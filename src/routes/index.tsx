@@ -1,0 +1,329 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { RotateCcw } from "lucide-react";
+import { AuthSlot } from "@/components/meridian/auth-slot";
+import { CalculateButton } from "@/components/meridian/calculate-button";
+import { CashChart, WealthChart } from "@/components/meridian/charts";
+import { ContributionForm } from "@/components/meridian/contribution-form";
+import { HouseholdForm } from "@/components/meridian/household-form";
+import { IncomeForm } from "@/components/meridian/income-form";
+import { KpiStrip } from "@/components/meridian/kpi-strip";
+import { PortfolioForm } from "@/components/meridian/portfolio-form";
+import { PeerBriefCard } from "@/components/meridian/peer-brief";
+import { Section } from "@/components/meridian/section";
+import { SpendingForm } from "@/components/meridian/spending-form";
+import { Verdict } from "@/components/meridian/verdict";
+import { YearTable } from "@/components/meridian/year-table";
+import { MachFooter, BrandLockup } from "@/components/meridian/mach-mark";
+import { simulate } from "@/lib/plan/engine";
+import { buildPeerBrief, type PeerBrief } from "@/lib/plan/peers";
+import { usePlanStore } from "@/lib/plan/store";
+import { useCloudPlan } from "@/lib/plan/use-cloud-plan";
+import { useEntitlement } from "@/lib/billing/use-entitlement";
+import type { Plan, SimResult } from "@/lib/plan/types";
+import { cn } from "@/lib/utils";
+
+export const Route = createFileRoute("/")({ component: Home });
+
+const LOOP = [
+  { id: "ooda-observe", label: "Observe" },
+  { id: "ooda-orient", label: "Orient" },
+  { id: "ooda-decide", label: "Decide" },
+  { id: "ooda-act", label: "Act" },
+] as const;
+
+function PhaseLabel({ id, label }: { id: string; label: string }) {
+  return (
+    <p
+      id={id}
+      className="scroll-mt-40 font-display text-lg font-semibold uppercase tracking-[0.18em] text-muted sm:text-xl"
+    >
+      {label}
+    </p>
+  );
+}
+
+function scrollParent(el: HTMLElement): HTMLElement | null {
+  let n: HTMLElement | null = el.parentElement;
+  while (n && n !== document.body) {
+    const s = getComputedStyle(n);
+    if (/(auto|scroll)/.test(s.overflowY) && n.scrollHeight > n.clientHeight + 4) {
+      return n;
+    }
+    n = n.parentElement;
+  }
+  return null;
+}
+
+function jumpToPhase(id: string) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const header = document.querySelector("header");
+  const headerH =
+    header instanceof HTMLElement ? header.getBoundingClientRect().height : 0;
+  const gap = 20;
+  const parent = scrollParent(el);
+  if (parent) {
+    const parentRect = parent.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    parent.scrollTo({
+      top: Math.max(0, parent.scrollTop + (elRect.top - parentRect.top) - gap),
+      behavior: "smooth",
+    });
+    if (parentRect.top < headerH + gap) {
+      window.scrollTo({
+        top: Math.max(0, window.scrollY + parentRect.top - headerH - gap),
+        behavior: "smooth",
+      });
+    }
+    return;
+  }
+  const y = window.scrollY + el.getBoundingClientRect().top - headerH - gap;
+  window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+}
+
+function Home() {
+  const plan = usePlanStore((s) => s.plan);
+  const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
+  const reset = usePlanStore((s) => s.reset);
+  const { status: saveStatus, saveNow } = useCloudPlan();
+  const ent = useEntitlement();
+  const [tab, setTab] = useState<"act" | "loop">("act");
+  const [pendingPhase, setPendingPhase] = useState<string | null>(null);
+  const [run, setRun] = useState<{
+    id: number;
+    plan: Plan;
+    sim: SimResult;
+    brief: PeerBrief;
+  } | null>(null);
+
+  useEffect(() => {
+    void Promise.resolve(usePlanStore.persist.rehydrate());
+  }, []);
+
+  useEffect(() => {
+    if (!pendingPhase) return;
+    if (pendingPhase === "ooda-act" && tab !== "act") return;
+    if (pendingPhase !== "ooda-act" && tab !== "loop") return;
+    const id = pendingPhase;
+    const t = window.setTimeout(() => {
+      jumpToPhase(id);
+      setPendingPhase(null);
+    }, 40);
+    return () => window.clearTimeout(t);
+  }, [pendingPhase, tab]);
+
+  const displayPlan = run
+    ? {
+        ...run.plan,
+        assumptions: { ...run.plan.assumptions, dollars: plan.assumptions.dollars },
+      }
+    : plan;
+  const sim = run?.sim;
+  const real = plan.assumptions.dollars === "real";
+
+  function calculate() {
+    const live = usePlanStore.getState().plan;
+    const snapshot = structuredClone(live) as Plan;
+    const nextSim = simulate(snapshot);
+    const brief = buildPeerBrief(snapshot, nextSim, { expanded: ent.paid });
+    setRun({
+      id: Date.now(),
+      plan: snapshot,
+      sim: nextSim,
+      brief,
+    });
+    void saveNow(snapshot);
+    setTab("act");
+    setPendingPhase("ooda-act");
+  }
+
+  function handleReset() {
+    reset();
+    setRun(null);
+  }
+
+  function goPhase(id: string) {
+    setTab(id === "ooda-act" ? "act" : "loop");
+    setPendingPhase(id);
+  }
+
+  return (
+    <div className="min-h-screen bg-bg text-fg">
+      <header className="sticky top-0 z-20 border-b border-border bg-bg/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="min-w-0">
+            <BrandLockup />
+            <p className="truncate text-xs text-subtle">
+              The Supersonic Financial Calculator from Time Of Flight LLC
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+              <button
+                type="button"
+                onClick={() => patchAssumptions({ dollars: "real" })}
+                className={cn(
+                  "h-9 rounded-md px-3 text-xs font-medium transition-colors",
+                  real ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
+                )}
+              >
+                Today $
+              </button>
+              <button
+                type="button"
+                onClick={() => patchAssumptions({ dollars: "nominal" })}
+                className={cn(
+                  "h-9 rounded-md px-3 text-xs font-medium",
+                  !real ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
+                )}
+              >
+                Nominal
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleReset()}
+              className="inline-flex h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-muted hover:bg-surface hover:text-fg sm:px-3"
+            >
+              <RotateCcw className="size-3.5" />
+              <span className="hidden sm:inline">Reset baseline</span>
+            </button>
+            <AuthSlot saved={saveStatus} />
+          </div>
+        </div>
+        <nav
+          aria-label="OODA loop"
+          className="mx-auto flex max-w-[1400px] items-center justify-center gap-1 overflow-x-auto px-4 pb-3 sm:px-6"
+        >
+          {LOOP.map((phase, i) => (
+            <span key={phase.id} className="flex items-center gap-1">
+              {i > 0 ? (
+                <span className="px-1 text-xs text-subtle" aria-hidden>
+                  ·
+                </span>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => goPhase(phase.id)}
+                className="h-9 cursor-pointer px-1.5 text-xs font-medium uppercase tracking-[0.16em] text-fg/85 underline decoration-fg/40 underline-offset-[5px] transition-colors hover:text-fg hover:decoration-fg"
+              >
+                {phase.label}
+              </button>
+            </span>
+          ))}
+        </nav>
+        <div className="mx-auto flex max-w-[1400px] gap-1 px-4 pb-3 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setTab("loop")}
+            className={cn(
+              "h-11 flex-1 rounded-lg text-sm font-medium",
+              tab === "loop" ? "bg-surface text-fg" : "text-muted",
+            )}
+          >
+            OODA
+          </button>
+          <button
+            type="button"
+            onClick={() => setTab("act")}
+            className={cn(
+              "h-11 flex-1 rounded-lg text-sm font-medium",
+              tab === "act" ? "bg-surface text-fg" : "text-muted",
+            )}
+          >
+            Act
+          </button>
+        </div>
+      </header>
+
+      <main className="mx-auto grid max-w-[1400px] grid-cols-1 gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] lg:items-start">
+        <aside
+          className={cn(
+            "flex flex-col gap-6 lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1",
+            tab === "act" ? "hidden lg:flex" : "flex",
+          )}
+        >
+          <div className="flex flex-col gap-3">
+            <PhaseLabel id="ooda-observe" label="Observe" />
+            <Section
+              title="Family"
+              hint="Names, birthdays — the household as it stands"
+              defaultOpen={false}
+            >
+              <HouseholdForm />
+            </Section>
+            <Section
+              title="Accounts"
+              hint="Your financial lowdown — current accounts and balances"
+              defaultOpen={false}
+            >
+              <PortfolioForm />
+            </Section>
+            <CalculateButton onCalculate={calculate} />
+          </div>
+          <div className="flex flex-col gap-3">
+            <PhaseLabel id="ooda-orient" label="Orient" />
+            <Section
+              title="Income"
+              hint="Name it, amount, start, end — add another for the next paycheck"
+            >
+              <IncomeForm />
+            </Section>
+            <Section
+              title="Spending"
+              hint="What the household actually costs"
+              defaultOpen={false}
+            >
+              <SpendingForm />
+            </Section>
+            <CalculateButton onCalculate={calculate} />
+          </div>
+          <div className="flex flex-col gap-3">
+            <PhaseLabel id="ooda-decide" label="Decide" />
+            <Section
+              title="Contributions"
+              hint="Change monthly amounts at any date"
+              defaultOpen={false}
+            >
+              <ContributionForm />
+            </Section>
+            <CalculateButton onCalculate={calculate} />
+          </div>
+        </aside>
+
+        <div
+          className={cn("flex flex-col gap-4", tab === "loop" ? "hidden lg:flex" : "flex")}
+        >
+          <PhaseLabel id="ooda-act" label="Act" />
+          {sim ? (
+            <>
+              <Verdict plan={displayPlan} sim={sim} />
+              <KpiStrip plan={displayPlan} sim={sim} />
+              <PeerBriefCard
+                key={run?.id ?? "idle"}
+                brief={run?.brief ?? null}
+                ran
+                plan={displayPlan}
+                sim={sim}
+              />
+              <WealthChart plan={displayPlan} sim={sim} />
+              <CashChart plan={displayPlan} sim={sim} />
+              <YearTable plan={displayPlan} sim={sim} />
+            </>
+          ) : (
+            <div className="rounded-xl bg-surface px-5 py-8 shadow-[0_0_0_1px_var(--color-border)]">
+              <p className="font-display text-xl text-fg">No MACH Run yet.</p>
+              <p className="mt-2 max-w-xl text-sm text-muted">
+                Complete Observe, Orient, and Decide to begin your financial
+                MACH Run. Hit Calculate at the bottom of any of those sections
+                to bust the MACH and Act with financial purpose.
+              </p>
+            </div>
+          )}
+        </div>
+      </main>
+      <MachFooter />
+    </div>
+  );
+}

@@ -1,0 +1,81 @@
+import type { Plan } from "./types";
+
+/**
+ * Blank household. Observe accounts, income stages, and contribution rules
+ * are typed in — MACH does not invent them.
+ */
+export function createDefaultPlan(): Plan {
+  return {
+    primary: { name: "", birthDate: "" },
+    spouse: { name: "", birthDate: "" },
+    children: [],
+    assumptions: {
+      asOfDate: "2026-08-01",
+      inflationPct: 2.5,
+      defaultReturnPct: 7,
+      ordinaryTaxRatePct: 22,
+      ssTaxablePct: 85,
+      projectionEndAge: 95,
+      careerEndDate: "2036-09-01",
+      militaryRetireDate: "2026-09-01",
+      sweepPortfolioId: null,
+      dollars: "real",
+      retirementGoalDate: null,
+    },
+    stages: [],
+    portfolios: [],
+    contributions: [],
+    incomes: [
+      {
+        id: "inc-1",
+        name: "",
+        kind: "salary",
+        monthlyAmount: 0,
+        startDate: "2026-08-01",
+        endDate: null,
+        colaPct: 0,
+        taxTreatment: "ordinary",
+        person: "household",
+      },
+    ],
+    spending: [
+      {
+        id: "sp-1",
+        label: "Household spending",
+        monthlyAmount: 8500,
+        startDate: "2026-08-01",
+        endDate: null,
+      },
+    ],
+  };
+}
+
+export function ensurePlan(plan: Plan): Plan {
+  const next: Plan = {
+    ...plan,
+    children: Array.isArray(plan.children) ? plan.children : [],
+    portfolios: Array.isArray(plan.portfolios) ? plan.portfolios : [],
+    contributions: Array.isArray(plan.contributions) ? plan.contributions : [],
+    incomes: Array.isArray(plan.incomes) ? plan.incomes : [],
+    spending: Array.isArray(plan.spending) ? plan.spending : [],
+  };
+  const asOf = next.assumptions?.asOfDate ?? "2026-08-01";
+  next.incomes = next.incomes.map((s) => ({
+    ...s,
+    startDate: s.startDate || asOf,
+    monthlyAmount: Number.isFinite(s.monthlyAmount) ? s.monthlyAmount : 0,
+  }));
+  const ids = new Set(next.portfolios.map((p) => p.id));
+  if (next.assumptions.sweepPortfolioId && !ids.has(next.assumptions.sweepPortfolioId)) {
+    next.assumptions = { ...next.assumptions, sweepPortfolioId: null };
+  }
+  if (next.assumptions.retirementGoalDate === undefined) {
+    next.assumptions = { ...next.assumptions, retirementGoalDate: null };
+  }
+  return next;
+}
+
+/** @deprecated use ensurePlan */
+export function ensureStages(plan: Plan): Plan {
+  return ensurePlan(plan);
+}
