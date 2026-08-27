@@ -44,104 +44,107 @@ function Login() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-bg px-4 py-10 text-fg">
-      <div className="w-full max-w-sm space-y-6">
-        <div>
-          <Link to="/" className="inline-block">
-            <BrandLockup />
+    <main className="grid min-h-screen place-items-center bg-bg px-4 py-12 text-fg">
+      <div className="w-full max-w-lg space-y-8">
+        <div className="flex flex-col items-center text-center">
+          <Link to="/" className="inline-flex justify-center">
+            <BrandLockup size="lg" />
           </Link>
-          <p className="mt-2 text-xs tracking-[0.14em] text-subtle">
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-muted">
             The Supersonic Financial Calculator from Time Of Flight LLC
           </p>
-          <p className="mt-1 text-xs text-subtle">
-            Free: save your MACH Run · 2 accounts · 2 contributions · 2 income stages
+          <p className="mt-2 max-w-md text-xs leading-relaxed text-subtle">
+            Free: save your MACH Run · 2 accounts · 2 contributions · 2 income
+            stages
           </p>
         </div>
 
-        <div className="flex rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
-          <button
-            type="button"
-            onClick={() => setMode("in")}
-            className={`h-10 flex-1 rounded-md text-sm font-medium ${
-              mode === "in" ? "bg-accent text-accent-fg" : "text-muted"
-            }`}
-          >
-            Sign in
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("up")}
-            className={`h-10 flex-1 rounded-md text-sm font-medium ${
-              mode === "up" ? "bg-accent text-accent-fg" : "text-muted"
-            }`}
-          >
-            Register
-          </button>
-        </div>
+        <div className="space-y-6 rounded-2xl bg-surface p-6 shadow-[0_0_0_1px_var(--color-border)] sm:p-8">
+          <div className="flex rounded-lg bg-bg p-1 shadow-[0_0_0_1px_var(--color-border)]">
+            <button
+              type="button"
+              onClick={() => setMode("in")}
+              className={`h-11 flex-1 rounded-md text-sm font-medium ${
+                mode === "in" ? "bg-accent text-accent-fg" : "text-muted"
+              }`}
+            >
+              Sign in
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("up")}
+              className={`h-11 flex-1 rounded-md text-sm font-medium ${
+                mode === "up" ? "bg-accent text-accent-fg" : "text-muted"
+              }`}
+            >
+              Register
+            </button>
+          </div>
 
-        {authEnabled ? (
-          <>
-            <form onSubmit={(e) => void onEmail(e)} className="space-y-3">
-              {mode === "up" ? (
-                <Field label="Name">
+          {authEnabled ? (
+            <>
+              <form onSubmit={(e) => void onEmail(e)} className="space-y-4">
+                {mode === "up" ? (
+                  <Field label="Name">
+                    <TextInput
+                      value={name}
+                      onChange={(ev) => setName(ev.target.value)}
+                      autoComplete="name"
+                      placeholder="Your name"
+                    />
+                  </Field>
+                ) : null}
+                <Field label="Email">
                   <TextInput
-                    value={name}
-                    onChange={(ev) => setName(ev.target.value)}
-                    autoComplete="name"
-                    placeholder="Your name"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(ev) => setEmail(ev.target.value)}
+                    autoComplete="email"
+                    placeholder="you@example.com"
                   />
                 </Field>
-              ) : null}
-              <Field label="Email">
-                <TextInput
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(ev) => setEmail(ev.target.value)}
-                  autoComplete="email"
-                  placeholder="you@example.com"
-                />
-              </Field>
-              <Field label="Password" hint="At least 8 characters">
-                <TextInput
-                  type="password"
-                  required
-                  minLength={8}
-                  value={password}
-                  onChange={(ev) => setPassword(ev.target.value)}
-                  autoComplete={mode === "up" ? "new-password" : "current-password"}
-                />
-              </Field>
-              {error ? <p className="text-sm text-negative">{error}</p> : null}
-              <PrimaryButton type="submit" disabled={busy} className="w-full">
-                {busy
-                  ? "Working…"
-                  : mode === "up"
-                    ? "Create account"
-                    : "Sign in"}
-              </PrimaryButton>
-            </form>
+                <Field label="Password" hint="At least 8 characters">
+                  <TextInput
+                    type="password"
+                    required
+                    minLength={8}
+                    value={password}
+                    onChange={(ev) => setPassword(ev.target.value)}
+                    autoComplete={mode === "up" ? "new-password" : "current-password"}
+                  />
+                </Field>
+                {error ? <p className="text-sm text-negative">{error}</p> : null}
+                <PrimaryButton type="submit" disabled={busy} className="w-full">
+                  {busy
+                    ? "Working…"
+                    : mode === "up"
+                      ? "Create account"
+                      : "Sign in"}
+                </PrimaryButton>
+              </form>
 
-            <p className="text-center text-xs text-subtle">or</p>
+              <p className="text-center text-xs text-subtle">or</p>
 
-            <div className="space-y-2">
-              {GROK_PROVIDERS.map((p) => (
-                <button
-                  key={p.providerId}
-                  type="button"
-                  onClick={() => void signIn(p.providerId, { callbackURL: "/" })}
-                  className="h-11 w-full rounded-lg bg-surface text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
-                >
-                  Continue with {p.label}
-                </button>
-              ))}
-            </div>
-          </>
-        ) : (
-          <p className="text-sm text-muted">Sign-in is disabled.</p>
-        )}
+              <div className="space-y-2">
+                {GROK_PROVIDERS.map((p) => (
+                  <button
+                    key={p.providerId}
+                    type="button"
+                    onClick={() => void signIn(p.providerId, { callbackURL: "/" })}
+                    className="h-11 w-full rounded-lg bg-bg text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+                  >
+                    Continue with {p.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-muted">Sign-in is disabled.</p>
+          )}
+        </div>
 
-        <p className="text-center text-xs text-subtle">
+        <p className="text-center text-xs leading-relaxed text-subtle">
           <Link to="/pricing" className="underline-offset-4 hover:text-fg hover:underline">
             See MACH pricing
           </Link>
@@ -149,7 +152,7 @@ function Login() {
           <Link to="/" className="underline-offset-4 hover:text-fg hover:underline">
             Continue without an account
           </Link>
-          — this browser only.
+          <span className="block mt-1">this browser only, until you sign in</span>
         </p>
       </div>
     </main>
