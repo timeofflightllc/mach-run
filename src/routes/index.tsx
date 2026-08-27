@@ -169,9 +169,9 @@ function Home() {
     <div className="min-h-screen bg-bg text-fg">
       <header
         id="mach-header"
-        className="sticky top-0 z-20 overflow-hidden border-b border-border bg-bg/95 backdrop-blur-sm"
+        className="sticky top-0 z-30 border-b border-border bg-bg/95 backdrop-blur-sm"
       >
-        <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
+        <div className="relative z-50 mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="min-w-0">
             <BrandLockup />
             <p className="truncate text-xs text-subtle">

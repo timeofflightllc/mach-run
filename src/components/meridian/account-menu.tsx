@@ -38,7 +38,7 @@ export function AccountMenu() {
       {open ? (
         <div
           role="menu"
-          className="absolute right-0 z-40 mt-1 min-w-[13rem] rounded-lg bg-elevated py-1 shadow-[0_0_0_1px_var(--color-border)]"
+          className="absolute right-0 z-50 mt-1 min-w-[13rem] rounded-lg bg-elevated py-1 shadow-[0_0_0_1px_var(--color-border)]"
         >
           <Link
             to="/account"
