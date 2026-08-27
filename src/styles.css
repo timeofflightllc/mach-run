@@ -95,6 +95,23 @@
   }
 }
 
+@keyframes master-caution-flash {
+  0%,
+  42% {
+    opacity: 1;
+    filter: brightness(1.08);
+  }
+  58%,
+  100% {
+    opacity: 0.38;
+    filter: brightness(0.72);
+  }
+}
+
+.master-caution-lamp {
+  animation: master-caution-flash 1.8s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

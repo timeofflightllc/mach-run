@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import { AuthSlot } from "@/components/meridian/auth-slot";
@@ -15,6 +15,7 @@ import { SpendingForm } from "@/components/meridian/spending-form";
 import { Verdict } from "@/components/meridian/verdict";
 import { YearTable } from "@/components/meridian/year-table";
 import { MachFooter, BrandLockup } from "@/components/meridian/mach-mark";
+import { SignedOut } from "@/lib/auth/gates";
 import { simulate } from "@/lib/plan/engine";
 import { buildPeerBrief, type PeerBrief } from "@/lib/plan/peers";
 import { usePlanStore } from "@/lib/plan/store";
@@ -235,6 +236,26 @@ function Home() {
             Act
           </button>
         </div>
+        <SignedOut>
+          <div className="border-t border-[#5c4a18] bg-[#241c0c]">
+            <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-center gap-x-3 gap-y-1.5 px-4 py-2.5 text-center sm:px-6">
+              <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-2 py-0.5 font-display text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1a1408]">
+                Master Caution
+              </span>
+              <p className="text-xs leading-snug text-[#ead9a0]">
+                Your MACH RUN information is not saved until you create an
+                account.{" "}
+                <Link
+                  to="/login"
+                  className="font-medium text-[#f6e7b0] underline decoration-[#e8c547]/80 underline-offset-[3px] hover:text-[#fff3c4]"
+                >
+                  Create a free account in 30 seconds
+                </Link>
+                .
+              </p>
+            </div>
+          </div>
+        </SignedOut>
       </header>
 
       <main className="mx-auto grid max-w-[1400px] grid-cols-1 gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] lg:items-start">
