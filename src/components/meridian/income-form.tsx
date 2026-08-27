@@ -5,6 +5,7 @@ import {
   Field,
   GhostButton,
   NumberInput,
+  MoneyInput,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
@@ -85,9 +86,7 @@ export function IncomeForm() {
                         : "62–70. FRA is 67."
                     }
                   >
-                    <NumberInput
-                      min={0}
-                      step={50}
+                    <MoneyInput
                       value={s.ssPia ?? 0}
                       onValue={(n) => updateIncome(s.id, { ssPia: n })}
                     />
@@ -104,9 +103,7 @@ export function IncomeForm() {
                 </>
               ) : s.kind === "va" ? null : (
                 <Field label="$ / month (today)">
-                  <NumberInput
-                    min={0}
-                    step={10}
+                  <MoneyInput
                     value={Math.round(s.monthlyAmount * 100) / 100}
                     onValue={(n) => updateIncome(s.id, { monthlyAmount: n })}
                   />

@@ -1,9 +1,10 @@
-import type {
-  ButtonHTMLAttributes,
-  InputHTMLAttributes,
-  ReactNode,
-  SelectHTMLAttributes,
-  TextareaHTMLAttributes,
+import {
+  useState,
+  type ButtonHTMLAttributes,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type SelectHTMLAttributes,
+  type TextareaHTMLAttributes,
 } from "react";
 import { cn } from "@/lib/utils";
 
@@ -53,6 +54,70 @@ export function NumberInput({
       onChange={(e) => onValue(e.target.value === "" ? 0 : Number(e.target.value))}
       className={cn(controlClass, props.className)}
     />
+  );
+}
+
+function formatMoneyDisplay(n: number): string {
+  if (!Number.isFinite(n) || n === 0) return "";
+  const rounded = Math.round(n * 100) / 100;
+  const cents = !Number.isInteger(rounded);
+  return rounded.toLocaleString("en-US", {
+    minimumFractionDigits: cents ? 2 : 0,
+    maximumFractionDigits: 2,
+  });
+}
+
+function parseMoney(raw: string): number {
+  const cleaned = raw.replace(/[^0-9.]/g, "");
+  if (!cleaned || cleaned === ".") return 0;
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
+export function MoneyInput({
+  value,
+  onValue,
+  className,
+  ...props
+}: Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "onChange"> & {
+  value: number;
+  onValue: (n: number) => void;
+}) {
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState("");
+  const shown = focused ? draft : formatMoneyDisplay(value);
+
+  return (
+    <div className="relative min-w-0">
+      <span
+        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted"
+        aria-hidden
+      >
+        $
+      </span>
+      <input
+        {...props}
+        type="text"
+        inputMode="decimal"
+        autoComplete="off"
+        value={shown}
+        onFocus={() => {
+          setFocused(true);
+          setDraft(formatMoneyDisplay(value));
+        }}
+        onBlur={() => {
+          setFocused(false);
+          onValue(parseMoney(draft));
+        }}
+        onChange={(e) => {
+          const raw = e.target.value;
+          const n = parseMoney(raw);
+          onValue(n);
+          setDraft(raw.includes(".") ? raw.replace(/[^0-9.]/g, "") : formatMoneyDisplay(n));
+        }}
+        className={cn(controlClass, "pl-7", className)}
+      />
+    </div>
   );
 }
 

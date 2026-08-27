@@ -1,4 +1,4 @@
-import { Field, DateInput, MonthInput, NumberInput, SelectInput, TextInput } from "@/components/ui/field";
+import { Field, DateInput, MonthInput, MoneyInput, NumberInput, SelectInput, TextInput } from "@/components/ui/field";
 import { usePlanStore } from "@/lib/plan/store";
 
 export function HouseholdForm() {
@@ -160,9 +160,7 @@ export function HouseholdForm() {
                 label="Nest egg goal (today $)"
                 hint="Spendable target at that retirement date — e.g. 3,000,000. MACH will say if you're on track, or how much more to invest each month. Blank = no lump-sum goal."
               >
-                <NumberInput
-                  min={0}
-                  step={10000}
+                <MoneyInput
                   value={plan.assumptions.nestEggGoal ?? 0}
                   onValue={(n) =>
                     patchAssumptions({ nestEggGoal: n > 0 ? n : null })

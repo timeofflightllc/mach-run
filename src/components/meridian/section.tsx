@@ -1,5 +1,5 @@
-import { ChevronDown } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 export function Section({
@@ -18,9 +18,17 @@ export function Section({
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
+  const root = useRef<HTMLElement>(null);
+
+  function collapse() {
+    setOpen(false);
+    root.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
   return (
     <section
       id={id}
+      ref={root}
       className="rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]"
     >
       <button
@@ -48,7 +56,21 @@ export function Section({
           )}
         />
       </button>
-      {open ? <div className="border-t border-border px-4 py-4">{children}</div> : null}
+      {open ? (
+        <div className="border-t border-border px-4 py-4">
+          {children}
+          <div className="mt-4 flex justify-end border-t border-border pt-3">
+            <button
+              type="button"
+              onClick={collapse}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-muted hover:bg-elevated hover:text-fg"
+            >
+              Close {title}
+              <ChevronUp className="size-3.5" />
+            </button>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

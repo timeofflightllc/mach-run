@@ -4,7 +4,7 @@ import {
   DateInput,
   Field,
   GhostButton,
-  NumberInput,
+  MoneyInput,
   TextInput,
 } from "@/components/ui/field";
 import { newId, usePlanStore } from "@/lib/plan/store";
@@ -43,9 +43,7 @@ export function SpendingForm() {
             </div>
             <div className="flex flex-col gap-2">
               <Field label="$ / month (today)">
-                <NumberInput
-                  min={0}
-                  step={100}
+                <MoneyInput
                   value={s.monthlyAmount}
                   onValue={(n) => updateSpending(s.id, { monthlyAmount: n })}
                 />

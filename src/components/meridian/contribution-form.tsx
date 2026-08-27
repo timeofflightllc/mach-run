@@ -6,6 +6,7 @@ import {
   Field,
   GhostButton,
   NumberInput,
+  MoneyInput,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
@@ -157,9 +158,7 @@ export function ContributionForm() {
                   </>
                 ) : (
                   <Field label="$ / month">
-                    <NumberInput
-                      min={0}
-                      step={10}
+                    <MoneyInput
                       value={Math.round(c.monthlyAmount * 100) / 100}
                       onValue={(n) => updateContribution(c.id, { monthlyAmount: n })}
                     />

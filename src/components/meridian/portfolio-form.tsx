@@ -4,6 +4,7 @@ import {
   Field,
   GhostButton,
   NumberInput,
+  MoneyInput,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
@@ -77,9 +78,8 @@ export function PortfolioForm() {
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
               <Field label="Value">
-                <NumberInput
+                <MoneyInput
                   min={0}
-                  step={100}
                   value={Math.round(p.currentValue * 100) / 100}
                   onValue={(n) => updatePortfolio(p.id, { currentValue: n })}
                 />
@@ -89,9 +89,8 @@ export function PortfolioForm() {
                   label="Amount invested"
                   hint="Premiums paid — cost basis. Earnings come out first and are ordinary income; basis comes out tax-free."
                 >
-                  <NumberInput
+                  <MoneyInput
                     min={0}
-                    step={100}
                     value={Math.round((p.costBasis ?? 0) * 100) / 100}
                     onValue={(n) => updatePortfolio(p.id, { costBasis: n })}
                   />
