@@ -1,6 +1,7 @@
 import type { PeerBrief } from "./peers";
 import type { Plan, SimResult } from "./types";
 import { usd } from "./format";
+import { OODA_DISCLAIMER } from "./disclaimer";
 import { startingNetWorth, startingSpendable } from "./engine";
 
 function pdfEscape(s: string): string {
@@ -35,6 +36,8 @@ function buildLines(brief: PeerBrief, plan: Plan, sim: SimResult): string[] {
     "MACH OODA Financial Analysis*",
     brief.runAt ? `Run ${brief.runAt}` : "",
     "",
+    ...wrapLine(OODA_DISCLAIMER),
+    "",
     brief.headline,
     "",
   ];
@@ -60,6 +63,8 @@ function buildLines(brief: PeerBrief, plan: Plan, sim: SimResult): string[] {
     "* MACH OODA AI analysis is for entertainment purposes only.",
     "It is not financial, tax, legal, or investment advice.",
     "Past performance does not guarantee future returns.",
+    "",
+    ...wrapLine(OODA_DISCLAIMER),
   );
   return lines.filter((l, i, a) => !(l === "" && a[i - 1] === ""));
 }

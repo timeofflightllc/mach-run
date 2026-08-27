@@ -131,11 +131,15 @@ export function ContributionForm() {
                     <Field label="Which income">
                       <SelectInput
                         value={c.percentOfIncomeId ?? ""}
-                        onChange={(e) =>
+                        onChange={(e) => {
+                          const id = e.target.value || null;
+                          const inc = plan.incomes.find((s) => s.id === id);
                           updateContribution(c.id, {
-                            percentOfIncomeId: e.target.value || null,
-                          })
-                        }
+                            percentOfIncomeId: id,
+                            startDate: inc?.startDate || c.startDate,
+                            endDate: inc ? inc.endDate : c.endDate,
+                          });
+                        }}
                       >
                         <option value="">Select an income</option>
                         {plan.incomes.map((s, i) => (
@@ -147,6 +151,8 @@ export function ContributionForm() {
                     </Field>
                     <p className="text-xs text-subtle">
                       About {usd(emp, true)}/mo at today’s amount of that income.
+                      Dates and employer match follow that paycheck — when it
+                      ends, this contribution and the match end.
                     </p>
                   </>
                 ) : (
@@ -199,20 +205,39 @@ export function ContributionForm() {
                     ) : null}
                   </>
                 ) : null}
-                <Field label="Start">
-                  <DateInput
-                    value={c.startDate}
-                    onValue={(v) => updateContribution(c.id, { startDate: v })}
-                  />
-                </Field>
-                <Field label="End (blank = open)">
-                  <DateInput
-                    value={c.endDate}
-                    onValue={(v) =>
-                      updateContribution(c.id, { endDate: v === "" ? null : v })
-                    }
-                  />
-                </Field>
+                {c.amountMode === "percent" ? (
+                  <p className="text-xs leading-relaxed text-subtle">
+                    {(() => {
+                      const inc = plan.incomes.find((s) => s.id === c.percentOfIncomeId);
+                      const name = inc
+                        ? inc.name.trim() || "that income"
+                        : null;
+                      if (!inc || !name) {
+                        return "Pick an income — start, end, and match will follow that paycheck automatically.";
+                      }
+                      const start = inc.startDate.slice(0, 7);
+                      const end = inc.endDate ? inc.endDate.slice(0, 7) : "ongoing";
+                      return `Follows ${name}: ${start} → ${end}. Employer match (if any) stops when this paycheck stops.`;
+                    })()}
+                  </p>
+                ) : (
+                  <>
+                    <Field label="Start">
+                      <DateInput
+                        value={c.startDate}
+                        onValue={(v) => updateContribution(c.id, { startDate: v })}
+                      />
+                    </Field>
+                    <Field label="End (blank = open)">
+                      <DateInput
+                        value={c.endDate}
+                        onValue={(v) =>
+                          updateContribution(c.id, { endDate: v === "" ? null : v })
+                        }
+                      />
+                    </Field>
+                  </>
+                )}
               </div>
             </li>
           );

@@ -1,0 +1,2 @@
+export const OODA_DISCLAIMER =
+  "This MACH OODA Financial Analysis is for entertainment and educational purposes only. It is not financial, investment, tax, or legal advice, and it is not a recommendation to buy, sell, or hold any security or product. Projections are hypothetical illustrations based on the numbers you entered; they are not guarantees. Past performance does not guarantee future results. MACH Run is not a fiduciary. Consult a qualified professional before making financial decisions.";

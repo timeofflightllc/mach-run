@@ -109,6 +109,10 @@ function contributionWindow(
   plan: Plan,
   rule: Plan["contributions"][number],
 ): { start: string; end: string | null } {
+  if (rule.amountMode === "percent" && rule.percentOfIncomeId) {
+    const stream = plan.incomes.find((s) => s.id === rule.percentOfIncomeId);
+    if (stream) return streamWindow(plan, stream);
+  }
   const stage = findStage(plan, rule.endWithStageId);
   if (!stage) return { start: rule.startDate, end: rule.endDate };
   return { start: rule.startDate, end: stage.endDate };

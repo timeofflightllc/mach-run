@@ -4,6 +4,11 @@ import type { PeerBrief } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { GuestOnly, RealSignedIn } from "@/lib/auth/gates";
 import { MACH_MONTHLY_USD } from "@/lib/billing/limits";
+import { OODA_DISCLAIMER } from "@/lib/plan/disclaimer";
+
+function Disclaimer() {
+  return <p className="text-xs italic leading-relaxed text-subtle">{OODA_DISCLAIMER}</p>;
+}
 
 export function PeerBriefCard({
   brief,
@@ -59,7 +64,10 @@ export function PeerBriefCard({
           </button>
         ) : null}
       </div>
-      <p className="mt-2 font-display text-xl font-medium leading-snug text-fg">
+      <div className="mt-3">
+        <Disclaimer />
+      </div>
+      <p className="mt-3 font-display text-xl font-medium leading-snug text-fg">
         {brief.headline}
       </p>
       <div className="mt-3 flex flex-col gap-4 text-sm leading-relaxed text-muted">
@@ -120,6 +128,9 @@ export function PeerBriefCard({
           a neighborhood, not a credit score, not advice.
         </p>
       )}
+      <div className="mt-4 border-t border-border pt-4">
+        <Disclaimer />
+      </div>
     </div>
   );
 }

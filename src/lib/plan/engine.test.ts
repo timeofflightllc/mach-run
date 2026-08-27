@@ -329,4 +329,69 @@ test("percent-of-income contribution plus employer match", () => {
   assert.ok(Math.abs(m0.spendableEnd - 1500) < 2);
 });
 
+test("percent contribution and match end when the income ends", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1970-01-01";
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultReturnPct = 0;
+  plan.incomes = [
+    {
+      id: "job",
+      name: "Boeing",
+      kind: "salary",
+      monthlyAmount: 10000,
+      startDate: "2026-08-01",
+      endDate: "2027-08-01",
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.spending = [
+    {
+      id: "sp-1",
+      label: "Spend",
+      monthlyAmount: 0,
+      startDate: "2026-08-01",
+      endDate: null,
+    },
+  ];
+  plan.portfolios = [
+    {
+      id: "k",
+      name: "401k",
+      kind: "401k",
+      owner: "Primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "pre_tax",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c1",
+      label: "Deferral",
+      portfolioId: "k",
+      monthlyAmount: 99999,
+      startDate: "2020-01-01",
+      endDate: null,
+      amountMode: "percent",
+      percentOfIncome: 10,
+      percentOfIncomeId: "job",
+      employerMatch: true,
+      employerMatchPct: 100,
+    },
+  ];
+  const result = simulate(plan);
+  const during = result.months.find((m) => m.date.startsWith("2026-08"));
+  const after = result.months.find((m) => m.date.startsWith("2027-09"));
+  assert.ok(during && after);
+  assert.ok(during.contributions > 1000);
+  assert.ok(after.contributions < 1);
+});
+
+
 
