@@ -250,7 +250,7 @@ function Pricing() {
         {error ? <p className="mt-6 text-sm text-negative">{error}</p> : null}
         {!ent.stripeConfigured ? (
           <p className="mt-6 text-sm text-subtle">
-            Card checkout turns on when MACH is published with Stripe. You can
+            Card checkout turns on when MACH RUN is published with Stripe. You can
             still register and save for free.
           </p>
         ) : null}

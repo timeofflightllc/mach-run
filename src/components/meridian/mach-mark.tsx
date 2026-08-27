@@ -93,7 +93,11 @@ export function MachWordmark({
   const large = size === "lg";
   return (
     <span
-      className={cn("relative inline-flex max-h-12 items-center overflow-hidden py-1", className)}
+      className={cn(
+        "relative inline-flex items-center py-1",
+        "flex-col sm:max-h-12 sm:flex-row sm:overflow-hidden",
+        className,
+      )}
       aria-label="MACH RUN"
     >
       <span
@@ -111,8 +115,8 @@ export function MachWordmark({
       <MachGlyph
         className={
           large
-            ? "pointer-events-none relative -ml-2 h-8 w-40"
-            : "pointer-events-none relative -ml-2 hidden h-7 w-32 sm:inline sm:h-8 sm:w-40"
+            ? "pointer-events-none relative h-8 w-40 sm:-ml-2"
+            : "pointer-events-none relative mt-0.5 h-6 w-28 sm:mt-0 sm:-ml-2 sm:h-8 sm:w-40"
         }
       />
     </span>
@@ -160,7 +164,7 @@ export function MachFooter() {
         <div className="w-full space-y-2 text-xs leading-relaxed text-subtle">
           <p>
             <Link to="/pricing" className="text-muted underline-offset-4 hover:text-fg hover:underline">
-              Free vs MACH paid
+              Free vs MACH RUN paid
             </Link>
             {" · "}
             <Link to="/privacy" className="text-muted underline-offset-4 hover:text-fg hover:underline">

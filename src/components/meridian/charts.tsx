@@ -36,7 +36,7 @@ export function WealthChart({ plan, sim }: { plan: Plan; sim: SimResult }) {
     <div className="rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)] sm:p-5">
       <h2 className="font-display text-lg font-medium text-fg">Spendable wealth</h2>
       <p className="mb-4 text-xs text-subtle">
-        {real ? "Inflation-adjusted (today's dollars)" : "Nominal dollars"} ·
+        {real ? "Inflation-adjusted (today's dollars)" : "Future dollars"} ·
         Roth / taxable / TSP marked spendable. Houses and 529s sit in net worth
         only.
       </p>

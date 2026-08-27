@@ -124,7 +124,7 @@ export function VaKids({ stream }: { stream: IncomeStream }) {
         </div>
       ) : (
         <p className="text-xs text-muted">
-          Pick a rating. MACH fills the check from the VA.gov 2026 table (rating + spouse +
+          Pick a rating. MACH RUN fills the check from the VA.gov 2026 table (rating + spouse +
           kids under 18).
         </p>
       )}

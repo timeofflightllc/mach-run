@@ -22,6 +22,7 @@ import { buildPeerBrief, type PeerBrief } from "@/lib/plan/peers";
 import { usePlanStore } from "@/lib/plan/store";
 import { useCloudPlan } from "@/lib/plan/use-cloud-plan";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
+import { getEntitlement } from "@/lib/billing/api";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 
@@ -104,10 +105,10 @@ function Home() {
     if (!header || typeof ResizeObserver === "undefined") return;
     const sync = () => {
       try {
-        document.documentElement.style.setProperty(
-          "--mach-header-h",
-          `${Math.ceil(header.getBoundingClientRect().height)}px`,
-        );
+        const h = Math.ceil(header.getBoundingClientRect().height);
+        const prev = document.documentElement.style.getPropertyValue("--mach-header-h");
+        if (prev === `${h}px`) return;
+        document.documentElement.style.setProperty("--mach-header-h", `${h}px`);
       } catch {
         /* ignore */
       }
@@ -139,20 +140,39 @@ function Home() {
   const sim = run?.sim;
   const real = plan.assumptions.dollars === "real";
 
-  function calculate(opts?: { stay?: boolean }) {
-    const live = usePlanStore.getState().plan;
-    const snapshot = structuredClone(live) as Plan;
-    const nextSim = simulate(snapshot);
-    const brief = buildPeerBrief(snapshot, nextSim, { expanded: ent.paid });
-    setRun({
-      id: Date.now(),
-      plan: snapshot,
-      sim: nextSim,
-      brief,
+  useEffect(() => {
+    if (!ent.paid) return;
+    setRun((prev) => {
+      if (!prev?.brief || prev.brief.expanded) return prev;
+      return { ...prev, brief: { ...prev.brief, expanded: true } };
     });
-    void saveNow(snapshot);
-    setTab("act");
-    if (!opts?.stay) setPendingPhase("ooda-act");
+  }, [ent.paid]);
+
+  async function calculate(opts?: { stay?: boolean }) {
+    try {
+      let paid = Boolean(ent.paid);
+      try {
+        const liveEnt = await getEntitlement();
+        paid = Boolean(liveEnt.paid);
+      } catch {
+        /* keep hook entitlement */
+      }
+      const live = usePlanStore.getState().plan;
+      const snapshot = structuredClone(live) as Plan;
+      const nextSim = simulate(snapshot);
+      const brief = buildPeerBrief(snapshot, nextSim, { expanded: paid });
+      setRun({
+        id: Date.now(),
+        plan: snapshot,
+        sim: { ...nextSim, months: [] },
+        brief,
+      });
+      void saveNow(snapshot);
+      setTab("act");
+      if (!opts?.stay) setPendingPhase("ooda-act");
+    } catch (err) {
+      console.error("MACH Run calculate failed", err);
+    }
   }
 
   function handleReset() {
@@ -180,7 +200,7 @@ function Home() {
                 The Supersonic Financial Calculator
               </p>
             </div>
-            <div className="flex shrink-0 items-center gap-1.5">
+            <div className="ml-auto flex shrink-0 items-center justify-end gap-1.5">
               <div className="hidden rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)] md:flex">
                 <button
                   type="button"
@@ -202,7 +222,7 @@ function Home() {
                     !real ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
                   )}
                 >
-                  Nominal
+                  Future $
                 </button>
               </div>
               <button
@@ -238,7 +258,7 @@ function Home() {
                   !real ? "bg-accent text-accent-fg" : "text-muted",
                 )}
               >
-                Nominal
+                Future $
               </button>
             </div>
             <button
@@ -376,7 +396,10 @@ function Home() {
         </aside>
 
         <div
-          className={cn("flex flex-col gap-4", tab === "loop" ? "hidden lg:flex" : "flex")}
+          className={cn(
+            "flex min-w-0 flex-col gap-4",
+            tab === "loop" ? "hidden lg:flex" : "flex",
+          )}
         >
           <div className="flex items-center justify-between gap-3">
             <PhaseLabel id="ooda-act" label="Act" />
@@ -428,7 +451,7 @@ function Home() {
               <p className="mt-2 max-w-xl text-sm text-muted">
                 Complete Observe, Orient, and Decide to begin your financial
                 MACH Run. Hit Calculate at the bottom of any of those sections
-                to bust the MACH and Act with financial purpose.
+                to bust the MACH RUN and Act with financial purpose.
               </p>
             </div>
           )}

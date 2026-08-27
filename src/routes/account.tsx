@@ -115,7 +115,7 @@ function Account() {
           <Field label="Name">
             <TextInput value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
-          <Field label="Email" hint="Google / X logins may not let MACH change this.">
+          <Field label="Email" hint="Google / X logins may not let MACH RUN change this.">
             <TextInput
               type="email"
               value={email}

@@ -82,7 +82,7 @@ function Privacy() {
           <section className="space-y-2">
             <h2 className="font-medium text-fg">Who sees the numbers</h2>
             <p>
-              Your MACH Run is tied to your login. Other MACH users cannot see
+              Your MACH Run is tied to your login. Other MACH RUN users cannot see
               it. Site operators can access stored plans only as needed to
               operate, secure, or repair the service.
             </p>

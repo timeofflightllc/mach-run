@@ -191,11 +191,11 @@ function bottomLine(opts: {
     if (egg.onTrack) {
       const early =
         egg.hitYear != null && egg.hitYear < egg.targetYear
-          ? ` MACH first reaches it around ${egg.hitYear}${egg.hitAge != null ? ` (age ${egg.hitAge})` : ""}, ahead of your date.`
+          ? ` MACH RUN first reaches it around ${egg.hitYear}${egg.hitAge != null ? ` (age ${egg.hitAge})` : ""}, ahead of your date.`
           : "";
       return {
         headline: `You're on track to meet your ${usd(egg.goal)} nest egg by ${egg.targetYear}${byAge}.`,
-        body: `Projected spendable at that date is ${usd(egg.projected)} in today's dollars.${early} Stay with the plan — this is the number you asked MACH to hit.`,
+        body: `Projected spendable at that date is ${usd(egg.projected)} in today's dollars.${early} Stay with the plan — this is the number you asked MACH RUN to hit.`,
       };
     }
     return {
@@ -231,7 +231,7 @@ function bottomLine(opts: {
   if (age != null && age < 40 && (nwPercentile == null || nwPercentile < 50)) {
     return {
       headline: `${who} is early — and that's an advantage.`,
-      body: `Time will do more work than a heroic save rate later. Automate contributions now and let compounding compound. Set a retirement goal date in Family so MACH can score the landing.`,
+      body: `Time will do more work than a heroic save rate later. Automate contributions now and let compounding compound. Set a retirement goal date in Family so MACH RUN can score the landing.`,
     };
   }
 
@@ -304,7 +304,7 @@ export function buildPeerBrief(
     headline = "There's nothing to rank yet — add accounts and a paycheck, then Calculate.";
     add(
       "Empty hangar",
-      "Add accounts in Observe and a paycheck in Orient, then hit Calculate. MACH will rank this household as soon as there is something to measure.",
+      "Add accounts in Observe and a paycheck in Orient, then hit Calculate. MACH RUN will rank this household as soon as there is something to measure.",
     );
     return pack();
   }
@@ -346,7 +346,7 @@ export function buildPeerBrief(
       .join("; ");
     add(
       "Paychecks",
-      `Income stages on this run: ${listed}. MACH only scores what you typed, so every pension and side check you add makes this picture truer.`,
+      `Income stages on this run: ${listed}. MACH RUN only scores what you typed, so every pension and side check you add makes this picture truer.`,
     );
   }
 
@@ -417,7 +417,7 @@ export function buildPeerBrief(
   } else {
     add(
       "Retirement landing",
-      "No retirement goal date in Family yet, so MACH cannot score the landing. Put a goal date in — or check Already retired — then Calculate again.",
+      "No retirement goal date in Family yet, so MACH RUN cannot score the landing. Put a goal date in — or check Already retired — then Calculate again.",
     );
   }
 
@@ -445,7 +445,7 @@ export function buildPeerBrief(
   } else if (annualIncome > 0 || netWorth > 0) {
     add(
       "Runway",
-      `On the numbers you typed, spendable lasts through age ${plan.assumptions.projectionEndAge}. That's the MACH engine talking, not a guarantee — and it's a strong place to be. Markets can still wobble; the plan you built is the buffer.`,
+      `On the numbers you typed, spendable lasts through age ${plan.assumptions.projectionEndAge}. That's the MACH RUN engine talking, not a guarantee — and it's a strong place to be. Markets can still wobble; the plan you built is the buffer.`,
     );
   }
 
@@ -471,11 +471,11 @@ function rmdAdvice(plan: Plan, sim: SimResult): string {
   const deferred = sim.rmd?.stillWorkingDeferred ?? [];
   if (deferred.length) {
     bits.push(
-      `Still-working exception is ON for ${deferred.join(", ")} — salary/wages is flowing and you're still contributing, so MACH is not forcing 401(k)/TSP RMDs from those accounts. Traditional IRA does not get that courtesy.`,
+      `Still-working exception is ON for ${deferred.join(", ")} — salary/wages is flowing and you're still contributing, so MACH RUN is not forcing 401(k)/TSP RMDs from those accounts. Traditional IRA does not get that courtesy.`,
     );
   } else {
     bits.push(
-      "Still-working exception (401(k)/TSP only): if a W-2 is on AND you're depositing into that workplace account, MACH skips the RMD there. Stop depositing or stop the salary, and the IRS tap turns on.",
+      "Still-working exception (401(k)/TSP only): if a W-2 is on AND you're depositing into that workplace account, MACH RUN skips the RMD there. Stop depositing or stop the salary, and the IRS tap turns on.",
     );
   }
   const forced = sim.rmd?.forced ?? [];

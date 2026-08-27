@@ -31,7 +31,7 @@ export function PeerBriefCard({
           Waiting on Calculate.
         </p>
         <p className="mt-2 text-sm text-muted">
-          Finish Observe, Orient, or Decide and hit Calculate. MACH will rank
+          Finish Observe, Orient, or Decide and hit Calculate. MACH RUN will rank
           this household against U.S. peers by age, income, and net worth — then
           the charts will move.
         </p>
@@ -110,7 +110,7 @@ export function PeerBriefCard({
           <RealSignedIn>
             <p className="text-sm text-muted">
               The rest of this OODA — RMDs, retirement landing, every stage —
-              is on Personal.
+              is on MACH RUN Unlimited.
             </p>
             <Link
               to="/pricing"

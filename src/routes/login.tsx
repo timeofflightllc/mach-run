@@ -146,7 +146,7 @@ function Login() {
 
         <p className="text-center text-xs leading-relaxed text-subtle">
           <Link to="/pricing" className="underline-offset-4 hover:text-fg hover:underline">
-            See MACH pricing
+            See MACH RUN pricing
           </Link>
           {" · "}
           <Link to="/" className="underline-offset-4 hover:text-fg hover:underline">

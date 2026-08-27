@@ -55,13 +55,13 @@ export function ContributionForm() {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted">
-        Rules stack. Amounts are invested only from leftover paycheck after tax
-        and spending — MACH will not save money you did not earn. Employer
-        match is extra (not from take-home) when the destination is a 401(k) or
-        TSP. Destination accounts come from Observe.
+        Tell MACH RUN how much to put into which account, and when. It only invests
+        what’s left after taxes and spending — it will not invent extra cash.
+        If your 401(k) or TSP has a company match, that match is free money on
+        top, not from your paycheck.
         {plan.portfolios.length
-          ? ` Currently active: ${usd(activeMonthly, true)}/mo including match.`
-          : " Add an account in Observe before you add a contribution rule."}
+          ? ` Right now this adds up to ${usd(activeMonthly, true)}/mo, including match.`
+          : null}
       </p>
       <ul className="flex flex-col gap-3">
         {plan.contributions.map((c) => {

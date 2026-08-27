@@ -60,7 +60,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
   }
 
   return (
-    <div className="rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
+    <div className="overflow-hidden rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <h2 className="font-display text-lg font-medium text-fg">Year ledger</h2>
         <button
@@ -78,7 +78,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           {sim.fundingGaps.length > 6
             ? ` (+${sim.fundingGaps.length - 6} more)`
             : ""}
-          . MACH invested only the leftover. Cut contribution rules or spending,
+          . MACH RUN invested only the leftover. Cut contribution rules or spending,
           or raise income — the ledger will not create money.
         </p>
       ) : (
@@ -87,8 +87,8 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           paycheck after tax and spending, including the surplus sweep.
         </p>
       )}
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[860px] text-left text-sm">
+      <div className="overflow-x-auto pb-2">
+        <table className="w-max min-w-full text-left text-sm">
           <thead className="border-y border-border text-xs uppercase tracking-wider text-subtle">
             <tr>
               <th className="px-4 py-2 font-medium">Year</th>
@@ -98,7 +98,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
               <th className="px-3 py-2 font-medium">Spend</th>
               <th className="px-3 py-2 font-medium">Saved</th>
               <th className="px-3 py-2 font-medium">Drawn</th>
-              <th className="px-3 py-2 font-medium">Spendable</th>
+              <th className="px-3 py-2 pr-5 font-medium">Spendable</th>
             </tr>
           </thead>
           <tbody className="tabular-nums">
@@ -107,7 +107,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                 key={y.year}
                 className="border-b border-border/70 last:border-0"
               >
-                <td className="px-4 py-2 text-fg">
+                <td className="whitespace-nowrap px-4 py-2 text-fg">
                   {y.year}
                   {gapYears.has(y.year) ? (
                     <span className="ml-1 text-xs uppercase tracking-wider text-negative">
@@ -115,20 +115,26 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                     </span>
                   ) : null}
                 </td>
-                <td className="px-3 py-2 text-muted">
+                <td className="whitespace-nowrap px-3 py-2 text-muted">
                   {plan.primary.birthDate ? y.primaryAge : "—"}/
                   {plan.spouse.birthDate ? y.spouseAge : "—"}
                 </td>
-                <td className="px-3 py-2 text-fg">{usd(flow(y.income, y.year))}</td>
-                <td className="px-3 py-2 text-muted">{usd(flow(y.tax, y.year))}</td>
-                <td className="px-3 py-2 text-fg">{usd(flow(y.spending, y.year))}</td>
-                <td className="px-3 py-2 text-positive">
+                <td className="whitespace-nowrap px-3 py-2 text-fg">
+                  {usd(flow(y.income, y.year))}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-muted">
+                  {usd(flow(y.tax, y.year))}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-fg">
+                  {usd(flow(y.spending, y.year))}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-positive">
                   {usd(flow(y.contributions, y.year))}
                 </td>
-                <td className="px-3 py-2 text-negative">
+                <td className="whitespace-nowrap px-3 py-2 text-negative">
                   {usd(flow(y.withdrawals, y.year))}
                 </td>
-                <td className="px-3 py-2 text-fg">
+                <td className="whitespace-nowrap px-3 py-2 pr-5 text-fg">
                   {usd(real ? y.endSpendableReal : y.endSpendable)}
                 </td>
               </tr>

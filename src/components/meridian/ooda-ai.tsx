@@ -70,7 +70,7 @@ export function OodaAiCard({
       {!paid ? (
         <div className="mt-4 flex flex-col items-start gap-2 border-t border-border pt-4">
           <p className="text-sm text-muted">
-            OODA AI is on MACH Unlimited — ${MACH_MONTHLY_USD}/month or $
+            OODA AI is on MACH RUN Unlimited — ${MACH_MONTHLY_USD}/month or $
             {MACH_YEARLY_USD}/year.
           </p>
           <Link

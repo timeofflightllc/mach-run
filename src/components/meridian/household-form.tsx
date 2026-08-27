@@ -158,7 +158,7 @@ export function HouseholdForm() {
               )}
               <Field
                 label="Nest egg goal (today $)"
-                hint="Spendable target at that retirement date — e.g. 3,000,000. MACH will say if you're on track, or how much more to invest each month. Blank = no lump-sum goal."
+                hint="Spendable target at that retirement date — e.g. 3,000,000. MACH RUN will say if you're on track, or how much more to invest each month. Blank = no lump-sum goal."
               >
                 <MoneyInput
                   value={plan.assumptions.nestEggGoal ?? 0}
