@@ -97,7 +97,7 @@ test("brief sees income that starts after as-of", () => {
   assert.doesNotMatch(brief.paragraphs.join(" "), /No income on the run/);
 });
 
-test("free OODA is shorter than expanded", () => {
+test("free and paid generate the same full OODA; expanded is a clip flag", () => {
   const plan = createDefaultPlan();
   plan.primary.birthDate = "1976-01-01";
   plan.portfolios = [
@@ -131,7 +131,9 @@ test("free OODA is shorter than expanded", () => {
   const full = buildPeerBrief(plan, sim, { expanded: true });
   assert.equal(short.expanded, false);
   assert.equal(full.expanded, true);
-  assert.ok(short.paragraphs.length < full.paragraphs.length);
-  assert.match(short.paragraphs.join(" "), /short OODA/i);
+  assert.equal(short.paragraphs.length, full.paragraphs.length);
+  assert.ok(full.paragraphs.length > 4);
+  assert.doesNotMatch(short.paragraphs.join(" "), /short OODA/i);
   assert.match(full.paragraphs.join(" "), /RMD/);
+  assert.match(full.paragraphs.join(" "), /Accounts on this run/);
 });

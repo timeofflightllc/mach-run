@@ -243,6 +243,36 @@ export function buildPeerBrief(
 
   paragraphs.push(rmdAdvice(plan, sim));
 
+  const ret = sim.retirement;
+  if (ret) {
+    if (ret.now) {
+      paragraphs.push(
+        `Retirement goal date is this month, so “at retirement” is just today: spendable ${usd(ret.spendableReal)} in today's dollars. Modeled income in the next twelve months is ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo). Set a future date in Family if you meant a later runway.`,
+      );
+    } else {
+      const retAge =
+        age != null && validIso(ret.date)
+          ? ageYears(plan.primary.birthDate, monthStart(ret.date))
+          : null;
+      paragraphs.push(
+        `Retirement goal is ${ret.date.slice(0, 7)}${retAge != null ? ` (age ${retAge})` : ""}. MACH has spendable of ${usd(ret.spendableReal)} there in today's dollars, with modeled retirement income ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo) from the stages you actually entered — not a 4% rule dressed up as a pension.`,
+      );
+    }
+  } else {
+    paragraphs.push(
+      "No retirement goal date in Family, so MACH cannot score the landing. Put one in, Calculate again, and the OODA will talk spendable-at-retirement instead of hand-waving.",
+    );
+  }
+
+  if (plan.portfolios.length) {
+    const listed = plan.portfolios
+      .map((p) => `${p.name.trim() || p.kind} ${usd(p.currentValue)}`)
+      .join("; ");
+    paragraphs.push(
+      `Accounts on this run: ${listed}. ${plan.portfolios.length === 1 ? "One account is a start. It is not a plan." : "That mix is the machine. Returns do the quiet work if you leave them alone."}`,
+    );
+  }
+
   if (sim.depletedAge != null) {
     paragraphs.push(
       `The MACH Run itself goes broke at age ${sim.depletedAge} (${sim.depletedYear}). Peer rank today does not save a plan that dies on a Tuesday. Cut spending, raise the save, or extend income. This is the mean part.`,
@@ -251,21 +281,6 @@ export function buildPeerBrief(
     paragraphs.push(
       `On the numbers you typed, spendable lasts through age ${plan.assumptions.projectionEndAge}. That is the MACH engine, not the Fed, not a promise, not a high-five that survives a 40% drawdown.`,
     );
-  }
-
-  if (!expanded) {
-    const short: string[] = [];
-    if (paragraphs[0]) short.push(paragraphs[0]);
-    if (paragraphs[1] && paragraphs[1] !== paragraphs[0]) short.push(paragraphs[1]);
-    const closer = paragraphs.find(
-      (p) => p.includes("goes broke") || p.includes("lasts through age"),
-    );
-    if (closer && !short.includes(closer)) short.push(closer);
-    short.push(
-      "That's the short OODA. Savings rate, RMDs, every income stage, and the unkind parts live in MACH Unlimited — $4 a month, less than a cup of coffee.",
-    );
-    paragraphs.length = 0;
-    paragraphs.push(...short);
   }
 
   return {

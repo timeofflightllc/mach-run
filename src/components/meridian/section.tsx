@@ -37,7 +37,9 @@ export function Section({
           <span className="block font-display text-base font-medium text-fg">
             {title}
           </span>
-          {hint ? <span className="mt-0.5 block text-xs text-subtle">{hint}</span> : null}
+          {hint ? (
+            <span className="mt-0.5 block text-xs text-subtle">{hint}</span>
+          ) : null}
         </span>
         <ChevronDown
           className={cn(

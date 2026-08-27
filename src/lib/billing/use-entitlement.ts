@@ -38,14 +38,21 @@ export function useEntitlement() {
   return ent;
 }
 
+function previewUnlimited(): boolean {
+  return import.meta.env.DEV;
+}
+
 export function atAccountCap(count: number, ent: Entitlement): boolean {
+  if (previewUnlimited() || ent.paid) return false;
   return ent.accountLimit != null && count >= ent.accountLimit;
 }
 
 export function atContributionCap(count: number, ent: Entitlement): boolean {
+  if (previewUnlimited() || ent.paid) return false;
   return ent.contributionLimit != null && count >= ent.contributionLimit;
 }
 
 export function atIncomeCap(count: number, ent: Entitlement): boolean {
+  if (previewUnlimited() || ent.paid) return false;
   return ent.incomeLimit != null && count >= ent.incomeLimit;
 }

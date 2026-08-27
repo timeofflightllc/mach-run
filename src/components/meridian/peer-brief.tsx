@@ -1,7 +1,9 @@
+import { Link } from "@tanstack/react-router";
 import { downloadAnalysisPdf } from "@/lib/plan/analysis-pdf";
 import type { PeerBrief } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
-import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
+import { GuestOnly, RealSignedIn } from "@/lib/auth/gates";
+import { MACH_MONTHLY_USD } from "@/lib/billing/limits";
 
 export function PeerBriefCard({
   brief,
@@ -34,13 +36,17 @@ export function PeerBriefCard({
 
   if (!brief) return null;
 
+  const clipped = !brief.expanded && brief.paragraphs.length > 2;
+  const visible = clipped ? brief.paragraphs.slice(0, 2) : brief.paragraphs;
+  const faded = clipped ? brief.paragraphs[2] : null;
+
   return (
     <div className="rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]">
       <div className="flex items-start justify-between gap-3">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
           MACH OODA Financial Analysis*
         </p>
-        {plan && sim ? (
+        {plan && sim && brief.expanded ? (
           <button
             type="button"
             onClick={() => downloadAnalysisPdf(brief, plan, sim)}
@@ -54,20 +60,52 @@ export function PeerBriefCard({
         {brief.headline}
       </p>
       <div className="mt-3 flex flex-col gap-3 text-sm leading-relaxed text-muted">
-        {brief.paragraphs.map((p, i) => (
+        {visible.map((p, i) => (
           <p key={`${brief.runAt}-${i}`}>{p}</p>
         ))}
+        {faded ? (
+          <div className="relative max-h-[4.75rem] overflow-hidden">
+            <p aria-hidden>{faded}</p>
+            <div
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface from-[18%] via-surface/75 to-transparent"
+              aria-hidden
+            />
+          </div>
+        ) : null}
       </div>
-      <p className="mt-4 text-xs leading-relaxed text-subtle">
-        Net worth bands: Federal Reserve Survey of Consumer Finances (2022),
-        shown in 2026 dollars. Income bands: U.S. Census household money income,
-        stepped forward. This is a sketch against national peers, not a
-        neighborhood, not a credit score, not advice.
-      </p>
-      {brief.expanded ? null : (
-        <div className="mt-4">
-          <UpgradeNudge kind="analysis" />
+      {clipped ? (
+        <div className="mt-4 flex flex-col items-center gap-2 border-t border-border pt-4 text-center">
+          <GuestOnly>
+            <p className="text-sm text-muted">
+              The rest of this OODA is behind a login.
+            </p>
+            <Link
+              to="/login"
+              className="inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
+            >
+              Sign in to keep this MACH Run
+            </Link>
+          </GuestOnly>
+          <RealSignedIn>
+            <p className="text-sm text-muted">
+              The rest of this OODA — RMDs, retirement landing, every stage —
+              is on Personal.
+            </p>
+            <Link
+              to="/pricing"
+              className="inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
+            >
+              Unlock the full MACH OODA — ${MACH_MONTHLY_USD}/month
+            </Link>
+          </RealSignedIn>
         </div>
+      ) : (
+        <p className="mt-4 text-xs leading-relaxed text-subtle">
+          Net worth bands: Federal Reserve Survey of Consumer Finances (2022),
+          shown in 2026 dollars. Income bands: U.S. Census household money
+          income, stepped forward. This is a sketch against national peers, not
+          a neighborhood, not a credit score, not advice.
+        </p>
       )}
     </div>
   );

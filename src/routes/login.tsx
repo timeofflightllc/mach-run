@@ -51,7 +51,7 @@ function Login() {
             <BrandLockup size="lg" />
           </Link>
           <p className="mt-4 max-w-md text-sm leading-relaxed text-muted">
-            The Supersonic Financial Calculator from Time Of Flight LLC
+            The Supersonic Financial Calculator
           </p>
           <p className="mt-2 max-w-md text-xs leading-relaxed text-subtle">
             Free: save your MACH Run · 2 accounts · 2 contributions · 2 income

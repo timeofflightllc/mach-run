@@ -6,7 +6,10 @@ export function MachGlyph({ className }: { className?: string }) {
   return (
     <svg
       viewBox="7 0 141 36"
-      className={cn("shrink-0 text-fg", className)}
+      width="168"
+      height="32"
+      className={cn("h-8 w-[10.5rem] shrink-0 text-fg", className)}
+      style={{ pointerEvents: "none", maxHeight: 32 }}
       aria-hidden
     >
       {/* Wake / history — same color, meets the tail, does not cross the jet */}
@@ -90,45 +93,9 @@ export function MachWordmark({
   const large = size === "lg";
   return (
     <span
-      className={cn("relative -mr-1 inline-flex items-center py-1", className)}
+      className={cn("relative inline-flex max-h-12 items-center overflow-hidden py-1", className)}
       aria-label="MACH RUN"
     >
-      <svg
-        aria-hidden
-        viewBox="0 0 100 100"
-        preserveAspectRatio="none"
-        className="pointer-events-none absolute -inset-x-2 -inset-y-1 h-[calc(100%+8px)] w-[calc(100%+16px)] overflow-visible text-fg"
-      >
-        {/* Vapor cone wrapping MACH + the Eagle, from the nose aft */}
-        <path
-          d="M82 38 C 48 4 14 6 3 50 C 14 94 48 96 82 62"
-          fill="none"
-          stroke="currentColor"
-          strokeOpacity="0.34"
-          strokeWidth="0.9"
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-        <path
-          d="M80 42 C 50 12 18 14 7 50 C 18 86 50 88 80 58"
-          fill="none"
-          stroke="currentColor"
-          strokeOpacity="0.18"
-          strokeWidth="0.7"
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-        {/* Left wrap around the M */}
-        <path
-          d="M10 22 Q -2 50 10 78"
-          fill="none"
-          stroke="currentColor"
-          strokeOpacity="0.28"
-          strokeWidth="0.85"
-          strokeLinecap="round"
-          vectorEffect="non-scaling-stroke"
-        />
-      </svg>
       <span
         className={cn(
           "relative z-10 font-display font-medium tracking-[0.12em] text-fg",
@@ -140,8 +107,8 @@ export function MachWordmark({
       <MachGlyph
         className={
           large
-            ? "relative z-10 -ml-5 h-10 w-[13.5rem]"
-            : "relative z-10 -ml-4 h-7 w-[8.75rem] sm:-ml-5 sm:h-8 sm:w-[10.5rem]"
+            ? "pointer-events-none relative -ml-2 h-8 w-40"
+            : "pointer-events-none relative -ml-2 h-7 w-32 sm:h-8 sm:w-40"
         }
       />
     </span>
@@ -155,21 +122,7 @@ export function BrandLockup({
   className?: string;
   size?: "md" | "lg";
 }) {
-  const large = size === "lg";
-  return (
-    <span className={cn("inline-flex items-center gap-2.5 sm:gap-3", className)}>
-      <img
-        src="/tof-logo.png"
-        alt="Time of Flight LLC"
-        className={
-          large
-            ? "h-8 w-auto max-w-[9.5rem] object-contain object-left sm:h-9 sm:max-w-[11rem]"
-            : "h-6 w-auto max-w-[7.5rem] object-contain object-left sm:h-7 sm:max-w-[9rem]"
-        }
-      />
-      <MachWordmark size={size} />
-    </span>
-  );
+  return <MachWordmark className={className} size={size} />;
 }
 
 export function MachFooter() {
@@ -179,12 +132,9 @@ export function MachFooter() {
         <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
           <BrandLockup size="lg" />
           <p className="text-xs tracking-[0.14em] text-subtle">
-            The Supersonic Financial Calculator from Time Of Flight LLC
+            The Supersonic Financial Calculator
           </p>
         </div>
-        <p className="font-display text-lg text-fg">
-          Measure · Allocate · Compound · Harvest
-        </p>
         <dl className="grid grid-cols-1 gap-4 text-sm text-muted md:grid-cols-4 md:gap-6">
           <div>
             <dt className="font-medium text-fg">Measure</dt>

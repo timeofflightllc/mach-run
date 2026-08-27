@@ -2,15 +2,17 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { BrandLockup } from "@/components/meridian/mach-mark";
 import { PrimaryButton } from "@/components/ui/field";
-import { SignedIn, SignedOut } from "@/lib/auth/gates";
 import { startBillingPortal, startCheckout } from "@/lib/billing/api";
 import { MACH_MONTHLY_USD, MACH_YEARLY_USD } from "@/lib/billing/limits";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
 
 export const Route = createFileRoute("/pricing")({ component: Pricing });
 
 function Pricing() {
   const ent = useEntitlement();
+  const { user } = useCurrentUserState();
+  const signedIn = Boolean(user && !user.isDevFallback);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<"month" | "year" | "portal" | null>(null);
 
@@ -51,9 +53,9 @@ function Pricing() {
 
         <header className="mt-10 max-w-2xl">
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">
-            The Supersonic Financial Calculator from Time Of Flight LLC
+            The Supersonic Financial Calculator
           </p>
-          <h1 className="mt-3 font-display text-3xl leading-tight text-fg sm:text-4xl">
+          <h1 className="mt-3 font-display text-4xl leading-tight text-fg sm:text-5xl">
             Less than a cup of coffee.
             <br />
             A lot more than a spreadsheet.
@@ -61,11 +63,12 @@ function Pricing() {
           <p className="mt-4 text-base leading-relaxed text-muted">
             Make a free account so your household is waiting the next time you
             open MACH. Two accounts, two contribution rules, two income stages —
-            and a short OODA. Enough to see if the engine is telling the truth.
-            When you have a 401(k), a Roth, a brokerage, and money moving on a
-            schedule, unlock everything for ${MACH_MONTHLY_USD}/month. That is
-            less than a cup of coffee. Or ${MACH_YEARLY_USD}/year if you would
-            rather pay once and forget it.
+            and a MACH OODA that fades after two paragraphs. Enough to see if
+            the engine is telling the truth. When you have a 401(k), a Roth, a
+            brokerage, and money moving on a schedule, unlock the rest of the
+            OODA for ${MACH_MONTHLY_USD}/month. That is less than a cup of
+            coffee. Or ${MACH_YEARLY_USD}/year if you would rather pay once and
+            forget it.
           </p>
         </header>
 
@@ -82,21 +85,20 @@ function Pricing() {
               <li>2 investment accounts</li>
               <li>2 contribution rules</li>
               <li>2 income stages</li>
-              <li>Short OODA analysis</li>
+              <li>Full OODA, cut off after two paragraphs</li>
             </ul>
-            <SignedOut>
-              <Link
-                to="/login"
+            {!signedIn ? (
+              <a
+                href="/login"
                 className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-surface px-4 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
               >
                 Create a free account
-              </Link>
-            </SignedOut>
-            <SignedIn>
+              </a>
+            ) : (
               <p className="mt-6 text-sm text-muted">
                 {ent.paid ? "Included with your MACH subscription." : "This is your current plan."}
               </p>
-            </SignedIn>
+            )}
           </article>
 
           <article className="relative flex flex-col rounded-xl bg-elevated p-6 shadow-[0_0_0_1px_var(--color-border)]">
@@ -120,46 +122,43 @@ function Pricing() {
               <li>Full MACH OODA Financial Analysis</li>
               <li>Everything in Free</li>
             </ul>
-            <SignedOut>
-              <Link
-                to="/login"
+            {!signedIn ? (
+              <a
+                href="/login"
                 className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90"
               >
                 Sign in, then go unlimited
-              </Link>
-            </SignedOut>
-            <SignedIn>
-              {ent.paid ? (
+              </a>
+            ) : ent.paid ? (
+              <PrimaryButton
+                className="mt-6"
+                disabled={busy !== null}
+                onClick={() => void portal()}
+              >
+                {busy === "portal" ? "Opening…" : "Manage billing"}
+              </PrimaryButton>
+            ) : (
+              <div className="mt-6 flex flex-col gap-2">
                 <PrimaryButton
-                  className="mt-6"
                   disabled={busy !== null}
-                  onClick={() => void portal()}
+                  onClick={() => void checkout("month")}
                 >
-                  {busy === "portal" ? "Opening…" : "Manage billing"}
+                  {busy === "month"
+                    ? "Redirecting…"
+                    : `$${MACH_MONTHLY_USD}/month — less than a coffee`}
                 </PrimaryButton>
-              ) : (
-                <div className="mt-6 flex flex-col gap-2">
-                  <PrimaryButton
-                    disabled={busy !== null}
-                    onClick={() => void checkout("month")}
-                  >
-                    {busy === "month"
-                      ? "Redirecting…"
-                      : `$${MACH_MONTHLY_USD}/month — less than a coffee`}
-                  </PrimaryButton>
-                  <button
-                    type="button"
-                    disabled={busy !== null}
-                    onClick={() => void checkout("year")}
-                    className="inline-flex h-11 items-center justify-center rounded-lg px-4 text-sm font-medium text-muted hover:bg-surface hover:text-fg disabled:opacity-50"
-                  >
-                    {busy === "year"
-                      ? "Redirecting…"
-                      : `Or $${MACH_YEARLY_USD}/year`}
-                  </button>
-                </div>
-              )}
-            </SignedIn>
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => void checkout("year")}
+                  className="inline-flex h-11 items-center justify-center rounded-lg px-4 text-sm font-medium text-muted hover:bg-surface hover:text-fg disabled:opacity-50"
+                >
+                  {busy === "year"
+                    ? "Redirecting…"
+                    : `Or $${MACH_YEARLY_USD}/year`}
+                </button>
+              </div>
+            )}
           </article>
         </div>
 

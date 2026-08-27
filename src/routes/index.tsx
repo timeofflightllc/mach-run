@@ -15,7 +15,7 @@ import { SpendingForm } from "@/components/meridian/spending-form";
 import { Verdict } from "@/components/meridian/verdict";
 import { YearTable } from "@/components/meridian/year-table";
 import { MachFooter, BrandLockup } from "@/components/meridian/mach-mark";
-import { SignedOut } from "@/lib/auth/gates";
+import { GuestOnly } from "@/lib/auth/gates";
 import { simulate } from "@/lib/plan/engine";
 import { buildPeerBrief, type PeerBrief } from "@/lib/plan/peers";
 import { usePlanStore } from "@/lib/plan/store";
@@ -59,24 +59,19 @@ function scrollParent(el: HTMLElement): HTMLElement | null {
 function jumpToPhase(id: string) {
   const el = document.getElementById(id);
   if (!el) return;
-  const header = document.querySelector("header");
+  const header = document.getElementById("mach-header");
   const headerH =
     header instanceof HTMLElement ? header.getBoundingClientRect().height : 0;
-  const gap = 20;
+  const gap = 16;
   const parent = scrollParent(el);
   if (parent) {
     const parentRect = parent.getBoundingClientRect();
     const elRect = el.getBoundingClientRect();
+    const pad = Math.max(gap, headerH - parentRect.top + gap);
     parent.scrollTo({
-      top: Math.max(0, parent.scrollTop + (elRect.top - parentRect.top) - gap),
+      top: Math.max(0, parent.scrollTop + (elRect.top - parentRect.top) - pad),
       behavior: "smooth",
     });
-    if (parentRect.top < headerH + gap) {
-      window.scrollTo({
-        top: Math.max(0, window.scrollY + parentRect.top - headerH - gap),
-        behavior: "smooth",
-      });
-    }
     return;
   }
   const y = window.scrollY + el.getBoundingClientRect().top - headerH - gap;
@@ -89,7 +84,8 @@ function Home() {
   const reset = usePlanStore((s) => s.reset);
   const { status: saveStatus, saveNow } = useCloudPlan();
   const ent = useEntitlement();
-  const [tab, setTab] = useState<"act" | "loop">("act");
+  const [tab, setTab] = useState<"act" | "loop">("loop");
+  const [activePhase, setActivePhase] = useState<string | null>(null);
   const [pendingPhase, setPendingPhase] = useState<string | null>(null);
   const [run, setRun] = useState<{
     id: number;
@@ -100,6 +96,25 @@ function Home() {
 
   useEffect(() => {
     void Promise.resolve(usePlanStore.persist.rehydrate());
+  }, []);
+
+  useEffect(() => {
+    const header = document.getElementById("mach-header");
+    if (!header || typeof ResizeObserver === "undefined") return;
+    const sync = () => {
+      try {
+        document.documentElement.style.setProperty(
+          "--mach-header-h",
+          `${Math.ceil(header.getBoundingClientRect().height)}px`,
+        );
+      } catch {
+        /* ignore */
+      }
+    };
+    sync();
+    const ro = new ResizeObserver(sync);
+    ro.observe(header);
+    return () => ro.disconnect();
   }, []);
 
   useEffect(() => {
@@ -145,27 +160,32 @@ function Home() {
   }
 
   function goPhase(id: string) {
+    setActivePhase(id);
     setTab(id === "ooda-act" ? "act" : "loop");
     setPendingPhase(id);
   }
 
   return (
     <div className="min-h-screen bg-bg text-fg">
-      <header className="sticky top-0 z-20 border-b border-border bg-bg/95 backdrop-blur-sm">
+      <header
+        id="mach-header"
+        className="sticky top-0 z-20 overflow-hidden border-b border-border bg-bg/95 backdrop-blur-sm"
+      >
         <div className="mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="min-w-0">
             <BrandLockup />
             <p className="truncate text-xs text-subtle">
-              The Supersonic Financial Calculator from Time Of Flight LLC
+              The Supersonic Financial Calculator
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="relative z-30 flex items-center gap-2">
             <div className="flex rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
               <button
                 type="button"
+                aria-pressed={real}
                 onClick={() => patchAssumptions({ dollars: "real" })}
                 className={cn(
-                  "h-9 rounded-md px-3 text-xs font-medium transition-colors",
+                  "relative z-30 h-9 rounded-md px-3 text-xs font-medium transition-colors",
                   real ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
                 )}
               >
@@ -173,9 +193,10 @@ function Home() {
               </button>
               <button
                 type="button"
+                aria-pressed={!real}
                 onClick={() => patchAssumptions({ dollars: "nominal" })}
                 className={cn(
-                  "h-9 rounded-md px-3 text-xs font-medium",
+                  "relative z-30 h-9 rounded-md px-3 text-xs font-medium",
                   !real ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
                 )}
               >
@@ -207,7 +228,12 @@ function Home() {
               <button
                 type="button"
                 onClick={() => goPhase(phase.id)}
-                className="h-9 cursor-pointer px-1.5 text-xs font-medium uppercase tracking-[0.16em] text-fg/85 underline decoration-fg/40 underline-offset-[5px] transition-colors hover:text-fg hover:decoration-fg"
+                className={cn(
+                  "relative z-30 inline-flex h-9 items-center px-1.5 text-xs font-medium uppercase tracking-[0.16em] underline-offset-[5px]",
+                  activePhase === phase.id
+                    ? "text-fg underline decoration-fg"
+                    : "text-fg/85 underline decoration-fg/40 hover:text-fg hover:decoration-fg",
+                )}
               >
                 {phase.label}
               </button>
@@ -236,7 +262,7 @@ function Home() {
             Act
           </button>
         </div>
-        <SignedOut>
+        <GuestOnly>
           <div className="border-t border-[#5c4a18] bg-[#241c0c]">
             <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-center gap-x-3 gap-y-1.5 px-4 py-2.5 text-center sm:px-6">
               <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-2 py-0.5 font-display text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1a1408]">
@@ -255,13 +281,13 @@ function Home() {
               </p>
             </div>
           </div>
-        </SignedOut>
+        </GuestOnly>
       </header>
 
       <main className="mx-auto grid max-w-[1400px] grid-cols-1 gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] lg:items-start">
         <aside
           className={cn(
-            "flex flex-col gap-6 lg:sticky lg:top-28 lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:pr-1",
+            "flex flex-col gap-6 lg:sticky lg:top-[var(--mach-header-h,7rem)] lg:max-h-[calc(100vh-var(--mach-header-h,7rem))] lg:overflow-y-auto lg:pr-1",
             tab === "act" ? "hidden lg:flex" : "flex",
           )}
         >

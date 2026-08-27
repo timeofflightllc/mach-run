@@ -32,6 +32,28 @@ export function SignedOut({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+/** True signed-in human — not the sandbox DEV_USER. */
+export function isRealUser(user: { isDevFallback?: boolean } | null | undefined) {
+  return Boolean(user && !user.isDevFallback);
+}
+
+/**
+ * Guests, pending session, and the preview DEV_USER. Use for Master Caution
+ * and other "you are not really logged in" chrome.
+ */
+export function GuestOnly({ children }: { children: ReactNode }) {
+  const { user } = useCurrentUserState();
+  if (isRealUser(user)) return null;
+  return <>{children}</>;
+}
+
+/** A real authenticated user (excludes preview DEV_USER). */
+export function RealSignedIn({ children }: { children: ReactNode }) {
+  const { user } = useCurrentUserState();
+  if (!isRealUser(user)) return null;
+  return <>{children}</>;
+}
+
 /**
  * Client-side redirect to the sign-in route (TanStack `<Navigate>` — NOT a full
  * `window.location` reload). A hard navigation re-bootstraps the SPA and re-runs

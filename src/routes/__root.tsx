@@ -14,12 +14,13 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "The Supersonic Financial Calculator from Time Of Flight LLC. Measure, Allocate, Compound, Harvest.",
+          "The Supersonic Financial Calculator. Measure, Allocate, Compound, Harvest.",
       },
       { name: "theme-color", content: "#0c0f14" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+      { rel: "preload", href: appCss, as: "style" },
       { rel: "stylesheet", href: appCss },
       { rel: "manifest", href: "/__grok/manifest.webmanifest" },
       { rel: "apple-touch-icon", href: "/__grok/icon-180.png" },
@@ -31,16 +32,21 @@ export const Route = createRootRoute({
       },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=optional",
       },
     ],
   }),
   component: () => (
-    <html lang="en" className="antialiased" suppressHydrationWarning>
+    <html
+      lang="en"
+      className="antialiased"
+      style={{ background: "#0c0f14", color: "#f6f3ec" }}
+      suppressHydrationWarning
+    >
       <head>
         <HeadContent />
       </head>
-      <body className="bg-bg text-fg">
+      <body className="bg-bg text-fg" style={{ background: "#0c0f14", color: "#f6f3ec" }}>
         <PreviewHostBridge />
         <AuthProvider>
           <Outlet />
