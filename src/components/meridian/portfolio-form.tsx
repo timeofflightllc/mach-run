@@ -22,6 +22,7 @@ const KIND_LABELS: { value: AccountKind; label: string; bucket: TaxBucket }[] = 
   { value: "roth", label: "Roth (other)", bucket: "roth" },
   { value: "traditional", label: "Traditional (other)", bucket: "pre_tax" },
   { value: "taxable", label: "Taxable brokerage", bucket: "taxable" },
+  { value: "annuity", label: "Annuity (non-qualified)", bucket: "taxable" },
   { value: "cash", label: "Cash", bucket: "taxable" },
   { value: "529", label: "529", bucket: "none" },
   { value: "ugma", label: "UGMA / UTMA", bucket: "none" },
@@ -83,6 +84,19 @@ export function PortfolioForm() {
                   onValue={(n) => updatePortfolio(p.id, { currentValue: n })}
                 />
               </Field>
+              {p.kind === "annuity" ? (
+                <Field
+                  label="Amount invested"
+                  hint="Premiums paid — cost basis. Earnings come out first and are ordinary income; basis comes out tax-free."
+                >
+                  <NumberInput
+                    min={0}
+                    step={100}
+                    value={Math.round((p.costBasis ?? 0) * 100) / 100}
+                    onValue={(n) => updatePortfolio(p.id, { costBasis: n })}
+                  />
+                </Field>
+              ) : null}
               <Field label="Return %">
                 <NumberInput
                   step={0.1}
@@ -130,7 +144,7 @@ export function PortfolioForm() {
                 </SelectInput>
               </Field>
               <Field label="Flags">
-                <div className="flex h-11 items-center gap-3 text-xs text-muted">
+                <div className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
                   <label className="flex items-center gap-1.5">
                     <input
                       type="checkbox"
@@ -149,7 +163,7 @@ export function PortfolioForm() {
                         updatePortfolio(p.id, { includeInNetWorth: e.target.checked })
                       }
                     />
-                    NW
+                    Net Worth
                   </label>
                 </div>
               </Field>

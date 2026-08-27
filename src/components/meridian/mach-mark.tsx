@@ -102,13 +102,17 @@ export function MachWordmark({
           large ? "text-2xl" : "text-xl",
         )}
       >
-        MACH RUN
+        M<span className="mx-px align-super text-[0.42em] tracking-normal">.</span>
+        A<span className="mx-px align-super text-[0.42em] tracking-normal">.</span>
+        C<span className="mx-px align-super text-[0.42em] tracking-normal">.</span>
+        H<span className="mx-px align-super text-[0.42em] tracking-normal">.</span>
+        {" RUN"}
       </span>
       <MachGlyph
         className={
           large
             ? "pointer-events-none relative -ml-2 h-8 w-40"
-            : "pointer-events-none relative -ml-2 h-7 w-32 sm:h-8 sm:w-40"
+            : "pointer-events-none relative -ml-2 hidden h-7 w-32 sm:inline sm:h-8 sm:w-40"
         }
       />
     </span>
@@ -157,6 +161,10 @@ export function MachFooter() {
           <p>
             <Link to="/pricing" className="text-muted underline-offset-4 hover:text-fg hover:underline">
               Free vs MACH paid
+            </Link>
+            {" · "}
+            <Link to="/privacy" className="text-muted underline-offset-4 hover:text-fg hover:underline">
+              Privacy
             </Link>
             {" — "}$4/month or $40/year unlocks unlimited accounts, contribution
             rules, income stages, and the full OODA.

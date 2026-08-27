@@ -49,7 +49,7 @@ export function NumberInput({
     <input
       {...props}
       type="number"
-      value={Number.isFinite(value) ? value : 0}
+      value={Number.isFinite(value) && value !== 0 ? value : ""}
       onChange={(e) => onValue(e.target.value === "" ? 0 : Number(e.target.value))}
       className={cn(controlClass, props.className)}
     />
@@ -76,6 +76,26 @@ export function DateInput({
   );
 }
 
+export function MonthInput({
+  value,
+  onValue,
+  ...props
+}: Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "onChange"> & {
+  value: string | null;
+  onValue: (v: string) => void;
+}) {
+  const v = value ? value.slice(0, 7) : "";
+  return (
+    <input
+      {...props}
+      type="month"
+      value={v}
+      onChange={(e) => onValue(e.target.value ? `${e.target.value}-01` : "")}
+      className={cn(dateClass, props.className)}
+    />
+  );
+}
+
 export function SelectInput(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...props} className={cn(controlClass, "pr-8", props.className)} />;
 }
@@ -97,7 +117,7 @@ export function GhostButton({
     <button
       type="button"
       className={cn(
-        "inline-flex h-11 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium text-muted transition-colors duration-150 hover:bg-elevated hover:text-fg active:scale-[0.96]",
+        "inline-flex h-11 items-center justify-center gap-2 rounded-lg px-3 text-sm font-medium text-muted transition-colors duration-150 hover:bg-elevated hover:text-fg active:scale-[0.96] disabled:cursor-not-allowed disabled:opacity-40",
         className,
       )}
       {...props}

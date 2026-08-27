@@ -20,10 +20,12 @@ const KINDS: { value: IncomeKind; label: string }[] = [
   { value: "salary", label: "Salary / wages" },
   { value: "bonus", label: "Bonus" },
   { value: "allowance", label: "Allowance / stipend" },
+  { value: "pension", label: "Pension (FRS, civilian, etc.)" },
   { value: "military", label: "Military retired pay" },
   { value: "va", label: "VA disability" },
   { value: "ss", label: "Social Security" },
-  { value: "other", label: "Other" },
+  { value: "other_retirement", label: "Other retirement income" },
+  { value: "other", label: "Other income" },
 ];
 
 const TAX: { value: TaxTreatment; label: string }[] = [
@@ -44,8 +46,10 @@ export function IncomeForm() {
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted">
         Each block is one paycheck over a stretch of time. Name it, set the
-        monthly amount, set start and end. Blank end = it keeps paying. Add
-        another block for the next job, pension, or benefit.
+        monthly amount, set start and end. Kind tells MACH whether it is earned
+        (salary, bonus, other income) or guaranteed (pension, military retired
+        pay, VA, Social Security, other retirement). Blank end = it keeps
+        paying.
       </p>
       <ul className="flex flex-col gap-3">
         {plan.incomes.map((s, i) => (
@@ -55,7 +59,7 @@ export function IncomeForm() {
           >
             <div className="mb-2 flex items-center gap-2">
               <span className="shrink-0 text-xs font-medium uppercase tracking-[0.16em] text-subtle">
-                Stage {i + 1}
+                Income {i + 1}
               </span>
               <TextInput
                 value={s.name}
@@ -64,7 +68,7 @@ export function IncomeForm() {
                 className="h-10"
               />
               <DangerButton
-                aria-label={`Remove ${s.name || `stage ${i + 1}`}`}
+                aria-label={`Remove ${s.name || `income ${i + 1}`}`}
                 onClick={() => removeIncome(s.id)}
               >
                 <Trash2 className="size-4" />

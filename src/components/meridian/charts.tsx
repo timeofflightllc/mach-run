@@ -111,8 +111,10 @@ export function CashChart({ plan, sim }: { plan: Plan; sim: SimResult }) {
     <div className="rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)] sm:p-5">
       <h2 className="font-display text-lg font-medium text-fg">Annual cash flow</h2>
       <p className="mb-4 text-xs text-subtle">
-        Gross income vs spending vs planned contributions. Guaranteed is
-        pension + VA + SS when those kinds are on the run.
+        Gross income vs spending vs planned contributions. Guaranteed (gold
+        line) is pension, other retirement income, military retired pay, VA, and
+        Social Security. Salary, bonus, allowance, and other income are earned —
+        they drop off when that stage ends.
       </p>
       <div className="h-64 sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
@@ -169,7 +171,7 @@ export function CashChart({ plan, sim }: { plan: Plan; sim: SimResult }) {
             <Line
               type="monotone"
               dataKey="guaranteed"
-              name="Guaranteed"
+              name="Guaranteed (pension / VA / SS)"
               stroke="var(--color-accent)"
               strokeWidth={1.5}
               dot={false}

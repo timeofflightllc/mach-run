@@ -33,6 +33,20 @@ import type {
 
 const WITHDRAW_ORDER: TaxBucket[] = ["taxable", "pre_tax", "roth"];
 
+function isGuaranteedKind(kind: string): boolean {
+  return (
+    kind === "military" ||
+    kind === "va" ||
+    kind === "ss" ||
+    kind === "pension" ||
+    kind === "other_retirement"
+  );
+}
+
+function isNonQualifiedAnnuity(p: { kind: string; taxBucket: TaxBucket }): boolean {
+  return p.kind === "annuity" && p.taxBucket !== "pre_tax" && p.taxBucket !== "roth";
+}
+
 function emptyBuckets(): Record<TaxBucket, number> {
   return { roth: 0, pre_tax: 0, taxable: 0, none: 0 };
 }
@@ -100,6 +114,44 @@ function contributionWindow(
   return { start: rule.startDate, end: stage.endDate };
 }
 
+function isWorkplaceMatchAccount(kind: string): boolean {
+  return kind === "401k" || kind === "401k_roth" || kind === "tsp";
+}
+
+function streamNominalAt(
+  plan: Plan,
+  stream: IncomeStream,
+  cursor: Date,
+  monthsFromAsOf: number,
+  infA: number,
+): number {
+  const win = streamWindow(plan, stream);
+  if (!inRange(cursor, win.start, win.end)) return 0;
+  const todayAmt = streamBenefitToday(plan, stream, cursor);
+  const colaAnnual = stream.colaPct == null ? infA : stream.colaPct / 100;
+  const mCola = yearlyRateToMonthly(colaAnnual);
+  return todayAmt * (1 + mCola) ** monthsFromAsOf;
+}
+
+function contributionDueThisMonth(
+  plan: Plan,
+  rule: Plan["contributions"][number],
+  cursor: Date,
+  monthsFromAsOf: number,
+  infA: number,
+): number {
+  const win = contributionWindow(plan, rule);
+  if (!inRange(cursor, win.start, win.end)) return 0;
+  if (rule.amountMode === "percent") {
+    const stream = plan.incomes.find((s) => s.id === rule.percentOfIncomeId);
+    if (!stream) return 0;
+    const pct = rule.percentOfIncome ?? 0;
+    if (pct <= 0) return 0;
+    return streamNominalAt(plan, stream, cursor, monthsFromAsOf, infA) * (pct / 100);
+  }
+  return rule.monthlyAmount > 0 ? rule.monthlyAmount : 0;
+}
+
 export function streamBenefitToday(
   plan: Plan,
   stream: IncomeStream,
@@ -152,6 +204,7 @@ function inflate(
 function withdrawNeed(
   plan: Plan,
   values: Map<string, number>,
+  basis: Map<string, number>,
   need: number,
   taxR: number,
 ): number {
@@ -162,8 +215,32 @@ function withdrawNeed(
     for (const p of plan.portfolios) {
       if (!p.spendable || p.taxBucket !== bucket) continue;
       if (remaining <= 0.5) break;
-      const v = values.get(p.id) ?? 0;
+      let v = values.get(p.id) ?? 0;
       if (v <= 0) continue;
+
+      if (isNonQualifiedAnnuity(p)) {
+        let b = Math.min(Math.max(0, basis.get(p.id) ?? 0), v);
+        let gain = Math.max(0, v - b);
+        if (gain > 0.5 && remaining > 0.5) {
+          const take =
+            taxR < 0.99 ? Math.min(gain, remaining / (1 - taxR)) : Math.min(gain, remaining);
+          v -= take;
+          gain -= take;
+          withdrawn += take;
+          remaining -= taxR < 0.99 ? take * (1 - taxR) : take;
+        }
+        if (remaining > 0.5 && v > 0) {
+          const take = Math.min(v, remaining);
+          v -= take;
+          b = Math.max(0, b - take);
+          withdrawn += take;
+          remaining -= take;
+        }
+        values.set(p.id, v);
+        basis.set(p.id, Math.min(b, v));
+        continue;
+      }
+
       if (bucket === "pre_tax" && taxR < 0.99) {
         const take = Math.min(v, remaining / (1 - taxR));
         values.set(p.id, v - take);
@@ -193,7 +270,13 @@ export function simulate(raw: Plan): SimResult {
   const stage1End = firstIncomeEnd(plan);
 
   const values = new Map<string, number>();
-  for (const p of plan.portfolios) values.set(p.id, p.currentValue);
+  const basis = new Map<string, number>();
+  for (const p of plan.portfolios) {
+    values.set(p.id, p.currentValue);
+    if (isNonQualifiedAnnuity(p)) {
+      basis.set(p.id, Math.max(0, Math.min(p.costBasis ?? 0, p.currentValue)));
+    }
+  }
   const priorYearEnd = new Map<string, number>(values);
   const rmdNote = {
     lifetimeRothExempt: [] as string[],
@@ -246,11 +329,7 @@ export function simulate(raw: Plan): SimResult {
       incomeByKind[stream.kind] = (incomeByKind[stream.kind] ?? 0) + nominal;
       if (stream.taxTreatment === "ordinary") taxableBase += nominal;
       if (stream.taxTreatment === "ss") taxableBase += nominal * ssTaxShare;
-      if (
-        stream.kind === "military" ||
-        stream.kind === "va" ||
-        stream.kind === "ss"
-      ) {
+      if (isGuaranteedKind(stream.kind)) {
         guaranteed += nominal;
       }
     }
@@ -262,15 +341,19 @@ export function simulate(raw: Plan): SimResult {
       spending += inflate(phase.monthlyAmount, mInf, monthsFromAsOf);
     }
 
-    const due: { portfolioId: string; amount: number }[] = [];
+    const due: { portfolioId: string; amount: number; matchPct: number }[] = [];
     let planned = 0;
     for (const rule of plan.contributions) {
-      const win = contributionWindow(plan, rule);
-      if (!inRange(cursor, win.start, win.end)) continue;
-      if (rule.monthlyAmount <= 0) continue;
+      const amount = contributionDueThisMonth(plan, rule, cursor, monthsFromAsOf, infA);
+      if (amount <= 0) continue;
       if (!values.has(rule.portfolioId)) continue;
-      due.push({ portfolioId: rule.portfolioId, amount: rule.monthlyAmount });
-      planned += rule.monthlyAmount;
+      const dest = plan.portfolios.find((p) => p.id === rule.portfolioId);
+      const matchPct =
+        rule.employerMatch && dest && isWorkplaceMatchAccount(dest.kind)
+          ? Math.max(0, Math.min(100, rule.employerMatchPct ?? 0))
+          : 0;
+      due.push({ portfolioId: rule.portfolioId, amount, matchPct });
+      planned += amount;
     }
     const contribIds = new Set(due.map((d) => d.portfolioId));
     const salaryOn = plan.incomes.some((stream) => {
@@ -322,20 +405,38 @@ export function simulate(raw: Plan): SimResult {
 
     if (leftover > 0.5) {
       let pool = leftover;
+      const funded: { portfolioId: string; amount: number; matchPct: number }[] = [];
       for (const d of due) {
         if (pool <= 0.5) break;
         const take = Math.min(d.amount, pool);
         values.set(d.portfolioId, (values.get(d.portfolioId) ?? 0) + take);
+        if (basis.has(d.portfolioId)) {
+          basis.set(d.portfolioId, (basis.get(d.portfolioId) ?? 0) + take);
+        }
         pool -= take;
         appliedContrib += take;
+        funded.push({ portfolioId: d.portfolioId, amount: take, matchPct: d.matchPct });
       }
       const sweepId = plan.assumptions.sweepPortfolioId;
       if (pool > 0.5 && sweepId && values.has(sweepId)) {
         values.set(sweepId, (values.get(sweepId) ?? 0) + pool);
+        if (basis.has(sweepId)) {
+          basis.set(sweepId, (basis.get(sweepId) ?? 0) + pool);
+        }
         appliedContrib += pool;
       }
+      for (const f of funded) {
+        if (f.matchPct <= 0) continue;
+        const match = f.amount * (f.matchPct / 100);
+        if (match <= 0.5) continue;
+        values.set(f.portfolioId, (values.get(f.portfolioId) ?? 0) + match);
+        income += match;
+        incomeByKind.employer_match = (incomeByKind.employer_match ?? 0) + match;
+        appliedContrib += match;
+        planned += match;
+      }
     } else if (leftover < -0.5) {
-      withdrawals += withdrawNeed(plan, values, -leftover, taxR);
+      withdrawals += withdrawNeed(plan, values, basis, -leftover, taxR);
       if (!markedDepleted) {
         const left = plan.portfolios
           .filter((p) => p.spendable)

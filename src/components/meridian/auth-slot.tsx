@@ -18,7 +18,7 @@ export function AuthSlot({ saved }: { saved?: "idle" | "saving" | "saved" | "gue
         <>
           <a
             href="/pricing"
-            className="inline-flex h-11 items-center px-2 text-sm font-medium text-muted hover:text-fg"
+            className="hidden h-11 items-center px-2 text-sm font-medium text-muted hover:text-fg sm:inline-flex"
           >
             Pricing
           </a>

@@ -21,6 +21,7 @@ export function createDefaultPlan(): Plan {
       sweepPortfolioId: null,
       dollars: "real",
       retirementGoalDate: null,
+      nestEggGoal: null,
     },
     stages: [],
     portfolios: [],
@@ -65,12 +66,24 @@ export function ensurePlan(plan: Plan): Plan {
     startDate: s.startDate || asOf,
     monthlyAmount: Number.isFinite(s.monthlyAmount) ? s.monthlyAmount : 0,
   }));
+  next.portfolios = next.portfolios.map((p) => ({
+    ...p,
+    costBasis:
+      p.kind === "annuity"
+        ? Number.isFinite(p.costBasis as number)
+          ? Number(p.costBasis)
+          : 0
+        : p.costBasis ?? null,
+  }));
   const ids = new Set(next.portfolios.map((p) => p.id));
   if (next.assumptions.sweepPortfolioId && !ids.has(next.assumptions.sweepPortfolioId)) {
     next.assumptions = { ...next.assumptions, sweepPortfolioId: null };
   }
   if (next.assumptions.retirementGoalDate === undefined) {
     next.assumptions = { ...next.assumptions, retirementGoalDate: null };
+  }
+  if (next.assumptions.nestEggGoal === undefined) {
+    next.assumptions = { ...next.assumptions, nestEggGoal: null };
   }
   return next;
 }

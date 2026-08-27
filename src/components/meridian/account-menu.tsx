@@ -28,7 +28,7 @@ export function AccountMenu() {
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-11 max-w-[12rem] items-center gap-1 truncate rounded-lg px-2 text-sm font-medium text-fg hover:bg-surface"
+        className="inline-flex h-11 max-w-[9rem] items-center gap-1 truncate rounded-lg px-2 text-sm font-medium text-fg hover:bg-surface sm:max-w-[12rem]"
       >
         <span className="truncate">{label}</span>
         <span className="text-subtle" aria-hidden>

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createDefaultPlan } from "./defaults.ts";
 import { simulate } from "./engine.ts";
-import { buildPeerBrief, percentileFromKnots } from "./peers.ts";
+import { buildPeerBrief, nestEggTrack, percentileFromKnots } from "./peers.ts";
 
 test("percentile interpolates between knots", () => {
   const knots = [
@@ -57,7 +57,8 @@ test("brief ranks a fat nest egg in the 45–54 band", () => {
   const brief = buildPeerBrief(plan, sim, { expanded: true });
   assert.ok((brief.nwPercentile ?? 0) >= 85);
   assert.ok((brief.incomePercentile ?? 0) >= 60);
-  assert.match(brief.headline, /top \d+%/i);
+  assert.match(brief.paragraphs.join(" "), /top \d+%/i);
+  assert.match(brief.headline, /on track|financial independence|good shape|well done|early|partway|underway/i);
 });
 
 test("brief sees income that starts after as-of", () => {
@@ -137,3 +138,45 @@ test("free and paid generate the same full OODA; expanded is a clip flag", () =>
   assert.match(full.paragraphs.join(" "), /RMD/);
   assert.match(full.paragraphs.join(" "), /Accounts on this run/);
 });
+
+test("nest egg goal says extra monthly when the pile will miss", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1976-01-01";
+  plan.assumptions.retirementGoalDate = "2041-01-01";
+  plan.assumptions.nestEggGoal = 3_000_000;
+  plan.assumptions.defaultReturnPct = 7;
+  plan.assumptions.inflationPct = 2.5;
+  plan.portfolios = [
+    {
+      id: "p1",
+      name: "Brokerage",
+      kind: "taxable",
+      owner: "Joint",
+      currentValue: 50_000,
+      returnPct: null,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.incomes = [];
+  plan.contributions = [];
+  plan.spending = [
+    {
+      id: "sp-1",
+      label: "Spend",
+      monthlyAmount: 0,
+      startDate: "2026-08-01",
+      endDate: null,
+    },
+  ];
+  const sim = simulate(plan);
+  const track = nestEggTrack(plan, sim);
+  assert.ok(track);
+  assert.equal(track.onTrack, false);
+  assert.ok(track.extraMonthly > 1000);
+  const brief = buildPeerBrief(plan, sim, { expanded: true });
+  assert.match(brief.headline, /not on track/i);
+  assert.match(brief.paragraphs.join(" "), /more per month/i);
+});
+

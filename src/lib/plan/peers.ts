@@ -1,4 +1,4 @@
-import { ageYears, monthStart, validIso } from "./dates.ts";
+import { ageYears, dateAtAge, monthStart, validIso, yearlyRateToMonthly } from "./dates.ts";
 import {
   monthlyIncomeAt,
   representativeAnnualIncome,
@@ -106,15 +106,139 @@ function standing(p: number): string {
   return `the bottom ${p}%`;
 }
 
+function monthsBetween(a: Date, b: Date): number {
+  return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
+}
+
+function extraMonthlyForGap(shortfall: number, months: number, annualReal: number): number {
+  if (shortfall <= 0) return 0;
+  if (months <= 0) return shortfall;
+  const r = yearlyRateToMonthly(annualReal);
+  if (Math.abs(r) < 1e-8) return shortfall / months;
+  const growth = (1 + r) ** months - 1;
+  if (growth <= 0) return shortfall / months;
+  return shortfall * r / growth;
+}
+
+export function nestEggTrack(plan: Plan, sim: SimResult) {
+  const goal = plan.assumptions.nestEggGoal;
+  if (goal == null || goal <= 0) return null;
+  const asOf = monthStart(plan.assumptions.asOfDate);
+  const goalDate = plan.assumptions.retirementGoalDate;
+  let targetDate: Date | null = null;
+  if (goalDate && validIso(goalDate)) targetDate = monthStart(goalDate);
+  else if (validIso(plan.primary.birthDate)) targetDate = dateAtAge(plan.primary.birthDate, 65);
+  if (!targetDate) return null;
+  const targetKey = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, "0")}`;
+  const monthAtTarget = sim.months.find((m) => m.date.startsWith(targetKey));
+  const projected =
+    monthAtTarget?.spendableEndReal ??
+    sim.retirement?.spendableReal ??
+    startingSpendable(plan);
+  const hit = sim.months.find((m) => m.spendableEndReal >= goal - 1);
+  const nom = plan.assumptions.defaultReturnPct / 100;
+  const inf = plan.assumptions.inflationPct / 100;
+  const real = (1 + nom) / (1 + inf) - 1;
+  const n = Math.max(0, monthsBetween(asOf, targetDate));
+  const extra = extraMonthlyForGap(Math.max(0, goal - projected), n, real);
+  const targetAge = validIso(plan.primary.birthDate)
+    ? ageYears(plan.primary.birthDate, targetDate)
+    : null;
+  return {
+    goal,
+    projected,
+    targetYear: targetDate.getFullYear(),
+    targetAge,
+    hitYear: hit ? hit.year : null,
+    hitAge: hit ? hit.primaryAge : null,
+    extraMonthly: extra,
+    onTrack: projected + 1 >= goal,
+    monthsOut: n,
+  };
+}
+
 function rankPhrase(p: number): string {
-  if (p < 20) return `in ${standing(p)} — and not the fun side`;
-  if (p < 40) return `in ${standing(p)} of households your age`;
-  if (p < 50) return `just under the middle, ${standing(p)}`;
-  if (p < 60) return `dead-center typical, ${standing(p)}`;
-  if (p < 75) return `comfortably in ${standing(p)}`;
-  if (p < 90) return `in ${standing(p)} and it shows`;
-  if (p < 97) return `in ${standing(p)}. Unfair, frankly`;
-  return `in ${standing(p)}. The compounding gods have favorites`;
+  if (p < 20) return `building from ${standing(p)} of households your age — every dollar you add now moves the needle`;
+  if (p < 40) return `in ${standing(p)} of households your age, with real room to climb`;
+  if (p < 50) return `just under the middle, ${standing(p)} — close enough to pass with a few good years`;
+  if (p < 60) return `right around typical, ${standing(p)} — solid, and the next rung is in reach`;
+  if (p < 75) return `comfortably in ${standing(p)}. That's a household that's been doing the work`;
+  if (p < 90) return `in ${standing(p)}. That's a strong showing for this age band`;
+  if (p < 97) return `in ${standing(p)}. Truly well positioned`;
+  return `in ${standing(p)}. That's elite company — well done`;
+}
+
+function bottomLine(opts: {
+  who: string;
+  age: number | null;
+  plan: Plan;
+  sim: SimResult;
+  savingsRatePct: number | null;
+  nwPercentile: number | null;
+}): { headline: string; body: string } {
+  const { who, age, plan, sim, savingsRatePct, nwPercentile } = opts;
+  const endAge = plan.assumptions.projectionEndAge;
+  const sr = savingsRatePct;
+  const levers: string[] = [];
+  if (sr != null && sr < 15) levers.push("raising the save rate");
+  levers.push("trimming spending a little");
+  levers.push("extending a paycheck");
+  const leverText = levers.slice(0, 3).join(", ");
+  const egg = nestEggTrack(plan, sim);
+
+  if (egg) {
+    const byAge = egg.targetAge != null ? ` (age ${egg.targetAge})` : "";
+    if (egg.onTrack) {
+      const early =
+        egg.hitYear != null && egg.hitYear < egg.targetYear
+          ? ` MACH first reaches it around ${egg.hitYear}${egg.hitAge != null ? ` (age ${egg.hitAge})` : ""}, ahead of your date.`
+          : "";
+      return {
+        headline: `You're on track to meet your ${usd(egg.goal)} nest egg by ${egg.targetYear}${byAge}.`,
+        body: `Projected spendable at that date is ${usd(egg.projected)} in today's dollars.${early} Stay with the plan — this is the number you asked MACH to hit.`,
+      };
+    }
+    return {
+      headline: `You're not on track for ${usd(egg.goal)} by ${egg.targetYear}${byAge}.`,
+      body: `Projected spendable there is ${usd(egg.projected)} — short ${usd(Math.max(0, egg.goal - egg.projected))}. Invest about ${usd(egg.extraMonthly, true)} more per month (on top of what you already entered), compounding at your assumed real return, to close the gap by that date.`,
+    };
+  }
+
+  if (sim.depletedAge != null) {
+    const early = age != null && age < 45;
+    return {
+      headline: early
+        ? `${who} is underway — this MACH Run still runs out at age ${sim.depletedAge}.`
+        : `${who} is partway there. On these numbers, spendable runs out at age ${sim.depletedAge}.`,
+      body: `That's a map, not a verdict. Highest-leverage improvements: ${leverText}. Change one, hit Calculate, and watch the runway move.`,
+    };
+  }
+
+  if (sim.retirement?.now) {
+    return {
+      headline: `Well done. On these numbers, ${who} has achieved financial independence.`,
+      body: `Spendable lasts through age ${endAge}. Protect it: keep spending honest, leave the accounts invested, and enjoy the fruit of the labor.`,
+    };
+  }
+
+  if (sim.retirement && !sim.retirement.now) {
+    return {
+      headline: `${who} is on track for the retirement date you set.`,
+      body: `The engine funds spending through age ${endAge}. Stay with the contributions. For more margin, nudge the save rate or don't let spending creep.`,
+    };
+  }
+
+  if (age != null && age < 40 && (nwPercentile == null || nwPercentile < 50)) {
+    return {
+      headline: `${who} is early — and that's an advantage.`,
+      body: `Time will do more work than a heroic save rate later. Automate contributions now and let compounding compound. Set a retirement goal date in Family so MACH can score the landing.`,
+    };
+  }
+
+  return {
+    headline: `${who} is in good shape on the numbers you typed.`,
+    body: `Spendable lasts through age ${endAge}. Set a retirement goal date in Family (or check Already retired) if you want the landing scored.`,
+  };
 }
 
 export function buildPeerBrief(
@@ -157,10 +281,7 @@ export function buildPeerBrief(
     dateStyle: "medium",
     timeStyle: "short",
   });
-  add(
-    "This MACH Run",
-    `${runAt}. Spendable ${usd(spendable)}. Net worth ${usd(netWorth)}. Income ${usd(incomeNow > 1 ? incomeNow : annualIncome / 12, true)}/mo. Spending ${usd(spendingNow, true)}/mo. First-year saved ${usd(year0?.contributions ?? 0)}. These are your numbers, not a vibe.`,
-  );
+  const snapshot = `${runAt}. Spendable ${usd(spendable)}. Net worth ${usd(netWorth)}. Income ${usd(incomeNow > 1 ? incomeNow : annualIncome / 12, true)}/mo. Spending ${usd(spendingNow, true)}/mo. First-year saved ${usd(year0?.contributions ?? 0)}. This is the household as you entered it.`;
   let headline = "Hit Calculate after you put numbers in Observe.";
 
   const pack = (): PeerBrief => ({
@@ -180,25 +301,37 @@ export function buildPeerBrief(
   });
 
   if (plan.portfolios.length === 0 && namedIncomes.length === 0) {
-    headline = "There's nothing to rank yet. MACH doesn't do imaginary wealth.";
+    headline = "There's nothing to rank yet — add accounts and a paycheck, then Calculate.";
     add(
       "Empty hangar",
-      "Add accounts in Observe and a paycheck in Orient, then Calculate. We will not invent a net worth so you can feel tall.",
+      "Add accounts in Observe and a paycheck in Orient, then hit Calculate. MACH will rank this household as soon as there is something to measure.",
     );
     return pack();
   }
 
+  const line = bottomLine({ who, age, plan, sim, savingsRatePct, nwPercentile });
+  headline = line.headline;
+  add("Bottom line", line.body);
+  add("This MACH Run", snapshot);
+  const egg = nestEggTrack(plan, sim);
+  if (egg) {
+    add(
+      "Nest egg goal",
+      egg.onTrack
+        ? `Goal ${usd(egg.goal)} by ${egg.targetYear}${egg.targetAge != null ? ` (age ${egg.targetAge})` : ""}. Projected ${usd(egg.projected)} in today's dollars — on track.`
+        : `Goal ${usd(egg.goal)} by ${egg.targetYear}${egg.targetAge != null ? ` (age ${egg.targetAge})` : ""}. Projected ${usd(egg.projected)}. Gap ${usd(Math.max(0, egg.goal - egg.projected))}. About ${usd(egg.extraMonthly, true)}/mo more invested closes it at your assumed return.`,
+    );
+  }
+
   if (age == null) {
-    headline = "You've got a pile. MACH has no age. That's a vibe, not a plan.";
     add(
       "Peer rank",
-      `Observed net worth is ${usd(netWorth)}. Peer rank needs a birthday in Family. Put one in, Calculate again, and we'll tell you if this is impressive or just a nice round number.`,
+      `Observed net worth is ${usd(netWorth)}. Peer rank needs a birthday in Family. Put one in, Calculate again, and we'll place this household against U.S. families in the same age band.`,
     );
   } else if (nwPercentile != null && band) {
-    headline = `${who} at ${age} is ${rankPhrase(nwPercentile)} on net worth.`;
     add(
       "Peer rank",
-      `Household net worth of ${usd(netWorth)} lands in ${standing(nwPercentile)} of U.S. families age ${band.label}. Median in that band is about ${usdCompact(band.p50)}. The door to ${standing(90)} is about ${usdCompact(band.p90)}. Fed SCF, stepped into 2026 dollars — not your squadron, not a trophy.`,
+      `Peer rank: ${who} at ${age} is ${rankPhrase(nwPercentile)} on net worth. Household net worth of ${usd(netWorth)} lands in ${standing(nwPercentile)} of U.S. families age ${band.label}. Median in that band is about ${usdCompact(band.p50)}. The ${standing(90)} door is about ${usdCompact(band.p90)}. Fed SCF, stepped into 2026 dollars — a national sketch, not a trophy.`,
     );
   }
 
@@ -213,17 +346,17 @@ export function buildPeerBrief(
       .join("; ");
     add(
       "Paychecks",
-      `Income stages on this run: ${listed}. MACH only scores what you typed. A missing pension is not a rounding error — it is a missing engine.`,
+      `Income stages on this run: ${listed}. MACH only scores what you typed, so every pension and side check you add makes this picture truer.`,
     );
   }
 
   if (incomePercentile != null) {
     const gap =
       nwPercentile != null && incomePercentile - nwPercentile >= 20
-        ? "Paycheck lives in a nicer zip code than the pile. Late start, fat lifestyle, or both. The clock is the constraint, not the salary. Save like you mean it."
+        ? "Income is running ahead of the nest egg. That's common in high-earning years. The nice news: you have the cash flow to close the gap if you keep funding the accounts."
         : nwPercentile != null && nwPercentile - incomePercentile >= 20
-          ? "The pile outruns the paycheck. Compounding already did the heroic part. Don't throw a spending glow-up you haven't modeled."
-          : "Income and net worth are in the same neighborhood. Consistent. Not a standing ovation. Not an insult.";
+          ? "The nest egg is already outrunning the paycheck. Compounding has been doing real work. Protect that lead."
+          : "Income and net worth are in the same neighborhood. That's a balanced household — keep feeding it.";
     add(
       "Income vs the country",
       `Gross income on this run is about ${usd(annualIncome)} a year — ${standing(incomePercentile)} of U.S. households. ${gap}`,
@@ -231,7 +364,7 @@ export function buildPeerBrief(
   } else {
     add(
       "Income vs the country",
-      "No income on the run, so there's no peer income comparison. Orient a paycheck if one exists, unless the plan is 'live on vibes.'",
+      "No income on the run yet, so there's no peer income comparison. Add a paycheck in Orient if one exists and Calculate again.",
     );
   }
 
@@ -239,13 +372,13 @@ export function buildPeerBrief(
     const sr = savingsRatePct;
     let saveLine: string;
     if (sr < 5) {
-      saveLine = `This run saves ${sr.toFixed(0)}% of gross. That's not a savings rate. That's a rounding error with a 401(k) login. Average America is also in this ditch. You do not want to be average at this.`;
+      saveLine = `This run saves ${sr.toFixed(0)}% of gross. Plenty of households sit here. Nudging that rate up even a few points is one of the highest-leverage moves you can make.`;
     } else if (sr < 15) {
-      saveLine = `This run saves ${sr.toFixed(0)}% of gross. Fine vs the country. Short of the 15% rule of thumb. Okay if the pile is already large. Thin if it isn't. Pick one and act like it.`;
+      saveLine = `This run saves ${sr.toFixed(0)}% of gross — better than a lot of the country. The common 15% rule of thumb is still a useful next step if the nest egg isn't already doing the heavy lifting.`;
     } else if (sr < 25) {
-      saveLine = `This run saves ${sr.toFixed(0)}% of gross. Serious-person zone. Keep it until the chart says you can stop, then keep it one more year out of spite.`;
+      saveLine = `This run saves ${sr.toFixed(0)}% of gross. That's serious, healthy saving. Keep it as long as the chart still needs it — you're doing this right.`;
     } else {
-      saveLine = `This run saves ${sr.toFixed(0)}% of gross. That's FI-pace. That's "the market is my personality now." Crushing it — so long as spending is the real household and not a brochure.`;
+      saveLine = `This run saves ${sr.toFixed(0)}% of gross. That's FI-pace. Outstanding discipline. Just make sure the spending figure is the real household so the victory lap is earned.`;
     }
     add("Save rate", saveLine);
   }
@@ -253,13 +386,13 @@ export function buildPeerBrief(
   if (netWorth > 0 && spendable / netWorth < 0.35) {
     add(
       "Spendable vs paper rich",
-      `Spendable accounts are ${usd(spendable)} of ${usd(netWorth)} net worth. The rest is illiquid — house, cars, kids' accounts. Peers with a paid-off house look rich on paper and still can't fund a year of groceries from the drywall. Don't confuse the two.`,
+      `Spendable accounts are ${usd(spendable)} of ${usd(netWorth)} net worth. The rest is illiquid — house, cars, kids' accounts. That's still wealth; it just isn't grocery money. Knowing the split is a strength.`,
     );
   }
 
   add(
     "Compounding",
-    `Spending starts at ${usd(spendingNow, true)}/mo and inflates at ${plan.assumptions.inflationPct}% a year. Accounts compound at ${plan.assumptions.defaultReturnPct}% nominal unless an account has its own rate. Spendable goes from ${usd(spendable)} now to ${usd(horizon)} at age ${plan.assumptions.projectionEndAge} in today's dollars. Time does the quiet work if you leave it alone.`,
+    `Spending starts at ${usd(spendingNow, true)}/mo and inflates at ${plan.assumptions.inflationPct}% a year. Accounts compound at ${plan.assumptions.defaultReturnPct}% nominal unless an account has its own rate. Spendable goes from ${usd(spendable)} now to ${usd(horizon)} at age ${plan.assumptions.projectionEndAge} in today's dollars. Time is on your side if you leave the machine running.`,
   );
 
   add("RMDs", rmdAdvice(plan, sim));
@@ -269,7 +402,7 @@ export function buildPeerBrief(
     if (ret.now) {
       add(
         "Retirement landing",
-        `Retirement goal date is this month, so “at retirement” is just today: spendable ${usd(ret.spendableReal)} in today's dollars. Modeled income in the next twelve months is ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo). Set a future date in Family if you meant a later runway.`,
+        `Retirement goal date is this month (or you're already retired), so “at retirement” is today: spendable ${usd(ret.spendableReal)} in today's dollars. Modeled income in the next twelve months is ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo).`,
       );
     } else {
       const retAge =
@@ -278,35 +411,41 @@ export function buildPeerBrief(
           : null;
       add(
         "Retirement landing",
-        `Retirement goal is ${ret.date.slice(0, 7)}${retAge != null ? ` (age ${retAge})` : ""}. Spendable there: ${usd(ret.spendableReal)} in today's dollars. Modeled retirement income ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo) from the stages you actually entered — not a 4% rule dressed up as a pension.`,
+        `Retirement goal is ${ret.date.slice(0, 7)}${retAge != null ? ` (age ${retAge})` : ""}. Spendable there: ${usd(ret.spendableReal)} in today's dollars. Modeled retirement income ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo) from the stages you entered.`,
       );
     }
   } else {
     add(
       "Retirement landing",
-      "No retirement goal date in Family, so MACH cannot score the landing. Put one in, Calculate again, and this section talks spendable-at-retirement instead of hand-waving.",
+      "No retirement goal date in Family yet, so MACH cannot score the landing. Put a goal date in — or check Already retired — then Calculate again.",
     );
   }
 
   if (plan.portfolios.length) {
     const listed = plan.portfolios
-      .map((p) => `${p.name.trim() || p.kind} ${usd(p.currentValue)}`)
+      .map((p) => {
+        const base =
+          p.kind === "annuity" && (p.costBasis ?? 0) > 0
+            ? `${p.name.trim() || p.kind} ${usd(p.currentValue)} (invested ${usd(p.costBasis ?? 0)})`
+            : `${p.name.trim() || p.kind} ${usd(p.currentValue)}`;
+        return base;
+      })
       .join("; ");
     add(
       "Accounts on this run",
-      `${listed}. ${plan.portfolios.length === 1 ? "One account is a start. It is not a plan." : "That mix is the machine. Returns do the quiet work if you leave them alone."}`,
+      `${listed}. ${plan.portfolios.length === 1 ? "One account is a clean start. Add the rest of the hangar when you're ready." : "That mix is the machine. Returns do the quiet work if you leave them invested."}`,
     );
   }
 
   if (sim.depletedAge != null) {
     add(
       "Runway",
-      `The MACH Run itself goes broke at age ${sim.depletedAge} (${sim.depletedYear}). Peer rank today does not save a plan that dies on a Tuesday. Cut spending, raise the save, or extend income. This is the mean part.`,
+      `The MACH Run runs out of spendable at age ${sim.depletedAge} (${sim.depletedYear}). That's useful information, not a verdict. A little more saving, a little less spending, or a longer paycheck can move that date. You've got levers.`,
     );
   } else if (annualIncome > 0 || netWorth > 0) {
     add(
       "Runway",
-      `On the numbers you typed, spendable lasts through age ${plan.assumptions.projectionEndAge}. That is the MACH engine, not the Fed, not a promise, not a high-five that survives a 40% drawdown.`,
+      `On the numbers you typed, spendable lasts through age ${plan.assumptions.projectionEndAge}. That's the MACH engine talking, not a guarantee — and it's a strong place to be. Markets can still wobble; the plan you built is the buffer.`,
     );
   }
 

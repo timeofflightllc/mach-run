@@ -139,7 +139,7 @@ function Home() {
   const sim = run?.sim;
   const real = plan.assumptions.dollars === "real";
 
-  function calculate() {
+  function calculate(opts?: { stay?: boolean }) {
     const live = usePlanStore.getState().plan;
     const snapshot = structuredClone(live) as Plan;
     const nextSim = simulate(snapshot);
@@ -152,7 +152,7 @@ function Home() {
     });
     void saveNow(snapshot);
     setTab("act");
-    setPendingPhase("ooda-act");
+    if (!opts?.stay) setPendingPhase("ooda-act");
   }
 
   function handleReset() {
@@ -172,22 +172,59 @@ function Home() {
         id="mach-header"
         className="sticky top-0 z-30 border-b border-border bg-bg/95 backdrop-blur-sm"
       >
-        <div className="relative z-50 mx-auto flex max-w-[1400px] items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <div className="min-w-0">
-            <BrandLockup />
-            <p className="truncate text-xs text-subtle">
-              The Supersonic Financial Calculator
-            </p>
+        <div className="relative z-50 mx-auto max-w-[1400px] px-4 py-3 sm:px-6">
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <BrandLockup />
+              <p className="hidden truncate text-xs text-subtle sm:block">
+                The Supersonic Financial Calculator
+              </p>
+            </div>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <div className="hidden rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)] md:flex">
+                <button
+                  type="button"
+                  aria-pressed={real}
+                  onClick={() => patchAssumptions({ dollars: "real" })}
+                  className={cn(
+                    "relative z-30 h-9 rounded-md px-3 text-xs font-medium transition-colors",
+                    real ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
+                  )}
+                >
+                  Today $
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={!real}
+                  onClick={() => patchAssumptions({ dollars: "nominal" })}
+                  className={cn(
+                    "relative z-30 h-9 rounded-md px-3 text-xs font-medium",
+                    !real ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
+                  )}
+                >
+                  Nominal
+                </button>
+              </div>
+              <button
+                type="button"
+                onClick={() => handleReset()}
+                className="hidden h-11 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-muted hover:bg-surface hover:text-fg md:inline-flex"
+              >
+                <RotateCcw className="size-3.5" />
+                Reset baseline
+              </button>
+              <AuthSlot saved={saveStatus} />
+            </div>
           </div>
-          <div className="relative z-30 flex items-center gap-2">
-            <div className="flex rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+          <div className="mt-2 flex items-center gap-2 md:hidden">
+            <div className="flex min-w-0 flex-1 rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
               <button
                 type="button"
                 aria-pressed={real}
                 onClick={() => patchAssumptions({ dollars: "real" })}
                 className={cn(
-                  "relative z-30 h-9 rounded-md px-3 text-xs font-medium transition-colors",
-                  real ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
+                  "h-9 flex-1 rounded-md px-2 text-xs font-medium",
+                  real ? "bg-accent text-accent-fg" : "text-muted",
                 )}
               >
                 Today $
@@ -197,8 +234,8 @@ function Home() {
                 aria-pressed={!real}
                 onClick={() => patchAssumptions({ dollars: "nominal" })}
                 className={cn(
-                  "relative z-30 h-9 rounded-md px-3 text-xs font-medium",
-                  !real ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
+                  "h-9 flex-1 rounded-md px-2 text-xs font-medium",
+                  !real ? "bg-accent text-accent-fg" : "text-muted",
                 )}
               >
                 Nominal
@@ -207,12 +244,11 @@ function Home() {
             <button
               type="button"
               onClick={() => handleReset()}
-              className="inline-flex h-11 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-muted hover:bg-surface hover:text-fg sm:px-3"
+              aria-label="Reset baseline"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface hover:text-fg"
             >
               <RotateCcw className="size-3.5" />
-              <span className="hidden sm:inline">Reset baseline</span>
             </button>
-            <AuthSlot saved={saveStatus} />
           </div>
         </div>
         <nav
@@ -265,11 +301,11 @@ function Home() {
         </div>
         <GuestOnly>
           <div className="border-t border-[#5c4a18] bg-[#241c0c]">
-            <div className="mx-auto flex max-w-[1400px] flex-wrap items-center justify-center gap-x-3 gap-y-1.5 px-4 py-2.5 text-center sm:px-6">
+            <div className="mx-auto flex max-w-[1400px] flex-col items-center gap-1.5 px-4 py-2.5 text-center sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-3 sm:px-6">
               <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-2 py-0.5 font-display text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1a1408]">
                 Master Caution
               </span>
-              <p className="text-xs leading-snug text-[#ead9a0]">
+              <p className="max-w-xl text-xs leading-relaxed text-[#ead9a0]">
                 Your MACH RUN information is not saved until you create an
                 account.{" "}
                 <Link
@@ -332,7 +368,6 @@ function Home() {
             <Section
               title="Contributions"
               hint="Change monthly amounts at any date"
-              defaultOpen={false}
             >
               <ContributionForm />
             </Section>
@@ -343,9 +378,32 @@ function Home() {
         <div
           className={cn("flex flex-col gap-4", tab === "loop" ? "hidden lg:flex" : "flex")}
         >
-          <PhaseLabel id="ooda-act" label="Act" />
+          <div className="flex items-center justify-between gap-3">
+            <PhaseLabel id="ooda-act" label="Act" />
+            <button
+              type="button"
+              onClick={() => calculate({ stay: true })}
+              className="inline-flex h-9 shrink-0 items-center rounded-lg bg-accent px-3 text-xs font-medium text-accent-fg hover:opacity-90"
+            >
+              Calculate
+            </button>
+          </div>
           {sim ? (
             <>
+              {!ent.paid ? (
+                <div className="flex flex-col gap-3 rounded-xl bg-elevated px-5 py-4 shadow-[0_0_0_1px_var(--color-border)] sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm leading-relaxed text-muted">
+                    This MACH Run is on Free. Unlimited opens every account,
+                    every stage, the full OODA, and OODA AI.
+                  </p>
+                  <Link
+                    to="/pricing"
+                    className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
+                  >
+                    Upgrade to MACH Run Unlimited
+                  </Link>
+                </div>
+              ) : null}
               <Verdict plan={displayPlan} sim={sim} />
               <KpiStrip plan={displayPlan} sim={sim} />
               <PeerBriefCard

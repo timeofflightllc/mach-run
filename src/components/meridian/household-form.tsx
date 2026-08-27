@@ -1,4 +1,4 @@
-import { Field, DateInput, NumberInput, SelectInput, TextInput } from "@/components/ui/field";
+import { Field, DateInput, MonthInput, NumberInput, SelectInput, TextInput } from "@/components/ui/field";
 import { usePlanStore } from "@/lib/plan/store";
 
 export function HouseholdForm() {
@@ -110,17 +110,68 @@ export function HouseholdForm() {
       </div>
 
       <div className="flex flex-col gap-3 border-t border-border pt-4">
-        <Field
-          label="Retirement goal date"
-          hint="Act’s Spendable strip keys off this date — pile, retirement income, and when spendable runs out."
-        >
-          <DateInput
-            value={plan.assumptions.retirementGoalDate}
-            onValue={(v) =>
-              patchAssumptions({ retirementGoalDate: v === "" ? null : v })
-            }
-          />
-        </Field>
+        {(() => {
+          const goal = plan.assumptions.retirementGoalDate;
+          const asOf = plan.assumptions.asOfDate.slice(0, 7);
+          const already = Boolean(goal && goal.slice(0, 7) <= asOf);
+          return (
+            <>
+              <label className="flex items-center gap-2 text-sm text-fg">
+                <input
+                  type="checkbox"
+                  checked={already}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      const stamp = `${asOf}-01`;
+                      patchAssumptions({ retirementGoalDate: stamp });
+                    } else {
+                      patchAssumptions({ retirementGoalDate: null });
+                    }
+                  }}
+                />
+                Already retired
+              </label>
+              {already ? (
+                <Field
+                  label="About when did you retire?"
+                  hint="Month and year. Act keys spendable-in-retirement off this."
+                >
+                  <MonthInput
+                    value={goal}
+                    onValue={(v) =>
+                      patchAssumptions({ retirementGoalDate: v === "" ? null : v })
+                    }
+                  />
+                </Field>
+              ) : (
+                <Field
+                  label="Retirement goal date"
+                  hint="Act’s Spendable strip keys off this date — pile, retirement income, and when spendable runs out."
+                >
+                  <DateInput
+                    value={goal}
+                    onValue={(v) =>
+                      patchAssumptions({ retirementGoalDate: v === "" ? null : v })
+                    }
+                  />
+                </Field>
+              )}
+              <Field
+                label="Nest egg goal (today $)"
+                hint="Spendable target at that retirement date — e.g. 3,000,000. MACH will say if you're on track, or how much more to invest each month. Blank = no lump-sum goal."
+              >
+                <NumberInput
+                  min={0}
+                  step={10000}
+                  value={plan.assumptions.nestEggGoal ?? 0}
+                  onValue={(n) =>
+                    patchAssumptions({ nestEggGoal: n > 0 ? n : null })
+                  }
+                />
+              </Field>
+            </>
+          );
+        })()}
       </div>
     </div>
   );

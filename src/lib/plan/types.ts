@@ -12,6 +12,7 @@ export type AccountKind =
   | "ugma"
   | "education"
   | "real_estate"
+  | "annuity"
   | "other";
 
 export type TaxBucket = "roth" | "pre_tax" | "taxable" | "none";
@@ -20,10 +21,12 @@ export type IncomeKind =
   | "salary"
   | "bonus"
   | "allowance"
+  | "pension"
   | "military"
   | "va"
   | "ss"
-  | "other";
+  | "other"
+  | "other_retirement";
 
 export type TaxTreatment = "ordinary" | "tax_free" | "ss";
 
@@ -55,6 +58,11 @@ export interface Portfolio {
   /** Eligible for retirement withdrawals. */
   spendable: boolean;
   includeInNetWorth: boolean;
+  /**
+   * Investment in the contract (premiums paid). Annuities only.
+   * Withdrawals: earnings first are ordinary income; then tax-free return of basis.
+   */
+  costBasis?: number | null;
 }
 
 export interface ContributionRule {
@@ -66,6 +74,13 @@ export interface ContributionRule {
   endDate: string | null;
   /** If set, end date tracks this stage. */
   endWithStageId?: string;
+  /** fixed dollars, or a percent of a named income stream. */
+  amountMode?: "fixed" | "percent";
+  percentOfIncome?: number | null;
+  percentOfIncomeId?: string | null;
+  employerMatch?: boolean;
+  /** 0–100. Applied to the employee dollars that actually get invested. */
+  employerMatchPct?: number | null;
 }
 
 export interface IncomeStream {
@@ -120,6 +135,8 @@ export interface Assumptions {
   dollars: "nominal" | "real";
   /** Household retirement target. Spendable strip keys off this date. */
   retirementGoalDate: string | null;
+  /** Spendable nest egg target in today's dollars at the retirement date. */
+  nestEggGoal: number | null;
 }
 
 export interface Plan {

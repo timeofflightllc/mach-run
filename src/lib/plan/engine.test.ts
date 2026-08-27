@@ -192,3 +192,141 @@ test("retirement as-of matches current spendable and monthly = annual/12", () =>
   assert.ok(a > 100000);
   assert.ok(Math.abs(m * 12 - a) < 1);
 });
+
+test("non-qualified annuity withdrawals tax earnings before basis", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1970-01-01";
+  plan.assumptions.ordinaryTaxRatePct = 20;
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultReturnPct = 0;
+  plan.incomes = [];
+  plan.spending = [
+    {
+      id: "sp-1",
+      label: "Spend",
+      monthlyAmount: 4000,
+      startDate: "2026-08-01",
+      endDate: null,
+    },
+  ];
+  plan.portfolios = [
+    {
+      id: "ann",
+      name: "Annuity",
+      kind: "annuity",
+      owner: "Primary",
+      currentValue: 100_000,
+      costBasis: 80_000,
+      returnPct: 0,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  const result = simulate(plan);
+  const m0 = result.months[0];
+  assert.ok(m0);
+  assert.ok(Math.abs(m0.withdrawals - 5000) < 2);
+  assert.ok(Math.abs(m0.spendableEnd - 95_000) < 2);
+});
+
+test("pension and other retirement count as guaranteed cash flow", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1970-01-01";
+  plan.incomes = [
+    {
+      id: "frs",
+      name: "Susan FRS",
+      kind: "pension",
+      monthlyAmount: 3000,
+      startDate: "2026-08-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "spouse",
+    },
+    {
+      id: "job",
+      name: "W-2",
+      kind: "salary",
+      monthlyAmount: 5000,
+      startDate: "2026-08-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.spending = [];
+  const result = simulate(plan);
+  const m0 = result.months[0];
+  assert.ok(m0);
+  assert.ok(Math.abs(m0.income - 8000) < 1);
+  assert.ok(Math.abs(m0.guaranteed - 3000) < 1);
+});
+
+test("percent-of-income contribution plus employer match", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1970-01-01";
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultReturnPct = 0;
+  plan.incomes = [
+    {
+      id: "job",
+      name: "Boeing",
+      kind: "salary",
+      monthlyAmount: 10000,
+      startDate: "2026-08-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.spending = [
+    {
+      id: "sp-1",
+      label: "Spend",
+      monthlyAmount: 0,
+      startDate: "2026-08-01",
+      endDate: null,
+    },
+  ];
+  plan.portfolios = [
+    {
+      id: "k",
+      name: "401k",
+      kind: "401k",
+      owner: "Primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "pre_tax",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c1",
+      label: "Deferral",
+      portfolioId: "k",
+      monthlyAmount: 0,
+      startDate: "2026-08-01",
+      endDate: null,
+      amountMode: "percent",
+      percentOfIncome: 10,
+      percentOfIncomeId: "job",
+      employerMatch: true,
+      employerMatchPct: 50,
+    },
+  ];
+  const result = simulate(plan);
+  const m0 = result.months[0];
+  assert.ok(m0);
+  // 10% of 10k = 1000 employee + 500 match
+  assert.ok(Math.abs(m0.contributions - 1500) < 2);
+  assert.ok(Math.abs(m0.spendableEnd - 1500) < 2);
+});
+
+
