@@ -144,7 +144,7 @@ export const startCheckout = createServerFn({ method: "POST" })
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceIdFor(data.interval), quantity: 1 }],
-      success_url: `${origin}/pricing?checkout=success`,
+      success_url: `${origin}/?checkout=success`,
       cancel_url: `${origin}/pricing?checkout=cancel`,
       client_reference_id: context.userId,
       metadata: { userId: context.userId },
@@ -171,7 +171,7 @@ export const startBillingPortal = createServerFn({ method: "POST" })
     try {
       const session = await stripe.billingPortal.sessions.create({
         customer: existing.stripe_customer_id,
-        return_url: `${origin}/pricing`,
+        return_url: `${origin}/`,
       });
       return { url: session.url };
     } catch (err) {
