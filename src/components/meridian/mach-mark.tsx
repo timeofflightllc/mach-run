@@ -162,8 +162,9 @@ export function MachFooter() {
             rules, income stages, and the full OODA.
           </p>
           <p>
-            * MACH OODA AI analysis is for entertainment purposes only. It is
-            not financial, tax, legal, or investment advice.
+            * MACH OODA AI analysis and OODA AI questions are for
+            entertainment purposes only. They are not financial, tax, legal, or
+            investment advice.
           </p>
           <p>
             Projections are hypothetical illustrations based on the numbers and

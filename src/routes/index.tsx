@@ -10,6 +10,7 @@ import { IncomeForm } from "@/components/meridian/income-form";
 import { KpiStrip } from "@/components/meridian/kpi-strip";
 import { PortfolioForm } from "@/components/meridian/portfolio-form";
 import { PeerBriefCard } from "@/components/meridian/peer-brief";
+import { OodaAiCard } from "@/components/meridian/ooda-ai";
 import { Section } from "@/components/meridian/section";
 import { SpendingForm } from "@/components/meridian/spending-form";
 import { Verdict } from "@/components/meridian/verdict";
@@ -353,6 +354,11 @@ function Home() {
                 ran
                 plan={displayPlan}
                 sim={sim}
+              />
+              <OodaAiCard
+                plan={displayPlan}
+                sim={sim}
+                brief={run?.brief ?? null}
               />
               <WealthChart plan={displayPlan} sim={sim} />
               <CashChart plan={displayPlan} sim={sim} />

@@ -36,9 +36,12 @@ export function PeerBriefCard({
 
   if (!brief) return null;
 
-  const clipped = !brief.expanded && brief.paragraphs.length > 2;
-  const visible = clipped ? brief.paragraphs.slice(0, 2) : brief.paragraphs;
-  const faded = clipped ? brief.paragraphs[2] : null;
+  const sections = brief.sections?.length
+    ? brief.sections
+    : brief.paragraphs.map((body) => ({ title: "", body }));
+  const clipped = !brief.expanded && sections.length > 2;
+  const visible = clipped ? sections.slice(0, 2) : sections;
+  const faded = clipped ? sections[2] : null;
 
   return (
     <div className="rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]">
@@ -59,13 +62,23 @@ export function PeerBriefCard({
       <p className="mt-2 font-display text-xl font-medium leading-snug text-fg">
         {brief.headline}
       </p>
-      <div className="mt-3 flex flex-col gap-3 text-sm leading-relaxed text-muted">
-        {visible.map((p, i) => (
-          <p key={`${brief.runAt}-${i}`}>{p}</p>
+      <div className="mt-3 flex flex-col gap-4 text-sm leading-relaxed text-muted">
+        {visible.map((s, i) => (
+          <div key={`${brief.runAt}-${i}`}>
+            {s.title ? (
+              <p className="font-semibold text-fg">{s.title}</p>
+            ) : null}
+            <p className={s.title ? "mt-1" : undefined}>{s.body}</p>
+          </div>
         ))}
         {faded ? (
-          <div className="relative max-h-[4.75rem] overflow-hidden">
-            <p aria-hidden>{faded}</p>
+          <div className="relative max-h-[5.5rem] overflow-hidden">
+            {faded.title ? (
+              <p className="font-semibold text-fg" aria-hidden>
+                {faded.title}
+              </p>
+            ) : null}
+            <p aria-hidden>{faded.body}</p>
             <div
               className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface from-[18%] via-surface/75 to-transparent"
               aria-hidden

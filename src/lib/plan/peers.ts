@@ -41,6 +41,11 @@ const INCOME_KNOTS = [
   { p: 95, v: 380_000 },
 ];
 
+export interface BriefSection {
+  title: string;
+  body: string;
+}
+
 export interface PeerBrief {
   runAt: string;
   age: number | null;
@@ -52,6 +57,8 @@ export interface PeerBrief {
   incomePercentile: number | null;
   bandLabel: string | null;
   headline: string;
+  sections: BriefSection[];
+  /** title + body, for tests and PDF fallback */
   paragraphs: string[];
   expanded: boolean;
 }
@@ -144,146 +151,19 @@ export function buildPeerBrief(
     annualIncome > 0 ? percentileFromKnots(annualIncome, INCOME_KNOTS) : null;
 
   const who = plan.primary.name.trim() || "This household";
-  const paragraphs: string[] = [];
+  const sections: BriefSection[] = [];
+  const add = (title: string, body: string) => sections.push({ title, body });
   const runAt = new Date().toLocaleString("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
   });
-  const thisRun = `This run (${runAt}): spendable ${usd(spendable)}, net worth ${usd(netWorth)}, income ${usd(incomeNow > 1 ? incomeNow : annualIncome / 12, true)}/mo, spending ${usd(spendingNow, true)}/mo, first-year saved ${usd(year0?.contributions ?? 0)}.`;
+  add(
+    "This MACH Run",
+    `${runAt}. Spendable ${usd(spendable)}. Net worth ${usd(netWorth)}. Income ${usd(incomeNow > 1 ? incomeNow : annualIncome / 12, true)}/mo. Spending ${usd(spendingNow, true)}/mo. First-year saved ${usd(year0?.contributions ?? 0)}. These are your numbers, not a vibe.`,
+  );
   let headline = "Hit Calculate after you put numbers in Observe.";
 
-  if (plan.portfolios.length === 0 && namedIncomes.length === 0) {
-    headline = "There's nothing to rank yet. MACH doesn't do imaginary wealth.";
-    paragraphs.push(
-      thisRun,
-      "Add accounts in Observe and a paycheck in Orient, then Calculate. We will not invent a net worth so you can feel tall.",
-    );
-    return {
-      runAt,
-      age,
-      netWorth,
-      spendable,
-      annualIncome,
-      savingsRatePct,
-      nwPercentile,
-      incomePercentile,
-      bandLabel: band?.label ?? null,
-      headline,
-      paragraphs,
-      expanded,
-    };
-  }
-
-  paragraphs.unshift(thisRun);
-
-  if (age == null) {
-    headline = "You've got a pile. MACH has no age. That's a vibe, not a plan.";
-    paragraphs.push(
-      `Observed net worth is ${usd(netWorth)}. Peer rank needs a birth date in Family. Put one in, Calculate again, and we'll tell you if this is impressive or just a nice round number.`,
-    );
-  } else if (nwPercentile != null && band) {
-    headline = `${who} at ${age} is ${rankPhrase(nwPercentile)} on net worth.`;
-    paragraphs.push(
-      `Household net worth of ${usd(netWorth)} lands in ${standing(nwPercentile)} of U.S. families in the ${band.label} band. Median in that band is about ${usdCompact(band.p50)}; the door to ${standing(90)} is about ${usdCompact(band.p90)}. Fed SCF numbers, stepped into 2026 dollars — not your squadron, not a trophy.`,
-    );
-  }
-
-  if (namedIncomes.length) {
-    const listed = namedIncomes
-      .map((s) => {
-        const win = streamWindow(plan, s);
-        const amt = streamBenefitToday(plan, s, asOf);
-        const end = win.end ? win.end.slice(0, 7) : "ongoing";
-        return `${s.name.trim() || s.kind} ${usd(amt, true)}/mo (${win.start.slice(0, 7)} → ${end})`;
-      })
-      .join("; ");
-    paragraphs.push(`Income stages on this run: ${listed}.`);
-  }
-
-  if (incomePercentile != null) {
-    const gap =
-      nwPercentile != null && incomePercentile - nwPercentile >= 20
-        ? "Paycheck is in a nicer zip code than the pile. That's a late start, a fat lifestyle, or both. The clock is the constraint, not the salary. Save like you mean it."
-        : nwPercentile != null && nwPercentile - incomePercentile >= 20
-          ? "The pile outruns the paycheck. Compounding already did the heroic part. Don't undo it with a spending glow-up you haven't modeled."
-          : "Income and net worth are in the same neighborhood. Consistent. Not a standing ovation. Not an insult.";
-    paragraphs.push(
-      `Gross income on this run is about ${usd(annualIncome)} a year — ${standing(incomePercentile)} of U.S. households. ${gap}`,
-    );
-  } else {
-    paragraphs.push(
-      "No income on the run, so there's no peer income comparison. Orient a paycheck if one exists, unless the plan is 'live on vibes.'",
-    );
-  }
-
-  if (savingsRatePct != null) {
-    const sr = savingsRatePct;
-    let saveLine: string;
-    if (sr < 5) {
-      saveLine = `This run saves ${sr.toFixed(0)}% of gross. That's not a savings rate. That's a rounding error with a 401(k) login. The average U.S. household is also in this ditch. You do not want to be average at this.`;
-    } else if (sr < 15) {
-      saveLine = `This run saves ${sr.toFixed(0)}% of gross. Respectable vs the country. Short of the 15% rule of thumb. Fine if the pile is already large. Thin if it isn't. Pick one and act like it.`;
-    } else if (sr < 25) {
-      saveLine = `This run saves ${sr.toFixed(0)}% of gross. Serious-person zone. Keep it until the chart says you can stop, then keep it one more year out of spite.`;
-    } else {
-      saveLine = `This run saves ${sr.toFixed(0)}% of gross. That's FI-pace. That's 'the market is my personality now.' Crushing it — so long as spending in Decide is the real household and not a brochure.`;
-    }
-    paragraphs.push(saveLine);
-  }
-
-  if (netWorth > 0 && spendable / netWorth < 0.35) {
-    paragraphs.push(
-      `Spendable accounts are ${usd(spendable)} of ${usd(netWorth)} net worth. The rest is illiquid — house, vehicles, kids' accounts. Peers with a paid-off house look rich on paper and still can't fund a year of groceries from the drywall. Don't confuse the two.`,
-    );
-  }
-
-  paragraphs.push(
-    `Household spending starts at ${usd(spendingNow, true)}/mo and inflates at ${plan.assumptions.inflationPct}% a year. Accounts compound at ${plan.assumptions.defaultReturnPct}% nominal unless an account has its own rate. Spendable goes from ${usd(spendable)} now to ${usd(horizon)} at age ${plan.assumptions.projectionEndAge} in today's dollars.`,
-  );
-
-  paragraphs.push(rmdAdvice(plan, sim));
-
-  const ret = sim.retirement;
-  if (ret) {
-    if (ret.now) {
-      paragraphs.push(
-        `Retirement goal date is this month, so “at retirement” is just today: spendable ${usd(ret.spendableReal)} in today's dollars. Modeled income in the next twelve months is ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo). Set a future date in Family if you meant a later runway.`,
-      );
-    } else {
-      const retAge =
-        age != null && validIso(ret.date)
-          ? ageYears(plan.primary.birthDate, monthStart(ret.date))
-          : null;
-      paragraphs.push(
-        `Retirement goal is ${ret.date.slice(0, 7)}${retAge != null ? ` (age ${retAge})` : ""}. MACH has spendable of ${usd(ret.spendableReal)} there in today's dollars, with modeled retirement income ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo) from the stages you actually entered — not a 4% rule dressed up as a pension.`,
-      );
-    }
-  } else {
-    paragraphs.push(
-      "No retirement goal date in Family, so MACH cannot score the landing. Put one in, Calculate again, and the OODA will talk spendable-at-retirement instead of hand-waving.",
-    );
-  }
-
-  if (plan.portfolios.length) {
-    const listed = plan.portfolios
-      .map((p) => `${p.name.trim() || p.kind} ${usd(p.currentValue)}`)
-      .join("; ");
-    paragraphs.push(
-      `Accounts on this run: ${listed}. ${plan.portfolios.length === 1 ? "One account is a start. It is not a plan." : "That mix is the machine. Returns do the quiet work if you leave them alone."}`,
-    );
-  }
-
-  if (sim.depletedAge != null) {
-    paragraphs.push(
-      `The MACH Run itself goes broke at age ${sim.depletedAge} (${sim.depletedYear}). Peer rank today does not save a plan that dies on a Tuesday. Cut spending, raise the save, or extend income. This is the mean part.`,
-    );
-  } else if (annualIncome > 0 || netWorth > 0) {
-    paragraphs.push(
-      `On the numbers you typed, spendable lasts through age ${plan.assumptions.projectionEndAge}. That is the MACH engine, not the Fed, not a promise, not a high-five that survives a 40% drawdown.`,
-    );
-  }
-
-  return {
+  const pack = (): PeerBrief => ({
     runAt,
     age,
     netWorth,
@@ -294,9 +174,143 @@ export function buildPeerBrief(
     incomePercentile,
     bandLabel: band?.label ?? null,
     headline,
-    paragraphs,
+    sections,
+    paragraphs: sections.map((s) => `${s.title}: ${s.body}`),
     expanded,
-  };
+  });
+
+  if (plan.portfolios.length === 0 && namedIncomes.length === 0) {
+    headline = "There's nothing to rank yet. MACH doesn't do imaginary wealth.";
+    add(
+      "Empty hangar",
+      "Add accounts in Observe and a paycheck in Orient, then Calculate. We will not invent a net worth so you can feel tall.",
+    );
+    return pack();
+  }
+
+  if (age == null) {
+    headline = "You've got a pile. MACH has no age. That's a vibe, not a plan.";
+    add(
+      "Peer rank",
+      `Observed net worth is ${usd(netWorth)}. Peer rank needs a birthday in Family. Put one in, Calculate again, and we'll tell you if this is impressive or just a nice round number.`,
+    );
+  } else if (nwPercentile != null && band) {
+    headline = `${who} at ${age} is ${rankPhrase(nwPercentile)} on net worth.`;
+    add(
+      "Peer rank",
+      `Household net worth of ${usd(netWorth)} lands in ${standing(nwPercentile)} of U.S. families age ${band.label}. Median in that band is about ${usdCompact(band.p50)}. The door to ${standing(90)} is about ${usdCompact(band.p90)}. Fed SCF, stepped into 2026 dollars — not your squadron, not a trophy.`,
+    );
+  }
+
+  if (namedIncomes.length) {
+    const listed = namedIncomes
+      .map((s) => {
+        const win = streamWindow(plan, s);
+        const amt = streamBenefitToday(plan, s, asOf);
+        const end = win.end ? win.end.slice(0, 7) : "open";
+        return `${s.name.trim() || s.kind} ${usd(amt, true)}/mo (${win.start.slice(0, 7)} → ${end})`;
+      })
+      .join("; ");
+    add(
+      "Paychecks",
+      `Income stages on this run: ${listed}. MACH only scores what you typed. A missing pension is not a rounding error — it is a missing engine.`,
+    );
+  }
+
+  if (incomePercentile != null) {
+    const gap =
+      nwPercentile != null && incomePercentile - nwPercentile >= 20
+        ? "Paycheck lives in a nicer zip code than the pile. Late start, fat lifestyle, or both. The clock is the constraint, not the salary. Save like you mean it."
+        : nwPercentile != null && nwPercentile - incomePercentile >= 20
+          ? "The pile outruns the paycheck. Compounding already did the heroic part. Don't throw a spending glow-up you haven't modeled."
+          : "Income and net worth are in the same neighborhood. Consistent. Not a standing ovation. Not an insult.";
+    add(
+      "Income vs the country",
+      `Gross income on this run is about ${usd(annualIncome)} a year — ${standing(incomePercentile)} of U.S. households. ${gap}`,
+    );
+  } else {
+    add(
+      "Income vs the country",
+      "No income on the run, so there's no peer income comparison. Orient a paycheck if one exists, unless the plan is 'live on vibes.'",
+    );
+  }
+
+  if (savingsRatePct != null) {
+    const sr = savingsRatePct;
+    let saveLine: string;
+    if (sr < 5) {
+      saveLine = `This run saves ${sr.toFixed(0)}% of gross. That's not a savings rate. That's a rounding error with a 401(k) login. Average America is also in this ditch. You do not want to be average at this.`;
+    } else if (sr < 15) {
+      saveLine = `This run saves ${sr.toFixed(0)}% of gross. Fine vs the country. Short of the 15% rule of thumb. Okay if the pile is already large. Thin if it isn't. Pick one and act like it.`;
+    } else if (sr < 25) {
+      saveLine = `This run saves ${sr.toFixed(0)}% of gross. Serious-person zone. Keep it until the chart says you can stop, then keep it one more year out of spite.`;
+    } else {
+      saveLine = `This run saves ${sr.toFixed(0)}% of gross. That's FI-pace. That's "the market is my personality now." Crushing it — so long as spending is the real household and not a brochure.`;
+    }
+    add("Save rate", saveLine);
+  }
+
+  if (netWorth > 0 && spendable / netWorth < 0.35) {
+    add(
+      "Spendable vs paper rich",
+      `Spendable accounts are ${usd(spendable)} of ${usd(netWorth)} net worth. The rest is illiquid — house, cars, kids' accounts. Peers with a paid-off house look rich on paper and still can't fund a year of groceries from the drywall. Don't confuse the two.`,
+    );
+  }
+
+  add(
+    "Compounding",
+    `Spending starts at ${usd(spendingNow, true)}/mo and inflates at ${plan.assumptions.inflationPct}% a year. Accounts compound at ${plan.assumptions.defaultReturnPct}% nominal unless an account has its own rate. Spendable goes from ${usd(spendable)} now to ${usd(horizon)} at age ${plan.assumptions.projectionEndAge} in today's dollars. Time does the quiet work if you leave it alone.`,
+  );
+
+  add("RMDs", rmdAdvice(plan, sim));
+
+  const ret = sim.retirement;
+  if (ret) {
+    if (ret.now) {
+      add(
+        "Retirement landing",
+        `Retirement goal date is this month, so “at retirement” is just today: spendable ${usd(ret.spendableReal)} in today's dollars. Modeled income in the next twelve months is ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo). Set a future date in Family if you meant a later runway.`,
+      );
+    } else {
+      const retAge =
+        age != null && validIso(ret.date)
+          ? ageYears(plan.primary.birthDate, monthStart(ret.date))
+          : null;
+      add(
+        "Retirement landing",
+        `Retirement goal is ${ret.date.slice(0, 7)}${retAge != null ? ` (age ${retAge})` : ""}. Spendable there: ${usd(ret.spendableReal)} in today's dollars. Modeled retirement income ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo) from the stages you actually entered — not a 4% rule dressed up as a pension.`,
+      );
+    }
+  } else {
+    add(
+      "Retirement landing",
+      "No retirement goal date in Family, so MACH cannot score the landing. Put one in, Calculate again, and this section talks spendable-at-retirement instead of hand-waving.",
+    );
+  }
+
+  if (plan.portfolios.length) {
+    const listed = plan.portfolios
+      .map((p) => `${p.name.trim() || p.kind} ${usd(p.currentValue)}`)
+      .join("; ");
+    add(
+      "Accounts on this run",
+      `${listed}. ${plan.portfolios.length === 1 ? "One account is a start. It is not a plan." : "That mix is the machine. Returns do the quiet work if you leave them alone."}`,
+    );
+  }
+
+  if (sim.depletedAge != null) {
+    add(
+      "Runway",
+      `The MACH Run itself goes broke at age ${sim.depletedAge} (${sim.depletedYear}). Peer rank today does not save a plan that dies on a Tuesday. Cut spending, raise the save, or extend income. This is the mean part.`,
+    );
+  } else if (annualIncome > 0 || netWorth > 0) {
+    add(
+      "Runway",
+      `On the numbers you typed, spendable lasts through age ${plan.assumptions.projectionEndAge}. That is the MACH engine, not the Fed, not a promise, not a high-five that survives a 40% drawdown.`,
+    );
+  }
+
+  return pack();
 }
 
 function rmdAdvice(plan: Plan, sim: SimResult): string {

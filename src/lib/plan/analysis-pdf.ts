@@ -38,8 +38,16 @@ function buildLines(brief: PeerBrief, plan: Plan, sim: SimResult): string[] {
     brief.headline,
     "",
   ];
-  for (const p of brief.paragraphs) {
-    lines.push(...wrapLine(p));
+  const blocks = brief.sections?.length
+    ? brief.sections
+    : brief.paragraphs.map((body) => ({ title: "", body }));
+  for (const s of blocks) {
+    if (s.title) {
+      lines.push(s.title);
+      lines.push(...wrapLine(s.body));
+    } else {
+      lines.push(...wrapLine(s.body));
+    }
     lines.push("");
   }
   lines.push(

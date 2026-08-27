@@ -158,6 +158,7 @@ function Pricing() {
               <li>Unlimited contribution rules</li>
               <li>Unlimited income stages</li>
               <li>Full MACH OODA Financial Analysis</li>
+              <li>OODA AI questions on this MACH Run</li>
               <li>Everything in Free</li>
             </ul>
             {!signedIn ? (
@@ -216,6 +217,7 @@ function Pricing() {
               <li>Unlimited contribution rules</li>
               <li>Unlimited income stages</li>
               <li>Full MACH OODA Financial Analysis</li>
+              <li>OODA AI questions on this MACH Run</li>
               <li>Same Unlimited engine, billed yearly</li>
             </ul>
             {!signedIn ? (
