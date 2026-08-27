@@ -8,6 +8,7 @@ export type Entitlement = {
   signedIn: boolean;
   paid: boolean;
   plan: "free" | "mach";
+  interval: "month" | "year" | null;
   accountLimit: number | null;
   contributionLimit: number | null;
   incomeLimit: number | null;
@@ -20,6 +21,7 @@ export const GUEST_ENTITLEMENT: Entitlement = {
   signedIn: false,
   paid: false,
   plan: "free",
+  interval: null,
   accountLimit: FREE_ACCOUNT_LIMIT,
   contributionLimit: FREE_CONTRIBUTION_LIMIT,
   incomeLimit: FREE_INCOME_LIMIT,

@@ -58,6 +58,17 @@ function stripeReady(): boolean {
   }
 }
 
+function intervalFromPrice(priceId: string | null | undefined, paid: boolean): "month" | "year" | null {
+  if (!paid) return null;
+  try {
+    if (priceId && priceId === process.env.STRIPE_PRICE_YEARLY) return "year";
+    if (priceId && priceId === process.env.STRIPE_PRICE_MONTHLY) return "month";
+  } catch {
+    /* env missing */
+  }
+  return "month";
+}
+
 function signedInFree(): Entitlement {
   return {
     ...GUEST_ENTITLEMENT,
@@ -114,6 +125,7 @@ export const getEntitlement = createServerFn({ method: "GET" })
         signedIn: true,
         paid,
         plan: paid ? "mach" : "free",
+        interval: intervalFromPrice(row?.price_id, paid),
         accountLimit: paid ? null : FREE_ACCOUNT_LIMIT,
         contributionLimit: paid ? null : FREE_CONTRIBUTION_LIMIT,
         incomeLimit: paid ? null : FREE_INCOME_LIMIT,

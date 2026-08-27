@@ -6,8 +6,20 @@ import { startBillingPortal, startCheckout } from "@/lib/billing/api";
 import { MACH_MONTHLY_USD, MACH_YEARLY_USD } from "@/lib/billing/limits";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/pricing")({ component: Pricing });
+
+function currentLabel(ent: {
+  signedIn: boolean;
+  paid: boolean;
+  interval: "month" | "year" | null;
+}): string {
+  if (!ent.signedIn) return "Not signed in — pick a package after you register.";
+  if (!ent.paid) return "Your current package: Free.";
+  if (ent.interval === "year") return `Your current package: Unlimited — $${MACH_YEARLY_USD}/year.`;
+  return `Your current package: Unlimited — $${MACH_MONTHLY_USD}/month.`;
+}
 
 function Pricing() {
   const ent = useEntitlement();
@@ -15,6 +27,10 @@ function Pricing() {
   const signedIn = Boolean(user && !user.isDevFallback);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<"month" | "year" | "portal" | null>(null);
+
+  const onFree = signedIn && !ent.paid;
+  const onMonth = signedIn && ent.paid && ent.interval !== "year";
+  const onYear = signedIn && ent.paid && ent.interval === "year";
 
   async function checkout(interval: "month" | "year") {
     setError(null);
@@ -46,7 +62,7 @@ function Pricing() {
 
   return (
     <main className="min-h-screen bg-bg px-4 py-10 text-fg">
-      <div className="mx-auto w-full max-w-3xl">
+      <div className="mx-auto w-full max-w-5xl">
         <Link to="/" className="inline-block opacity-90 hover:opacity-100">
           <BrandLockup />
         </Link>
@@ -70,13 +86,28 @@ function Pricing() {
             coffee. Or ${MACH_YEARLY_USD}/year if you would rather pay once and
             forget it.
           </p>
+          <p className="mt-4 rounded-lg bg-surface px-4 py-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)]">
+            {currentLabel(ent)}
+          </p>
         </header>
 
-        <div className="mt-10 grid gap-4 md:grid-cols-2">
-          <article className="flex flex-col rounded-xl bg-surface p-6 shadow-[0_0_0_1px_var(--color-border)]">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">
-              Free
-            </p>
+        <div className="mt-10 grid gap-4 md:grid-cols-3">
+          <article
+            className={cn(
+              "flex flex-col rounded-xl bg-surface p-6 shadow-[0_0_0_1px_var(--color-border)]",
+              onFree && "shadow-[0_0_0_2px_var(--color-accent)]",
+            )}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">
+                Free
+              </p>
+              {onFree ? (
+                <span className="rounded-sm bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent-fg">
+                  Your plan
+                </span>
+              ) : null}
+            </div>
             <p className="mt-3 font-display text-4xl tabular-nums">$0</p>
             <p className="mt-1 text-sm text-muted">Register. Save. Run it.</p>
             <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
@@ -94,27 +125,34 @@ function Pricing() {
               >
                 Create a free account
               </a>
+            ) : onFree ? (
+              <p className="mt-6 text-sm text-muted">This is your current package.</p>
             ) : (
-              <p className="mt-6 text-sm text-muted">
-                {ent.paid ? "Included with your MACH subscription." : "This is your current plan."}
-              </p>
+              <p className="mt-6 text-sm text-muted">Included with Unlimited.</p>
             )}
           </article>
 
-          <article className="relative flex flex-col rounded-xl bg-elevated p-6 shadow-[0_0_0_1px_var(--color-border)]">
-            <p className="absolute right-5 top-5 text-[11px] font-medium uppercase tracking-[0.14em] text-subtle">
-              Less than a coffee
-            </p>
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">
-              Unlimited
-            </p>
+          <article
+            className={cn(
+              "flex flex-col rounded-xl bg-elevated p-6 shadow-[0_0_0_1px_var(--color-border)]",
+              onMonth && "shadow-[0_0_0_2px_var(--color-accent)]",
+            )}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">
+                Unlimited
+              </p>
+              {onMonth ? (
+                <span className="rounded-sm bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent-fg">
+                  Your plan
+                </span>
+              ) : null}
+            </div>
             <p className="mt-3 font-display text-4xl tabular-nums">
               ${MACH_MONTHLY_USD}
               <span className="text-xl text-muted">/month</span>
             </p>
-            <p className="mt-1 text-sm text-muted">
-              ${MACH_YEARLY_USD}/year — two months on the house
-            </p>
+            <p className="mt-1 text-sm text-muted">Less than a cup of coffee.</p>
             <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
               <li>Unlimited accounts</li>
               <li>Unlimited contribution rules</li>
@@ -127,9 +165,9 @@ function Pricing() {
                 href="/login"
                 className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90"
               >
-                Sign in, then go unlimited
+                Sign in, then go monthly
               </a>
-            ) : ent.paid ? (
+            ) : onMonth ? (
               <PrimaryButton
                 className="mt-6"
                 disabled={busy !== null}
@@ -138,26 +176,71 @@ function Pricing() {
                 {busy === "portal" ? "Opening…" : "Manage billing"}
               </PrimaryButton>
             ) : (
-              <div className="mt-6 flex flex-col gap-2">
-                <PrimaryButton
-                  disabled={busy !== null}
-                  onClick={() => void checkout("month")}
-                >
-                  {busy === "month"
-                    ? "Redirecting…"
-                    : `$${MACH_MONTHLY_USD}/month — less than a coffee`}
-                </PrimaryButton>
-                <button
-                  type="button"
-                  disabled={busy !== null}
-                  onClick={() => void checkout("year")}
-                  className="inline-flex h-11 items-center justify-center rounded-lg px-4 text-sm font-medium text-muted hover:bg-surface hover:text-fg disabled:opacity-50"
-                >
-                  {busy === "year"
-                    ? "Redirecting…"
-                    : `Or $${MACH_YEARLY_USD}/year`}
-                </button>
-              </div>
+              <PrimaryButton
+                className="mt-6"
+                disabled={busy !== null}
+                onClick={() => void checkout("month")}
+              >
+                {busy === "month" ? "Redirecting…" : `Choose $${MACH_MONTHLY_USD}/month`}
+              </PrimaryButton>
+            )}
+          </article>
+
+          <article
+            className={cn(
+              "flex flex-col rounded-xl bg-elevated p-6 shadow-[0_0_0_1px_var(--color-border)]",
+              onYear && "shadow-[0_0_0_2px_var(--color-accent)]",
+            )}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">
+                Unlimited
+              </p>
+              {onYear ? (
+                <span className="rounded-sm bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent-fg">
+                  Your plan
+                </span>
+              ) : (
+                <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-subtle">
+                  Two months free
+                </span>
+              )}
+            </div>
+            <p className="mt-3 font-display text-4xl tabular-nums">
+              ${MACH_YEARLY_USD}
+              <span className="text-xl text-muted">/year</span>
+            </p>
+            <p className="mt-1 text-sm text-muted">Pay once. Forget it.</p>
+            <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
+              <li>Unlimited accounts</li>
+              <li>Unlimited contribution rules</li>
+              <li>Unlimited income stages</li>
+              <li>Full MACH OODA Financial Analysis</li>
+              <li>Same Unlimited engine, billed yearly</li>
+            </ul>
+            {!signedIn ? (
+              <a
+                href="/login"
+                className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90"
+              >
+                Sign in, then go yearly
+              </a>
+            ) : onYear ? (
+              <PrimaryButton
+                className="mt-6"
+                disabled={busy !== null}
+                onClick={() => void portal()}
+              >
+                {busy === "portal" ? "Opening…" : "Manage billing"}
+              </PrimaryButton>
+            ) : (
+              <PrimaryButton
+                className="mt-6"
+                disabled={busy !== null}
+                onClick={() => void checkout("year")}
+              >
+                {busy === "year" ? "Redirecting…" : `Choose $${MACH_YEARLY_USD}/year`}
+              </PrimaryButton>
             )}
           </article>
         </div>
