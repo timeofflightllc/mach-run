@@ -107,6 +107,49 @@ export async function userIdForCustomer(customerId: string): Promise<string | nu
   }
 }
 
+export async function clearSubscription(userId: string): Promise<void> {
+  try {
+    await ensureSubscriptionsTable();
+    const sql = await getSql();
+    await sql.query(
+      `update mach_subscriptions
+          set stripe_customer_id = null,
+              stripe_subscription_id = null,
+              status = 'none',
+              price_id = null,
+              current_period_end = null,
+              updated_at = now()
+        where user_id = $1`,
+      [userId],
+    );
+  } catch {
+    /* table missing — nothing to clear */
+  }
+}
+
+/** Drop a test-mode customer/sub that does not exist on the current Stripe key. */
+export async function dropIfUnknownToStripe(
+  userId: string,
+  row: {
+    stripe_customer_id: string | null;
+    stripe_subscription_id: string | null;
+  } | null,
+): Promise<boolean> {
+  const subId = row?.stripe_subscription_id;
+  const cusId = row?.stripe_customer_id;
+  if (!subId && !cusId) return false;
+  try {
+    const stripe = await getStripe();
+    if (subId) await stripe.subscriptions.retrieve(subId);
+    return false;
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!/No such (customer|subscription)/i.test(msg)) return false;
+    await clearSubscription(userId);
+    return true;
+  }
+}
+
 export async function loadSubscription(userId: string) {
   try {
     await ensureSubscriptionsTable();

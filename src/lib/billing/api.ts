@@ -98,6 +98,11 @@ export const getEntitlement = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<Entitlement> => {
     try {
       const row = await loadSubscription(context.userId);
+      if (row && stripeReady()) {
+        const { dropIfUnknownToStripe } = await import("./stripe.server");
+        const dropped = await dropIfUnknownToStripe(context.userId, row);
+        if (dropped) return signedInFree();
+      }
       const paid = paidFromStatus(row?.status);
       const periodEnd =
         row?.current_period_end == null
@@ -134,6 +139,8 @@ export const startCheckout = createServerFn({ method: "POST" })
     const origin = sanitizeOrigin(data.origin);
     const stripe = await getStripe();
     const existing = await loadSubscription(context.userId);
+    const { dropIfUnknownToStripe } = await import("./stripe.server");
+    const dropped = await dropIfUnknownToStripe(context.userId, existing);
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceIdFor(data.interval), quantity: 1 }],
@@ -142,7 +149,7 @@ export const startCheckout = createServerFn({ method: "POST" })
       client_reference_id: context.userId,
       metadata: { userId: context.userId },
       subscription_data: { metadata: { userId: context.userId } },
-      customer: existing?.stripe_customer_id || undefined,
+      customer: dropped ? undefined : existing?.stripe_customer_id || undefined,
       allow_promotion_codes: true,
     });
     if (!session.url) throw new Error("Stripe did not return a checkout URL.");
@@ -161,11 +168,23 @@ export const startBillingPortal = createServerFn({ method: "POST" })
     }
     const origin = sanitizeOrigin(data.origin);
     const stripe = await getStripe();
-    const session = await stripe.billingPortal.sessions.create({
-      customer: existing.stripe_customer_id,
-      return_url: `${origin}/pricing`,
-    });
-    return { url: session.url };
+    try {
+      const session = await stripe.billingPortal.sessions.create({
+        customer: existing.stripe_customer_id,
+        return_url: `${origin}/pricing`,
+      });
+      return { url: session.url };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (/No such customer/i.test(msg)) {
+        const { clearSubscription } = await import("./stripe.server");
+        await clearSubscription(context.userId);
+        throw new Error(
+          "That billing profile was from Stripe test mode. Refresh, then subscribe with a live card.",
+        );
+      }
+      throw err;
+    }
   });
 
 export async function clampPlanForUser(userId: string, plan: Plan): Promise<Plan> {
