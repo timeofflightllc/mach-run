@@ -1,4 +1,5 @@
 import type { Plan } from "./types";
+import { coerceIsoDate } from "./dates.ts";
 
 /**
  * Blank household. Observe accounts, income stages, and contribution rules
@@ -63,7 +64,8 @@ export function ensurePlan(plan: Plan): Plan {
   const asOf = next.assumptions?.asOfDate ?? "2026-08-01";
   next.incomes = next.incomes.map((s) => ({
     ...s,
-    startDate: s.startDate || asOf,
+    startDate: coerceIsoDate(s.startDate) || s.startDate || asOf,
+    endDate: s.endDate ? coerceIsoDate(s.endDate) || s.endDate : null,
     monthlyAmount: Number.isFinite(s.monthlyAmount) ? s.monthlyAmount : 0,
   }));
   next.portfolios = next.portfolios.map((p) => ({
@@ -78,6 +80,13 @@ export function ensurePlan(plan: Plan): Plan {
   next.contributions = next.contributions.map((c) => ({
     ...c,
     capToIrsLimit: Boolean(c.capToIrsLimit),
+    startDate: coerceIsoDate(c.startDate) || c.startDate,
+    endDate: c.endDate ? coerceIsoDate(c.endDate) || c.endDate : null,
+  }));
+  next.spending = next.spending.map((p) => ({
+    ...p,
+    startDate: coerceIsoDate(p.startDate) || p.startDate,
+    endDate: p.endDate ? coerceIsoDate(p.endDate) || p.endDate : null,
   }));
   const ids = new Set(next.portfolios.map((p) => p.id));
   if (next.assumptions.sweepPortfolioId && !ids.has(next.assumptions.sweepPortfolioId)) {

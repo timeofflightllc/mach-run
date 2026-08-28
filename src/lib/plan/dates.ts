@@ -10,8 +10,21 @@ import {
   startOfMonth,
 } from "date-fns";
 
-export function parseDate(iso: string): Date {
+/** Two-digit / leading-zero years (0029) become 20xx so date pickers cannot end a paycheck in year 29. */
+export function coerceIsoDate(iso: string | null | undefined): string {
+  if (!iso) return "";
   const s = iso.trim();
+  const m = s.match(/^(\d{1,4})-(\d{1,2})(?:-(\d{1,2}))?/);
+  if (!m) return s;
+  let y = Number(m[1]);
+  if (y < 100) y += 2000;
+  const mo = String(Number(m[2])).padStart(2, "0");
+  const day = String(Number(m[3] ?? 1)).padStart(2, "0");
+  return `${String(y).padStart(4, "0")}-${mo}-${day}`;
+}
+
+export function parseDate(iso: string): Date {
+  const s = coerceIsoDate(iso) || iso.trim();
   const m = s.match(/^(\d{4})-(\d{2})(?:-(\d{2}))?/);
   if (!m) return parseISO(s.slice(0, 10));
   return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3] ?? 1));
@@ -19,13 +32,9 @@ export function parseDate(iso: string): Date {
 
 /** Calendar year-month, timezone-safe. */
 export function yearMonth(iso: string): string {
-  const s = iso.trim();
+  const s = coerceIsoDate(iso);
   if (/^\d{4}-\d{2}/.test(s)) return s.slice(0, 7);
-  const d = parseDate(s);
-  if (Number.isNaN(d.getTime())) return "";
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  return `${y}-${m}`;
+  return "";
 }
 
 export function iso(d: Date): string {

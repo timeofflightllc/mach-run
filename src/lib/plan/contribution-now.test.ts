@@ -248,3 +248,36 @@ test("percent-of-income match uses the paycheck dates even if the rule still has
   ];
   assert.equal(activeEmployerMatchMonthly(plan), 4000);
 });
+
+test("end year 0029 is year 2029 — match is not already over", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-08-01";
+  plan.incomes = [
+    {
+      id: "qatar",
+      name: "BGS Qatar",
+      kind: "salary",
+      monthlyAmount: 30000,
+      startDate: "2026-08-26",
+      endDate: "0029-09-01",
+      colaPct: 3,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.portfolios = [k401("k-roth")];
+  plan.contributions = [
+    rule({
+      id: "c-k",
+      portfolioId: "k-roth",
+      amountMode: "percent",
+      percentOfIncome: 10,
+      percentOfIncomeId: "qatar",
+      startDate: "2026-08-26",
+      endDate: "0029-09-01",
+      employerMatch: true,
+      employerMatchPct: 100,
+    }),
+  ];
+  assert.equal(activeEmployerMatchMonthly(plan), 3000);
+});

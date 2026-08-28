@@ -7,6 +7,7 @@ import {
   type TextareaHTMLAttributes,
 } from "react";
 import { cn } from "@/lib/utils";
+import { coerceIsoDate } from "@/lib/plan/dates";
 
 const controlClass =
   "h-11 w-full min-w-0 rounded-lg border border-border bg-elevated px-3 text-sm text-fg tabular-nums outline-none transition-[box-shadow,border-color] duration-150 placeholder:text-subtle focus:border-accent/40 focus:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] disabled:opacity-50";
@@ -135,7 +136,9 @@ export function DateInput({
       {...props}
       type="date"
       value={v}
-      onChange={(e) => onValue(e.target.value)}
+      min={props.min ?? "1950-01-01"}
+      max={props.max ?? "2199-12-31"}
+      onChange={(e) => onValue(coerceIsoDate(e.target.value) || e.target.value)}
       className={cn(dateClass, props.className)}
     />
   );

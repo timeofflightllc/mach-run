@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { RotateCcw } from "lucide-react";
 import { AuthSlot } from "@/components/meridian/auth-slot";
+import { MACH_RESET_BASELINE } from "@/components/meridian/account-menu";
 import { CalculateButton } from "@/components/meridian/calculate-button";
 import { CashChart, WealthChart } from "@/components/meridian/charts";
 import { ContributionForm } from "@/components/meridian/contribution-form";
@@ -83,7 +83,6 @@ function jumpToPhase(id: string) {
 function Home() {
   const plan = usePlanStore((s) => s.plan);
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
-  const reset = usePlanStore((s) => s.reset);
   const { status: saveStatus, saveNow } = useCloudPlan();
   const ent = useEntitlement();
   const [tab, setTab] = useState<"act" | "loop">("loop");
@@ -98,6 +97,14 @@ function Home() {
 
   useEffect(() => {
     void Promise.resolve(usePlanStore.persist.rehydrate());
+  }, []);
+
+  useEffect(() => {
+    function onReset() {
+      setRun(null);
+    }
+    window.addEventListener(MACH_RESET_BASELINE, onReset);
+    return () => window.removeEventListener(MACH_RESET_BASELINE, onReset);
   }, []);
 
   useEffect(() => {
@@ -175,11 +182,6 @@ function Home() {
     }
   }
 
-  function handleReset() {
-    reset();
-    setRun(null);
-  }
-
   function goPhase(id: string) {
     setActivePhase(id);
     setTab(id === "ooda-act" ? "act" : "loop");
@@ -223,14 +225,6 @@ function Home() {
                   Future $
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={() => handleReset()}
-                className="hidden h-11 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-muted hover:bg-surface hover:text-fg md:inline-flex"
-              >
-                <RotateCcw className="size-3.5" />
-                Reset baseline
-              </button>
               <AuthSlot saved={saveStatus} />
             </div>
           </div>
@@ -259,14 +253,6 @@ function Home() {
                 Future $
               </button>
             </div>
-            <button
-              type="button"
-              onClick={() => handleReset()}
-              aria-label="Reset baseline"
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-surface hover:text-fg"
-            >
-              <RotateCcw className="size-3.5" />
-            </button>
           </div>
         </div>
         <nav
