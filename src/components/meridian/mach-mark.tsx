@@ -100,13 +100,11 @@ export function MachWordmark({
         alt="MACH RUN.com"
         width={761}
         height={268}
-        style={{
-          width: large ? "15.75rem" : "12.6rem",
-          maxWidth: large ? "15.75rem" : "12.6rem",
-          height: "auto",
-        }}
         className={cn(
-          "block shrink-0 object-contain object-left",
+          "block h-auto shrink-0 object-contain object-left",
+          large
+            ? "w-[15.75rem] max-w-[15.75rem]"
+            : "w-[10.9rem] max-w-[10.9rem] sm:w-[12.6rem] sm:max-w-[12.6rem]",
           framed && "rounded-sm shadow-[0_0_0_1px_#c5cdd6]",
         )}
       />

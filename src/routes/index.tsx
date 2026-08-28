@@ -205,7 +205,7 @@ function Home() {
       >
         <div className="relative z-50 mx-auto max-w-[1400px] px-4 py-2.5 sm:px-6">
           <div className="flex items-center justify-between gap-2">
-            <div className="shrink-0 self-start text-left">
+            <div className="min-w-0 shrink text-left">
               <BrandLockup />
             </div>
             <div className="ml-auto flex shrink-0 items-center justify-end gap-1.5">
