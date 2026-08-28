@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
 import {
+  ADVISOR_TRIAL_DAYS,
   FREE_ACCOUNT_LIMIT,
   FREE_CONTRIBUTION_LIMIT,
   FREE_INCOME_LIMIT,
@@ -10,6 +11,7 @@ import {
   clampPlan,
   paidFromStatus,
   type Entitlement,
+  type MachPackage,
 } from "./limits";
 import { ensurePlan } from "@/lib/plan/defaults";
 import type { Plan } from "@/lib/plan/types";
@@ -58,15 +60,52 @@ function stripeReady(): boolean {
   }
 }
 
+function advisorStripeReady(): boolean {
+  try {
+    return Boolean(
+      process.env.STRIPE_SECRET_KEY &&
+        process.env.STRIPE_PRICE_ADVISOR_MONTHLY &&
+        process.env.STRIPE_PRICE_ADVISOR_YEARLY,
+    );
+  } catch {
+    return false;
+  }
+}
+
 function intervalFromPrice(priceId: string | null | undefined, paid: boolean): "month" | "year" | null {
   if (!paid) return null;
   try {
-    if (priceId && priceId === process.env.STRIPE_PRICE_YEARLY) return "year";
-    if (priceId && priceId === process.env.STRIPE_PRICE_MONTHLY) return "month";
+    if (
+      priceId === process.env.STRIPE_PRICE_YEARLY ||
+      priceId === process.env.STRIPE_PRICE_ADVISOR_YEARLY
+    ) {
+      return "year";
+    }
+    if (
+      priceId === process.env.STRIPE_PRICE_MONTHLY ||
+      priceId === process.env.STRIPE_PRICE_ADVISOR_MONTHLY
+    ) {
+      return "month";
+    }
   } catch {
     /* env missing */
   }
   return "month";
+}
+
+function packageFromPrice(priceId: string | null | undefined, paid: boolean): MachPackage {
+  if (!paid) return "free";
+  try {
+    if (
+      priceId === process.env.STRIPE_PRICE_ADVISOR_MONTHLY ||
+      priceId === process.env.STRIPE_PRICE_ADVISOR_YEARLY
+    ) {
+      return "advisor";
+    }
+  } catch {
+    /* env missing */
+  }
+  return "individual";
 }
 
 function signedInFree(): Entitlement {
@@ -74,6 +113,7 @@ function signedInFree(): Entitlement {
     ...GUEST_ENTITLEMENT,
     signedIn: true,
     stripeConfigured: stripeReady(),
+    advisorStripeConfigured: advisorStripeReady(),
     status: "none",
   };
 }
@@ -97,9 +137,9 @@ async function loadSubscription(userId: string): Promise<SubRow | null> {
 export const getBillingConfig = createServerFn({ method: "GET" }).handler(
   async () => {
     try {
-      return { stripeConfigured: stripeReady(), monthly: 4, yearly: 40 };
+      return { stripeConfigured: stripeReady(), advisorStripeConfigured: advisorStripeReady(), monthly: 4, yearly: 40 };
     } catch {
-      return { stripeConfigured: false, monthly: 4, yearly: 40 };
+      return { stripeConfigured: false, advisorStripeConfigured: false, monthly: 4, yearly: 40 };
     }
   },
 );
@@ -124,12 +164,13 @@ export const getEntitlement = createServerFn({ method: "GET" })
       return {
         signedIn: true,
         paid,
-        plan: paid ? "mach" : "free",
+        plan: packageFromPrice(row?.price_id, paid),
         interval: intervalFromPrice(row?.price_id, paid),
         accountLimit: paid ? null : FREE_ACCOUNT_LIMIT,
         contributionLimit: paid ? null : FREE_CONTRIBUTION_LIMIT,
         incomeLimit: paid ? null : FREE_INCOME_LIMIT,
         stripeConfigured: stripeReady(),
+        advisorStripeConfigured: advisorStripeReady(),
         status: row?.status ?? "none",
         periodEnd,
       };
@@ -140,10 +181,24 @@ export const getEntitlement = createServerFn({ method: "GET" })
 
 export const startCheckout = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((input: { interval: "month" | "year"; origin: string }) => input)
+  .validator(
+    (input: {
+      interval: "month" | "year";
+      origin: string;
+      package?: "individual" | "advisor";
+    }) => input,
+  )
   .handler(async ({ context, data }) => {
-    const { getStripe, priceIdFor, stripeConfigured } = await import("./stripe.server");
-    if (!stripeConfigured()) {
+    const { getStripe, priceIdFor, stripeConfigured, advisorStripeConfigured } =
+      await import("./stripe.server");
+    const pkg = data.package === "advisor" ? "advisor" : "individual";
+    if (pkg === "advisor") {
+      if (!advisorStripeConfigured()) {
+        throw new Error(
+          "Advisor checkout is not connected yet. Add STRIPE_PRICE_ADVISOR_MONTHLY and STRIPE_PRICE_ADVISOR_YEARLY in Vercel.",
+        );
+      }
+    } else if (!stripeConfigured()) {
       throw new Error(
         "Stripe is not connected yet. Add the keys after you publish.",
       );
@@ -155,12 +210,15 @@ export const startCheckout = createServerFn({ method: "POST" })
     const dropped = await dropIfUnknownToStripe(context.userId, existing);
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      line_items: [{ price: priceIdFor(data.interval), quantity: 1 }],
+      line_items: [{ price: priceIdFor(data.interval, pkg), quantity: 1 }],
       success_url: `${origin}/?checkout=success`,
       cancel_url: `${origin}/pricing?checkout=cancel`,
       client_reference_id: context.userId,
-      metadata: { userId: context.userId },
-      subscription_data: { metadata: { userId: context.userId } },
+      metadata: { userId: context.userId, package: pkg },
+      subscription_data: {
+        metadata: { userId: context.userId, package: pkg },
+        ...(pkg === "advisor" ? { trial_period_days: ADVISOR_TRIAL_DAYS } : {}),
+      },
       customer: dropped ? undefined : existing?.stripe_customer_id || undefined,
       allow_promotion_codes: true,
     });

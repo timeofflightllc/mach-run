@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AuthSlot } from "@/components/meridian/auth-slot";
+import { ProfileSwitcher } from "@/components/meridian/profile-switcher";
 import { MACH_RESET_BASELINE } from "@/components/meridian/account-menu";
 import { CalculateButton } from "@/components/meridian/calculate-button";
 import { CashChart, WealthChart } from "@/components/meridian/charts";
@@ -20,6 +21,7 @@ import { GuestOnly } from "@/lib/auth/gates";
 import { simulate } from "@/lib/plan/engine";
 import { buildPeerBrief, type PeerBrief } from "@/lib/plan/peers";
 import { usePlanStore } from "@/lib/plan/store";
+import { useProfileStore } from "@/lib/plan/profile-store";
 import { useCloudPlan } from "@/lib/plan/use-cloud-plan";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { getEntitlement } from "@/lib/billing/api";
@@ -97,6 +99,12 @@ function Home() {
 
   useEffect(() => {
     void Promise.resolve(usePlanStore.persist.rehydrate());
+    void Promise.resolve(useProfileStore.persist.rehydrate()).then(() => {
+      const live = usePlanStore.getState().plan;
+      if (!useProfileStore.getState().profiles.length) {
+        useProfileStore.getState().hydrateFromPlan(live);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -225,6 +233,7 @@ function Home() {
                   Future $
                 </button>
               </div>
+              <ProfileSwitcher ent={ent} />
               <AuthSlot saved={saveStatus} />
             </div>
           </div>

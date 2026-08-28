@@ -3,16 +3,22 @@ export const FREE_CONTRIBUTION_LIMIT = 2;
 export const FREE_INCOME_LIMIT = 2;
 export const MACH_MONTHLY_USD = 4;
 export const MACH_YEARLY_USD = 40;
+export const ADVISOR_MONTHLY_USD = 69;
+export const ADVISOR_YEARLY_USD = 690;
+export const ADVISOR_TRIAL_DAYS = 7;
+
+export type MachPackage = "free" | "individual" | "advisor";
 
 export type Entitlement = {
   signedIn: boolean;
   paid: boolean;
-  plan: "free" | "mach";
+  plan: MachPackage;
   interval: "month" | "year" | null;
   accountLimit: number | null;
   contributionLimit: number | null;
   incomeLimit: number | null;
   stripeConfigured: boolean;
+  advisorStripeConfigured: boolean;
   status: string | null;
   periodEnd: string | null;
 };
@@ -26,12 +32,19 @@ export const GUEST_ENTITLEMENT: Entitlement = {
   contributionLimit: FREE_CONTRIBUTION_LIMIT,
   incomeLimit: FREE_INCOME_LIMIT,
   stripeConfigured: false,
+  advisorStripeConfigured: false,
   status: null,
   periodEnd: null,
 };
 
 export function paidFromStatus(status: string | null | undefined): boolean {
   return status === "active" || status === "trialing" || status === "past_due";
+}
+
+export function packageLabel(plan: MachPackage): string {
+  if (plan === "advisor") return "Advisor";
+  if (plan === "individual") return "Individual";
+  return "Free";
 }
 
 /** Free users can keep what they already saved; they cannot grow past the cap. */

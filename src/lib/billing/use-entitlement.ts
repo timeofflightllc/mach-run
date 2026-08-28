@@ -14,7 +14,13 @@ export function useEntitlement() {
       void getBillingConfig()
         .then((cfg) => {
           if (cancelled) return;
-          setEnt({ ...GUEST_ENTITLEMENT, stripeConfigured: cfg.stripeConfigured });
+          setEnt({
+            ...GUEST_ENTITLEMENT,
+            stripeConfigured: cfg.stripeConfigured,
+            advisorStripeConfigured: Boolean(
+              (cfg as { advisorStripeConfigured?: boolean }).advisorStripeConfigured,
+            ),
+          });
         })
         .catch(() => {
           if (!cancelled) setEnt(GUEST_ENTITLEMENT);

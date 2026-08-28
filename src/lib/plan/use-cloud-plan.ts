@@ -2,15 +2,25 @@ import { useEffect, useState } from "react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { loadMachPlan, saveMachPlan } from "./plan-api";
 import { usePlanStore } from "./store";
+import { useProfileStore } from "./profile-store";
 import type { Plan } from "./types";
 
-function planWeight(p: Plan): number {
+function planWeight(p: Plan | null | undefined): number {
+  if (!p) return 0;
   const inc = (p.incomes ?? []).reduce(
     (s, i) => s + (i.monthlyAmount || i.ssPia || 0),
     0,
   );
   const assets = (p.portfolios ?? []).reduce((s, x) => s + (x.currentValue || 0), 0);
   return inc * 12 + assets;
+}
+
+function payloadToSave(plan: Plan) {
+  const lib = useProfileStore.getState();
+  if (lib.profiles.length > 1) {
+    return lib.asLibrary(plan);
+  }
+  return plan;
 }
 
 export function useCloudPlan() {
@@ -34,8 +44,12 @@ export function useCloudPlan() {
       .then((saved) => {
         if (cancelled) return;
         const local = usePlanStore.getState().plan;
-        if (saved && planWeight(saved) >= planWeight(local)) {
-          setPlan(saved);
+        const cloudPlan = saved && typeof saved === "object" && "plan" in saved ? saved.plan : saved;
+        const library =
+          saved && typeof saved === "object" && "library" in saved ? saved.library : null;
+        if (library) useProfileStore.getState().hydrateLibrary(library);
+        if (cloudPlan && planWeight(cloudPlan) >= planWeight(local)) {
+          setPlan(cloudPlan);
         }
         setCloudReady(true);
         setStatus("saved");
@@ -54,7 +68,7 @@ export function useCloudPlan() {
     if (!userId || !cloudReady) return;
     setStatus("saving");
     const t = window.setTimeout(() => {
-      void saveMachPlan({ data: plan })
+      void saveMachPlan({ data: payloadToSave(plan) })
         .then(() => setStatus("saved"))
         .catch(() => setStatus("idle"));
     }, 700);
@@ -65,7 +79,8 @@ export function useCloudPlan() {
     if (!userId) return;
     setStatus("saving");
     try {
-      await saveMachPlan({ data: next ?? usePlanStore.getState().plan });
+      const live = next ?? usePlanStore.getState().plan;
+      await saveMachPlan({ data: payloadToSave(live) });
       setStatus("saved");
     } catch {
       setStatus("idle");
