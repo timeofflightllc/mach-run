@@ -26,7 +26,7 @@ function Account() {
 
   if (isPending) {
     return (
-      <main className="grid min-h-screen place-items-center bg-bg text-muted">
+      <main className="grid min-h-screen place-items-center text-muted" style={{ backgroundColor: "#0a1835" }}>
         Loading account…
       </main>
     );
@@ -90,7 +90,7 @@ function Account() {
   }
 
   return (
-    <main className="min-h-screen bg-bg px-4 py-10 text-fg">
+    <main className="min-h-screen px-4 py-10 text-fg" style={{ backgroundColor: "#0a1835" }}>
       <div className="mx-auto w-full max-w-lg space-y-8">
         <Link to="/" className="inline-block opacity-90 hover:opacity-100">
           <BrandLockup />
@@ -101,9 +101,16 @@ function Account() {
           </p>
           <h1 className="mt-2 font-display text-3xl text-fg">Your MACH Run identity</h1>
           <p className="mt-2 text-sm text-muted">
-            Name and email for this login. Billing is on Manage billing.
+            Name and email for this login.
           </p>
         </header>
+
+        <Link
+          to="/pricing"
+          className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90"
+        >
+          Manage billing
+        </Link>
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
         {msg ? <p className="text-sm text-muted">{msg}</p> : null}
@@ -158,10 +165,6 @@ function Account() {
         </form>
 
         <p className="text-sm text-subtle">
-          <Link to="/pricing" className="underline-offset-4 hover:text-fg hover:underline">
-            Manage billing
-          </Link>
-          {" · "}
           <Link to="/" className="underline-offset-4 hover:text-fg hover:underline">
             Back to the engine
           </Link>
