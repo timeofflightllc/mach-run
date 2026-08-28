@@ -13,7 +13,11 @@ const env = (key: string): string | undefined => {
 function privateKeyPem(): string | undefined {
   const raw = env("APPLE_PRIVATE_KEY");
   if (!raw) return undefined;
-  return raw.includes("-----BEGIN") ? raw.replace(/\\n/g, "\n") : undefined;
+  let pem = raw.replace(/\\n/g, "\n").replace(/\r/g, "").trim();
+  if (!pem.includes("BEGIN")) {
+    pem = `-----BEGIN PRIVATE KEY-----\n${pem}\n-----END PRIVATE KEY-----`;
+  }
+  return pem;
 }
 
 export const appleConfigured = Boolean(
@@ -47,8 +51,18 @@ export async function appleSocialProvider(): Promise<{
   clientId: string;
   clientSecret: string;
 } | null> {
-  if (!appleConfigured) return null;
-  const clientId = env("APPLE_CLIENT_ID") as string;
-  const clientSecret = await generateAppleClientSecret();
-  return { clientId, clientSecret };
+  if (!appleConfigured) {
+    console.warn(
+      "[mach-run] Apple Sign In off — missing APPLE_CLIENT_ID, TEAM_ID, KEY_ID, or PRIVATE_KEY",
+    );
+    return null;
+  }
+  try {
+    const clientId = env("APPLE_CLIENT_ID") as string;
+    const clientSecret = await generateAppleClientSecret();
+    return { clientId, clientSecret };
+  } catch (err) {
+    console.error("[mach-run] Apple client secret failed", err);
+    return null;
+  }
 }

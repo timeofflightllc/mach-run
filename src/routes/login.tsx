@@ -127,7 +127,18 @@ function Login() {
                 {appleSignInEnabled ? (
                   <button
                     type="button"
-                    onClick={() => void signInWithApple("/")}
+                    onClick={() => {
+                      setBusy(true);
+                      setError(null);
+                      void signInWithApple("/").catch((err) => {
+                        setError(
+                          err instanceof Error
+                            ? err.message
+                            : "Apple sign-in failed.",
+                        );
+                        setBusy(false);
+                      });
+                    }}
                     className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#f5f5f7] text-sm font-medium text-[#1d1d1f] hover:bg-white"
                   >
                     <svg viewBox="0 0 24 24" className="size-4" aria-hidden>

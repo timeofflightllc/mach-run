@@ -37,8 +37,8 @@ export const authClient = createAuthClient({
  */
 export const authEnabled = import.meta.env.VITE_AUTH_ENABLED !== "false";
 
-/** Shown on login/register when Vercel has VITE_APPLE_ENABLED=true. */
-export const appleSignInEnabled = import.meta.env.VITE_APPLE_ENABLED === "true";
+/** Apple button is always on; the server no-ops unless APPLE_* secrets exist. */
+export const appleSignInEnabled = true;
 
 /** The upstream providers to render sign-in buttons for. */
 export { GROK_PROVIDERS };
@@ -163,13 +163,43 @@ export async function signInWithApple(callbackURL = "/"): Promise<void> {
     requestSignOut: () => authClient.signOut(),
     clearToken: () => setBearerToken(null),
   });
-  const { data, error } = await authClient.signIn.social({
-    provider: "apple",
-    callbackURL,
-    errorCallbackURL: "/login",
+  const social = authClient.signIn.social;
+  if (typeof social === "function") {
+    const { data, error } = await social({
+      provider: "apple",
+      callbackURL,
+      errorCallbackURL: "/login",
+    });
+    if (error) throw new Error(error.message ?? "Apple sign-in failed");
+    if (data?.url) {
+      window.location.href = data.url;
+      return;
+    }
+  }
+  const res = await fetch("/api/auth/sign-in/social", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      provider: "apple",
+      callbackURL,
+      errorCallbackURL: "/login",
+    }),
   });
-  if (error) throw new Error(error.message ?? "Apple sign-in failed");
-  if (data?.url) window.location.href = data.url;
+  const json = (await res.json().catch(() => ({}))) as {
+    url?: string;
+    message?: string;
+    error?: { message?: string };
+  };
+  if (json.url) {
+    window.location.href = json.url;
+    return;
+  }
+  throw new Error(
+    json.error?.message ??
+      json.message ??
+      "Apple sign-in is not configured on the server. Check APPLE_* env vars and redeploy.",
+  );
 }
 
 /**
