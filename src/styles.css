@@ -4,18 +4,18 @@
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Newsreader", ui-serif, Georgia, "Times New Roman", serif;
 
-  --color-bg: #0c0f14;
-  --color-surface: #141922;
-  --color-elevated: #1b2230;
-  --color-fg: #f6f3ec;
-  --color-muted: #c5cad3;
-  --color-subtle: #a7aeb8;
-  --color-accent: #c5ccd6;
-  --color-accent-fg: #0c0f14;
-  --color-border: #2a3140;
-  --color-positive: #a8bfa6;
+  --color-bg: #07111c;
+  --color-surface: #0d1a2a;
+  --color-elevated: #132436;
+  --color-fg: #eef2f6;
+  --color-muted: #c5d0dc;
+  --color-subtle: #8fa3b8;
+  --color-accent: #c5cdd6;
+  --color-accent-fg: #07111c;
+  --color-border: #1e354c;
+  --color-positive: #9dba9a;
   --color-negative: #d4a090;
-  --color-ring: #c5ccd6;
+  --color-ring: #c5cdd6;
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -28,13 +28,19 @@
     font-size: 18px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    color-scheme: dark;
   }
 
   html,
   body,
   #app {
     min-height: 100%;
-    background: var(--color-bg);
+    background-color: var(--color-bg);
+    background-image: radial-gradient(
+      900px 520px at 12% -8%,
+      #163a5c 0%,
+      #07111c 58%
+    );
     color: var(--color-fg);
   }
 
@@ -59,31 +65,37 @@
     cursor: pointer;
   }
 
-  input[type="date"] {
+  input[type="date"],
+  input[type="month"] {
     min-width: 13.75rem;
     color-scheme: dark;
   }
 
-  input[type="date"]::-webkit-datetime-edit {
+  input[type="date"]::-webkit-datetime-edit,
+  input[type="month"]::-webkit-datetime-edit {
     padding: 0;
     min-width: 11.5rem;
   }
 
-  input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+  input[type="month"]::-webkit-datetime-edit-fields-wrapper {
     padding: 0;
   }
 
-  input[type="date"]::-webkit-datetime-edit-year-field {
+  input[type="date"]::-webkit-datetime-edit-year-field,
+  input[type="month"]::-webkit-datetime-edit-year-field {
     min-width: 3.75em;
     padding: 0 0.12em;
   }
 
   input[type="date"]::-webkit-datetime-edit-month-field,
-  input[type="date"]::-webkit-datetime-edit-day-field {
+  input[type="date"]::-webkit-datetime-edit-day-field,
+  input[type="month"]::-webkit-datetime-edit-month-field {
     padding: 0 0.12em;
   }
 
-  input[type="date"]::-webkit-calendar-picker-indicator {
+  input[type="date"]::-webkit-calendar-picker-indicator,
+  input[type="month"]::-webkit-calendar-picker-indicator {
     opacity: 0.7;
     cursor: pointer;
     margin-left: 0.25rem;

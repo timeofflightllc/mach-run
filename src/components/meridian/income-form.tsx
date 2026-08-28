@@ -46,11 +46,11 @@ export function IncomeForm() {
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted">
-        Each block is one paycheck over a stretch of time. Name it, set the
-        monthly amount, set start and end. Kind tells MACH RUN whether it is earned
-        (salary, bonus, other income) or guaranteed (pension, military retired
-        pay, VA, Social Security, other retirement). Blank end = it keeps
-        paying.
+        Each block is one paycheck over a specific stretch of time. Name it, set
+        the monthly amount, set start and end. Tell MACH RUN what kind of income
+        it is — earned (salary, bonus, other income) or guaranteed (pension,
+        military retired pay, VA, Social Security, other retirement). Blank end
+        date = it keeps paying indefinitely.
       </p>
       <ul className="flex flex-col gap-3">
         {plan.incomes.map((s, i) => (

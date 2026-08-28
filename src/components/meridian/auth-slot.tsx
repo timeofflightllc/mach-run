@@ -22,17 +22,12 @@ export function AuthSlot({ saved }: { saved?: "idle" | "saving" | "saved" | "gue
           >
             Pricing
           </a>
-          <div className="flex flex-col items-end">
-            <a
-              href="/login"
-              className="inline-flex h-11 items-center justify-end rounded-lg px-0 text-sm font-medium text-muted hover:bg-surface hover:text-fg sm:px-3"
-            >
-              Sign in
-            </a>
-            <p className="-mt-1 max-w-[10.5rem] pb-1 text-right text-[10px] leading-tight text-subtle sm:hidden">
-              The Supersonic Financial Calculator
-            </p>
-          </div>
+          <a
+            href="/login"
+            className="inline-flex h-11 items-center justify-end rounded-lg px-0 text-sm font-medium text-muted hover:bg-surface hover:text-fg sm:px-3"
+          >
+            Sign in
+          </a>
         </>
       )}
     </div>

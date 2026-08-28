@@ -92,32 +92,18 @@ export function MachWordmark({
 }) {
   const large = size === "lg";
   return (
-    <span
-      className={cn(
-        "relative inline-flex items-center py-1",
-        "flex-col sm:max-h-12 sm:flex-row sm:overflow-hidden",
-        className,
-      )}
-      aria-label="MACH RUN"
-    >
-      <span
-        className={cn(
-          "relative z-10 font-display font-medium tracking-[0.12em] text-fg",
-          large ? "text-2xl" : "text-xl",
-        )}
-      >
-        M<span className="mx-px align-super text-[0.42em] tracking-normal">.</span>
-        A<span className="mx-px align-super text-[0.42em] tracking-normal">.</span>
-        C<span className="mx-px align-super text-[0.42em] tracking-normal">.</span>
-        H<span className="mx-px align-super text-[0.42em] tracking-normal">.</span>
-        {" RUN"}
-      </span>
-      <MachGlyph
-        className={
-          large
-            ? "pointer-events-none relative h-8 w-40 sm:-ml-2"
-            : "pointer-events-none relative mt-0.5 h-6 w-28 sm:mt-0 sm:-ml-2 sm:h-8 sm:w-40"
-        }
+    <span className={cn("inline-flex shrink-0 items-center", className)} aria-label="MACH RUN.com">
+      <img
+        src="/brand/mach-run-logo.jpg?v=12"
+        alt="MACH RUN.com"
+        width={761}
+        height={268}
+        style={{
+          width: large ? "15.75rem" : "12.6rem",
+          maxWidth: large ? "15.75rem" : "12.6rem",
+          height: "auto",
+        }}
+        className="block shrink-0 object-contain object-left"
       />
     </span>
   );
@@ -130,7 +116,20 @@ export function BrandLockup({
   className?: string;
   size?: "md" | "lg";
 }) {
-  return <MachWordmark className={className} size={size} />;
+  const large = size === "lg";
+  return (
+    <span className={cn("inline-flex shrink-0 flex-col items-stretch", className)}>
+      <MachWordmark size={size} />
+      <span
+        className={cn(
+          "mt-1.5 w-full text-center font-bold leading-snug tracking-[0.12em] text-muted",
+          large ? "text-[13px] sm:text-sm" : "text-xs sm:text-[13px]",
+        )}
+      >
+        The Supersonic Financial Calculator
+      </span>
+    </span>
+  );
 }
 
 export function MachFooter() {
@@ -139,9 +138,6 @@ export function MachFooter() {
       <div className="mx-auto flex max-w-[1400px] flex-col gap-5 px-4 py-8 sm:px-6">
         <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
           <BrandLockup size="lg" />
-          <p className="text-xs tracking-[0.14em] text-subtle">
-            The Supersonic Financial Calculator
-          </p>
         </div>
         <dl className="grid grid-cols-1 gap-4 text-sm text-muted md:grid-cols-4 md:gap-6">
           <div>

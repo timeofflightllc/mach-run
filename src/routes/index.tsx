@@ -190,15 +190,13 @@ function Home() {
     <div className="min-h-screen bg-bg text-fg">
       <header
         id="mach-header"
-        className="sticky top-0 z-30 border-b border-border bg-bg/95 backdrop-blur-sm"
+        className="sticky top-0 z-30 border-b border-border"
+        style={{ backgroundColor: "#0a1835" }}
       >
-        <div className="relative z-50 mx-auto max-w-[1400px] px-4 py-3 sm:px-6">
+        <div className="relative z-50 mx-auto max-w-[1400px] px-4 py-2.5 sm:px-6">
           <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0">
+            <div className="shrink-0 self-start text-left">
               <BrandLockup />
-              <p className="hidden truncate text-xs text-subtle sm:block">
-                The Supersonic Financial Calculator
-              </p>
             </div>
             <div className="ml-auto flex shrink-0 items-center justify-end gap-1.5">
               <div className="hidden rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)] md:flex">
@@ -352,14 +350,14 @@ function Home() {
             <PhaseLabel id="ooda-observe" label="Observe" />
             <Section
               title="Family"
-              hint="Names, birthdays — the household as it stands"
+              hint="Names and birthdays, retirement goal date and nest egg amount, and what to do with leftover dollars after income minus spending (a.k.a. “sweep”)."
               defaultOpen={false}
             >
               <HouseholdForm />
             </Section>
             <Section
               title="Accounts"
-              hint="Your financial lowdown — current accounts and balances"
+              hint="Your financial lowdown — add your accounts, update balances, define account types, set as spendable and decide to include in net worth."
               defaultOpen={false}
             >
               <PortfolioForm />
@@ -376,7 +374,7 @@ function Home() {
             </Section>
             <Section
               title="Spending"
-              hint="What the household actually costs"
+              hint="Set specific monthly expected spending here. Do not include spending from investments or contributions to accounts you have listed above — those will be set below in Contributions."
               defaultOpen={false}
             >
               <SpendingForm />
@@ -387,7 +385,7 @@ function Home() {
             <PhaseLabel id="ooda-decide" label="Decide" />
             <Section
               title="Contributions"
-              hint="Change monthly amounts at any date"
+              hint="Set your monthly contributions to the accounts created above. Different rules apply for different types of accounts, so ensure the “kind” of account is correctly set above."
             >
               <ContributionForm />
             </Section>
@@ -447,11 +445,14 @@ function Home() {
             </>
           ) : (
             <div className="rounded-xl bg-surface px-5 py-8 shadow-[0_0_0_1px_var(--color-border)]">
-              <p className="font-display text-xl text-fg">No MACH Run yet.</p>
-              <p className="mt-2 max-w-xl text-sm text-muted">
-                Complete Observe, Orient, and Decide to begin your financial
-                MACH Run. Hit Calculate at the bottom of any of those sections
-                to bust the MACH RUN and Act with financial purpose.
+              <p className="text-left font-display text-3xl text-fg">No MACH RUN yet.</p>
+              <p className="mt-1 text-left font-display text-lg text-fg">
+                You need to kick the tires and light the fires!
+              </p>
+              <p className="mt-2 max-w-xl text-left text-sm text-muted">
+                Complete Observe, Orient, and Decide to the left to begin your
+                financial MACH RUN. Hit Calculate at the bottom of any of those
+                sections to go supersonic and Act with financial purpose.
               </p>
             </div>
           )}

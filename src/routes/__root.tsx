@@ -16,7 +16,7 @@ export const Route = createRootRoute({
         content:
           "The Supersonic Financial Calculator. Measure, Allocate, Compound, Harvest.",
       },
-      { name: "theme-color", content: "#0c0f14" },
+      { name: "theme-color", content: "#0a1835" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
@@ -40,13 +40,12 @@ export const Route = createRootRoute({
     <html
       lang="en"
       className="antialiased"
-      style={{ background: "#0c0f14", color: "#f6f3ec" }}
       suppressHydrationWarning
     >
       <head>
         <HeadContent />
       </head>
-      <body className="bg-bg text-fg" style={{ background: "#0c0f14", color: "#f6f3ec" }}>
+      <body className="bg-bg text-fg">
         <PreviewHostBridge />
         <AuthProvider>
           <Outlet />

@@ -68,10 +68,7 @@ function Pricing() {
         </Link>
 
         <header className="mt-10 max-w-2xl">
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">
-            The Supersonic Financial Calculator
-          </p>
-          <h1 className="mt-3 font-display text-4xl leading-tight text-fg sm:text-5xl">
+          <h1 className="font-display text-4xl leading-tight text-fg sm:text-5xl">
             Less than a cup of coffee.
             <br />
             A lot more than a spreadsheet.

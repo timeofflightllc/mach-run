@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { GROK_PROVIDERS, authClient, authEnabled, signIn } from "@/lib/auth/client";
+import { GROK_PROVIDERS, appleSignInEnabled, authClient, authEnabled, signIn, signInWithApple } from "@/lib/auth/client";
 import { BrandLockup } from "@/components/meridian/mach-mark";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 
@@ -50,9 +50,6 @@ function Login() {
           <Link to="/" className="inline-flex justify-center">
             <BrandLockup size="lg" />
           </Link>
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-muted">
-            The Supersonic Financial Calculator
-          </p>
           <p className="mt-2 max-w-md text-xs leading-relaxed text-subtle">
             Free: save your MACH Run · 2 accounts · 2 contributions · 2 income
             stages
@@ -127,6 +124,21 @@ function Login() {
               <p className="text-center text-xs text-subtle">or</p>
 
               <div className="space-y-2">
+                {appleSignInEnabled ? (
+                  <button
+                    type="button"
+                    onClick={() => void signInWithApple("/")}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#f5f5f7] text-sm font-medium text-[#1d1d1f] hover:bg-white"
+                  >
+                    <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
+                      <path
+                        fill="currentColor"
+                        d="M16.37 12.63c.03 3.25 2.85 4.33 2.88 4.35-.02.06-.45 1.55-1.49 3.07-.9 1.31-1.83 2.61-3.3 2.64-1.45.03-1.91-.86-3.57-.86-1.66 0-2.17.83-3.54.89-1.42.06-2.5-1.42-3.41-2.73-1.86-2.68-3.28-7.57-1.37-10.87.95-1.64 2.64-2.68 4.48-2.71 1.4-.03 2.72.94 3.57.94.85 0 2.45-1.17 4.13-.99.7.03 2.68.28 3.95 2.14-.1.06-2.36 1.38-2.33 4.13ZM14.7 5.9c.76-.92 1.27-2.2 1.13-3.47-1.1.04-2.43.73-3.22 1.65-.71.82-1.33 2.14-1.16 3.4 1.22.1 2.48-.62 3.25-1.58Z"
+                      />
+                    </svg>
+                    Continue with Apple
+                  </button>
+                ) : null}
                 {GROK_PROVIDERS.map((p) => (
                   <button
                     key={p.providerId}

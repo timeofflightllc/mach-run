@@ -37,6 +37,9 @@ export const authClient = createAuthClient({
  */
 export const authEnabled = import.meta.env.VITE_AUTH_ENABLED !== "false";
 
+/** Shown on login/register when Vercel has VITE_APPLE_ENABLED=true. */
+export const appleSignInEnabled = import.meta.env.VITE_APPLE_ENABLED === "true";
+
 /** The upstream providers to render sign-in buttons for. */
 export { GROK_PROVIDERS };
 
@@ -149,6 +152,23 @@ export async function signIn(
     errorCallbackURL,
   });
   if (error) throw new Error(error.message ?? "Sign-in failed");
+  if (data?.url) window.location.href = data.url;
+}
+
+/** Apple is a first-party Better Auth social provider, not the Grok broker. */
+export async function signInWithApple(callbackURL = "/"): Promise<void> {
+  await runPreSignInSignOut({
+    livePreview: inLivePreview(),
+    hasBearer: Boolean(getBearerToken()),
+    requestSignOut: () => authClient.signOut(),
+    clearToken: () => setBearerToken(null),
+  });
+  const { data, error } = await authClient.signIn.social({
+    provider: "apple",
+    callbackURL,
+    errorCallbackURL: "/login",
+  });
+  if (error) throw new Error(error.message ?? "Apple sign-in failed");
   if (data?.url) window.location.href = data.url;
 }
 

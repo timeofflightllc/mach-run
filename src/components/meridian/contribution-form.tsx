@@ -14,20 +14,17 @@ import { usd } from "@/lib/plan/format";
 import { newId, usePlanStore } from "@/lib/plan/store";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
 import { atContributionCap, useEntitlement } from "@/lib/billing/use-entitlement";
-import type { ContributionRule, Plan } from "@/lib/plan/types";
+import {
+  activeEmployerMatchMonthly,
+  employeeMonthlyNow,
+} from "@/lib/plan/contribution-now";
+import { irsOverLimitWarning } from "@/lib/plan/irs-limits";
+import type { ContributionRule } from "@/lib/plan/types";
 
 const MATCH_PCTS = Array.from({ length: 21 }, (_, i) => i * 5);
 
 function isWorkplace(kind: string): boolean {
   return kind === "401k" || kind === "401k_roth" || kind === "tsp";
-}
-
-function employeeMonthly(plan: Plan, c: ContributionRule): number {
-  if (c.amountMode === "percent") {
-    const inc = plan.incomes.find((s) => s.id === c.percentOfIncomeId);
-    return ((inc?.monthlyAmount ?? 0) * (c.percentOfIncome ?? 0)) / 100;
-  }
-  return c.monthlyAmount;
 }
 
 export function ContributionForm() {
@@ -39,35 +36,30 @@ export function ContributionForm() {
   const capped = atContributionCap(plan.contributions.length, ent);
   const [needAccount, setNeedAccount] = useState(false);
 
-  const activeMonthly = plan.contributions
-    .filter((c) => !c.endDate || c.endDate >= plan.assumptions.asOfDate)
-    .reduce((s, c) => {
-      if (c.startDate > plan.assumptions.asOfDate) return s;
-      const emp = employeeMonthly(plan, c);
-      const dest = plan.portfolios.find((p) => p.id === c.portfolioId);
-      const match =
-        c.employerMatch && dest && isWorkplace(dest.kind)
-          ? emp * ((c.employerMatchPct ?? 0) / 100)
-          : 0;
-      return s + emp + match;
-    }, 0);
+  const activeMonthly = activeEmployerMatchMonthly(plan);
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted">
-        Tell MACH RUN how much to put into which account, and when. It only invests
-        what’s left after taxes and spending — it will not invent extra cash.
-        If your 401(k) or TSP has a company match, that match is free money on
-        top, not from your paycheck.
-        {plan.portfolios.length
-          ? ` Right now this adds up to ${usd(activeMonthly, true)}/mo, including match.`
-          : null}
-      </p>
+      <div className="flex flex-col gap-3 text-sm text-muted">
+        <p>
+          Tell MACH RUN how much to put into which account, and when. It only
+          invests what’s left after taxes and spending — it will not invent extra
+          cash — so ensure your income and spending is accurate.
+        </p>
+        <p>
+          If your 401(k) or TSP has a company match, select that below. That match
+          is free money on top, not from your paycheck.
+          {plan.portfolios.length
+            ? ` Right now this adds up to ${usd(activeMonthly, true)}/mo in employer match.`
+            : null}
+        </p>
+      </div>
       <ul className="flex flex-col gap-3">
         {plan.contributions.map((c) => {
           const dest = plan.portfolios.find((p) => p.id === c.portfolioId);
           const workplace = dest ? isWorkplace(dest.kind) : false;
-          const emp = employeeMonthly(plan, c);
+          const emp = employeeMonthlyNow(plan, c);
+          const overIrs = dest ? irsOverLimitWarning(dest.kind, emp) : null;
           return (
             <li
               key={c.id}
@@ -164,6 +156,11 @@ export function ContributionForm() {
                     />
                   </Field>
                 )}
+                {overIrs ? (
+                  <p className="text-xs leading-relaxed text-[#e8c547]">
+                    {overIrs}
+                  </p>
+                ) : null}
                 {workplace ? (
                   <>
                     <label className="flex items-center gap-2 text-sm text-fg">
