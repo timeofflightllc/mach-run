@@ -21,6 +21,7 @@ export type Entitlement = {
   advisorStripeConfigured: boolean;
   status: string | null;
   periodEnd: string | null;
+  billed: MachPackage;
 };
 
 export const GUEST_ENTITLEMENT: Entitlement = {
@@ -35,6 +36,7 @@ export const GUEST_ENTITLEMENT: Entitlement = {
   advisorStripeConfigured: false,
   status: null,
   periodEnd: null,
+  billed: "free",
 };
 
 export function paidFromStatus(status: string | null | undefined): boolean {

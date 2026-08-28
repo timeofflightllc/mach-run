@@ -19,6 +19,10 @@ export async function ensureSubscriptionsTable(): Promise<boolean> {
       create index if not exists mach_subscriptions_customer_idx
         on mach_subscriptions (stripe_customer_id)
     `);
+    await sql.query(`
+      alter table mach_subscriptions
+        add column if not exists advisor_grant boolean not null default false
+    `);
     return true;
   } catch {
     return false;

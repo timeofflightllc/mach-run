@@ -69,11 +69,21 @@ function Pricing() {
       ? "Your current package: Free."
       : `Your current package: ${packageLabel(ent.plan)}${
           ent.status === "trialing" ? " (trial)" : ""
-        } — ${
-          ent.interval === "year"
-            ? `$${ent.plan === "advisor" ? ADVISOR_YEARLY_USD : MACH_YEARLY_USD}/year`
-            : `$${ent.plan === "advisor" ? ADVISOR_MONTHLY_USD : MACH_MONTHLY_USD}/month`
-        }.`;
+        }${
+          ent.billed === "individual" && ent.plan === "advisor"
+            ? ` — billed as Individual ($${
+                ent.interval === "year" ? MACH_YEARLY_USD : MACH_MONTHLY_USD
+              }${ent.interval === "year" ? "/year" : "/month"}).`
+            : ` — $${
+                ent.plan === "advisor"
+                  ? ent.interval === "year"
+                    ? ADVISOR_YEARLY_USD
+                    : ADVISOR_MONTHLY_USD
+                  : ent.interval === "year"
+                    ? MACH_YEARLY_USD
+                    : MACH_MONTHLY_USD
+              }${ent.interval === "year" ? "/year" : "/month"}.`
+        }`;
 
   return (
     <main className="min-h-screen px-4 py-10 text-fg" style={{ backgroundColor: "#0a1835" }}>

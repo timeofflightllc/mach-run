@@ -22,6 +22,7 @@ type SubRow = {
   status: string;
   price_id: string | null;
   current_period_end: string | Date | null;
+  advisor_grant?: boolean | null;
 };
 
 async function ensureSubscriptionsTable(): Promise<boolean> {
@@ -41,6 +42,10 @@ async function ensureSubscriptionsTable(): Promise<boolean> {
     await sql.query(`
       create index if not exists mach_subscriptions_customer_idx
         on mach_subscriptions (stripe_customer_id)
+    `);
+    await sql.query(`
+      alter table mach_subscriptions
+        add column if not exists advisor_grant boolean not null default false
     `);
     return true;
   } catch {
@@ -123,7 +128,7 @@ async function loadSubscription(userId: string): Promise<SubRow | null> {
     await ensureSubscriptionsTable();
     const sql = await getSql();
     const rows = await sql<SubRow>`
-      select stripe_customer_id, stripe_subscription_id, status, price_id, current_period_end
+      select stripe_customer_id, stripe_subscription_id, status, price_id, current_period_end, advisor_grant
       from mach_subscriptions
       where user_id = ${userId}
       limit 1
@@ -155,6 +160,9 @@ export const getEntitlement = createServerFn({ method: "GET" })
         if (dropped) return signedInFree();
       }
       const paid = paidFromStatus(row?.status);
+      const billed = packageFromPrice(row?.price_id, paid);
+      const plan: MachPackage =
+        paid && row?.advisor_grant ? "advisor" : billed;
       const periodEnd =
         row?.current_period_end == null
           ? null
@@ -164,7 +172,8 @@ export const getEntitlement = createServerFn({ method: "GET" })
       return {
         signedIn: true,
         paid,
-        plan: packageFromPrice(row?.price_id, paid),
+        plan,
+        billed,
         interval: intervalFromPrice(row?.price_id, paid),
         accountLimit: paid ? null : FREE_ACCOUNT_LIMIT,
         contributionLimit: paid ? null : FREE_CONTRIBUTION_LIMIT,
