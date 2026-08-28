@@ -44,11 +44,11 @@ function Login() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center bg-bg px-4 py-12 text-fg">
+    <main className="grid min-h-screen place-items-center px-4 py-12 text-fg" style={{ backgroundColor: "#0a1835" }}>
       <div className="w-full max-w-lg space-y-8">
         <div className="flex flex-col items-center text-center">
           <Link to="/" className="inline-flex justify-center">
-            <BrandLockup size="lg" />
+            <BrandLockup size="lg" framed />
           </Link>
           <p className="mt-2 max-w-md text-xs leading-relaxed text-subtle">
             Free: save your MACH Run · 2 accounts · 2 contributions · 2 income

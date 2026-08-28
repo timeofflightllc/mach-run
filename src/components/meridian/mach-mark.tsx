@@ -86,9 +86,11 @@ export function MachGlyph({ className }: { className?: string }) {
 export function MachWordmark({
   className,
   size = "md",
+  framed = false,
 }: {
   className?: string;
   size?: "md" | "lg";
+  framed?: boolean;
 }) {
   const large = size === "lg";
   return (
@@ -103,7 +105,10 @@ export function MachWordmark({
           maxWidth: large ? "15.75rem" : "12.6rem",
           height: "auto",
         }}
-        className="block shrink-0 object-contain object-left"
+        className={cn(
+          "block shrink-0 object-contain object-left",
+          framed && "rounded-sm shadow-[0_0_0_1px_#c5cdd6]",
+        )}
       />
     </span>
   );
@@ -112,14 +117,16 @@ export function MachWordmark({
 export function BrandLockup({
   className,
   size = "md",
+  framed = false,
 }: {
   className?: string;
   size?: "md" | "lg";
+  framed?: boolean;
 }) {
   const large = size === "lg";
   return (
     <span className={cn("inline-flex shrink-0 flex-col items-stretch", className)}>
-      <MachWordmark size={size} />
+      <MachWordmark size={size} framed={framed} />
       <span
         className={cn(
           "mt-1.5 w-full text-center font-bold leading-snug tracking-[0.12em] text-muted",

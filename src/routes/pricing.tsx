@@ -61,10 +61,10 @@ function Pricing() {
   }
 
   return (
-    <main className="min-h-screen bg-bg px-4 py-10 text-fg">
+    <main className="min-h-screen px-4 py-10 text-fg" style={{ backgroundColor: "#0a1835" }}>
       <div className="mx-auto w-full max-w-5xl">
         <Link to="/" className="inline-block opacity-90 hover:opacity-100">
-          <BrandLockup />
+          <BrandLockup framed />
         </Link>
 
         <header className="mt-10 max-w-2xl">
