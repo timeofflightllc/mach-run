@@ -11,7 +11,21 @@ import {
 } from "date-fns";
 
 export function parseDate(iso: string): Date {
-  return parseISO(iso.slice(0, 10));
+  const s = iso.trim();
+  const m = s.match(/^(\d{4})-(\d{2})(?:-(\d{2}))?/);
+  if (!m) return parseISO(s.slice(0, 10));
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3] ?? 1));
+}
+
+/** Calendar year-month, timezone-safe. */
+export function yearMonth(iso: string): string {
+  const s = iso.trim();
+  if (/^\d{4}-\d{2}/.test(s)) return s.slice(0, 7);
+  const d = parseDate(s);
+  if (Number.isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}`;
 }
 
 export function iso(d: Date): string {

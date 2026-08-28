@@ -81,6 +81,8 @@ export interface ContributionRule {
   employerMatch?: boolean;
   /** 0–100. Applied to the employee dollars that actually get invested. */
   employerMatchPct?: number | null;
+  /** Stop employee dollars when YTD hits the IRS annual max (catch-up if owner is 50+). */
+  capToIrsLimit?: boolean;
 }
 
 export interface IncomeStream {

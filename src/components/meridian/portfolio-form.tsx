@@ -13,6 +13,11 @@ import { newId, usePlanStore } from "@/lib/plan/store";
 import { usd } from "@/lib/plan/format";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
 import { atAccountCap, useEntitlement } from "@/lib/billing/use-entitlement";
+import {
+  familyOwnerOptions,
+  isTaxQualified,
+  normalizeOwner,
+} from "@/lib/plan/family-owners";
 
 const KIND_LABELS: { value: AccountKind; label: string; bucket: TaxBucket }[] = [
   { value: "401k", label: "401(k)", bucket: "pre_tax" },
@@ -103,11 +108,19 @@ export function PortfolioForm() {
                   onValue={(n) => updatePortfolio(p.id, { returnPct: n })}
                 />
               </Field>
-              <Field label="Owner">
-                <TextInput
-                  value={p.owner}
-                  onChange={(e) => updatePortfolio(p.id, { owner: e.target.value })}
-                />
+              <Field label="Who is this account for">
+                <SelectInput
+                  value={normalizeOwner(p.owner)}
+                  onChange={(e) =>
+                    updatePortfolio(p.id, { owner: e.target.value })
+                  }
+                >
+                  {familyOwnerOptions(plan, p.kind).map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </SelectInput>
               </Field>
               <Field label="Kind">
                 <SelectInput
@@ -118,6 +131,9 @@ export function PortfolioForm() {
                     updatePortfolio(p.id, {
                       kind,
                       ...(row ? { taxBucket: row.bucket } : {}),
+                      ...(isTaxQualified(kind) && normalizeOwner(p.owner) === "joint"
+                        ? { owner: "primary" }
+                        : {}),
                     });
                   }}
                 >
@@ -179,7 +195,7 @@ export function PortfolioForm() {
               id: newId("port"),
               name: "New account",
               kind: "taxable",
-              owner: "Joint",
+              owner: "primary",
               currentValue: 0,
               returnPct: null,
               taxBucket: "taxable",

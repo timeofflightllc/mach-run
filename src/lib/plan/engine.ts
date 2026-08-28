@@ -19,6 +19,8 @@ import {
   rmdDueThisMonth,
   rmdStartAge,
 } from "./rmd.ts";
+import { normalizeOwner } from "./family-owners.ts";
+import { irsAnnualCap, irsLimitClass } from "./irs-limits.ts";
 import type {
   FundingGap,
   IncomeStage,
@@ -306,6 +308,7 @@ export function simulate(raw: Plan): SimResult {
 
   let cursor = asOf;
   let guard = 0;
+  const irsYtd = new Map<string, number>();
   while (!isBefore(endDate, cursor) && guard < 1200) {
     guard += 1;
     const monthsFromAsOf = months.length;
@@ -348,10 +351,24 @@ export function simulate(raw: Plan): SimResult {
     const due: { portfolioId: string; amount: number; matchPct: number }[] = [];
     let planned = 0;
     for (const rule of plan.contributions) {
-      const amount = contributionDueThisMonth(plan, rule, cursor, monthsFromAsOf, infA);
+      let amount = contributionDueThisMonth(plan, rule, cursor, monthsFromAsOf, infA);
       if (amount <= 0) continue;
       if (!values.has(rule.portfolioId)) continue;
       const dest = plan.portfolios.find((p) => p.id === rule.portfolioId);
+      const cls = dest ? irsLimitClass(dest.kind) : null;
+      const person =
+        dest && normalizeOwner(dest.owner) === "spouse" ? "spouse" : "primary";
+      const ytdKey = cls ? `${cursor.getFullYear()}|${person}|${cls}` : null;
+      if (rule.capToIrsLimit && dest && cls && ytdKey) {
+        const birth =
+          person === "spouse" ? plan.spouse.birthDate : plan.primary.birthDate;
+        const age = ageInCalendarYear(birth, cursor.getFullYear());
+        const cap = irsAnnualCap(dest.kind, age) ?? 0;
+        const used = irsYtd.get(ytdKey) ?? 0;
+        amount = Math.min(amount, Math.max(0, cap - used));
+      }
+      if (amount <= 0) continue;
+      if (ytdKey) irsYtd.set(ytdKey, (irsYtd.get(ytdKey) ?? 0) + amount);
       const matchPct =
         rule.employerMatch && dest && isWorkplaceMatchAccount(dest.kind)
           ? Math.max(0, Math.min(100, rule.employerMatchPct ?? 0))

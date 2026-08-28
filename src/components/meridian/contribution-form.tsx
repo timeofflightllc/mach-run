@@ -18,7 +18,9 @@ import {
   activeEmployerMatchMonthly,
   employeeMonthlyNow,
 } from "@/lib/plan/contribution-now";
-import { irsOverLimitWarning } from "@/lib/plan/irs-limits";
+import { irsEmployeeAnnualLimit, irsOverLimitWarning } from "@/lib/plan/irs-limits";
+import { normalizeOwner } from "@/lib/plan/family-owners";
+import { ageInCalendarYear } from "@/lib/plan/rmd";
 import type { ContributionRule } from "@/lib/plan/types";
 
 const MATCH_PCTS = Array.from({ length: 21 }, (_, i) => i * 5);
@@ -59,7 +61,18 @@ export function ContributionForm() {
           const dest = plan.portfolios.find((p) => p.id === c.portfolioId);
           const workplace = dest ? isWorkplace(dest.kind) : false;
           const emp = employeeMonthlyNow(plan, c);
-          const overIrs = dest ? irsOverLimitWarning(dest.kind, emp) : null;
+          const owner = dest ? normalizeOwner(dest.owner) : "primary";
+          const birth =
+            owner === "spouse" ? plan.spouse.birthDate : plan.primary.birthDate;
+          const year = Number(plan.assumptions.asOfDate.slice(0, 4)) || new Date().getFullYear();
+          const age = birth ? ageInCalendarYear(birth, year) : 0;
+          const overIrs = dest
+            ? irsOverLimitWarning(dest.kind, emp, {
+                age,
+                capToLimit: Boolean(c.capToIrsLimit),
+              })
+            : null;
+          const irsCappedKind = dest ? irsEmployeeAnnualLimit(dest.kind) != null : false;
           return (
             <li
               key={c.id}
@@ -156,6 +169,18 @@ export function ContributionForm() {
                     />
                   </Field>
                 )}
+                {irsCappedKind ? (
+                  <label className="flex items-center gap-2 text-sm text-fg">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(c.capToIrsLimit)}
+                      onChange={(e) =>
+                        updateContribution(c.id, { capToIrsLimit: e.target.checked })
+                      }
+                    />
+                    Stop my contribution when I hit the IRS annual limit
+                  </label>
+                ) : null}
                 {overIrs ? (
                   <p className="text-xs leading-relaxed text-[#e8c547]">
                     {overIrs}
@@ -269,6 +294,7 @@ export function ContributionForm() {
                 percentOfIncomeId: null,
                 employerMatch: false,
                 employerMatchPct: 0,
+                capToIrsLimit: false,
               });
             }}
           >

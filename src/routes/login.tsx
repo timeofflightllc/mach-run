@@ -50,9 +50,9 @@ function Login() {
           <Link to="/" className="inline-flex justify-center">
             <BrandLockup size="lg" />
           </Link>
-          <p className="mt-2 max-w-md text-xs leading-relaxed text-subtle">
-            Free: save your MACH Run · 2 accounts · 2 contributions · 2 income
-            stages
+          <p className="mt-3 max-w-sm text-center text-xs leading-relaxed text-subtle">
+            Free to use with limits. A cup of coffee a month for unlimited. Pay
+            for a year, get two months on us.
           </p>
         </div>
 

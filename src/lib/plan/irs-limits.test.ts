@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   annualizedMonthly,
+  irsAnnualCap,
   irsEmployeeAnnualLimit,
   irsOverLimitWarning,
 } from "./irs-limits.ts";
@@ -45,4 +46,13 @@ test("401k $2,100/mo × 12 exceeds $24,500 — warning", () => {
   assert.ok(w);
   assert.match(w!, /24,500/);
   assert.match(w!, /25,200/);
+});
+
+test("catch-up: 50+ 401k is $32,500; 60–63 is $35,750; IRA 50+ is $8,600", () => {
+  assert.equal(irsAnnualCap("401k", 49), 24500);
+  assert.equal(irsAnnualCap("401k", 50), 32500);
+  assert.equal(irsAnnualCap("401k_roth", 62), 35750);
+  assert.equal(irsAnnualCap("401k", 64), 32500);
+  assert.equal(irsAnnualCap("roth_ira", 49), 7500);
+  assert.equal(irsAnnualCap("roth_ira", 50), 8600);
 });

@@ -1,17 +1,17 @@
-import { inRange, monthStart } from "./dates.ts";
+import { yearMonth } from "./dates.ts";
 import type { ContributionRule, Plan } from "./types.ts";
 
-/** DateInput stores YYYY-MM; as-of is YYYY-MM-DD. Normalize so the window compares. */
-function asDay(iso: string): string {
-  const s = iso.trim();
-  if (/^\d{4}-\d{2}$/.test(s)) return `${s}-01`;
-  return s;
-}
-
-/** True if this rule is in force on the plan as-of month (month inputs vs day dates). */
+/** True if this rule is in force in the as-of calendar month. */
 export function contributionActiveOnAsOf(plan: Plan, rule: ContributionRule): boolean {
-  const at = monthStart(asDay(plan.assumptions.asOfDate));
-  return inRange(at, asDay(rule.startDate), rule.endDate ? asDay(rule.endDate) : null);
+  const asOfYm = yearMonth(plan.assumptions.asOfDate);
+  const startYm = yearMonth(rule.startDate || plan.assumptions.asOfDate);
+  if (!asOfYm || !startYm) return false;
+  if (startYm > asOfYm) return false;
+  if (rule.endDate) {
+    const endYm = yearMonth(rule.endDate);
+    if (endYm && endYm < asOfYm) return false;
+  }
+  return true;
 }
 
 export function employeeMonthlyNow(plan: Plan, rule: ContributionRule): number {
@@ -23,7 +23,6 @@ export function employeeMonthlyNow(plan: Plan, rule: ContributionRule): number {
 }
 
 export function matchMonthlyNow(plan: Plan, rule: ContributionRule): number {
-  // Checkbox is the only switch. Do not infer match from account kind.
   if (!rule.employerMatch) return 0;
   const pct = Math.max(0, Math.min(100, rule.employerMatchPct ?? 0));
   return employeeMonthlyNow(plan, rule) * (pct / 100);

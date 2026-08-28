@@ -162,3 +162,20 @@ test("unchecked match box is $0 even on a 401k", () => {
   ];
   assert.equal(activeEmployerMatchMonthly(plan), 0);
 });
+
+test("401k match still counts when start is later in the as-of month", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-08-01";
+  plan.portfolios = [k401("k-roth")];
+  plan.contributions = [
+    rule({
+      id: "c-k",
+      portfolioId: "k-roth",
+      monthlyAmount: 2000,
+      startDate: "2026-08-28",
+      employerMatch: true,
+      employerMatchPct: 100,
+    }),
+  ];
+  assert.equal(activeEmployerMatchMonthly(plan), 2000);
+});

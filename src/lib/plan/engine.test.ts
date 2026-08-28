@@ -393,5 +393,71 @@ test("percent contribution and match end when the income ends", () => {
   assert.ok(after.contributions < 1);
 });
 
+test("IRS cap: $3000/mo 401k stops when $24,500 is full; match follows", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1985-06-01";
+  plan.assumptions.asOfDate = "2026-01-01";
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultReturnPct = 0;
+  plan.incomes = [
+    {
+      id: "job",
+      name: "Boeing",
+      kind: "salary",
+      monthlyAmount: 20000,
+      startDate: "2026-01-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.spending = [
+    {
+      id: "sp-1",
+      label: "Spend",
+      monthlyAmount: 0,
+      startDate: "2026-01-01",
+      endDate: null,
+    },
+  ];
+  plan.portfolios = [
+    {
+      id: "k",
+      name: "401k Roth",
+      kind: "401k_roth",
+      owner: "primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "roth",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c1",
+      label: "Boeing",
+      portfolioId: "k",
+      monthlyAmount: 3000,
+      startDate: "2026-01-01",
+      endDate: null,
+      amountMode: "fixed",
+      employerMatch: true,
+      employerMatchPct: 100,
+      capToIrsLimit: true,
+    },
+  ];
+  const result = simulate(plan);
+  const jan = result.months.find((m) => m.date.startsWith("2026-01"));
+  const sep = result.months.find((m) => m.date.startsWith("2026-09"));
+  const oct = result.months.find((m) => m.date.startsWith("2026-10"));
+  assert.ok(jan && sep && oct);
+  assert.ok(Math.abs(jan.contributions - 6000) < 2);
+  assert.ok(Math.abs(sep.contributions - 1000) < 2);
+  assert.ok(oct.contributions < 1);
+});
+
 
 

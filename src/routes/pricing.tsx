@@ -84,7 +84,19 @@ function Pricing() {
             forget it.
           </p>
           <p className="mt-4 rounded-lg bg-surface px-4 py-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)]">
-            {currentLabel(ent)}
+            {ent.signedIn ? (
+              currentLabel(ent)
+            ) : (
+              <>
+                Not signed in — pick a package after you register.{" "}
+                <Link
+                  to="/login"
+                  className="underline underline-offset-4 hover:text-accent"
+                >
+                  Sign in here.
+                </Link>
+              </>
+            )}
           </p>
         </header>
 

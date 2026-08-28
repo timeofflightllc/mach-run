@@ -75,6 +75,10 @@ export function ensurePlan(plan: Plan): Plan {
           : 0
         : p.costBasis ?? null,
   }));
+  next.contributions = next.contributions.map((c) => ({
+    ...c,
+    capToIrsLimit: Boolean(c.capToIrsLimit),
+  }));
   const ids = new Set(next.portfolios.map((p) => p.id));
   if (next.assumptions.sweepPortfolioId && !ids.has(next.assumptions.sweepPortfolioId)) {
     next.assumptions = { ...next.assumptions, sweepPortfolioId: null };
