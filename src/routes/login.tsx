@@ -48,7 +48,7 @@ function Login() {
       <div className="w-full max-w-lg space-y-8">
         <div className="flex flex-col items-center text-center">
           <Link to="/" className="inline-flex justify-center">
-            <BrandLockup size="lg" framed />
+            <BrandLockup size="lg" />
           </Link>
           <p className="mt-2 max-w-md text-xs leading-relaxed text-subtle">
             Free: save your MACH Run · 2 accounts · 2 contributions · 2 income
