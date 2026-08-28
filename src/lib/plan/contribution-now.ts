@@ -1,14 +1,26 @@
 import { yearMonth } from "./dates.ts";
 import type { ContributionRule, Plan } from "./types.ts";
 
+function ruleWindow(plan: Plan, rule: ContributionRule): { start: string; end: string | null } {
+  if (rule.amountMode === "percent" && rule.percentOfIncomeId) {
+    const inc = plan.incomes.find((s) => s.id === rule.percentOfIncomeId);
+    if (inc) return { start: inc.startDate || plan.assumptions.asOfDate, end: inc.endDate };
+  }
+  return {
+    start: rule.startDate || plan.assumptions.asOfDate,
+    end: rule.endDate,
+  };
+}
+
 /** True if this rule is in force in the as-of calendar month. */
 export function contributionActiveOnAsOf(plan: Plan, rule: ContributionRule): boolean {
   const asOfYm = yearMonth(plan.assumptions.asOfDate);
-  const startYm = yearMonth(rule.startDate || plan.assumptions.asOfDate);
+  const { start, end } = ruleWindow(plan, rule);
+  const startYm = yearMonth(start);
   if (!asOfYm || !startYm) return false;
   if (startYm > asOfYm) return false;
-  if (rule.endDate) {
-    const endYm = yearMonth(rule.endDate);
+  if (end) {
+    const endYm = yearMonth(end);
     if (endYm && endYm < asOfYm) return false;
   }
   return true;
@@ -34,4 +46,25 @@ export function activeEmployerMatchMonthly(plan: Plan): number {
     if (!contributionActiveOnAsOf(plan, rule)) return sum;
     return sum + matchMonthlyNow(plan, rule);
   }, 0);
+}
+
+/** Match dollars when those rules are on (includes future start dates, skips ended). */
+export function scheduledEmployerMatchMonthly(plan: Plan): number {
+  return plan.contributions.reduce((sum, rule) => {
+    if (!contributionMatchStillScheduled(plan, rule)) return sum;
+    return sum + matchMonthlyNow(plan, rule);
+  }, 0);
+}
+
+/** Match-checked and not already ended — includes rules that start after as-of. */
+export function contributionMatchStillScheduled(plan: Plan, rule: ContributionRule): boolean {
+  if (!rule.employerMatch) return false;
+  const asOfYm = yearMonth(plan.assumptions.asOfDate);
+  if (!asOfYm) return false;
+  const { end } = ruleWindow(plan, rule);
+  if (end) {
+    const endYm = yearMonth(end);
+    if (endYm && endYm < asOfYm) return false;
+  }
+  return true;
 }

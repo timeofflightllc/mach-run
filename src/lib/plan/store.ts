@@ -108,12 +108,25 @@ export const usePlanStore = create<PlanState>()(
           },
         })),
       updateIncome: (id, patch) =>
-        set((s) => ({
-          plan: {
-            ...s.plan,
-            incomes: s.plan.incomes.map((c) => (c.id === id ? { ...c, ...patch } : c)),
-          },
-        })),
+        set((s) => {
+          const incomes = s.plan.incomes.map((c) => (c.id === id ? { ...c, ...patch } : c));
+          const datePatch =
+            patch.startDate !== undefined || patch.endDate !== undefined;
+          const contributions = datePatch
+            ? s.plan.contributions.map((c) => {
+                if (c.amountMode !== "percent" || c.percentOfIncomeId !== id) {
+                  return c;
+                }
+                return {
+                  ...c,
+                  startDate:
+                    patch.startDate !== undefined ? patch.startDate : c.startDate,
+                  endDate: patch.endDate !== undefined ? patch.endDate : c.endDate,
+                };
+              })
+            : s.plan.contributions;
+          return { plan: { ...s.plan, incomes, contributions } };
+        }),
       addIncome: (row) =>
         set((s) => ({ plan: { ...s.plan, incomes: [...s.plan.incomes, row] } })),
       removeIncome: (id) =>

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createDefaultPlan } from "./defaults.ts";
-import { activeEmployerMatchMonthly } from "./contribution-now.ts";
+import { activeEmployerMatchMonthly, scheduledEmployerMatchMonthly } from "./contribution-now.ts";
 import type { ContributionRule, Portfolio } from "./types.ts";
 
 function ira(id: string, extra: Partial<Portfolio> = {}): Portfolio {
@@ -178,4 +178,73 @@ test("401k match still counts when start is later in the as-of month", () => {
     }),
   ];
   assert.equal(activeEmployerMatchMonthly(plan), 2000);
+});
+
+test("Boeing-style: 10% of pay, 100% match, start next month — this month $0, scheduled $4000", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-08-01";
+  plan.incomes = [
+    {
+      id: "bgs",
+      name: "Boeing BGS",
+      kind: "salary",
+      monthlyAmount: 40000,
+      startDate: "2026-09-01",
+      endDate: "2029-09-01",
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.portfolios = [k401("k-roth")];
+  plan.contributions = [
+    rule({
+      id: "c-k",
+      portfolioId: "k-roth",
+      monthlyAmount: 0,
+      amountMode: "percent",
+      percentOfIncome: 10,
+      percentOfIncomeId: "bgs",
+      startDate: "2026-09",
+      endDate: "2029-09",
+      employerMatch: true,
+      employerMatchPct: 100,
+    }),
+  ];
+  assert.equal(activeEmployerMatchMonthly(plan), 0);
+  assert.equal(scheduledEmployerMatchMonthly(plan), 4000);
+});
+
+test("percent-of-income match uses the paycheck dates even if the rule still has old start", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-08-01";
+  plan.incomes = [
+    {
+      id: "bgs",
+      name: "Boeing BGS",
+      kind: "salary",
+      monthlyAmount: 40000,
+      startDate: "2026-08-01",
+      endDate: "2029-09-01",
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.portfolios = [k401("k-roth")];
+  plan.contributions = [
+    rule({
+      id: "c-k",
+      portfolioId: "k-roth",
+      monthlyAmount: 0,
+      amountMode: "percent",
+      percentOfIncome: 10,
+      percentOfIncomeId: "bgs",
+      startDate: "2026-09-01",
+      endDate: "2029-09-01",
+      employerMatch: true,
+      employerMatchPct: 100,
+    }),
+  ];
+  assert.equal(activeEmployerMatchMonthly(plan), 4000);
 });

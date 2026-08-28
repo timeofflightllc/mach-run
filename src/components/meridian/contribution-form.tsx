@@ -17,6 +17,7 @@ import { atContributionCap, useEntitlement } from "@/lib/billing/use-entitlement
 import {
   activeEmployerMatchMonthly,
   employeeMonthlyNow,
+  scheduledEmployerMatchMonthly,
 } from "@/lib/plan/contribution-now";
 import { irsEmployeeAnnualLimit, irsOverLimitWarning } from "@/lib/plan/irs-limits";
 import { normalizeOwner } from "@/lib/plan/family-owners";
@@ -39,6 +40,18 @@ export function ContributionForm() {
   const [needAccount, setNeedAccount] = useState(false);
 
   const activeMonthly = activeEmployerMatchMonthly(plan);
+  const scheduledMonthly = scheduledEmployerMatchMonthly(plan);
+
+  const matchLine = (() => {
+    if (!plan.portfolios.length) return null;
+    if (activeMonthly > 0) {
+      return ` Right now this adds up to ${usd(activeMonthly, true)}/mo in employer match.`;
+    }
+    if (scheduledMonthly > 0) {
+      return ` This month the match is ${usd(0, true)} because that contribution has not started yet. When it is on, employer match is ${usd(scheduledMonthly, true)}/mo.`;
+    }
+    return ` Right now this adds up to ${usd(0, true)}/mo in employer match.`;
+  })();
 
   return (
     <div className="flex flex-col gap-4">
@@ -51,9 +64,7 @@ export function ContributionForm() {
         <p>
           If your 401(k) or TSP has a company match, select that below. That match
           is free money on top, not from your paycheck.
-          {plan.portfolios.length
-            ? ` Right now this adds up to ${usd(activeMonthly, true)}/mo in employer match.`
-            : null}
+          {matchLine}
         </p>
       </div>
       <ul className="flex flex-col gap-3">
