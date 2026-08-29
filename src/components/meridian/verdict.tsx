@@ -92,7 +92,7 @@ export function Verdict({
       {rank ? (
         <p className="mt-2 text-sm font-medium leading-relaxed text-fg">{rank}</p>
       ) : null}
-      <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted">
+      <p className="mt-3 text-sm leading-relaxed text-muted">
         Current spendable {usd(start)}. Remaining at age{" "}
         {plan.assumptions.projectionEndAge} is {usd(atTerm)} ({unit}).
         {retLine}

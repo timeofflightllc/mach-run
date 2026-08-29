@@ -49,7 +49,7 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
 
   return (
     <div className="@container flex flex-col gap-2">
-      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-border shadow-[0_0_0_1px_var(--color-border)] sm:grid-cols-3 @min-[1080px]:grid-cols-6">
+      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-border shadow-[0_0_0_1px_var(--color-border)]">
         {items.map((item) => (
           <div key={item.label} className="bg-surface px-3 py-3 sm:px-4 sm:py-4">
             <dt className="text-[13px] font-medium uppercase tracking-wider text-subtle">

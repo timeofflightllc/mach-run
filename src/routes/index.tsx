@@ -480,11 +480,17 @@ function Home() {
                   </Link>
                 </div>
               ) : null}
-              <Verdict plan={displayPlan} sim={sim} brief={run?.brief ?? null} />
-              <KpiStrip plan={displayPlan} sim={sim} />
               <div className="@container">
-                <div className="grid grid-cols-1 gap-4 @min-[64rem]:grid-cols-[minmax(0,1.4fr)_minmax(24rem,1fr)] @min-[64rem]:items-start">
+                <div className="grid grid-cols-1 gap-4 @min-[64rem]:grid-cols-[minmax(0,1.15fr)_minmax(24rem,1fr)] @min-[64rem]:items-start">
                   <div className="flex min-w-0 flex-col gap-4">
+                    <div className="grid grid-cols-1 gap-4 @min-[36rem]:grid-cols-2">
+                      <Verdict
+                        plan={displayPlan}
+                        sim={sim}
+                        brief={run?.brief ?? null}
+                      />
+                      <KpiStrip plan={displayPlan} sim={sim} />
+                    </div>
                     <PeerBriefCard
                       key={run?.id ?? "idle"}
                       brief={run?.brief ?? null}
@@ -492,13 +498,15 @@ function Home() {
                       plan={displayPlan}
                       sim={sim}
                     />
+                  </div>
+                  <div className="flex min-w-0 flex-col gap-4">
+                    <ActChartColumn plan={displayPlan} sim={sim} />
                     <OodaAiCard
                       plan={displayPlan}
                       sim={sim}
                       brief={run?.brief ?? null}
                     />
                   </div>
-                  <ActChartColumn plan={displayPlan} sim={sim} />
                 </div>
               </div>
               <YearTable plan={displayPlan} sim={sim} />
