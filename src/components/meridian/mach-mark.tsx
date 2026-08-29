@@ -195,7 +195,7 @@ export function MachFooter() {
             solely responsible for your financial decisions.
           </p>
           <p>
-            Observe, Orient, Decide and Act (OODA) comes from the late, great
+            Observe, Orient, Decide, Act (OODA) comes from the late, great
             U.S. Air Force Col. John Boyd (Ret.). His Energy-Maneuverability theory and the OODA Loop changed
             the world. Any mention of OODA or the OODA Loop on this site refers
             to Boyd’s publicly circulated work — not to any private organization
