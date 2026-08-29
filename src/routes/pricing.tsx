@@ -78,6 +78,35 @@ function Pricing() {
   const indPrice = interval === "year" ? MACH_YEARLY_USD : MACH_MONTHLY_USD;
   const advPrice = interval === "year" ? ADVISOR_YEARLY_USD : ADVISOR_MONTHLY_USD;
   const per = interval === "year" ? "/year" : "/month";
+  const codeHint = hasTrial
+    ? `Valid code — ${TRIAL_PROMO_DAYS} days free, then the package you pick.`
+    : codeInvalid
+      ? "That code isn't valid."
+      : "Type coupon code above.";
+  const individualSignIn = hasTrial
+    ? `Sign in, then start ${TRIAL_PROMO_DAYS}-day trial`
+    : "Sign in, then choose Individual";
+  const individualButton =
+    busy === `individual-${interval}`
+      ? "Redirecting…"
+      : hasTrial
+        ? `Start ${TRIAL_PROMO_DAYS}-day trial · $${indPrice}${per}`
+        : `Choose Individual · $${indPrice}${per}`;
+  const advisorTrialLabel = `${hasTrial ? TRIAL_PROMO_DAYS : ADVISOR_TRIAL_DAYS}-day trial`;
+  const advisorSubtitle = hasTrial
+    ? interval === "year"
+      ? `${TRIAL_PROMO_DAYS}-day trial, 2 months free`
+      : `${TRIAL_PROMO_DAYS}-day trial, then $${ADVISOR_MONTHLY_USD}/month`
+    : interval === "year"
+      ? `${ADVISOR_TRIAL_DAYS}-day trial, 2 months free`
+      : `${ADVISOR_TRIAL_DAYS}-day trial, then $${ADVISOR_MONTHLY_USD}/month`;
+  const advisorSignIn = hasTrial
+    ? `Sign in, then start ${TRIAL_PROMO_DAYS}-day trial`
+    : "Sign in, then start Advisor trial";
+  const advisorButton =
+    busy === `advisor-${interval}`
+      ? "Redirecting…"
+      : `Start ${hasTrial ? TRIAL_PROMO_DAYS : ADVISOR_TRIAL_DAYS}-day trial`;
 
   const currentText = !ent.signedIn
     ? null
@@ -195,11 +224,7 @@ function Pricing() {
               hasTrial ? "text-fg" : codeInvalid ? "text-negative" : "text-subtle",
             )}
           >
-            {hasTrial
-              ? `Valid code — ${TRIAL_PROMO_DAYS} days free, then the package you pick.`
-              : codeInvalid
-                ? "That code isn’t valid."
-                : "Type coupon code above."}}
+            {codeHint}
           </p>
         </div>
 
@@ -280,7 +305,7 @@ function Pricing() {
                 href="/login"
                 className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90"
               >
-                Sign in, then {hasTrial ? `start ${TRIAL_PROMO_DAYS}-day trial` : "choose Individual"}
+                {individualSignIn}
               </a>
             ) : onIndividual ? (
               <PrimaryButton className="mt-6" disabled={busy !== null} onClick={() => void portal()}>
@@ -292,11 +317,7 @@ function Pricing() {
                 disabled={busy !== null}
                 onClick={() => void checkout("individual")}
               >
-                {busy === `individual-${interval}`
-                  ? "Redirecting…"
-                  : hasTrial
-                    ? `Start ${TRIAL_PROMO_DAYS}-day trial · $${indPrice}${per}`
-                    : `Choose Individual · $${indPrice}${per}`}
+                {individualButton}
               </PrimaryButton>
             )}
           </article>
@@ -317,7 +338,7 @@ function Pricing() {
                 </span>
               ) : (
                 <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-subtle">
-                  {hasTrial ? `${TRIAL_PROMO_DAYS}-day trial` : `${ADVISOR_TRIAL_DAYS}-day trial`}
+                  {advisorTrialLabel}
                 </span>
               )}
             </div>
@@ -326,13 +347,7 @@ function Pricing() {
               <span className="text-xl text-muted">{per}</span>
             </p>
             <p className="mt-1 text-sm text-muted">
-              {hasTrial
-                ? interval === "year"
-                  ? `${TRIAL_PROMO_DAYS}-day trial, 2 months free`
-                  : `${TRIAL_PROMO_DAYS}-day trial, then $${ADVISOR_MONTHLY_USD}/month`
-                : interval === "year"
-                  ? `${ADVISOR_TRIAL_DAYS}-day trial, 2 months free`
-                  : `${ADVISOR_TRIAL_DAYS}-day trial, then $${ADVISOR_MONTHLY_USD}/month`}
+              {advisorSubtitle}
             </p>
             <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
               <li>Everything in Individual, plus:</li>
@@ -346,7 +361,7 @@ function Pricing() {
                 href="/login"
                 className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90"
               >
-                Sign in, then start {hasTrial ? `${TRIAL_PROMO_DAYS}-day` : "Advisor"} trial
+                {advisorSignIn}
               </a>
             ) : onAdvisor ? (
               <PrimaryButton className="mt-6" disabled={busy !== null} onClick={() => void portal()}>
@@ -358,9 +373,7 @@ function Pricing() {
                 disabled={busy !== null}
                 onClick={() => void checkout("advisor")}
               >
-                {busy === `advisor-${interval}`
-                  ? "Redirecting…"
-                  : `Start ${hasTrial ? TRIAL_PROMO_DAYS : ADVISOR_TRIAL_DAYS}-day trial`}
+                {advisorButton}
               </PrimaryButton>
             )}
           </article>
