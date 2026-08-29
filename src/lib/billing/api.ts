@@ -10,6 +10,8 @@ import {
   addCap,
   clampPlan,
   paidFromStatus,
+  trialDaysForCode,
+  normalizePromoCode,
   type Entitlement,
   type MachPackage,
 } from "./limits";
@@ -195,6 +197,7 @@ export const startCheckout = createServerFn({ method: "POST" })
       interval: "month" | "year";
       origin: string;
       package?: "individual" | "advisor";
+      trialCode?: string;
     }) => input,
   )
   .handler(async ({ context, data }) => {
@@ -217,16 +220,26 @@ export const startCheckout = createServerFn({ method: "POST" })
     const existing = await loadSubscription(context.userId);
     const { dropIfUnknownToStripe } = await import("./stripe.server");
     const dropped = await dropIfUnknownToStripe(context.userId, existing);
+    const promoTrialDays = trialDaysForCode(data.trialCode);
+    const trialDays = promoTrialDays ?? (pkg === "advisor" ? ADVISOR_TRIAL_DAYS : null);
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceIdFor(data.interval, pkg), quantity: 1 }],
       success_url: `${origin}/?checkout=success`,
       cancel_url: `${origin}/pricing?checkout=cancel`,
       client_reference_id: context.userId,
-      metadata: { userId: context.userId, package: pkg },
+      metadata: {
+        userId: context.userId,
+        package: pkg,
+        ...(promoTrialDays ? { trialCode: normalizePromoCode(data.trialCode) } : {}),
+      },
       subscription_data: {
-        metadata: { userId: context.userId, package: pkg },
-        ...(pkg === "advisor" ? { trial_period_days: ADVISOR_TRIAL_DAYS } : {}),
+        metadata: {
+          userId: context.userId,
+          package: pkg,
+          ...(promoTrialDays ? { trialCode: normalizePromoCode(data.trialCode) } : {}),
+        },
+        ...(trialDays ? { trial_period_days: trialDays } : {}),
       },
       customer: dropped ? undefined : existing?.stripe_customer_id || undefined,
       allow_promotion_codes: true,

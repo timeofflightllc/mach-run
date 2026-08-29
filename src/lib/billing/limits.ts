@@ -6,6 +6,20 @@ export const MACH_YEARLY_USD = 40;
 export const ADVISOR_MONTHLY_USD = 69;
 export const ADVISOR_YEARLY_USD = 690;
 export const ADVISOR_TRIAL_DAYS = 7;
+export const TRIAL_PROMO_CODE = "SUPER14";
+export const TRIAL_PROMO_DAYS = 14;
+
+export function normalizePromoCode(raw: string | null | undefined): string {
+  return (raw ?? "").trim().toUpperCase();
+}
+
+/** Days of free trial from a MACH RUN code, or null if blank/unknown. */
+export function trialDaysForCode(raw: string | null | undefined): number | null {
+  const code = normalizePromoCode(raw);
+  if (!code) return null;
+  if (code === TRIAL_PROMO_CODE) return TRIAL_PROMO_DAYS;
+  return null;
+}
 
 export type MachPackage = "free" | "individual" | "advisor";
 
