@@ -233,7 +233,7 @@ function Home() {
         className="sticky top-0 z-30 border-b border-border"
         style={{ backgroundColor: "#0a1835" }}
       >
-        <div className="relative z-50 mx-auto max-w-[1750px] px-4 py-2.5 sm:px-6">
+        <div className="relative z-50 mx-auto max-w-[2300px] px-4 py-2.5 sm:px-6">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0 shrink text-left">
               <BrandLockup />
@@ -296,7 +296,7 @@ function Home() {
         </div>
         <nav
           aria-label="OODA loop"
-          className="mx-auto flex max-w-[1750px] items-center justify-center gap-1 overflow-x-auto px-4 pb-3 sm:px-6"
+          className="mx-auto flex max-w-[2300px] items-center justify-center gap-1 overflow-x-auto px-4 pb-3 sm:px-6"
         >
           {LOOP.map((phase, i) => (
             <span key={phase.id} className="flex items-center gap-1">
@@ -320,7 +320,7 @@ function Home() {
             </span>
           ))}
         </nav>
-        <div className="mx-auto flex max-w-[1750px] gap-1 px-4 pb-3 lg:hidden">
+        <div className="mx-auto flex max-w-[2300px] gap-1 px-4 pb-3 lg:hidden">
           <button
             type="button"
             onClick={() => setTab("loop")}
@@ -344,7 +344,7 @@ function Home() {
         </div>
         <GuestOnly>
           <div className="border-t border-[#5c4a18] bg-[#241c0c]">
-            <div className="mx-auto flex max-w-[1750px] flex-col items-center gap-1.5 px-4 py-2.5 text-center sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-3 sm:px-6">
+            <div className="mx-auto flex max-w-[2300px] flex-col items-center gap-1.5 px-4 py-2.5 text-center sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-3 sm:px-6">
               <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-2 py-0.5 font-display text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1a1408]">
                 Master Caution
               </span>
@@ -364,7 +364,7 @@ function Home() {
         </GuestOnly>
       </header>
 
-      <main className="mx-auto grid max-w-[1750px] grid-cols-1 gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] lg:items-start">
+      <main className="mx-auto grid max-w-[2300px] grid-cols-1 gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] lg:items-start">
         <aside
           className={cn(
             "flex flex-col gap-6 lg:sticky lg:top-[var(--mach-header-h,7rem)] lg:max-h-[calc(100vh-var(--mach-header-h,7rem))] lg:overflow-y-auto lg:pr-1",
@@ -438,7 +438,7 @@ function Home() {
             <p className="text-sm text-[#e8c547]">{runError}</p>
           ) : null}
           {sim ? (
-            <div className="grid grid-cols-1 gap-4 min-[1500px]:grid-cols-[minmax(0,1fr)_minmax(24rem,38rem)] min-[1500px]:items-start">
+            <div className="grid grid-cols-1 gap-4 min-[2100px]:grid-cols-[minmax(56rem,1fr)_minmax(26rem,36rem)] min-[2100px]:items-start">
               <div className="flex min-w-0 flex-col gap-4">
                 {!ent.paid ? (
                   <div className="flex flex-col gap-3 rounded-xl bg-elevated px-5 py-4 shadow-[0_0_0_1px_var(--color-border)] sm:flex-row sm:items-center sm:justify-between">
@@ -469,11 +469,11 @@ function Home() {
                   brief={run?.brief ?? null}
                 />
               </div>
-              <div className="flex min-w-0 flex-col gap-4 min-[1500px]:sticky min-[1500px]:top-[var(--mach-header-h,7rem)]">
+              <div className="flex min-w-0 flex-col gap-4 min-[2100px]:sticky min-[2100px]:top-[var(--mach-header-h,7rem)]">
                 <WealthChart plan={displayPlan} sim={sim} />
                 <CashChart plan={displayPlan} sim={sim} />
               </div>
-              <div className="min-w-0 min-[1500px]:col-span-2">
+              <div className="min-w-0 min-[2100px]:col-span-2">
                 <YearTable plan={displayPlan} sim={sim} />
               </div>
             </div>
