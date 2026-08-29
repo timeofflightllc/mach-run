@@ -4,6 +4,7 @@ import type { PeerBrief } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { GuestOnly, RealSignedIn } from "@/lib/auth/gates";
 import { MACH_MONTHLY_USD } from "@/lib/billing/limits";
+import { OODA_DISCLAIMER } from "@/lib/plan/disclaimer";
 import { NestEggHeadline } from "@/components/meridian/verdict";
 import { nestEggTrack } from "@/lib/plan/peers";
 
