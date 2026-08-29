@@ -80,6 +80,10 @@ export const useProfileStore = create<ProfileState>()(
       },
       switchTo: (id, currentPlan) => {
         const { profiles, activeId } = get();
+        if (id === activeId) {
+          get().snapshotCurrent(currentPlan);
+          return null;
+        }
         const next = profiles.find((p) => p.id === id);
         if (!next) return null;
         const snapped = profiles.map((p) =>

@@ -1,3 +1,5 @@
+import { dateAtAge, iso, validIso } from "./dates.ts";
+
 /**
  * SSA early/delayed retirement factors applied to PIA.
  * FRA for anyone born 1960+ is 67; born 1959 is 66y10m. Both household
@@ -26,4 +28,19 @@ export function ssBenefitFromPia(
 
 export function clampClaimAge(age: number): number {
   return Math.min(70, Math.max(62, age));
+}
+
+/** Start = birthday + claiming age. End = birthday + Family projection age. */
+export function ssScheduleDates(
+  birthIso: string,
+  claimAge: number,
+  projectionEndAge: number,
+): { startDate: string; endDate: string } | null {
+  if (!validIso(birthIso)) return null;
+  const claim = clampClaimAge(claimAge);
+  const endAge = Math.max(claim, Number.isFinite(projectionEndAge) ? projectionEndAge : claim);
+  return {
+    startDate: iso(dateAtAge(birthIso, claim)),
+    endDate: iso(dateAtAge(birthIso, endAge)),
+  };
 }

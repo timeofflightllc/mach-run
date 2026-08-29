@@ -90,12 +90,21 @@ function Home() {
   const [tab, setTab] = useState<"act" | "loop">("loop");
   const [activePhase, setActivePhase] = useState<string | null>(null);
   const [pendingPhase, setPendingPhase] = useState<string | null>(null);
-  const [run, setRun] = useState<{
-    id: number;
-    plan: Plan;
-    sim: SimResult;
-    brief: PeerBrief;
-  } | null>(null);
+  const [runError, setRunError] = useState<string | null>(null);
+  const activeProfileId = useProfileStore((s) => s.activeId);
+  const runKey = activeProfileId || "local";
+  const [runs, setRuns] = useState<
+    Record<
+      string,
+      {
+        id: number;
+        plan: Plan;
+        sim: SimResult;
+        brief: PeerBrief;
+      }
+    >
+  >({});
+  const run = runs[runKey] ?? null;
 
   useEffect(() => {
     void Promise.resolve(usePlanStore.persist.rehydrate());
@@ -109,7 +118,8 @@ function Home() {
 
   useEffect(() => {
     function onReset() {
-      setRun(null);
+      setRuns({});
+      setRunError(null);
     }
     window.addEventListener(MACH_RESET_BASELINE, onReset);
     return () => window.removeEventListener(MACH_RESET_BASELINE, onReset);
@@ -156,37 +166,57 @@ function Home() {
   const real = plan.assumptions.dollars === "real";
 
   useEffect(() => {
+    setRunError(null);
+  }, [runKey]);
+
+  useEffect(() => {
     if (!ent.paid) return;
-    setRun((prev) => {
-      if (!prev?.brief || prev.brief.expanded) return prev;
-      return { ...prev, brief: { ...prev.brief, expanded: true } };
+    setRuns((prev) => {
+      const cur = prev[runKey];
+      if (!cur?.brief || cur.brief.expanded) return prev;
+      return { ...prev, [runKey]: { ...cur, brief: { ...cur.brief, expanded: true } } };
     });
-  }, [ent.paid]);
+  }, [ent.paid, runKey]);
 
   async function calculate(opts?: { stay?: boolean }) {
     try {
-      let paid = Boolean(ent.paid);
-      try {
-        const liveEnt = await getEntitlement();
-        paid = Boolean(liveEnt.paid);
-      } catch {
-        /* keep hook entitlement */
-      }
+      setRunError(null);
       const live = usePlanStore.getState().plan;
+      const key = useProfileStore.getState().activeId || "local";
+      useProfileStore.getState().snapshotCurrent(live);
       const snapshot = structuredClone(live) as Plan;
       const nextSim = simulate(snapshot);
-      const brief = buildPeerBrief(snapshot, nextSim, { expanded: paid });
-      setRun({
-        id: Date.now(),
-        plan: snapshot,
-        sim: { ...nextSim, months: [] },
-        brief,
-      });
-      void saveNow(snapshot);
+      const brief = buildPeerBrief(snapshot, nextSim, { expanded: Boolean(ent.paid) });
+      setRuns((prev) => ({
+        ...prev,
+        [key]: {
+          id: Date.now(),
+          plan: snapshot,
+          sim: { ...nextSim, months: [] },
+          brief,
+        },
+      }));
       setTab("act");
       if (!opts?.stay) setPendingPhase("ooda-act");
+      void saveNow(snapshot);
+      void getEntitlement()
+        .then((liveEnt) => {
+          if (!liveEnt?.paid) return;
+          const expanded = buildPeerBrief(snapshot, nextSim, { expanded: true });
+          setRuns((prev) => {
+            const cur = prev[key];
+            if (!cur?.brief || cur.brief.expanded) return prev;
+            return { ...prev, [key]: { ...cur, brief: expanded } };
+          });
+        })
+        .catch(() => {
+          /* keep hook entitlement */
+        });
     } catch (err) {
       console.error("MACH Run calculate failed", err);
+      setRunError(
+        err instanceof Error ? err.message : "Calculate failed. Check the numbers and try again.",
+      );
     }
   }
 
@@ -404,6 +434,9 @@ function Home() {
               Calculate
             </button>
           </div>
+          {runError ? (
+            <p className="text-sm text-[#e8c547]">{runError}</p>
+          ) : null}
           {sim ? (
             <>
               {!ent.paid ? (

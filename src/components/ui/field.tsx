@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useState,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
@@ -11,9 +12,6 @@ import { coerceIsoDate } from "@/lib/plan/dates";
 
 const controlClass =
   "h-11 w-full min-w-0 rounded-lg border border-border bg-elevated px-3 text-sm text-fg tabular-nums outline-none transition-[box-shadow,border-color] duration-150 placeholder:text-subtle focus:border-accent/40 focus:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] disabled:opacity-50";
-
-const dateClass =
-  "h-11 w-full min-w-[13.75rem] rounded-lg border border-border bg-elevated px-2 text-sm text-fg tabular-nums outline-none [color-scheme:dark] transition-[box-shadow,border-color] duration-150 focus:border-accent/40 focus:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-accent)_25%,transparent)]";
 
 export function Field({
   label,
@@ -122,45 +120,242 @@ export function MoneyInput({
   );
 }
 
+const datePartClass =
+  "h-11 rounded-lg border border-border bg-elevated px-2 text-sm text-fg tabular-nums outline-none transition-[box-shadow,border-color] duration-150 placeholder:text-subtle focus:border-accent/40 focus:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-accent)_25%,transparent)]";
+
+const MONTHS: { value: string; label: string }[] = [
+  { value: "01", label: "Jan" },
+  { value: "02", label: "Feb" },
+  { value: "03", label: "Mar" },
+  { value: "04", label: "Apr" },
+  { value: "05", label: "May" },
+  { value: "06", label: "Jun" },
+  { value: "07", label: "Jul" },
+  { value: "08", label: "Aug" },
+  { value: "09", label: "Sep" },
+  { value: "10", label: "Oct" },
+  { value: "11", label: "Nov" },
+  { value: "12", label: "Dec" },
+];
+
+function daysInMonth(year: number, month: number): number {
+  if (!month) return 31;
+  return new Date(year || 2024, month, 0).getDate();
+}
+
+function centuryYear(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 4);
+  if (digits.length === 4) return digits;
+  if (digits.length === 0) return "";
+  if (digits.length <= 2) {
+    const n = Number(digits);
+    if (!Number.isFinite(n)) return "";
+    return String(n <= 49 ? 2000 + n : 1900 + n);
+  }
+  return digits;
+}
+
+function splitIso(value: string | null | undefined): { y: string; m: string; d: string } {
+  const iso = coerceIsoDate(value ?? "") || (value ?? "");
+  const m = iso.match(/^(\d{4})-(\d{2})(?:-(\d{2}))?/);
+  if (!m) return { y: "", m: "", d: "" };
+  const year = Number(m[1]);
+  if (year < 1000) return { y: "", m: m[2], d: m[3] ?? "" };
+  return { y: m[1], m: m[2], d: m[3] ?? "01" };
+}
+
 export function DateInput({
   value,
   onValue,
+  className,
+  min,
+  max,
   ...props
 }: Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "onChange"> & {
   value: string | null;
   onValue: (v: string) => void;
 }) {
-  const v = value ? value.slice(0, 10) : "";
+  const parts = splitIso(value);
+  const [yearDraft, setYearDraft] = useState(parts.y);
+  useEffect(() => {
+    setYearDraft(parts.y);
+  }, [parts.y]);
+
+  const minYear = Number(String(min ?? "1900").slice(0, 4)) || 1900;
+  const maxYear = Number(String(max ?? "2199").slice(0, 4)) || 2199;
+  const yearNum = Number(yearDraft.length === 4 ? yearDraft : parts.y);
+  const maxDay = daysInMonth(Number.isFinite(yearNum) ? yearNum : 2024, Number(parts.m) || 0);
+  const dayOptions = Array.from({ length: maxDay }, (_, i) => String(i + 1).padStart(2, "0"));
+
+  function emit(y: string, m: string, d: string) {
+    if (!y && !m && !d) {
+      onValue("");
+      return;
+    }
+    if (y.length !== 4 || !m || !d) return;
+    const dim = daysInMonth(Number(y), Number(m));
+    const day = String(Math.min(Number(d) || 1, dim)).padStart(2, "0");
+    onValue(`${y}-${m}-${day}`);
+  }
+
+  function onYearBlur() {
+    let y = centuryYear(yearDraft);
+    if (y.length === 4) {
+      const n = Number(y);
+      if (n < minYear) y = String(minYear);
+      if (n > maxYear) y = String(maxYear);
+      setYearDraft(y);
+      emit(y, parts.m || "01", parts.d || "01");
+      return;
+    }
+    setYearDraft(parts.y);
+  }
+
   return (
-    <input
-      {...props}
-      type="date"
-      value={v}
-      min={props.min ?? "1950-01-01"}
-      max={props.max ?? "2199-12-31"}
-      onChange={(e) => onValue(coerceIsoDate(e.target.value) || e.target.value)}
-      className={cn(dateClass, props.className)}
-    />
+    <div className={cn("flex min-w-0 items-center gap-1.5", className)}>
+      <select
+        aria-label="Month"
+        value={parts.m}
+        onChange={(e) => {
+          const m = e.target.value;
+          if (!m && !yearDraft && !parts.d) {
+            onValue("");
+            return;
+          }
+          emit(yearDraft.length === 4 ? yearDraft : parts.y, m, parts.d || "01");
+        }}
+        className={cn(datePartClass, "w-[4.75rem] pr-1")}
+      >
+        <option value="">Mon</option>
+        {MONTHS.map((mo) => (
+          <option key={mo.value} value={mo.value}>
+            {mo.label}
+          </option>
+        ))}
+      </select>
+      <select
+        aria-label="Day"
+        value={parts.d && Number(parts.d) <= maxDay ? parts.d : ""}
+        onChange={(e) => {
+          const d = e.target.value;
+          if (!d && !yearDraft && !parts.m) {
+            onValue("");
+            return;
+          }
+          emit(yearDraft.length === 4 ? yearDraft : parts.y, parts.m || "01", d);
+        }}
+        className={cn(datePartClass, "w-[4.25rem] pr-1")}
+      >
+        <option value="">Day</option>
+        {dayOptions.map((d) => (
+          <option key={d} value={d}>
+            {d}
+          </option>
+        ))}
+      </select>
+      <input
+        {...props}
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        maxLength={4}
+        placeholder="YYYY"
+        aria-label="Year"
+        value={yearDraft}
+        onChange={(e) => {
+          const y = e.target.value.replace(/\D/g, "").slice(0, 4);
+          setYearDraft(y);
+          if (y.length === 4) emit(y, parts.m || "01", parts.d || "01");
+        }}
+        onBlur={onYearBlur}
+        className={cn(datePartClass, "w-[4.75rem] px-2 text-center")}
+      />
+    </div>
   );
 }
 
 export function MonthInput({
   value,
   onValue,
+  className,
+  min,
+  max,
   ...props
 }: Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "onChange"> & {
   value: string | null;
   onValue: (v: string) => void;
 }) {
-  const v = value ? value.slice(0, 7) : "";
+  const parts = splitIso(value);
+  const [yearDraft, setYearDraft] = useState(parts.y);
+  useEffect(() => {
+    setYearDraft(parts.y);
+  }, [parts.y]);
+
+  const minYear = Number(String(min ?? "1900").slice(0, 4)) || 1900;
+  const maxYear = Number(String(max ?? "2199").slice(0, 4)) || 2199;
+
+  function emit(y: string, m: string) {
+    if (!y && !m) {
+      onValue("");
+      return;
+    }
+    if (y.length !== 4 || !m) return;
+    onValue(`${y}-${m}-01`);
+  }
+
+  function onYearBlur() {
+    let y = centuryYear(yearDraft);
+    if (y.length === 4) {
+      const n = Number(y);
+      if (n < minYear) y = String(minYear);
+      if (n > maxYear) y = String(maxYear);
+      setYearDraft(y);
+      emit(y, parts.m || "01");
+      return;
+    }
+    setYearDraft(parts.y);
+  }
+
   return (
-    <input
-      {...props}
-      type="month"
-      value={v}
-      onChange={(e) => onValue(e.target.value ? `${e.target.value}-01` : "")}
-      className={cn(dateClass, props.className)}
-    />
+    <div className={cn("flex min-w-0 items-center gap-1.5", className)}>
+      <select
+        aria-label="Month"
+        value={parts.m}
+        onChange={(e) => {
+          const m = e.target.value;
+          if (!m && !yearDraft) {
+            onValue("");
+            return;
+          }
+          emit(yearDraft.length === 4 ? yearDraft : parts.y, m);
+        }}
+        className={cn(datePartClass, "w-[4.75rem] pr-1")}
+      >
+        <option value="">Mon</option>
+        {MONTHS.map((mo) => (
+          <option key={mo.value} value={mo.value}>
+            {mo.label}
+          </option>
+        ))}
+      </select>
+      <input
+        {...props}
+        type="text"
+        inputMode="numeric"
+        autoComplete="off"
+        maxLength={4}
+        placeholder="YYYY"
+        aria-label="Year"
+        value={yearDraft}
+        onChange={(e) => {
+          const y = e.target.value.replace(/\D/g, "").slice(0, 4);
+          setYearDraft(y);
+          if (y.length === 4) emit(y, parts.m || "01");
+        }}
+        onBlur={onYearBlur}
+        className={cn(datePartClass, "w-[4.75rem] px-2 text-center")}
+      />
+    </div>
   );
 }
 

@@ -10,14 +10,16 @@ import {
   startOfMonth,
 } from "date-fns";
 
-/** Two-digit / leading-zero years (0029) become 20xx so date pickers cannot end a paycheck in year 29. */
+/** Two-digit / leading-zero years (0029) map into a century.
+ *  00–49 → 2000s (paycheck “year 29”, kids). 50–99 → 1900s (adult birthdays).
+ *  Four-digit years (1979, 2026) are left alone. */
 export function coerceIsoDate(iso: string | null | undefined): string {
   if (!iso) return "";
   const s = iso.trim();
   const m = s.match(/^(\d{1,4})-(\d{1,2})(?:-(\d{1,2}))?/);
   if (!m) return s;
   let y = Number(m[1]);
-  if (y < 100) y += 2000;
+  if (y < 100) y += y <= 49 ? 2000 : 1900;
   const mo = String(Number(m[2])).padStart(2, "0");
   const day = String(Number(m[3] ?? 1)).padStart(2, "0");
   return `${String(y).padStart(4, "0")}-${mo}-${day}`;

@@ -2,13 +2,20 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createDefaultPlan } from "./defaults.ts";
 import { simulate } from "./engine.ts";
-import { ssBenefitFromPia } from "./social-security.ts";
+import { ssBenefitFromPia, ssScheduleDates } from "./social-security.ts";
 import type { IncomeStream } from "./types.ts";
 
 test("SS claiming: FRA is 100%, 62 is 70%, 70 is 124%", () => {
   assert.equal(ssBenefitFromPia(1000, 67, 67), 1000);
   assert.ok(Math.abs(ssBenefitFromPia(1000, 62, 67) - 700) < 1);
   assert.ok(Math.abs(ssBenefitFromPia(1000, 70, 67) - 1240) < 1);
+});
+
+test("SS dates: start at claiming age, end at projection age", () => {
+  const window = ssScheduleDates("1979-06-15", 67, 95);
+  assert.ok(window);
+  assert.equal(window.startDate, "2046-06-15");
+  assert.equal(window.endDate, "2074-06-15");
 });
 
 test("default plan runs with blank income", () => {
