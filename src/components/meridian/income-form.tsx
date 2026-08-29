@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/field";
 import type { IncomeKind, IncomeStream, TaxTreatment } from "@/lib/plan/types";
 import { newId, usePlanStore } from "@/lib/plan/store";
-import { ssBenefitFromPia, ssScheduleDates } from "@/lib/plan/social-security";
+import { ssBenefitFromPia, ssBirthFor, ssScheduleDates } from "@/lib/plan/social-security";
 import { usd } from "@/lib/plan/format";
 import { VaKids } from "@/components/meridian/va-kids";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
@@ -68,7 +68,7 @@ export function IncomeForm() {
               monthlyAmount: 0,
               startDate: plan.assumptions.asOfDate,
               endDate: null,
-              colaPct: 0,
+              colaPct: null,
               taxTreatment: "ordinary",
               person: "household",
             })
@@ -88,16 +88,18 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
   const removeIncome = usePlanStore((s) => s.removeIncome);
   const ssOrdinal =
     plan.incomes.filter((row) => row.kind === "ss").findIndex((row) => row.id === s.id) + 1;
-  const person: "primary" | "spouse" = s.person === "spouse" ? "spouse" : "primary";
-  const owner =
-    person === "spouse"
-      ? plan.spouse
-      : plan.primary;
+  const person: "primary" | "spouse" | "other" =
+    s.person === "spouse" ? "spouse" : s.person === "other" ? "other" : "primary";
   const ownerLabel =
-    owner.name.trim() || (person === "spouse" ? "Spouse" : "You (primary)");
+    person === "other"
+      ? s.name.trim() || "other household member"
+      : person === "spouse"
+        ? plan.spouse.name.trim() || "Spouse"
+        : plan.primary.name.trim() || "You (primary)";
   const claimAge = s.ssClaimAge ?? 67;
   const endAge = plan.assumptions.projectionEndAge;
-  const ssWindow = ssScheduleDates(owner.birthDate, claimAge, endAge);
+  const birth = ssBirthFor(plan, s);
+  const ssWindow = ssScheduleDates(birth, claimAge, endAge);
 
   useEffect(() => {
     if (s.kind !== "ss") return;
@@ -118,12 +120,19 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
     if (kind === "ss") {
       const others = plan.incomes.filter((row) => row.id !== s.id && row.kind === "ss");
       const primaryTaken = others.some((row) => row.person === "primary");
-      const nextPerson: "primary" | "spouse" =
-        primaryTaken && (plan.spouse.name.trim() || plan.spouse.birthDate)
-          ? "spouse"
-          : "primary";
+      const spouseTaken = others.some((row) => row.person === "spouse");
+      const nextPerson: "primary" | "spouse" | "other" =
+        others.length >= 2
+          ? "other"
+          : primaryTaken && !spouseTaken
+            ? "spouse"
+            : "primary";
       const birth =
-        nextPerson === "spouse" ? plan.spouse.birthDate : plan.primary.birthDate;
+        nextPerson === "other"
+          ? s.ssBirthDate ?? ""
+          : nextPerson === "spouse"
+            ? plan.spouse.birthDate
+            : plan.primary.birthDate;
       const window = ssScheduleDates(birth, s.ssClaimAge ?? 67, endAge);
       updateIncome(s.id, {
         kind,
@@ -140,15 +149,19 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
     });
   }
 
-  function setPerson(next: "primary" | "spouse") {
+  function setPerson(next: "primary" | "spouse" | "other") {
     const birth =
-      next === "spouse" ? plan.spouse.birthDate : plan.primary.birthDate;
+      next === "other"
+        ? s.ssBirthDate ?? ""
+        : next === "spouse"
+          ? plan.spouse.birthDate
+          : plan.primary.birthDate;
     const window = ssScheduleDates(birth, claimAge, endAge);
     updateIncome(s.id, { person: next, ...(window ?? {}) });
   }
 
   function setClaimAge(n: number) {
-    const window = ssScheduleDates(owner.birthDate, n, endAge);
+    const window = ssScheduleDates(ssBirthFor(plan, { ...s, ssClaimAge: n }), n, endAge);
     updateIncome(s.id, { ssClaimAge: n, ...(window ?? {}) });
   }
 
@@ -188,13 +201,16 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
           <>
             <Field
               label="Who is this Social Security for?"
-              hint="Names come from Family in Observe."
+              hint="Primary and spouse come from Family. Other is anyone else in the household."
             >
               <SelectInput
                 value={person}
-                onChange={(e) =>
-                  setPerson(e.target.value === "spouse" ? "spouse" : "primary")
-                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setPerson(
+                    v === "spouse" ? "spouse" : v === "other" ? "other" : "primary",
+                  );
+                }}
               >
                 <option value="primary">
                   {plan.primary.name.trim() || "You (primary)"}
@@ -202,8 +218,26 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
                 <option value="spouse">
                   {plan.spouse.name.trim() || "Spouse"}
                 </option>
+                <option value="other">Other household member</option>
               </SelectInput>
             </Field>
+            {person === "other" ? (
+              <Field
+                label="Their birth date"
+                hint="Needed so claiming age can set start and end."
+              >
+                <DateInput
+                  value={s.ssBirthDate ?? ""}
+                  onValue={(v) => {
+                    const window = ssScheduleDates(v, claimAge, endAge);
+                    updateIncome(s.id, {
+                      ssBirthDate: v,
+                      ...(window ?? {}),
+                    });
+                  }}
+                />
+              </Field>
+            ) : null}
             {s.kind === "ss" && ssOrdinal >= 3 ? (
               <p className="text-xs leading-relaxed text-[#e8c547]">
                 You already have two Social Security incomes. Are you sure you
@@ -235,8 +269,9 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
             </Field>
             {!ssWindow ? (
               <p className="text-xs leading-relaxed text-[#e8c547]">
-                Add a birth date for {ownerLabel} in Family so MACH RUN can set
-                the Social Security start and end dates.
+                {person === "other"
+                  ? "Add a birth date for this other household member so MACH RUN can set the Social Security start and end dates."
+                  : `Add a birth date for ${ownerLabel} in Family so MACH RUN can set the Social Security start and end dates.`}
               </p>
             ) : (
               <p className="text-xs leading-relaxed text-[#e8c547]">
@@ -282,11 +317,14 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
             ))}
           </SelectInput>
         </Field>
-        <Field label="COLA % / yr (blank = inflation)">
+        <Field
+          label="COLA % / yr (blank = Family default)"
+          hint={`Blank uses ${plan.assumptions.defaultColaPct ?? 2.5}% from Family.`}
+        >
           <NumberInput
             step={0.1}
-            value={s.colaPct ?? plan.assumptions.inflationPct}
-            onValue={(n) => updateIncome(s.id, { colaPct: n })}
+            value={s.colaPct ?? 0}
+            onValue={(n) => updateIncome(s.id, { colaPct: n === 0 ? null : n })}
           />
         </Field>
         {s.kind === "va" ? <VaKids stream={s} /> : null}

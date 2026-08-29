@@ -66,6 +66,19 @@ export function HouseholdForm() {
             onValue={(n) => patchAssumptions({ defaultReturnPct: n })}
           />
         </Field>
+        <Field label="Nominal COLA for all incomes (% / yr)">
+          <NumberInput
+            min={0}
+            max={15}
+            step={0.1}
+            value={plan.assumptions.defaultColaPct ?? 2.5}
+            onValue={(n) => patchAssumptions({ defaultColaPct: n })}
+          />
+        </Field>
+        <p className="text-xs leading-relaxed text-[#e8c547]">
+          This is the default COLA for every income. You can set a different
+          COLA on each income in Orient.
+        </p>
         <Field label="Inflation (% / yr)">
           <NumberInput
             min={0}

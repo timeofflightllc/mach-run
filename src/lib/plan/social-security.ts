@@ -1,4 +1,5 @@
 import { dateAtAge, iso, validIso } from "./dates.ts";
+import type { IncomeStream, Plan } from "./types.ts";
 
 /**
  * SSA early/delayed retirement factors applied to PIA.
@@ -43,4 +44,13 @@ export function ssScheduleDates(
     startDate: iso(dateAtAge(birthIso, claim)),
     endDate: iso(dateAtAge(birthIso, endAge)),
   };
+}
+
+export function ssBirthFor(
+  plan: Plan,
+  stream: Pick<IncomeStream, "person" | "ssBirthDate">,
+): string {
+  if (stream.person === "spouse") return plan.spouse.birthDate;
+  if (stream.person === "other") return stream.ssBirthDate ?? "";
+  return plan.primary.birthDate;
 }

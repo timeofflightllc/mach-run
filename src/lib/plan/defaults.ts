@@ -13,6 +13,7 @@ export function createDefaultPlan(): Plan {
     assumptions: {
       asOfDate: "2026-08-01",
       inflationPct: 2.5,
+      defaultColaPct: 2.5,
       defaultReturnPct: 7,
       ordinaryTaxRatePct: 22,
       ssTaxablePct: 85,
@@ -35,7 +36,7 @@ export function createDefaultPlan(): Plan {
         monthlyAmount: 0,
         startDate: "2026-08-01",
         endDate: null,
-        colaPct: 0,
+        colaPct: null,
         taxTreatment: "ordinary",
         person: "household",
       },
@@ -97,6 +98,12 @@ export function ensurePlan(plan: Plan): Plan {
   }
   if (next.assumptions.nestEggGoal === undefined) {
     next.assumptions = { ...next.assumptions, nestEggGoal: null };
+  }
+  if (
+    next.assumptions.defaultColaPct == null ||
+    !Number.isFinite(next.assumptions.defaultColaPct)
+  ) {
+    next.assumptions = { ...next.assumptions, defaultColaPct: 2.5 };
   }
   return next;
 }

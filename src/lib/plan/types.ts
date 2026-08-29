@@ -96,7 +96,7 @@ export interface IncomeStream {
   /** Annual COLA. null = use inflation assumption. */
   colaPct: number | null;
   taxTreatment: TaxTreatment;
-  person: "primary" | "spouse" | "household";
+  person: "primary" | "spouse" | "household" | "other";
   /** Window tracks this income stage. */
   tiedToStageId?: string;
   /** Legacy: treat as tied to stage 1. */
@@ -107,6 +107,8 @@ export interface IncomeStream {
   ssPia?: number;
   ssClaimAge?: number;
   ssFra?: number;
+  /** Birthday when person is "other" (not listed in Family). */
+  ssBirthDate?: string | null;
   vaChildAware?: boolean;
   /** Combined disability rating, 10–100. Schedular table only — no SMC. */
   vaRatingPct?: number;
@@ -126,6 +128,8 @@ export interface SpendingPhase {
 export interface Assumptions {
   asOfDate: string;
   inflationPct: number;
+  /** Default COLA on incomes unless a stream sets its own colaPct. */
+  defaultColaPct: number;
   defaultReturnPct: number;
   ordinaryTaxRatePct: number;
   ssTaxablePct: number;

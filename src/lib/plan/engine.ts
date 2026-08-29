@@ -10,7 +10,7 @@ import {
   validIso,
   yearlyRateToMonthly,
 } from "./dates.ts";
-import { ssBenefitFromPia } from "./social-security.ts";
+import { ssBenefitFromPia, ssBirthFor, ssScheduleDates } from "./social-security.ts";
 import {
   ageInCalendarYear,
   monthlyRmd,
@@ -76,11 +76,12 @@ export function streamWindow(
   let start = stream.startDate || plan.assumptions.asOfDate;
   let end = stream.endDate;
   if (stream.kind === "ss" && stream.ssClaimAge != null) {
-    const birth =
-      stream.person === "spouse" ? plan.spouse.birthDate : plan.primary.birthDate;
-    start = iso(dateAtAge(birth, stream.ssClaimAge));
-    end = null;
-    return { start, end };
+    const window = ssScheduleDates(
+      ssBirthFor(plan, stream),
+      stream.ssClaimAge,
+      plan.assumptions.projectionEndAge,
+    );
+    if (window) return { start: window.startDate, end: window.endDate };
   }
   const stageId =
     stream.tiedToStageId ?? (stream.tiedToCareer ? plan.stages?.[0]?.id : undefined);
@@ -124,6 +125,13 @@ function isWorkplaceMatchAccount(kind: string): boolean {
   return kind === "401k" || kind === "401k_roth" || kind === "tsp";
 }
 
+function streamColaAnnual(plan: Plan, stream: IncomeStream, infA: number): number {
+  if (stream.colaPct != null) return stream.colaPct / 100;
+  const d = plan.assumptions.defaultColaPct;
+  if (d != null && Number.isFinite(d)) return d / 100;
+  return infA;
+}
+
 function streamNominalAt(
   plan: Plan,
   stream: IncomeStream,
@@ -134,7 +142,7 @@ function streamNominalAt(
   const win = streamWindow(plan, stream);
   if (!inRange(cursor, win.start, win.end)) return 0;
   const todayAmt = streamBenefitToday(plan, stream, cursor);
-  const colaAnnual = stream.colaPct == null ? infA : stream.colaPct / 100;
+  const colaAnnual = streamColaAnnual(plan, stream, infA);
   const mCola = yearlyRateToMonthly(colaAnnual);
   return todayAmt * (1 + mCola) ** monthsFromAsOf;
 }
@@ -329,7 +337,7 @@ export function simulate(raw: Plan): SimResult {
       const win = streamWindow(plan, stream);
       if (!inRange(cursor, win.start, win.end)) continue;
       const todayAmt = streamBenefitToday(plan, stream, cursor);
-      const colaAnnual = stream.colaPct == null ? infA : stream.colaPct / 100;
+      const colaAnnual = streamColaAnnual(plan, stream, infA);
       const mCola = yearlyRateToMonthly(colaAnnual);
       const nominal = todayAmt * (1 + mCola) ** monthsFromAsOf;
       income += nominal;
