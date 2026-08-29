@@ -116,6 +116,15 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
     updateIncome,
   ]);
 
+  useEffect(() => {
+    if (s.kind === "ss" && s.taxTreatment !== "ss") {
+      updateIncome(s.id, { taxTreatment: "ss" });
+    }
+    if (s.kind === "va" && s.taxTreatment !== "tax_free") {
+      updateIncome(s.id, { taxTreatment: "tax_free" });
+    }
+  }, [s.kind, s.taxTreatment, s.id, updateIncome]);
+
   function setKind(kind: IncomeKind) {
     if (kind === "ss") {
       const others = plan.incomes.filter((row) => row.id !== s.id && row.kind === "ss");
@@ -301,9 +310,16 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
             onValue={(v) => updateIncome(s.id, { endDate: v === "" ? null : v })}
           />
         </Field>
-        <Field label="Tax">
+        <Field
+          label="Tax"
+          hint={
+            s.kind === "ss"
+              ? "Social Security tax treatment is set automatically when Kind is Social Security."
+              : undefined
+          }
+        >
           <SelectInput
-            value={s.taxTreatment}
+            value={s.kind === "ss" ? "ss" : s.taxTreatment}
             onChange={(e) =>
               updateIncome(s.id, {
                 taxTreatment: e.target.value as TaxTreatment,
@@ -318,13 +334,13 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
           </SelectInput>
         </Field>
         <Field
-          label="COLA % / yr (blank = Family default)"
-          hint={`Blank uses ${plan.assumptions.defaultColaPct ?? 2.5}% from Family.`}
+          label="COLA % / yr"
+          hint="Starts at the Family default. Type over it for this income only."
         >
           <NumberInput
             step={0.1}
-            value={s.colaPct ?? 0}
-            onValue={(n) => updateIncome(s.id, { colaPct: n === 0 ? null : n })}
+            value={s.colaPct ?? plan.assumptions.defaultColaPct ?? 2.5}
+            onValue={(n) => updateIncome(s.id, { colaPct: n })}
           />
         </Field>
         {s.kind === "va" ? <VaKids stream={s} /> : null}

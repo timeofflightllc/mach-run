@@ -25,11 +25,11 @@ export function Field({
   className?: string;
 }) {
   return (
-    <label className={cn("flex min-w-0 flex-col gap-1.5", className)}>
+    <div className={cn("flex min-w-0 flex-col gap-1.5", className)}>
       <span className="text-xs font-medium tracking-wide text-muted">{label}</span>
       {children}
       {hint ? <span className="text-xs text-subtle">{hint}</span> : null}
-    </label>
+    </div>
   );
 }
 
@@ -177,14 +177,23 @@ export function DateInput({
 }) {
   const parts = splitIso(value);
   const [yearDraft, setYearDraft] = useState(parts.y);
+  const [monthDraft, setMonthDraft] = useState(parts.m);
+  const [dayDraft, setDayDraft] = useState(parts.d);
   useEffect(() => {
     setYearDraft(parts.y);
   }, [parts.y]);
+  useEffect(() => {
+    setMonthDraft(parts.m);
+  }, [parts.m]);
+  useEffect(() => {
+    setDayDraft(parts.d);
+  }, [parts.d]);
 
   const minYear = Number(String(min ?? "1900").slice(0, 4)) || 1900;
   const maxYear = Number(String(max ?? "2199").slice(0, 4)) || 2199;
   const yearNum = Number(yearDraft.length === 4 ? yearDraft : parts.y);
-  const maxDay = daysInMonth(Number.isFinite(yearNum) ? yearNum : 2024, Number(parts.m) || 0);
+  const monthNum = Number(monthDraft || parts.m) || 0;
+  const maxDay = daysInMonth(Number.isFinite(yearNum) ? yearNum : 2024, monthNum);
   const dayOptions = Array.from({ length: maxDay }, (_, i) => String(i + 1).padStart(2, "0"));
 
   function emit(y: string, m: string, d: string) {
@@ -205,7 +214,7 @@ export function DateInput({
       if (n < minYear) y = String(minYear);
       if (n > maxYear) y = String(maxYear);
       setYearDraft(y);
-      emit(y, parts.m || "01", parts.d || "01");
+      emit(y, monthDraft || "01", dayDraft || "01");
       return;
     }
     setYearDraft(parts.y);
@@ -215,14 +224,16 @@ export function DateInput({
     <div className={cn("flex min-w-0 items-center gap-1.5", className)}>
       <select
         aria-label="Month"
-        value={parts.m}
+        value={monthDraft}
+        onMouseDown={(e) => e.stopPropagation()}
         onChange={(e) => {
           const m = e.target.value;
-          if (!m && !yearDraft && !parts.d) {
+          setMonthDraft(m);
+          if (!m && !yearDraft && !dayDraft) {
             onValue("");
             return;
           }
-          emit(yearDraft.length === 4 ? yearDraft : parts.y, m, parts.d || "01");
+          emit(yearDraft.length === 4 ? yearDraft : parts.y, m, dayDraft || "01");
         }}
         className={cn(datePartClass, "w-[4.75rem] pr-1")}
       >
@@ -235,14 +246,16 @@ export function DateInput({
       </select>
       <select
         aria-label="Day"
-        value={parts.d && Number(parts.d) <= maxDay ? parts.d : ""}
+        value={dayDraft && Number(dayDraft) <= maxDay ? dayDraft : ""}
+        onMouseDown={(e) => e.stopPropagation()}
         onChange={(e) => {
           const d = e.target.value;
-          if (!d && !yearDraft && !parts.m) {
+          setDayDraft(d);
+          if (!d && !yearDraft && !monthDraft) {
             onValue("");
             return;
           }
-          emit(yearDraft.length === 4 ? yearDraft : parts.y, parts.m || "01", d);
+          emit(yearDraft.length === 4 ? yearDraft : parts.y, monthDraft || "01", d);
         }}
         className={cn(datePartClass, "w-[4.25rem] pr-1")}
       >
@@ -265,7 +278,7 @@ export function DateInput({
         onChange={(e) => {
           const y = e.target.value.replace(/\D/g, "").slice(0, 4);
           setYearDraft(y);
-          if (y.length === 4) emit(y, parts.m || "01", parts.d || "01");
+          if (y.length === 4) emit(y, monthDraft || "01", dayDraft || "01");
         }}
         onBlur={onYearBlur}
         className={cn(datePartClass, "w-[4.75rem] px-2 text-center")}
@@ -287,9 +300,13 @@ export function MonthInput({
 }) {
   const parts = splitIso(value);
   const [yearDraft, setYearDraft] = useState(parts.y);
+  const [monthDraft, setMonthDraft] = useState(parts.m);
   useEffect(() => {
     setYearDraft(parts.y);
   }, [parts.y]);
+  useEffect(() => {
+    setMonthDraft(parts.m);
+  }, [parts.m]);
 
   const minYear = Number(String(min ?? "1900").slice(0, 4)) || 1900;
   const maxYear = Number(String(max ?? "2199").slice(0, 4)) || 2199;
@@ -310,7 +327,7 @@ export function MonthInput({
       if (n < minYear) y = String(minYear);
       if (n > maxYear) y = String(maxYear);
       setYearDraft(y);
-      emit(y, parts.m || "01");
+      emit(y, monthDraft || "01");
       return;
     }
     setYearDraft(parts.y);
@@ -320,9 +337,11 @@ export function MonthInput({
     <div className={cn("flex min-w-0 items-center gap-1.5", className)}>
       <select
         aria-label="Month"
-        value={parts.m}
+        value={monthDraft}
+        onMouseDown={(e) => e.stopPropagation()}
         onChange={(e) => {
           const m = e.target.value;
+          setMonthDraft(m);
           if (!m && !yearDraft) {
             onValue("");
             return;
@@ -350,7 +369,7 @@ export function MonthInput({
         onChange={(e) => {
           const y = e.target.value.replace(/\D/g, "").slice(0, 4);
           setYearDraft(y);
-          if (y.length === 4) emit(y, parts.m || "01");
+          if (y.length === 4) emit(y, monthDraft || "01");
         }}
         onBlur={onYearBlur}
         className={cn(datePartClass, "w-[4.75rem] px-2 text-center")}
