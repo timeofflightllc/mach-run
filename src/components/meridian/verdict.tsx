@@ -1,9 +1,46 @@
 import { usd } from "@/lib/plan/format";
+import type { PeerBrief } from "@/lib/plan/peers";
+import { nestEggTrack, peerRankLine } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { monthlyIncomeAt, startingSpendable } from "@/lib/plan/engine";
 import { monthStart } from "@/lib/plan/dates";
 
-export function Verdict({ plan, sim }: { plan: Plan; sim: SimResult }) {
+export function NestEggHeadline({
+  egg,
+}: {
+  egg: NonNullable<ReturnType<typeof nestEggTrack>>;
+}) {
+  const byAge = egg.targetAge != null ? ` (age ${egg.targetAge})` : "";
+  const mark = (word: string) => (
+    <span className="font-bold underline decoration-2 underline-offset-[3px]">
+      {word}
+    </span>
+  );
+  if (egg.onTrack) {
+    return (
+      <>
+        You {mark("are")} on track for {usd(egg.goal)} by {egg.targetYear}
+        {byAge}.
+      </>
+    );
+  }
+  return (
+    <>
+      You are {mark("not")} on track for {usd(egg.goal)} by {egg.targetYear}
+      {byAge}.
+    </>
+  );
+}
+
+export function Verdict({
+  plan,
+  sim,
+  brief,
+}: {
+  plan: Plan;
+  sim: SimResult;
+  brief?: PeerBrief | null;
+}) {
   const real = plan.assumptions.dollars === "real";
   const atTerm = real ? sim.spendableAtEndReal : sim.spendableAtEnd;
   const unit = real ? "today's dollars" : "nominal";
@@ -38,11 +75,23 @@ export function Verdict({ plan, sim }: { plan: Plan; sim: SimResult }) {
     retLine = "";
   }
 
+  const rank = brief ? peerRankLine(brief) : null;
+  const egg = nestEggTrack(plan, sim);
+
   return (
     <div className="rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]">
-      <p className="font-display text-xl font-medium leading-snug text-fg sm:text-2xl">
-        {body}
+      <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
+        BLUF (Bottom Line Up Front)
       </p>
+      <p className="mt-2 font-display text-xl font-medium leading-snug text-fg sm:text-2xl">
+        {egg ? <NestEggHeadline egg={egg} /> : body}
+      </p>
+      {egg ? (
+        <p className="mt-2 text-base font-medium leading-snug text-fg">{body}</p>
+      ) : null}
+      {rank ? (
+        <p className="mt-2 text-sm font-medium leading-relaxed text-fg">{rank}</p>
+      ) : null}
       <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted">
         Current spendable {usd(start)}. Remaining at age{" "}
         {plan.assumptions.projectionEndAge} is {usd(atTerm)} ({unit}).

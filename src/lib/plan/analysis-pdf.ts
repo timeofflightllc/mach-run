@@ -27,18 +27,21 @@ function pdfEscape(s: string): string {
 }
 
 function wrapText(text: string, maxChars: number): string[] {
-  const words = text.split(/\s+/).filter(Boolean);
-  const lines: string[] = [];
-  let cur = "";
-  for (const w of words) {
-    const next = cur ? `${cur} ${w}` : w;
-    if (next.length > maxChars) {
-      if (cur) lines.push(cur);
-      cur = w;
-    } else cur = next;
-  }
-  if (cur) lines.push(cur);
-  return lines.length ? lines : [""];
+  return text.split(/\n/).flatMap((para) => {
+    const words = para.split(/\s+/).filter(Boolean);
+    if (!words.length) return [""];
+    const lines: string[] = [];
+    let cur = "";
+    for (const w of words) {
+      const next = cur ? `${cur} ${w}` : w;
+      if (next.length > maxChars) {
+        if (cur) lines.push(cur);
+        cur = w;
+      } else cur = next;
+    }
+    if (cur) lines.push(cur);
+    return lines;
+  });
 }
 
 function jpegSize(bytes: Uint8Array): { w: number; h: number } {

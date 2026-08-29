@@ -105,7 +105,7 @@ export function MachWordmark({
           large
             ? "w-[15.75rem] max-w-[15.75rem]"
             : "w-[10.9rem] max-w-[10.9rem] sm:w-[12.6rem] sm:max-w-[12.6rem]",
-          framed && "rounded-sm shadow-[0_0_0_1px_#c5cdd6]",
+          framed && "shadow-[0_0_0_1px_#c5cdd6]",
         )}
       />
     </span>
@@ -140,9 +140,9 @@ export function BrandLockup({
 export function MachFooter() {
   return (
     <footer className="mt-8 border-t border-border">
-      <div className="mx-auto flex max-w-[2300px] flex-col gap-5 px-4 py-8 sm:px-6">
+      <div className="mx-auto flex w-full flex-col gap-5 px-4 py-8 sm:px-6">
         <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
-          <BrandLockup size="lg" />
+          <BrandLockup size="lg" framed />
         </div>
         <dl className="grid grid-cols-1 gap-4 text-sm text-muted md:grid-cols-4 md:gap-6">
           <div>

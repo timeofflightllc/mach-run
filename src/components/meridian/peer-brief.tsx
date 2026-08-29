@@ -4,7 +4,8 @@ import type { PeerBrief } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { GuestOnly, RealSignedIn } from "@/lib/auth/gates";
 import { MACH_MONTHLY_USD } from "@/lib/billing/limits";
-import { OODA_DISCLAIMER } from "@/lib/plan/disclaimer";
+import { NestEggHeadline } from "@/components/meridian/verdict";
+import { nestEggTrack } from "@/lib/plan/peers";
 
 function Disclaimer() {
   return <p className="text-xs italic leading-relaxed text-subtle">{OODA_DISCLAIMER}</p>;
@@ -48,6 +49,8 @@ export function PeerBriefCard({
   const visible = clipped ? sections.slice(0, 2) : sections;
   const faded = clipped ? sections[2] : null;
 
+  const egg = plan && sim ? nestEggTrack(plan, sim) : null;
+
   return (
     <div className="rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]">
       <div className="flex items-start justify-between gap-3">
@@ -68,7 +71,7 @@ export function PeerBriefCard({
         <Disclaimer />
       </div>
       <p className="mt-3 font-display text-xl font-medium leading-snug text-fg">
-        {brief.headline}
+        {egg ? <NestEggHeadline egg={egg} /> : brief.headline}
       </p>
       <div className="mt-3 flex flex-col gap-4 text-sm leading-relaxed text-muted">
         {visible.map((s, i) => (
@@ -76,7 +79,7 @@ export function PeerBriefCard({
             {s.title ? (
               <p className="font-semibold text-fg">{s.title}</p>
             ) : null}
-            <p className={s.title ? "mt-1" : undefined}>{s.body}</p>
+            <p className={s.title ? "mt-1 whitespace-pre-line" : "whitespace-pre-line"}>{s.body}</p>
           </div>
         ))}
         {faded ? (

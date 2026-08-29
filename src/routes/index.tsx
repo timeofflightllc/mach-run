@@ -5,6 +5,7 @@ import { ProfileSwitcher } from "@/components/meridian/profile-switcher";
 import { MACH_RESET_BASELINE } from "@/components/meridian/account-menu";
 import { CalculateButton } from "@/components/meridian/calculate-button";
 import { CashChart, WealthChart } from "@/components/meridian/charts";
+import { Pinnable, useChartPins } from "@/components/meridian/chart-pin";
 import { ContributionForm } from "@/components/meridian/contribution-form";
 import { HouseholdForm } from "@/components/meridian/household-form";
 import { IncomeForm } from "@/components/meridian/income-form";
@@ -29,6 +30,32 @@ import type { Plan, SimResult } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({ component: Home });
+
+function ActChartColumn({ plan, sim }: { plan: Plan; sim: SimResult }) {
+  const pins = useChartPins();
+  return (
+    <div className="flex min-w-0 flex-col gap-4">
+      <div ref={pins.wealthSlot}>
+        <Pinnable pinned={pins.pinWealth} stackTop={pins.wealthTop}>
+          <WealthChart
+            plan={plan}
+            sim={sim}
+            pinned={pins.pinWealth}
+            onPin={pins.toggleWealth}
+          />
+        </Pinnable>
+      </div>
+      <Pinnable pinned={pins.pinCash} stackTop={pins.cashTop}>
+        <CashChart
+          plan={plan}
+          sim={sim}
+          pinned={pins.pinCash}
+          onPin={pins.toggleCash}
+        />
+      </Pinnable>
+    </div>
+  );
+}
 
 const LOOP = [
   { id: "ooda-observe", label: "Observe" },
@@ -233,7 +260,7 @@ function Home() {
         className="sticky top-0 z-30 border-b border-border"
         style={{ backgroundColor: "#0a1835" }}
       >
-        <div className="relative z-50 mx-auto max-w-[2300px] px-4 py-2.5 sm:px-6">
+        <div className="relative z-50 mx-auto max-w-none px-4 py-2.5 sm:px-6">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0 shrink text-left">
               <BrandLockup />
@@ -296,7 +323,7 @@ function Home() {
         </div>
         <nav
           aria-label="OODA loop"
-          className="mx-auto flex max-w-[2300px] items-center justify-center gap-1 overflow-x-auto px-4 pb-3 sm:px-6"
+          className="mx-auto flex max-w-none items-center justify-center gap-1 overflow-x-auto px-4 pb-3 sm:px-6"
         >
           {LOOP.map((phase, i) => (
             <span key={phase.id} className="flex items-center gap-1">
@@ -320,7 +347,7 @@ function Home() {
             </span>
           ))}
         </nav>
-        <div className="mx-auto flex max-w-[2300px] gap-1 px-4 pb-3 lg:hidden">
+        <div className="mx-auto flex max-w-none gap-1 px-4 pb-3 lg:hidden">
           <button
             type="button"
             onClick={() => setTab("loop")}
@@ -344,7 +371,7 @@ function Home() {
         </div>
         <GuestOnly>
           <div className="border-t border-[#5c4a18] bg-[#241c0c]">
-            <div className="mx-auto flex max-w-[2300px] flex-col items-center gap-1.5 px-4 py-2.5 text-center sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-3 sm:px-6">
+            <div className="mx-auto flex max-w-none flex-col items-center gap-1.5 px-4 py-2.5 text-center sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-3 sm:px-6">
               <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-2 py-0.5 font-display text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1a1408]">
                 Master Caution
               </span>
@@ -364,7 +391,7 @@ function Home() {
         </GuestOnly>
       </header>
 
-      <main className="mx-auto grid max-w-[2300px] grid-cols-1 gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] lg:items-start">
+      <main className="mx-auto grid max-w-none grid-cols-1 gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] lg:items-start">
         <aside
           className={cn(
             "flex flex-col gap-6 lg:sticky lg:top-[var(--mach-header-h,7rem)] lg:max-h-[calc(100vh-var(--mach-header-h,7rem))] lg:overflow-y-auto lg:pr-1",
@@ -438,44 +465,43 @@ function Home() {
             <p className="text-sm text-[#e8c547]">{runError}</p>
           ) : null}
           {sim ? (
-            <div className="grid grid-cols-1 gap-4 min-[2100px]:grid-cols-[minmax(56rem,1fr)_minmax(26rem,36rem)] min-[2100px]:items-start">
-              <div className="flex min-w-0 flex-col gap-4">
-                {!ent.paid ? (
-                  <div className="flex flex-col gap-3 rounded-xl bg-elevated px-5 py-4 shadow-[0_0_0_1px_var(--color-border)] sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm leading-relaxed text-muted">
-                      This MACH Run is on Free. Unlimited opens every account,
-                      every stage, the full OODA, and OODA AI.
-                    </p>
-                    <Link
-                      to="/pricing"
-                      className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
-                    >
-                      Upgrade to MACH Run Unlimited
-                    </Link>
+            <div className="flex flex-col gap-4">
+              {!ent.paid ? (
+                <div className="flex flex-col gap-3 rounded-xl bg-elevated px-5 py-4 shadow-[0_0_0_1px_var(--color-border)] sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm leading-relaxed text-muted">
+                    This MACH Run is on Free. Unlimited opens every account,
+                    every stage, the full OODA, and OODA AI.
+                  </p>
+                  <Link
+                    to="/pricing"
+                    className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
+                  >
+                    Upgrade to MACH Run Unlimited
+                  </Link>
+                </div>
+              ) : null}
+              <Verdict plan={displayPlan} sim={sim} brief={run?.brief ?? null} />
+              <KpiStrip plan={displayPlan} sim={sim} />
+              <div className="@container">
+                <div className="grid grid-cols-1 gap-4 @min-[64rem]:grid-cols-[minmax(0,1.4fr)_minmax(24rem,1fr)] @min-[64rem]:items-start">
+                  <div className="flex min-w-0 flex-col gap-4">
+                    <PeerBriefCard
+                      key={run?.id ?? "idle"}
+                      brief={run?.brief ?? null}
+                      ran
+                      plan={displayPlan}
+                      sim={sim}
+                    />
+                    <OodaAiCard
+                      plan={displayPlan}
+                      sim={sim}
+                      brief={run?.brief ?? null}
+                    />
                   </div>
-                ) : null}
-                <Verdict plan={displayPlan} sim={sim} />
-                <KpiStrip plan={displayPlan} sim={sim} />
-                <PeerBriefCard
-                  key={run?.id ?? "idle"}
-                  brief={run?.brief ?? null}
-                  ran
-                  plan={displayPlan}
-                  sim={sim}
-                />
-                <OodaAiCard
-                  plan={displayPlan}
-                  sim={sim}
-                  brief={run?.brief ?? null}
-                />
+                  <ActChartColumn plan={displayPlan} sim={sim} />
+                </div>
               </div>
-              <div className="flex min-w-0 flex-col gap-4 min-[2100px]:sticky min-[2100px]:top-[var(--mach-header-h,7rem)]">
-                <WealthChart plan={displayPlan} sim={sim} />
-                <CashChart plan={displayPlan} sim={sim} />
-              </div>
-              <div className="min-w-0 min-[2100px]:col-span-2">
-                <YearTable plan={displayPlan} sim={sim} />
-              </div>
+              <YearTable plan={displayPlan} sim={sim} />
             </div>
           ) : (
             <div className="rounded-xl bg-surface px-5 py-8 shadow-[0_0_0_1px_var(--color-border)]">

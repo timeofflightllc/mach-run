@@ -8,7 +8,7 @@ function Privacy() {
     <main className="min-h-screen bg-bg px-4 py-10 text-fg">
       <div className="mx-auto w-full max-w-2xl space-y-8">
         <Link to="/" className="inline-block opacity-90 hover:opacity-100">
-          <BrandLockup />
+          <BrandLockup framed />
         </Link>
         <header>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">

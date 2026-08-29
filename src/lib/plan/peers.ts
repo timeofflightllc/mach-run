@@ -106,6 +106,28 @@ function standing(p: number): string {
   return `the bottom ${p}%`;
 }
 
+export function peerRankLine(brief: {
+  age: number | null;
+  nwPercentile: number | null;
+  incomePercentile: number | null;
+  bandLabel: string | null;
+}): string | null {
+  const parts: string[] = [];
+  if (brief.nwPercentile != null && brief.bandLabel) {
+    parts.push(
+      `net worth in ${standing(brief.nwPercentile)} of U.S. families age ${brief.bandLabel}`,
+    );
+  }
+  if (brief.incomePercentile != null) {
+    parts.push(
+      `income in ${standing(brief.incomePercentile)} of U.S. households`,
+    );
+  }
+  if (!parts.length) return null;
+  const ageBit = brief.age != null ? ` at ${brief.age}` : "";
+  return `Peer rank${ageBit}: ${parts.join("; ")}.`;
+}
+
 function monthsBetween(a: Date, b: Date): number {
   return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
 }
@@ -194,12 +216,12 @@ function bottomLine(opts: {
           ? ` MACH RUN first reaches it around ${egg.hitYear}${egg.hitAge != null ? ` (age ${egg.hitAge})` : ""}, ahead of your date.`
           : "";
       return {
-        headline: `You're on track to meet your ${usd(egg.goal)} nest egg by ${egg.targetYear}${byAge}.`,
+        headline: `You are on track for ${usd(egg.goal)} by ${egg.targetYear}${byAge}.`,
         body: `Projected spendable at that date is ${usd(egg.projected)} in today's dollars.${early} Stay with the plan — this is the number you asked MACH RUN to hit.`,
       };
     }
     return {
-      headline: `You're not on track for ${usd(egg.goal)} by ${egg.targetYear}${byAge}.`,
+      headline: `You are not on track for ${usd(egg.goal)} by ${egg.targetYear}${byAge}.`,
       body: `Projected spendable there is ${usd(egg.projected)} — short ${usd(Math.max(0, egg.goal - egg.projected))}. Invest about ${usd(egg.extraMonthly, true)} more per month (on top of what you already entered), compounding at your assumed real return, to close the gap by that date.`,
     };
   }
@@ -331,7 +353,7 @@ export function buildPeerBrief(
   } else if (nwPercentile != null && band) {
     add(
       "Peer rank",
-      `Peer rank: ${who} at ${age} is ${rankPhrase(nwPercentile)} on net worth. Household net worth of ${usd(netWorth)} lands in ${standing(nwPercentile)} of U.S. families age ${band.label}. Median in that band is about ${usdCompact(band.p50)}. The ${standing(90)} door is about ${usdCompact(band.p90)}. Fed SCF, stepped into 2026 dollars — a national sketch, not a trophy.`,
+      `Peer rank: ${who} at ${age} is ${rankPhrase(nwPercentile)} on net worth. Household net worth of ${usd(netWorth)} lands in ${standing(nwPercentile)} of U.S. families age ${band.label}. Median in that band is about ${usdCompact(band.p50)}. The ${standing(90)} door is about ${usdCompact(band.p90)}.`,
     );
   }
 
@@ -341,12 +363,12 @@ export function buildPeerBrief(
         const win = streamWindow(plan, s);
         const amt = streamBenefitToday(plan, s, asOf);
         const end = win.end ? win.end.slice(0, 7) : "open";
-        return `${s.name.trim() || s.kind} ${usd(amt, true)}/mo (${win.start.slice(0, 7)} → ${end})`;
+        return `${s.name.trim() || s.kind}  ${usd(amt, true)}/mo  (${win.start.slice(0, 7)} → ${end})`;
       })
-      .join("; ");
+      .join("\n");
     add(
       "Paychecks",
-      `Income stages on this run: ${listed}. MACH RUN only scores what you typed, so every pension and side check you add makes this picture truer.`,
+      `Income stages on this run:\n${listed}\nMACH RUN only scores what you typed, so every pension and side check you add makes this picture truer.`,
     );
   }
 

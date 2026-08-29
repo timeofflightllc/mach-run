@@ -10,7 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import { usd, usdCompact } from "@/lib/plan/format";
-import type { Plan, SimResult } from "@/lib/plan/types";
+import { PinToggle } from "@/components/meridian/chart-pin";
 
 const tooltipStyle = {
   background: "var(--color-elevated)",
@@ -24,7 +24,17 @@ function formatTip(value: unknown) {
   return usd(Number(value ?? 0));
 }
 
-export function WealthChart({ plan, sim }: { plan: Plan; sim: SimResult }) {
+export function WealthChart({
+  plan,
+  sim,
+  pinned,
+  onPin,
+}: {
+  plan: Plan;
+  sim: SimResult;
+  pinned?: boolean;
+  onPin?: () => void;
+}) {
   const real = plan.assumptions.dollars === "real";
   const data = sim.years.map((y) => ({
     year: y.year,
@@ -34,7 +44,10 @@ export function WealthChart({ plan, sim }: { plan: Plan; sim: SimResult }) {
 
   return (
     <div className="rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)] sm:p-5">
-      <h2 className="font-display text-lg font-medium text-fg">Spendable wealth</h2>
+      <div className="flex items-start justify-between gap-2">
+        <h2 className="font-display text-lg font-medium text-fg">Spendable wealth</h2>
+        {onPin ? <PinToggle pinned={Boolean(pinned)} onToggle={onPin} /> : null}
+      </div>
       <p className="mb-4 text-xs text-subtle">
         {real ? "Inflation-adjusted (today's dollars)" : "Future dollars"} ·
         Roth / taxable / TSP marked spendable. Houses and 529s sit in net worth
@@ -91,7 +104,17 @@ export function WealthChart({ plan, sim }: { plan: Plan; sim: SimResult }) {
   );
 }
 
-export function CashChart({ plan, sim }: { plan: Plan; sim: SimResult }) {
+export function CashChart({
+  plan,
+  sim,
+  pinned,
+  onPin,
+}: {
+  plan: Plan;
+  sim: SimResult;
+  pinned?: boolean;
+  onPin?: () => void;
+}) {
   const real = plan.assumptions.dollars === "real";
   const inf = plan.assumptions.inflationPct / 100;
   const asOfYear = Number(plan.assumptions.asOfDate.slice(0, 4));
@@ -109,7 +132,10 @@ export function CashChart({ plan, sim }: { plan: Plan; sim: SimResult }) {
 
   return (
     <div className="rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)] sm:p-5">
-      <h2 className="font-display text-lg font-medium text-fg">Annual cash flow</h2>
+      <div className="flex items-start justify-between gap-2">
+        <h2 className="font-display text-lg font-medium text-fg">Annual cash flow</h2>
+        {onPin ? <PinToggle pinned={Boolean(pinned)} onToggle={onPin} /> : null}
+      </div>
       <p className="mb-4 text-xs text-subtle">
         Gross income vs spending vs planned contributions. Guaranteed (gold
         line) is pension, other retirement income, military retired pay, VA, and
