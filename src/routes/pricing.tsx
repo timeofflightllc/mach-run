@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { BrandLockup } from "@/components/meridian/mach-mark";
+import { BrandLockup, MachFooter } from "@/components/meridian/mach-mark";
 import { PrimaryButton } from "@/components/ui/field";
 import { startBillingPortal, startCheckout } from "@/lib/billing/api";
 import {
@@ -92,18 +92,22 @@ function Pricing() {
           <BrandLockup />
         </Link>
 
-        <header className="mt-10 max-w-2xl">
+        <header className="mt-10 max-w-[50.5rem]">
           <h1 className="font-display text-4xl leading-tight text-fg sm:text-5xl">
             Pick a package.
             <br />
             Monthly or yearly — your call.
           </h1>
-          <p className="mt-4 text-base leading-relaxed text-muted">
-            Free is one household with limits. Individual is the full engine for
-            you. Advisor is for CFPs: unlimited named MACH RUN profiles, a
-            dropdown to switch clients, and a file you can export or import.
+          <p className="mt-5 font-display text-2xl leading-snug text-fg sm:text-3xl">
+            Two months free on yearly.
           </p>
-          <p className="mt-4 rounded-lg bg-surface px-4 py-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)]">
+          <p className="mt-6 text-base leading-relaxed text-muted">
+            Individual account is a cup of coffee a month.
+          </p>
+          <p className="mt-3 text-base leading-relaxed text-muted">
+            Advisor account has a 7-day free trial to see how awesome it is.
+          </p>
+          <p className="mt-6 rounded-lg bg-surface px-4 py-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)]">
             {ent.signedIn && currentText ? (
               currentText
             ) : (
@@ -170,11 +174,11 @@ function Pricing() {
               ) : null}
             </div>
             <p className="mt-3 font-display text-4xl tabular-nums">$0</p>
-            <p className="mt-1 text-sm text-muted">One household. Limits apply.</p>
+            <p className="mt-1 text-sm text-muted">Register in 30 seconds</p>
             <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
-              <li>Save one MACH RUN</li>
-              <li>2 accounts · 2 contributions · 2 incomes</li>
-              <li>OODA cut off after two paragraphs</li>
+              <li>One household.</li>
+              <li>Limit 2 accounts · 2 contributions · 2 incomes</li>
+              <li>Limited OODA analysis, a paragraph or two</li>
             </ul>
             {!signedIn ? (
               <a
@@ -215,13 +219,14 @@ function Pricing() {
               <span className="text-xl text-muted">{per}</span>
             </p>
             <p className="mt-1 text-sm text-muted">
-              {interval === "year" ? "Pay once. Forget it." : "Less than a cup of coffee."}
+              Less than that cup of bad coffee you hate
             </p>
             <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
               <li>One household, unlimited accounts</li>
               <li>Unlimited contributions and incomes</li>
               <li>Full MACH OODA Financial Analysis</li>
               <li>OODA AI on this MACH RUN</li>
+              <li>Pay yearly, 2 months on us</li>
             </ul>
             {!signedIn ? (
               <a
@@ -273,14 +278,15 @@ function Pricing() {
             </p>
             <p className="mt-1 text-sm text-muted">
               {interval === "year"
-                ? "Two months on us."
-                : `${ADVISOR_TRIAL_DAYS} days free, then ${ADVISOR_MONTHLY_USD}/month.`}
+                ? "7-day trial, 2 months free"
+                : `7-day trial, then $${ADVISOR_MONTHLY_USD}/month`}
             </p>
             <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
+              <li>Everything in Individual, plus:</li>
               <li>Unlimited named profiles (client IDs)</li>
-              <li>Dropdown to switch which MACH RUN you are in</li>
+              <li>Dropdown to switch Client profiles</li>
               <li>Export / import a MACH RUN file</li>
-              <li>Everything in Individual</li>
+              <li>For financial professionals, or nerds</li>
             </ul>
             {!signedIn ? (
               <a
@@ -326,6 +332,7 @@ function Pricing() {
           </Link>
         </p>
       </div>
+      <MachFooter />
     </main>
   );
 }
