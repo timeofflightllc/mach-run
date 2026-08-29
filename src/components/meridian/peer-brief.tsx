@@ -57,7 +57,7 @@ export function PeerBriefCard({
         {plan && sim && brief.expanded ? (
           <button
             type="button"
-            onClick={() => downloadAnalysisPdf(brief, plan, sim)}
+            onClick={() => void downloadAnalysisPdf(brief, plan, sim)}
             className="h-11 shrink-0 rounded-lg px-3 text-sm font-medium text-muted transition-colors hover:bg-elevated hover:text-fg"
           >
             Save PDF

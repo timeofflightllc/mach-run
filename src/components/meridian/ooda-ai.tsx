@@ -5,10 +5,15 @@ import { buildOodaAskContext } from "@/lib/ooda-ai/context";
 import { MACH_MONTHLY_USD, MACH_YEARLY_USD } from "@/lib/billing/limits";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { OODA_DISCLAIMER } from "@/lib/plan/disclaimer";
 import type { PeerBrief } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
 
 type Turn = { q: string; a: string };
+
+function Disclaimer() {
+  return <p className="text-xs italic leading-relaxed text-subtle">{OODA_DISCLAIMER}</p>;
+}
 
 export function OodaAiCard({
   plan,
@@ -62,23 +67,35 @@ export function OodaAiCard({
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
         OODA AI*
       </p>
-      <p className="mt-2 font-display text-lg text-fg">Ask about this analysis.</p>
-      <p className="mt-1 text-sm text-muted">
-        Unlimited only. Questions hit the MACH OODA Financial Analysis you just
-        ran — runway, RMDs, a stage, whether the save rate is a joke.
+      <p className="mt-2 font-display text-lg text-fg">
+        Ask OODA AI about this financial summary.
       </p>
+      <div className="mt-3">
+        <Disclaimer />
+      </div>
       {!paid ? (
         <div className="mt-4 flex flex-col items-start gap-2 border-t border-border pt-4">
-          <p className="text-sm text-muted">
-            OODA AI is on MACH RUN Unlimited — ${MACH_MONTHLY_USD}/month or $
-            {MACH_YEARLY_USD}/year.
-          </p>
-          <Link
-            to={signedIn ? "/pricing" : "/login"}
-            className="inline-flex h-11 items-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
-          >
-            {signedIn ? "Unlock OODA AI" : "Sign in, then go Unlimited"}
-          </Link>
+          {!signedIn ? (
+            <>
+              <p className="text-sm text-muted">
+                OODA AI is on MACH RUN Unlimited — ${MACH_MONTHLY_USD}/month or $
+                {MACH_YEARLY_USD}/year.
+              </p>
+              <Link
+                to="/login"
+                className="inline-flex h-11 items-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
+              >
+                Sign in, then go Unlimited
+              </Link>
+            </>
+          ) : (
+            <Link
+              to="/pricing"
+              className="inline-flex h-11 items-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
+            >
+              Unlock OODA AI
+            </Link>
+          )}
         </div>
       ) : (
         <>
@@ -119,6 +136,9 @@ export function OodaAiCard({
           {error ? <p className="mt-4 text-sm text-negative">{error}</p> : null}
         </>
       )}
+      <div className="mt-4 border-t border-border pt-4">
+        <Disclaimer />
+      </div>
     </div>
   );
 }
