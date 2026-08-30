@@ -54,6 +54,8 @@ export interface Mortgage {
   termYears: number;
   /** If true, P&I is added to monthly spending until the loan is paid off. */
   includeInSpending: boolean;
+  /** User opted in to model a loan on this property. */
+  associated?: boolean;
 }
 
 export interface Portfolio {

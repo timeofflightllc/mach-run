@@ -15,6 +15,7 @@ import { usd } from "@/lib/plan/format";
 import { startingNetWorth } from "@/lib/plan/engine";
 import {
   emptyMortgage,
+  mortgageAssociated,
   mortgagePayoffDate,
   originalPrincipal,
   remainingMortgage,
@@ -114,7 +115,7 @@ export function PortfolioForm() {
                   onValue={(n) => updatePortfolio(p.id, { returnPct: n })}
                 />
               </Field>
-              <Field label="Who is this account for">
+              <Field label="Account owner">
                 <SelectInput
                   value={normalizeOwner(p.owner)}
                   onChange={(e) =>
@@ -243,83 +244,103 @@ function RealEstateMortgage({
   onChange: (m: Mortgage) => void;
 }) {
   const patch = (partial: Partial<Mortgage>) => onChange({ ...mortgage, ...partial });
+  const associated = mortgageAssociated(mortgage);
   const original = originalPrincipal(mortgage);
   const remaining = remainingMortgage(mortgage, asOf);
   const equity = propertyValue - remaining;
   const payoff = mortgagePayoffDate(mortgage);
-  const hasLoan = mortgage.monthlyPi > 0 && mortgage.termYears > 0;
+  const hasLoan = associated && mortgage.monthlyPi > 0 && mortgage.termYears > 0;
 
   return (
     <div
-      className="mt-3 rounded-lg px-3 py-3"
+      className="mx-[50px] mt-3 rounded-lg px-3 py-3"
       style={{
         background: "color-mix(in oklab, #e8c547 12%, transparent)",
         boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 45%, transparent)",
       }}
     >
-      <p className="text-xs font-medium tracking-wide text-[#e8c547]">
-        Associated loan / mortgage
-      </p>
-      <p className="mt-1 text-xs leading-relaxed text-[#e8c547]">
-        Remaining principal is subtracted from net worth. Property value still
-        grows at the return above. Check the box only if this P&I is not
-        already in Spending.
-      </p>
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <Field label="Origination (month/year)" className="col-span-2">
-          <MonthInput
-            value={mortgage.originationDate}
-            onValue={(v) => patch({ originationDate: v })}
-          />
-        </Field>
-        <Field label="APR (%)">
-          <NumberInput
-            min={0}
-            max={25}
-            step={0.125}
-            value={mortgage.aprPct}
-            onValue={(n) => patch({ aprPct: n })}
-          />
-        </Field>
-        <Field label="P&I / month">
-          <MoneyInput
-            min={0}
-            value={Math.round((mortgage.monthlyPi || 0) * 100) / 100}
-            onValue={(n) => patch({ monthlyPi: n })}
-          />
-        </Field>
-        <Field label="Length (years)">
-          <NumberInput
-            min={1}
-            max={50}
-            step={1}
-            value={mortgage.termYears}
-            onValue={(n) => patch({ termYears: n })}
-          />
-        </Field>
-        <Field label="In spending">
-          <label className="flex min-h-11 items-center gap-2 text-xs text-[#e8c547]">
-            <input
-              type="checkbox"
-              checked={Boolean(mortgage.includeInSpending)}
-              onChange={(e) => patch({ includeInSpending: e.target.checked })}
-            />
-            Include this P&I in spending
-          </label>
-        </Field>
-      </div>
-      {hasLoan ? (
-        <p className="mt-3 text-xs leading-relaxed text-[#e8c547]">
-          Original principal about {usd(original)}. Remaining now {usd(remaining)}.
-          Equity in this property {usd(equity)}
-          {payoff ? ` · paid off ${payoff.slice(0, 7)}` : ""}.
-        </p>
-      ) : (
-        <p className="mt-3 text-xs leading-relaxed text-[#e8c547]">
-          Enter P&I, APR, origination, and term to model the loan. Leave
-          P&I at blank if this property is free and clear.
-        </p>
-      )}
+      <label className="flex items-start gap-2 text-xs leading-relaxed text-[#e8c547]">
+        <input
+          type="checkbox"
+          className="mt-0.5 shrink-0"
+          checked={associated}
+          onChange={(e) => patch({ associated: e.target.checked })}
+        />
+        <span>
+          Check if there is a mortgage or loan/liability associated with this
+          real estate account.
+        </span>
+      </label>
+      {associated ? (
+        <div className="mt-3">
+          <p className="text-xs font-medium tracking-wide text-[#e8c547]">
+            Associated loan / mortgage
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-[#e8c547]">
+            Remaining principal is subtracted from net worth. Property value still
+            grows at the return above. Check the box only if this P&I is not
+            already in Spending.
+          </p>
+          <div className="mt-3 flex flex-col gap-2">
+            <Field label="Origination (month/year)">
+              <MonthInput
+                value={mortgage.originationDate}
+                onValue={(v) => patch({ originationDate: v })}
+              />
+            </Field>
+            <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
+              <Field label="APR (%)" className="w-[8.75rem]">
+                <NumberInput
+                  min={0}
+                  max={25}
+                  step={0.125}
+                  value={mortgage.aprPct}
+                  onValue={(n) => patch({ aprPct: n })}
+                />
+              </Field>
+              <Field label="P&I / month" className="w-[8.75rem]">
+                <MoneyInput
+                  min={0}
+                  value={Math.round((mortgage.monthlyPi || 0) * 100) / 100}
+                  onValue={(n) => patch({ monthlyPi: n })}
+                />
+              </Field>
+              <Field label="Length (years)" className="w-[8.75rem]">
+                <NumberInput
+                  min={1}
+                  max={50}
+                  step={1}
+                  value={mortgage.termYears}
+                  onValue={(n) => patch({ termYears: n })}
+                />
+              </Field>
+              <Field label="In spending">
+                <label className="flex min-h-11 items-center gap-2 text-xs text-[#e8c547]">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(mortgage.includeInSpending)}
+                    onChange={(e) => patch({ includeInSpending: e.target.checked })}
+                  />
+                  Include this P&I in spending
+                </label>
+              </Field>
+            </div>
+          </div>
+          {hasLoan ? (
+            <p className="mt-3 text-xs leading-relaxed text-[#e8c547]">
+              Original principal about {usd(original)}. Remaining now {usd(remaining)}.
+              Equity in this property {usd(equity)}
+              {payoff ? ` · paid off ${payoff.slice(0, 7)}` : ""}.
+            </p>
+          ) : (
+            <p className="mt-3 text-xs leading-relaxed text-[#e8c547]">
+              Enter P&I, APR, origination, and term to model the loan. Leave
+              P&I at blank if this property is free and clear.
+            </p>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }
+

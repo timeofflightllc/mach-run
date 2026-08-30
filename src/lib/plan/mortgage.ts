@@ -1,5 +1,12 @@
-import { monthStart } from "./dates.ts";
+import { monthStart, validIso } from "./dates.ts";
 import type { Mortgage, Portfolio } from "./types.ts";
+
+export function mortgageAssociated(m: Mortgage | null | undefined): boolean {
+  if (!m) return false;
+  if (m.associated === false) return false;
+  if (m.associated === true) return true;
+  return (m.monthlyPi || 0) > 0 && validIso(m.originationDate);
+}
 
 export function monthsBetweenMonths(a: Date, b: Date): number {
   return (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
@@ -20,7 +27,7 @@ export function remainingMortgage(
   m: Mortgage | null | undefined,
   asOf: string | Date,
 ): number {
-  if (!m || !(m.monthlyPi > 0) || !(m.termYears > 0) || !m.originationDate) {
+  if (!mortgageAssociated(m) || !m || !(m.monthlyPi > 0) || !(m.termYears > 0) || !validIso(m.originationDate)) {
     return 0;
   }
   const start = monthStart(m.originationDate);
@@ -43,7 +50,7 @@ export function mortgagePaymentDue(
   m: Mortgage | null | undefined,
   asOf: string | Date,
 ): number {
-  if (!m || !m.includeInSpending) return 0;
+  if (!mortgageAssociated(m) || !m || !m.includeInSpending) return 0;
   const rem = remainingMortgage(m, asOf);
   if (rem <= 0.5) return 0;
   const r = (m.aprPct || 0) / 100 / 12;
@@ -52,7 +59,7 @@ export function mortgagePaymentDue(
 }
 
 export function mortgagePayoffDate(m: Mortgage | null | undefined): string | null {
-  if (!m?.originationDate || !(m.termYears > 0)) return null;
+  if (!m || !mortgageAssociated(m) || !validIso(m.originationDate) || !(m.termYears > 0)) return null;
   const start = monthStart(m.originationDate);
   const end = new Date(start.getFullYear(), start.getMonth() + Math.round(m.termYears * 12), 1);
   return `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-01`;
@@ -65,6 +72,7 @@ export function emptyMortgage(): Mortgage {
     monthlyPi: 0,
     termYears: 30,
     includeInSpending: false,
+    associated: false,
   };
 }
 
