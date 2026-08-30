@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as LogoDraftsRouteImport } from './routes/logo-drafts'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -31,11 +30,6 @@ const AccountRoute = AccountRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LogoDraftsRoute = LogoDraftsRouteImport.update({
-  id: '/logo-drafts',
-  path: '/logo-drafts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -63,7 +57,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/login': typeof LoginRoute
-  '/logo-drafts': typeof LogoDraftsRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -73,7 +66,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/login': typeof LoginRoute
-  '/logo-drafts': typeof LogoDraftsRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -84,7 +76,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/account': typeof AccountRoute
   '/login': typeof LoginRoute
-  '/logo-drafts': typeof LogoDraftsRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
@@ -96,7 +87,6 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/login'
-    | '/logo-drafts'
     | '/pricing'
     | '/privacy'
     | '/api/auth/$'
@@ -106,7 +96,6 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/login'
-    | '/logo-drafts'
     | '/pricing'
     | '/privacy'
     | '/api/auth/$'
@@ -116,7 +105,6 @@ export interface FileRouteTypes {
     | '/'
     | '/account'
     | '/login'
-    | '/logo-drafts'
     | '/pricing'
     | '/privacy'
     | '/api/auth/$'
@@ -127,7 +115,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AccountRoute: typeof AccountRoute
   LoginRoute: typeof LoginRoute
-  LogoDraftsRoute: typeof LogoDraftsRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -155,13 +142,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/logo-drafts': {
-      id: '/logo-drafts'
-      path: '/logo-drafts'
-      fullPath: '/logo-drafts'
-      preLoaderRoute: typeof LogoDraftsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -199,7 +179,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AccountRoute: AccountRoute,
   LoginRoute: LoginRoute,
-  LogoDraftsRoute: LogoDraftsRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
