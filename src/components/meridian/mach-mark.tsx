@@ -116,23 +116,27 @@ export function BrandLockup({
   className,
   size = "md",
   framed = false,
+  showTagline = true,
 }: {
   className?: string;
   size?: "md" | "lg";
   framed?: boolean;
+  showTagline?: boolean;
 }) {
   const large = size === "lg";
   return (
     <span className={cn("inline-flex shrink-0 flex-col items-stretch", className)}>
       <MachWordmark size={size} framed={framed} />
-      <span
-        className={cn(
-          "mt-1.5 w-full text-center font-bold leading-snug tracking-[0.12em] text-muted",
-          large ? "text-[13px] sm:text-sm" : "text-xs sm:text-[13px]",
-        )}
-      >
-        The Supersonic Financial Calculator
-      </span>
+      {showTagline ? (
+        <span
+          className={cn(
+            "mt-1.5 w-full text-center font-bold leading-snug tracking-[0.12em] text-muted",
+            large ? "text-[13px] sm:text-sm" : "text-xs sm:text-[13px]",
+          )}
+        >
+          The Supersonic Financial Calculator
+        </span>
+      ) : null}
     </span>
   );
 }

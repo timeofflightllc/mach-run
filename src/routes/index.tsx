@@ -272,11 +272,11 @@ function Home() {
         style={{ backgroundColor: "#0a1835" }}
       >
         <div className="page-gutter relative z-50 mx-auto max-w-none py-2.5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="min-w-0 shrink text-left">
-              <BrandLockup />
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1">
+            <div className="min-w-0">
+              <BrandLockup showTagline={false} />
             </div>
-            <div className="ml-auto flex shrink-0 items-center justify-end gap-1.5">
+            <div className="flex shrink-0 items-center justify-end gap-1.5">
               <div className="hidden rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)] md:flex">
                 <button
                   type="button"
@@ -304,31 +304,34 @@ function Home() {
               <ProfileSwitcher ent={ent} />
               <AuthSlot saved={saveStatus} />
             </div>
-          </div>
-          <div className="mt-2 flex items-center gap-2 md:hidden">
-            <div className="flex min-w-0 flex-1 rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
-              <button
-                type="button"
-                aria-pressed={real}
-                onClick={() => patchAssumptions({ dollars: "real" })}
-                className={cn(
-                  "h-9 flex-1 rounded-md px-2 text-xs font-medium",
-                  real ? "bg-accent text-accent-fg" : "text-muted",
-                )}
-              >
-                Today $
-              </button>
-              <button
-                type="button"
-                aria-pressed={!real}
-                onClick={() => patchAssumptions({ dollars: "nominal" })}
-                className={cn(
-                  "h-9 flex-1 rounded-md px-2 text-xs font-medium",
-                  !real ? "bg-accent text-accent-fg" : "text-muted",
-                )}
-              >
-                Future $
-              </button>
+            <p className="min-w-0 text-left text-[11px] font-bold leading-snug tracking-[0.12em] text-muted sm:text-xs md:text-[13px]">
+              The Supersonic Financial Calculator
+            </p>
+            <div className="flex justify-end md:hidden">
+              <div className="inline-flex rounded-md bg-surface p-0.5 shadow-[0_0_0_1px_var(--color-border)]">
+                <button
+                  type="button"
+                  aria-pressed={real}
+                  onClick={() => patchAssumptions({ dollars: "real" })}
+                  className={cn(
+                    "h-6 rounded px-1.5 text-[10px] font-medium leading-none",
+                    real ? "bg-accent text-accent-fg" : "text-muted",
+                  )}
+                >
+                  Today $
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={!real}
+                  onClick={() => patchAssumptions({ dollars: "nominal" })}
+                  className={cn(
+                    "h-6 rounded px-1.5 text-[10px] font-medium leading-none",
+                    !real ? "bg-accent text-accent-fg" : "text-muted",
+                  )}
+                >
+                  Future $
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -358,28 +361,6 @@ function Home() {
             </span>
           ))}
         </nav>
-        <div className="page-gutter mx-auto flex max-w-none gap-1 pb-3 lg:hidden">
-          <button
-            type="button"
-            onClick={() => setTab("loop")}
-            className={cn(
-              "h-11 flex-1 rounded-lg text-sm font-medium",
-              tab === "loop" ? "bg-surface text-fg" : "text-muted",
-            )}
-          >
-            OODA
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab("act")}
-            className={cn(
-              "h-11 flex-1 rounded-lg text-sm font-medium",
-              tab === "act" ? "bg-surface text-fg" : "text-muted",
-            )}
-          >
-            Act
-          </button>
-        </div>
         <GuestOnly>
           <div className="border-t border-[#5c4a18] bg-[#241c0c]">
             <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-1.5 py-2.5 text-center sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-3">
