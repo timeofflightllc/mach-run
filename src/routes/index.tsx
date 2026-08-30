@@ -425,6 +425,7 @@ function Home() {
             >
               <PortfolioForm />
             </Section>
+            <CalculateButton onCalculate={calculate} />
           </div>
           <div className="flex flex-col gap-3">
             <PhaseLabel id="ooda-orient" label="Orient" />
@@ -441,6 +442,7 @@ function Home() {
             >
               <SpendingForm />
             </Section>
+            <CalculateButton onCalculate={calculate} />
           </div>
           <div className="flex flex-col gap-3">
             <PhaseLabel id="ooda-decide" label="Decide" />
@@ -450,6 +452,7 @@ function Home() {
             >
               <ContributionForm />
             </Section>
+            <CalculateButton onCalculate={calculate} />
           </div>
         </aside>
 
@@ -547,6 +550,7 @@ function Home() {
               </div>
             </div>
           )}
+          <CalculateButton onCalculate={() => calculate({ stay: true })} />
         </div>
       </main>
       <MachFooter />
