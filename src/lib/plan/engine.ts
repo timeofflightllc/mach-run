@@ -21,6 +21,7 @@ import {
 } from "./rmd.ts";
 import { normalizeOwner } from "./family-owners.ts";
 import { irsAnnualCap, irsLimitClass } from "./irs-limits.ts";
+import { mortgagePaymentDue, portfolioEquity } from "./mortgage.ts";
 import type {
   FundingGap,
   IncomeStage,
@@ -355,6 +356,10 @@ export function simulate(raw: Plan): SimResult {
       if (!inRange(cursor, win.start, win.end)) continue;
       spending += inflate(phase.monthlyAmount, mInf, monthsFromAsOf);
     }
+    for (const p of plan.portfolios) {
+      if (p.kind !== "real_estate") continue;
+      spending += mortgagePaymentDue(p.mortgage, cursor);
+    }
 
     const due: { portfolioId: string; amount: number; matchPct: number }[] = [];
     let planned = 0;
@@ -484,7 +489,7 @@ export function simulate(raw: Plan): SimResult {
     for (const p of plan.portfolios) {
       const v = values.get(p.id) ?? 0;
       byBucket[p.taxBucket] += v;
-      if (p.includeInNetWorth) netWorthEnd += v;
+      if (p.includeInNetWorth) netWorthEnd += portfolioEquity({ ...p, currentValue: v }, cursor);
       if (p.spendable) spendableEnd += v;
     }
 
@@ -677,7 +682,8 @@ export function startingSpendable(plan: Plan): number {
 }
 
 export function startingNetWorth(plan: Plan): number {
+  const asOf = plan.assumptions.asOfDate;
   return plan.portfolios
     .filter((p) => p.includeInNetWorth)
-    .reduce((s, p) => s + p.currentValue, 0);
+    .reduce((s, p) => s + portfolioEquity(p, asOf), 0);
 }

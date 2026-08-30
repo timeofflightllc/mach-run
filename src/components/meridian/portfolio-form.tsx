@@ -3,14 +3,22 @@ import {
   DangerButton,
   Field,
   GhostButton,
+  MonthInput,
   NumberInput,
   MoneyInput,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
-import type { AccountKind, TaxBucket } from "@/lib/plan/types";
+import type { AccountKind, Mortgage, TaxBucket } from "@/lib/plan/types";
 import { newId, usePlanStore } from "@/lib/plan/store";
 import { usd } from "@/lib/plan/format";
+import { startingNetWorth } from "@/lib/plan/engine";
+import {
+  emptyMortgage,
+  mortgagePayoffDate,
+  originalPrincipal,
+  remainingMortgage,
+} from "@/lib/plan/mortgage";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
 import { atAccountCap, useEntitlement } from "@/lib/billing/use-entitlement";
 import {
@@ -50,9 +58,7 @@ export function PortfolioForm() {
   const spendable = plan.portfolios
     .filter((p) => p.spendable)
     .reduce((s, p) => s + p.currentValue, 0);
-  const net = plan.portfolios
-    .filter((p) => p.includeInNetWorth)
-    .reduce((s, p) => s + p.currentValue, 0);
+  const net = startingNetWorth(plan);
 
   return (
     <div className="flex flex-col gap-4">
@@ -131,6 +137,9 @@ export function PortfolioForm() {
                     updatePortfolio(p.id, {
                       kind,
                       ...(row ? { taxBucket: row.bucket } : {}),
+                      ...(kind === "real_estate"
+                        ? { mortgage: p.mortgage ?? emptyMortgage(), spendable: false }
+                        : {}),
                       ...(isTaxQualified(kind) && normalizeOwner(p.owner) === "joint"
                         ? { owner: "primary" }
                         : {}),
@@ -183,6 +192,15 @@ export function PortfolioForm() {
                 </div>
               </Field>
             </div>
+            {p.kind === "real_estate" ? (
+              <RealEstateMortgage
+                portfolioId={p.id}
+                asOf={plan.assumptions.asOfDate}
+                propertyValue={p.currentValue}
+                mortgage={p.mortgage ?? emptyMortgage()}
+                onChange={(mortgage) => updatePortfolio(p.id, { mortgage })}
+              />
+            ) : null}
           </li>
         ))}
       </ul>
@@ -207,6 +225,100 @@ export function PortfolioForm() {
           <Plus className="size-4" />
           Add account
         </GhostButton>
+      )}
+    </div>
+  );
+}
+
+function RealEstateMortgage({
+  asOf,
+  propertyValue,
+  mortgage,
+  onChange,
+}: {
+  portfolioId: string;
+  asOf: string;
+  propertyValue: number;
+  mortgage: Mortgage;
+  onChange: (m: Mortgage) => void;
+}) {
+  const patch = (partial: Partial<Mortgage>) => onChange({ ...mortgage, ...partial });
+  const original = originalPrincipal(mortgage);
+  const remaining = remainingMortgage(mortgage, asOf);
+  const equity = propertyValue - remaining;
+  const payoff = mortgagePayoffDate(mortgage);
+  const hasLoan = mortgage.monthlyPi > 0 && mortgage.termYears > 0;
+
+  return (
+    <div
+      className="mt-3 rounded-lg px-3 py-3"
+      style={{
+        background: "color-mix(in oklab, #e8c547 12%, transparent)",
+        boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 45%, transparent)",
+      }}
+    >
+      <p className="text-xs font-medium tracking-wide text-[#e8c547]">
+        Associated loan / mortgage
+      </p>
+      <p className="mt-1 text-xs leading-relaxed text-[#e8c547]">
+        Remaining principal is subtracted from net worth. Property value still
+        grows at the return above. Check the box only if this P&I is not
+        already in Spending.
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <Field label="Origination (month/year)" className="col-span-2">
+          <MonthInput
+            value={mortgage.originationDate}
+            onValue={(v) => patch({ originationDate: v })}
+          />
+        </Field>
+        <Field label="APR (%)">
+          <NumberInput
+            min={0}
+            max={25}
+            step={0.125}
+            value={mortgage.aprPct}
+            onValue={(n) => patch({ aprPct: n })}
+          />
+        </Field>
+        <Field label="P&I / month">
+          <MoneyInput
+            min={0}
+            value={Math.round((mortgage.monthlyPi || 0) * 100) / 100}
+            onValue={(n) => patch({ monthlyPi: n })}
+          />
+        </Field>
+        <Field label="Length (years)">
+          <NumberInput
+            min={1}
+            max={50}
+            step={1}
+            value={mortgage.termYears}
+            onValue={(n) => patch({ termYears: n })}
+          />
+        </Field>
+        <Field label="In spending">
+          <label className="flex min-h-11 items-center gap-2 text-xs text-[#e8c547]">
+            <input
+              type="checkbox"
+              checked={Boolean(mortgage.includeInSpending)}
+              onChange={(e) => patch({ includeInSpending: e.target.checked })}
+            />
+            Include this P&I in spending
+          </label>
+        </Field>
+      </div>
+      {hasLoan ? (
+        <p className="mt-3 text-xs leading-relaxed text-[#e8c547]">
+          Original principal about {usd(original)}. Remaining now {usd(remaining)}.
+          Equity in this property {usd(equity)}
+          {payoff ? ` · paid off ${payoff.slice(0, 7)}` : ""}.
+        </p>
+      ) : (
+        <p className="mt-3 text-xs leading-relaxed text-[#e8c547]">
+          Enter P&I, APR, origination, and term to model the loan. Leave
+          P&I at blank if this property is free and clear.
+        </p>
       )}
     </div>
   );

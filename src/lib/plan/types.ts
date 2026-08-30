@@ -46,6 +46,16 @@ export interface IncomeStage {
   endDate: string | null;
 }
 
+export interface Mortgage {
+  originationDate: string;
+  aprPct: number;
+  /** Principal and interest only. */
+  monthlyPi: number;
+  termYears: number;
+  /** If true, P&I is added to monthly spending until the loan is paid off. */
+  includeInSpending: boolean;
+}
+
 export interface Portfolio {
   id: string;
   name: string;
@@ -63,6 +73,8 @@ export interface Portfolio {
    * Withdrawals: earnings first are ordinary income; then tax-free return of basis.
    */
   costBasis?: number | null;
+  /** Real estate only. Remaining principal is subtracted from net worth. */
+  mortgage?: Mortgage | null;
 }
 
 export interface ContributionRule {
@@ -83,6 +95,8 @@ export interface ContributionRule {
   employerMatchPct?: number | null;
   /** Stop employee dollars when YTD hits the IRS annual max (catch-up if owner is 50+). */
   capToIrsLimit?: boolean;
+  /** End date tracks Family retirement goal date. */
+  endAtRetirement?: boolean;
 }
 
 export interface IncomeStream {

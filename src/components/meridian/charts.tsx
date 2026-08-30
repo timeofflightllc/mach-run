@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import { usd, usdCompact } from "@/lib/plan/format";
 import { PinToggle } from "@/components/meridian/chart-pin";
+import type { Plan, SimResult } from "@/lib/plan/types";
 
 const tooltipStyle = {
   background: "var(--color-elevated)",

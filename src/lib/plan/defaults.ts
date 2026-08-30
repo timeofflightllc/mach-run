@@ -77,6 +77,7 @@ export function ensurePlan(plan: Plan): Plan {
           ? Number(p.costBasis)
           : 0
         : p.costBasis ?? null,
+    mortgage: p.kind === "real_estate" ? p.mortgage ?? null : p.mortgage ?? null,
   }));
   next.contributions = next.contributions.map((c) => ({
     ...c,

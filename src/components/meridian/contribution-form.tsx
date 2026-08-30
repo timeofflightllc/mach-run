@@ -1,5 +1,5 @@
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   DangerButton,
   DateInput,
@@ -38,6 +38,16 @@ export function ContributionForm() {
   const ent = useEntitlement();
   const capped = atContributionCap(plan.contributions.length, ent);
   const [needAccount, setNeedAccount] = useState(false);
+
+  useEffect(() => {
+    const ret = plan.assumptions.retirementGoalDate;
+    if (!ret) return;
+    for (const c of plan.contributions) {
+      if (c.endAtRetirement && c.endDate !== ret) {
+        updateContribution(c.id, { endDate: ret });
+      }
+    }
+  }, [plan.assumptions.retirementGoalDate, plan.contributions, updateContribution]);
 
   const activeMonthly = activeEmployerMatchMonthly(plan);
   const scheduledMonthly = scheduledEmployerMatchMonthly(plan);
@@ -264,12 +274,37 @@ export function ContributionForm() {
                       <DateInput
                         value={c.endDate}
                         onValue={(v) =>
-                          updateContribution(c.id, { endDate: v === "" ? null : v })
+                          updateContribution(c.id, {
+                            endDate: v === "" ? null : v,
+                            endAtRetirement: false,
+                          })
                         }
                       />
                     </Field>
                   </>
                 )}
+                <label className="flex items-start gap-2 text-xs leading-relaxed text-[#e8c547]">
+                  <input
+                    type="checkbox"
+                    className="mt-0.5"
+                    checked={Boolean(c.endAtRetirement)}
+                    onChange={(e) => {
+                      const on = e.target.checked;
+                      const ret = plan.assumptions.retirementGoalDate;
+                      updateContribution(c.id, {
+                        endAtRetirement: on,
+                        ...(on && ret ? { endDate: ret } : {}),
+                      });
+                    }}
+                  />
+                  Select to automatically stop this contribution at planned
+                  retirement date.
+                </label>
+                {c.endAtRetirement && !plan.assumptions.retirementGoalDate ? (
+                  <p className="text-xs leading-relaxed text-[#e8c547]">
+                    Set a retirement goal date in Family first.
+                  </p>
+                ) : null}
               </div>
             </li>
           );
@@ -306,6 +341,7 @@ export function ContributionForm() {
                 employerMatch: false,
                 employerMatchPct: 0,
                 capToIrsLimit: false,
+                endAtRetirement: false,
               });
             }}
           >

@@ -107,6 +107,11 @@
   }
 }
 
+/* Side inset ≈ Calculate button width (8.5rem) on a wide screen. */
+.page-gutter {
+  padding-inline: clamp(1rem, 4vw, 4.25rem);
+}
+
 @keyframes master-caution-flash {
   0%,
   42% {

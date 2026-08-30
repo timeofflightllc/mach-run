@@ -64,11 +64,22 @@ const LOOP = [
   { id: "ooda-act", label: "Act" },
 ] as const;
 
-function PhaseLabel({ id, label }: { id: string; label: string }) {
+function PhaseLabel({
+  id,
+  label,
+  className,
+}: {
+  id: string;
+  label: string;
+  className?: string;
+}) {
   return (
     <p
       id={id}
-      className="scroll-mt-40 font-display text-lg font-semibold uppercase tracking-[0.18em] text-muted sm:text-xl"
+      className={cn(
+        "scroll-mt-40 font-display text-lg font-semibold uppercase tracking-[0.18em] text-muted sm:text-xl",
+        className,
+      )}
     >
       {label}
     </p>
@@ -260,7 +271,7 @@ function Home() {
         className="sticky top-0 z-30 border-b border-border"
         style={{ backgroundColor: "#0a1835" }}
       >
-        <div className="relative z-50 mx-auto max-w-none px-4 py-2.5 sm:px-6">
+        <div className="page-gutter relative z-50 mx-auto max-w-none py-2.5">
           <div className="flex items-center justify-between gap-2">
             <div className="min-w-0 shrink text-left">
               <BrandLockup />
@@ -323,7 +334,7 @@ function Home() {
         </div>
         <nav
           aria-label="OODA loop"
-          className="mx-auto flex max-w-none items-center justify-center gap-1 overflow-x-auto px-4 pb-3 sm:px-6"
+          className="page-gutter mx-auto flex max-w-none items-center justify-center gap-1 overflow-x-auto pb-3"
         >
           {LOOP.map((phase, i) => (
             <span key={phase.id} className="flex items-center gap-1">
@@ -347,7 +358,7 @@ function Home() {
             </span>
           ))}
         </nav>
-        <div className="mx-auto flex max-w-none gap-1 px-4 pb-3 lg:hidden">
+        <div className="page-gutter mx-auto flex max-w-none gap-1 pb-3 lg:hidden">
           <button
             type="button"
             onClick={() => setTab("loop")}
@@ -371,7 +382,7 @@ function Home() {
         </div>
         <GuestOnly>
           <div className="border-t border-[#5c4a18] bg-[#241c0c]">
-            <div className="mx-auto flex max-w-none flex-col items-center gap-1.5 px-4 py-2.5 text-center sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-3 sm:px-6">
+            <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-1.5 py-2.5 text-center sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-3">
               <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-2 py-0.5 font-display text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1a1408]">
                 Master Caution
               </span>
@@ -391,7 +402,7 @@ function Home() {
         </GuestOnly>
       </header>
 
-      <main className="mx-auto grid max-w-none grid-cols-1 gap-5 px-4 py-5 sm:px-6 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] lg:items-start">
+      <main className="page-gutter mx-auto grid max-w-none grid-cols-1 gap-5 py-5 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] lg:items-start">
         <aside
           className={cn(
             "flex flex-col gap-6 lg:sticky lg:top-[var(--mach-header-h,7rem)] lg:max-h-[calc(100vh-var(--mach-header-h,7rem))] lg:overflow-y-auto lg:pr-1",
@@ -414,7 +425,6 @@ function Home() {
             >
               <PortfolioForm />
             </Section>
-            <CalculateButton onCalculate={calculate} />
           </div>
           <div className="flex flex-col gap-3">
             <PhaseLabel id="ooda-orient" label="Orient" />
@@ -431,7 +441,6 @@ function Home() {
             >
               <SpendingForm />
             </Section>
-            <CalculateButton onCalculate={calculate} />
           </div>
           <div className="flex flex-col gap-3">
             <PhaseLabel id="ooda-decide" label="Decide" />
@@ -441,7 +450,6 @@ function Home() {
             >
               <ContributionForm />
             </Section>
-            <CalculateButton onCalculate={calculate} />
           </div>
         </aside>
 
@@ -451,15 +459,16 @@ function Home() {
             tab === "loop" ? "hidden lg:flex" : "flex",
           )}
         >
-          <div className="flex items-center justify-between gap-3">
-            <PhaseLabel id="ooda-act" label="Act" />
-            <button
-              type="button"
-              onClick={() => calculate({ stay: true })}
-              className="inline-flex h-9 shrink-0 items-center rounded-lg bg-accent px-3 text-xs font-medium text-accent-fg hover:opacity-90"
-            >
-              Calculate
-            </button>
+          <div className="relative flex min-h-11 items-center">
+            <PhaseLabel id="ooda-act" label="Act" className="pr-[8rem]" />
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+              <div className="pointer-events-auto">
+                <CalculateButton
+                  onCalculate={() => calculate({ stay: true })}
+                  className="h-9 w-auto min-w-[6.8rem] px-5 text-sm"
+                />
+              </div>
+            </div>
           </div>
           {runError ? (
             <p className="text-sm text-[#e8c547]">{runError}</p>
@@ -500,6 +509,7 @@ function Home() {
                     />
                   </div>
                   <div className="flex min-w-0 flex-col gap-4">
+                    <PhaseLabel id="ooda-radar" label="Radar" />
                     <ActChartColumn plan={displayPlan} sim={sim} />
                     <OodaAiCard
                       plan={displayPlan}
@@ -519,8 +529,8 @@ function Home() {
               </p>
               <p className="mt-2 max-w-xl text-left text-sm text-muted">
                 Complete Observe, Orient, and Decide to the left to begin your
-                financial MACH RUN. Hit Calculate at the bottom of any of those
-                sections to go supersonic and Act with financial purpose.
+                financial MACH RUN. Hit Calculate next to Act to go supersonic
+                and Act with financial purpose.
               </p>
             </div>
           )}

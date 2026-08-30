@@ -7,6 +7,7 @@ import { MACH_MONTHLY_USD } from "@/lib/billing/limits";
 import { OODA_DISCLAIMER } from "@/lib/plan/disclaimer";
 import { NestEggHeadline } from "@/components/meridian/verdict";
 import { nestEggTrack } from "@/lib/plan/peers";
+import { PrimaryButton } from "@/components/ui/field";
 
 function Disclaimer() {
   return <p className="text-xs italic leading-relaxed text-subtle">{OODA_DISCLAIMER}</p>;
@@ -59,13 +60,12 @@ export function PeerBriefCard({
           MACH OODA Financial Analysis*
         </p>
         {plan && sim && brief.expanded ? (
-          <button
-            type="button"
+          <PrimaryButton
             onClick={() => void downloadAnalysisPdf(brief, plan, sim)}
-            className="h-11 shrink-0 rounded-lg px-3 text-sm font-medium text-muted transition-colors hover:bg-elevated hover:text-fg"
+            className="w-auto shrink-0 px-4"
           >
-            Save PDF
-          </button>
+            Save / Print PDF
+          </PrimaryButton>
         ) : null}
       </div>
       <div className="mt-3">

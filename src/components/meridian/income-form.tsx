@@ -170,7 +170,7 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
   }
 
   function setClaimAge(n: number) {
-    const window = ssScheduleDates(ssBirthFor(plan, { ...s, ssClaimAge: n }), n, endAge);
+    const window = ssScheduleDates(ssBirthFor(plan, s), n, endAge);
     updateIncome(s.id, { ssClaimAge: n, ...(window ?? {}) });
   }
 

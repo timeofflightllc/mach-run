@@ -237,7 +237,7 @@ export function DateInput({
         }}
         className={cn(datePartClass, "w-[4.75rem] pr-1")}
       >
-        <option value="">Mon</option>
+        <option value=""></option>
         {MONTHS.map((mo) => (
           <option key={mo.value} value={mo.value}>
             {mo.label}
@@ -348,9 +348,9 @@ export function MonthInput({
           }
           emit(yearDraft.length === 4 ? yearDraft : parts.y, m);
         }}
-        className={cn(datePartClass, "w-[4.75rem] pr-1")}
+        className={cn(datePartClass, "min-w-[6.25rem] flex-1 pr-1")}
       >
-        <option value="">Mon</option>
+        <option value="">Month</option>
         {MONTHS.map((mo) => (
           <option key={mo.value} value={mo.value}>
             {mo.label}

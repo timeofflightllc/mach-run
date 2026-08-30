@@ -429,7 +429,9 @@ export async function downloadAnalysisPdf(
   parts.push(enc(xref));
 
   const pdf = concat(parts);
-  const blob = new Blob([pdf], { type: "application/pdf" });
+  const copy = new Uint8Array(pdf.byteLength);
+  copy.set(pdf);
+  const blob = new Blob([copy], { type: "application/pdf" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
