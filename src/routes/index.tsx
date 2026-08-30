@@ -459,17 +459,6 @@ function Home() {
             tab === "loop" ? "hidden lg:flex" : "flex",
           )}
         >
-          <div className="relative flex min-h-11 items-center">
-            <PhaseLabel id="ooda-act" label="Act" className="pr-[8rem]" />
-            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-              <div className="pointer-events-auto">
-                <CalculateButton
-                  onCalculate={() => calculate({ stay: true })}
-                  className="h-9 w-auto min-w-[6.8rem] px-5 text-sm"
-                />
-              </div>
-            </div>
-          </div>
           {runError ? (
             <p className="text-sm text-[#e8c547]">{runError}</p>
           ) : null}
@@ -493,12 +482,23 @@ function Home() {
                 <div className="grid grid-cols-1 gap-4 @min-[64rem]:grid-cols-[minmax(0,1.15fr)_minmax(24rem,1fr)] @min-[64rem]:items-start">
                   <div className="flex min-w-0 flex-col gap-4">
                     <div className="grid grid-cols-1 gap-4 @min-[36rem]:grid-cols-2">
-                      <Verdict
-                        plan={displayPlan}
-                        sim={sim}
-                        brief={run?.brief ?? null}
-                      />
-                      <KpiStrip plan={displayPlan} sim={sim} />
+                      <div className="flex min-w-0 flex-col gap-3">
+                        <PhaseLabel id="ooda-act" label="Act" />
+                        <Verdict
+                          plan={displayPlan}
+                          sim={sim}
+                          brief={run?.brief ?? null}
+                        />
+                      </div>
+                      <div className="flex min-w-0 flex-col gap-3">
+                        <div className="flex min-h-11 items-center justify-center">
+                          <CalculateButton
+                            onCalculate={() => calculate({ stay: true })}
+                            className="h-9 w-auto min-w-[6.8rem] px-5 text-sm"
+                          />
+                        </div>
+                        <KpiStrip plan={displayPlan} sim={sim} />
+                      </div>
                     </div>
                     <PeerBriefCard
                       key={run?.id ?? "idle"}
@@ -522,16 +522,29 @@ function Home() {
               <YearTable plan={displayPlan} sim={sim} />
             </div>
           ) : (
-            <div className="rounded-xl bg-surface px-5 py-8 shadow-[0_0_0_1px_var(--color-border)]">
-              <p className="text-left font-display text-3xl text-fg">No MACH RUN yet.</p>
-              <p className="mt-1 text-left font-display text-lg text-fg">
-                You need to kick the tires and light the fires!
-              </p>
-              <p className="mt-2 max-w-xl text-left text-sm text-muted">
-                Complete Observe, Orient, and Decide to the left to begin your
-                financial MACH RUN. Hit Calculate next to Act to go supersonic
-                and Act with financial purpose.
-              </p>
+            <div className="flex flex-col gap-4">
+              <div className="relative flex min-h-11 items-center">
+                <PhaseLabel id="ooda-act" label="Act" />
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="pointer-events-auto">
+                    <CalculateButton
+                      onCalculate={() => calculate({ stay: true })}
+                      className="h-9 w-auto min-w-[6.8rem] px-5 text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-xl bg-surface px-5 py-8 shadow-[0_0_0_1px_var(--color-border)]">
+                <p className="text-left font-display text-3xl text-fg">No MACH RUN yet.</p>
+                <p className="mt-1 text-left font-display text-lg text-fg">
+                  You need to kick the tires and light the fires!
+                </p>
+                <p className="mt-2 max-w-xl text-left text-sm text-muted">
+                  Complete Observe, Orient, and Decide to the left to begin your
+                  financial MACH RUN. Hit Calculate above to go supersonic and
+                  Act with financial purpose.
+                </p>
+              </div>
             </div>
           )}
         </div>

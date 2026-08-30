@@ -251,6 +251,7 @@ function Pricing() {
               <li>One household.</li>
               <li>Limit 2 accounts · 2 contributions · 2 incomes</li>
               <li>Limited OODA analysis, a paragraph or two</li>
+              <li>Limits disappear for a cup of coffee a month</li>
             </ul>
             {!signedIn ? (
               <a
@@ -262,7 +263,9 @@ function Pricing() {
             ) : onFree ? (
               <p className="mt-6 text-sm text-muted">This is your current package.</p>
             ) : (
-              <p className="mt-6 text-sm text-muted">Included in paid packages.</p>
+              <p className="mt-6 text-sm text-muted">
+                Limits disappear for a cup of coffee a month
+              </p>
             )}
           </article>
 
