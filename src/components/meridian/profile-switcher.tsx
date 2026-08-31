@@ -6,9 +6,11 @@ import {
 } from "@/lib/plan/profile-store";
 import { usePlanStore } from "@/lib/plan/store";
 import type { Entitlement } from "@/lib/billing/limits";
+import { isAdvisorPlan } from "@/lib/billing/limits";
+import { atProfileCap } from "@/lib/billing/use-entitlement";
 
 export function canUseProfiles(ent: Entitlement): boolean {
-  return Boolean(ent.signedIn && ent.plan === "advisor");
+  return Boolean(ent.signedIn && isAdvisorPlan(ent.plan));
 }
 
 export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
@@ -39,6 +41,7 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
   if (!allowed) return null;
   const active = profiles.find((p) => p.id === activeId);
   const label = active?.name ?? "Profiles";
+  const capped = atProfileCap(profiles.length, ent);
 
   function onSwitch(id: string) {
     const next = useProfileStore.getState().switchTo(id, usePlanStore.getState().plan);
@@ -47,6 +50,7 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
   }
 
   function onAdd() {
+    if (atProfileCap(useProfileStore.getState().profiles.length, ent)) return;
     const next = useProfileStore.getState().addProfile(usePlanStore.getState().plan);
     setPlan(next);
     setOpen(false);
@@ -65,6 +69,7 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
   }
 
   function onImportFile(file: File) {
+    if (atProfileCap(useProfileStore.getState().profiles.length, ent)) return;
     void file.text().then((text) => {
       const parsed = parseProfileBlob(text);
       if (!parsed) return;
@@ -137,10 +142,16 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
             </div>
           ))}
           <div className="my-1 h-px bg-border" />
+          {capped ? (
+            <p className="px-3 py-2 text-xs leading-snug text-[#e8c547]">
+              Advisor Lite is 5 profiles. Upgrade to Advisor Unlimited for more.
+            </p>
+          ) : null}
           <button
             type="button"
             onClick={onAdd}
-            className="block w-full px-3 py-2 text-left text-sm text-fg hover:bg-surface"
+            disabled={capped}
+            className="block w-full px-3 py-2 text-left text-sm text-fg hover:bg-surface disabled:cursor-not-allowed disabled:text-subtle"
           >
             New profile
           </button>
@@ -154,7 +165,8 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
-            className="block w-full px-3 py-2 text-left text-sm text-muted hover:bg-surface hover:text-fg"
+            disabled={capped}
+            className="block w-full px-3 py-2 text-left text-sm text-muted hover:bg-surface hover:text-fg disabled:cursor-not-allowed disabled:text-subtle"
           >
             Import MACH RUN file
           </button>

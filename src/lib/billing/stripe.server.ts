@@ -65,6 +65,18 @@ export function unlimitedStripeConfigured(): boolean {
   }
 }
 
+export function advisorUnlimitedStripeConfigured(): boolean {
+  try {
+    return Boolean(
+      process.env.STRIPE_SECRET_KEY &&
+        process.env.STRIPE_PRICE_ADVISOR_UNLIMITED_MONTHLY &&
+        process.env.STRIPE_PRICE_ADVISOR_UNLIMITED_YEARLY,
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function getStripe(): Promise<StripeClient> {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("Stripe is not configured.");
@@ -74,27 +86,33 @@ export async function getStripe(): Promise<StripeClient> {
 
 export function priceIdFor(
   interval: "month" | "year",
-  pkg: "individual" | "unlimited" | "advisor" = "individual",
+  pkg: "individual" | "unlimited" | "advisor" | "advisor_lite" = "individual",
 ): string {
   const id =
     pkg === "advisor"
       ? interval === "year"
-        ? process.env.STRIPE_PRICE_ADVISOR_YEARLY
-        : process.env.STRIPE_PRICE_ADVISOR_MONTHLY
-      : pkg === "unlimited"
+        ? process.env.STRIPE_PRICE_ADVISOR_UNLIMITED_YEARLY
+        : process.env.STRIPE_PRICE_ADVISOR_UNLIMITED_MONTHLY
+      : pkg === "advisor_lite"
         ? interval === "year"
-          ? process.env.STRIPE_PRICE_UNLIMITED_YEARLY
-          : process.env.STRIPE_PRICE_UNLIMITED_MONTHLY
-        : interval === "year"
-          ? process.env.STRIPE_PRICE_YEARLY
-          : process.env.STRIPE_PRICE_MONTHLY;
+          ? process.env.STRIPE_PRICE_ADVISOR_YEARLY
+          : process.env.STRIPE_PRICE_ADVISOR_MONTHLY
+        : pkg === "unlimited"
+          ? interval === "year"
+            ? process.env.STRIPE_PRICE_UNLIMITED_YEARLY
+            : process.env.STRIPE_PRICE_UNLIMITED_MONTHLY
+          : interval === "year"
+            ? process.env.STRIPE_PRICE_YEARLY
+            : process.env.STRIPE_PRICE_MONTHLY;
   if (!id) {
     throw new Error(
       pkg === "advisor"
-        ? "Advisor Stripe prices are not configured yet."
-        : pkg === "unlimited"
-          ? "Individual Unlimited Stripe prices are not configured yet."
-          : "Stripe prices are not configured.",
+        ? "Advisor Unlimited Stripe prices are not configured yet."
+        : pkg === "advisor_lite"
+          ? "Advisor Lite Stripe prices are not configured yet."
+          : pkg === "unlimited"
+            ? "Individual Unlimited Stripe prices are not configured yet."
+            : "Stripe prices are not configured.",
     );
   }
   return id;
@@ -102,14 +120,20 @@ export function priceIdFor(
 
 export function packageFromPriceId(
   priceId: string | null | undefined,
-): "individual" | "unlimited" | "advisor" | null {
+): "individual" | "unlimited" | "advisor" | "advisor_lite" | null {
   if (!priceId) return null;
   try {
+    if (
+      priceId === process.env.STRIPE_PRICE_ADVISOR_UNLIMITED_MONTHLY ||
+      priceId === process.env.STRIPE_PRICE_ADVISOR_UNLIMITED_YEARLY
+    ) {
+      return "advisor";
+    }
     if (
       priceId === process.env.STRIPE_PRICE_ADVISOR_MONTHLY ||
       priceId === process.env.STRIPE_PRICE_ADVISOR_YEARLY
     ) {
-      return "advisor";
+      return "advisor_lite";
     }
     if (
       priceId === process.env.STRIPE_PRICE_UNLIMITED_MONTHLY ||

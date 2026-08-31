@@ -6,12 +6,15 @@ import { startBillingPortal, startCheckout } from "@/lib/billing/api";
 import {
   ADVISOR_MONTHLY_USD,
   ADVISOR_TRIAL_DAYS,
+  ADVISOR_UNLIMITED_MONTHLY_USD,
+  ADVISOR_UNLIMITED_YEARLY_USD,
   ADVISOR_YEARLY_USD,
   MACH_MONTHLY_USD,
   MACH_YEARLY_USD,
   UNLIMITED_MONTHLY_USD,
   UNLIMITED_YEARLY_USD,
   TRIAL_PROMO_DAYS,
+  isAdvisorPlan,
   packageLabel,
   trialDaysForCode,
 } from "@/lib/billing/limits";
@@ -31,7 +34,7 @@ function Pricing() {
     ent.interval === "year" ? "year" : "month",
   );
   const [audience, setAudience] = useState<"individual" | "advisor">(
-    ent.plan === "advisor" ? "advisor" : "individual",
+    isAdvisorPlan(ent.plan) ? "advisor" : "individual",
   );
   const [trialCode, setTrialCode] = useState("");
   const promoDays = trialDaysForCode(trialCode);
@@ -42,9 +45,10 @@ function Pricing() {
   const onFree = signedIn && !ent.paid;
   const onIndividual = signedIn && ent.paid && ent.plan === "individual";
   const onUnlimited = signedIn && ent.paid && ent.plan === "unlimited";
+  const onAdvisorLite = signedIn && ent.plan === "advisor_lite";
   const onAdvisor = signedIn && ent.plan === "advisor";
 
-  async function checkout(pkg: "individual" | "unlimited" | "advisor") {
+  async function checkout(pkg: "individual" | "unlimited" | "advisor" | "advisor_lite") {
     if (codeInvalid) {
       setError("That code isn’t valid.");
       return;
@@ -84,6 +88,7 @@ function Pricing() {
   const indPrice = interval === "year" ? MACH_YEARLY_USD : MACH_MONTHLY_USD;
   const unlPrice = interval === "year" ? UNLIMITED_YEARLY_USD : UNLIMITED_MONTHLY_USD;
   const advPrice = interval === "year" ? ADVISOR_YEARLY_USD : ADVISOR_MONTHLY_USD;
+  const advUnlPrice = interval === "year" ? ADVISOR_UNLIMITED_YEARLY_USD : ADVISOR_UNLIMITED_MONTHLY_USD;
   const per = interval === "year" ? "/year" : "/month";
   const codeHint = hasTrial
     ? `Valid code — ${TRIAL_PROMO_DAYS} days free, then the package you pick.`
@@ -118,11 +123,20 @@ function Pricing() {
       : `${ADVISOR_TRIAL_DAYS}-day trial, then $${ADVISOR_MONTHLY_USD}/month`;
   const advisorSignIn = hasTrial
     ? `Sign in, then start ${TRIAL_PROMO_DAYS}-day trial`
-    : "Sign in, then start Advisor trial";
-  const advisorButton =
-    busy === `advisor-${interval}`
+    : "Sign in, then start Advisor Lite trial";
+  const advisorLiteButton =
+    busy === `advisor_lite-${interval}`
       ? "Redirecting…"
       : `Start ${hasTrial ? TRIAL_PROMO_DAYS : ADVISOR_TRIAL_DAYS}-day trial`;
+  const advisorUnlSignIn = hasTrial
+    ? `Sign in, then start ${TRIAL_PROMO_DAYS}-day trial`
+    : "Sign in, then choose Advisor Unlimited";
+  const advisorUnlButton =
+    busy === `advisor-${interval}`
+      ? "Redirecting…"
+      : hasTrial
+        ? `Start ${TRIAL_PROMO_DAYS}-day trial · $${advUnlPrice}${per}`
+        : `Choose Unlimited · $${advUnlPrice}${per}`;
 
   const currentText = !ent.signedIn
     ? null
@@ -138,8 +152,12 @@ function Pricing() {
             : ` — $${
                 ent.plan === "advisor"
                   ? ent.interval === "year"
-                    ? ADVISOR_YEARLY_USD
-                    : ADVISOR_MONTHLY_USD
+                    ? ADVISOR_UNLIMITED_YEARLY_USD
+                    : ADVISOR_UNLIMITED_MONTHLY_USD
+                  : ent.plan === "advisor_lite"
+                    ? ent.interval === "year"
+                      ? ADVISOR_YEARLY_USD
+                      : ADVISOR_MONTHLY_USD
                   : ent.plan === "unlimited"
                     ? ent.interval === "year"
                       ? UNLIMITED_YEARLY_USD
@@ -169,10 +187,11 @@ function Pricing() {
           {audience === "advisor" ? (
             <>
               <p className="mt-6 text-base leading-relaxed text-muted">
-                Advisor Unlimited is live — named client profiles and a 7-day trial.
+                Advisor Lite is five named client profiles. Seven-day trial, then $
+                {ADVISOR_MONTHLY_USD}/month.
               </p>
               <p className="mt-3 text-base leading-relaxed text-muted">
-                Advisor Lite is coming soon.
+                Advisor Unlimited is the same engine with unlimited profiles.
               </p>
             </>
           ) : (
@@ -258,7 +277,7 @@ function Pricing() {
           {interval === "year"
             ? "Yearly: two months on us."
             : audience === "advisor"
-              ? `Advisor Unlimited includes a ${ADVISOR_TRIAL_DAYS}-day free trial (card on file).`
+              ? `Advisor Lite includes a ${ADVISOR_TRIAL_DAYS}-day free trial (card on file).`
               : "Monthly or yearly — yearly is two months free."}
         </p>
 
@@ -449,37 +468,17 @@ function Pricing() {
             </>
           ) : (
             <>
-          <article className="relative flex flex-col rounded-xl bg-elevated p-6 opacity-55 shadow-[0_0_0_1px_var(--color-border)]">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">
-                Advisor Lite
-              </p>
-              <span className="rounded-sm bg-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
-                Coming soon
-              </span>
-            </div>
-            <p className="mt-3 font-display text-4xl tabular-nums text-muted">—</p>
-            <p className="mt-1 text-sm text-muted">A lighter advisor package is on the way.</p>
-            <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
-              <li>Details coming soon.</li>
-              <li>For now, Advisor Unlimited is the live advisor package.</li>
-            </ul>
-            <p className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-surface px-4 text-sm font-medium text-muted shadow-[0_0_0_1px_var(--color-border)]">
-              Coming soon
-            </p>
-          </article>
-
           <article
             className={cn(
               "flex flex-col rounded-xl bg-elevated p-6 shadow-[0_0_0_1px_var(--color-border)]",
-              onAdvisor && "shadow-[0_0_0_2px_var(--color-accent)]",
+              onAdvisorLite && "shadow-[0_0_0_2px_var(--color-accent)]",
             )}
           >
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">
-                Advisor Unlimited
+                Advisor Lite
               </p>
-              {onAdvisor ? (
+              {onAdvisorLite ? (
                 <span className="rounded-sm bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent-fg">
                   Your plan
                 </span>
@@ -498,7 +497,7 @@ function Pricing() {
             </p>
             <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
               <li>Everything in Individual Unlimited, plus:</li>
-              <li>Unlimited named profiles (client IDs)</li>
+              <li>5 named profiles (client IDs)</li>
               <li>Dropdown to switch Client profiles</li>
               <li>Export / import a MACH RUN file</li>
               <li>For financial professionals, or nerds</li>
@@ -510,6 +509,63 @@ function Pricing() {
               >
                 {advisorSignIn}
               </a>
+            ) : onAdvisorLite ? (
+              <PrimaryButton className="mt-6" disabled={busy !== null} onClick={() => void portal()}>
+                {busy === "portal" ? "Opening…" : "Manage billing"}
+              </PrimaryButton>
+            ) : (
+              <PrimaryButton
+                className="mt-6"
+                disabled={busy !== null}
+                onClick={() => void checkout("advisor_lite")}
+              >
+                {advisorLiteButton}
+              </PrimaryButton>
+            )}
+          </article>
+
+          <article
+            className={cn(
+              "flex flex-col rounded-xl bg-elevated p-6 shadow-[0_0_0_1px_var(--color-border)]",
+              onAdvisor && "shadow-[0_0_0_2px_var(--color-accent)]",
+            )}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">
+                Advisor Unlimited
+              </p>
+              {onAdvisor ? (
+                <span className="rounded-sm bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent-fg">
+                  Your plan
+                </span>
+              ) : interval === "year" ? (
+                <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-subtle">
+                  Two months free
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-3 font-display text-4xl tabular-nums">
+              ${advUnlPrice}
+              <span className="text-xl text-muted">{per}</span>
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              {interval === "year"
+                ? "Two months free on yearly."
+                : `$${ADVISOR_UNLIMITED_MONTHLY_USD}/month for an unlimited book.`}
+            </p>
+            <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
+              <li>Everything in Advisor Lite, plus:</li>
+              <li>Unlimited named profiles</li>
+              <li>Same export / import</li>
+              <li>For a full book of clients</li>
+            </ul>
+            {!signedIn ? (
+              <a
+                href="/login"
+                className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90"
+              >
+                {advisorUnlSignIn}
+              </a>
             ) : onAdvisor ? (
               <PrimaryButton className="mt-6" disabled={busy !== null} onClick={() => void portal()}>
                 {busy === "portal" ? "Opening…" : "Manage billing"}
@@ -520,7 +576,7 @@ function Pricing() {
                 disabled={busy !== null}
                 onClick={() => void checkout("advisor")}
               >
-                {advisorButton}
+                {advisorUnlButton}
               </PrimaryButton>
             )}
           </article>
@@ -542,8 +598,14 @@ function Pricing() {
         ) : null}
         {ent.stripeConfigured && !ent.advisorStripeConfigured ? (
           <p className="mt-3 text-sm text-subtle">
-            Advisor checkout needs STRIPE_PRICE_ADVISOR_MONTHLY and
+            Advisor Lite checkout needs STRIPE_PRICE_ADVISOR_MONTHLY and
             STRIPE_PRICE_ADVISOR_YEARLY in Vercel, then a redeploy.
+          </p>
+        ) : null}
+        {ent.stripeConfigured && !ent.advisorUnlimitedStripeConfigured ? (
+          <p className="mt-3 text-sm text-subtle">
+            Advisor Unlimited checkout needs STRIPE_PRICE_ADVISOR_UNLIMITED_MONTHLY and
+            STRIPE_PRICE_ADVISOR_UNLIMITED_YEARLY in Vercel, then a redeploy.
           </p>
         ) : null}
 

@@ -7,7 +7,10 @@ export const UNLIMITED_MONTHLY_USD = 15;
 export const UNLIMITED_YEARLY_USD = 130;
 export const ADVISOR_MONTHLY_USD = 69;
 export const ADVISOR_YEARLY_USD = 690;
+export const ADVISOR_UNLIMITED_MONTHLY_USD = 169;
+export const ADVISOR_UNLIMITED_YEARLY_USD = 1690;
 export const ADVISOR_TRIAL_DAYS = 7;
+export const ADVISOR_LITE_PROFILE_LIMIT = 5;
 export const TRIAL_PROMO_CODE = "SUPER14";
 export const TRIAL_PROMO_DAYS = 14;
 
@@ -23,7 +26,8 @@ export function trialDaysForCode(raw: string | null | undefined): number | null 
   return null;
 }
 
-export type MachPackage = "free" | "individual" | "unlimited" | "advisor";
+export type MachPackage = "free" | "individual" | "unlimited" | "advisor_lite" | "advisor";
+export type CheckoutPackage = "individual" | "unlimited" | "advisor_lite" | "advisor";
 
 export type Entitlement = {
   signedIn: boolean;
@@ -33,8 +37,10 @@ export type Entitlement = {
   accountLimit: number | null;
   contributionLimit: number | null;
   incomeLimit: number | null;
+  profileLimit: number | null;
   stripeConfigured: boolean;
   advisorStripeConfigured: boolean;
+  advisorUnlimitedStripeConfigured: boolean;
   status: string | null;
   periodEnd: string | null;
   billed: MachPackage;
@@ -49,8 +55,10 @@ export const GUEST_ENTITLEMENT: Entitlement = {
   accountLimit: FREE_ACCOUNT_LIMIT,
   contributionLimit: FREE_CONTRIBUTION_LIMIT,
   incomeLimit: FREE_INCOME_LIMIT,
+  profileLimit: 0,
   stripeConfigured: false,
   advisorStripeConfigured: false,
+  advisorUnlimitedStripeConfigured: false,
   status: null,
   periodEnd: null,
   billed: "free",
@@ -60,8 +68,13 @@ export function paidFromStatus(status: string | null | undefined): boolean {
   return status === "active" || status === "trialing" || status === "past_due";
 }
 
+export function isAdvisorPlan(plan: MachPackage): boolean {
+  return plan === "advisor" || plan === "advisor_lite";
+}
+
 export function packageLabel(plan: MachPackage): string {
-  if (plan === "advisor") return "Advisor";
+  if (plan === "advisor") return "Advisor Unlimited";
+  if (plan === "advisor_lite") return "Advisor Lite";
   if (plan === "unlimited") return "Individual Unlimited";
   if (plan === "individual") return "Individual";
   return "Free";
@@ -69,7 +82,14 @@ export function packageLabel(plan: MachPackage): string {
 
 /** Net Worth chart + Liabilities list. Individual $4 does not get these. */
 export function hasBalanceSheet(plan: MachPackage): boolean {
-  return plan === "unlimited" || plan === "advisor";
+  return plan === "unlimited" || plan === "advisor" || plan === "advisor_lite";
+}
+
+/** null = unlimited profiles. 0 = switcher hidden. */
+export function profileLimitFor(plan: MachPackage): number | null {
+  if (plan === "advisor") return null;
+  if (plan === "advisor_lite") return ADVISOR_LITE_PROFILE_LIMIT;
+  return 0;
 }
 
 /** Free users can keep what they already saved; they cannot grow past the cap. */

@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { addCap, clampPlan, hasBalanceSheet, paidFromStatus } from "./limits.ts";
+import {
+  addCap,
+  clampPlan,
+  hasBalanceSheet,
+  packageLabel,
+  paidFromStatus,
+  profileLimitFor,
+} from "./limits.ts";
 
 test("free add cap grandfathers existing rows", () => {
   assert.equal(addCap(0, false, 2), 2);
@@ -34,9 +41,18 @@ test("paid statuses", () => {
   assert.equal(paidFromStatus("none"), false);
 });
 
-test("hasBalanceSheet only Unlimited and Advisor", () => {
+test("hasBalanceSheet Unlimited and both Advisor SKUs", () => {
   assert.equal(hasBalanceSheet("free"), false);
   assert.equal(hasBalanceSheet("individual"), false);
   assert.equal(hasBalanceSheet("unlimited"), true);
+  assert.equal(hasBalanceSheet("advisor_lite"), true);
   assert.equal(hasBalanceSheet("advisor"), true);
+});
+
+test("Advisor Lite is 5 profiles; Unlimited is uncapped", () => {
+  assert.equal(profileLimitFor("advisor_lite"), 5);
+  assert.equal(profileLimitFor("advisor"), null);
+  assert.equal(profileLimitFor("unlimited"), 0);
+  assert.equal(packageLabel("advisor_lite"), "Advisor Lite");
+  assert.equal(packageLabel("advisor"), "Advisor Unlimited");
 });

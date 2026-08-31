@@ -10,6 +10,7 @@ import {
   addCap,
   clampPlan,
   paidFromStatus,
+  profileLimitFor,
   trialDaysForCode,
   normalizePromoCode,
   type Entitlement,
@@ -91,12 +92,25 @@ function unlimitedStripeReady(): boolean {
   }
 }
 
+function advisorUnlimitedStripeReady(): boolean {
+  try {
+    return Boolean(
+      process.env.STRIPE_SECRET_KEY &&
+        process.env.STRIPE_PRICE_ADVISOR_UNLIMITED_MONTHLY &&
+        process.env.STRIPE_PRICE_ADVISOR_UNLIMITED_YEARLY,
+    );
+  } catch {
+    return false;
+  }
+}
+
 function intervalFromPrice(priceId: string | null | undefined, paid: boolean): "month" | "year" | null {
   if (!paid) return null;
   try {
     if (
       priceId === process.env.STRIPE_PRICE_YEARLY ||
       priceId === process.env.STRIPE_PRICE_ADVISOR_YEARLY ||
+      priceId === process.env.STRIPE_PRICE_ADVISOR_UNLIMITED_YEARLY ||
       priceId === process.env.STRIPE_PRICE_UNLIMITED_YEARLY
     ) {
       return "year";
@@ -104,6 +118,7 @@ function intervalFromPrice(priceId: string | null | undefined, paid: boolean): "
     if (
       priceId === process.env.STRIPE_PRICE_MONTHLY ||
       priceId === process.env.STRIPE_PRICE_ADVISOR_MONTHLY ||
+      priceId === process.env.STRIPE_PRICE_ADVISOR_UNLIMITED_MONTHLY ||
       priceId === process.env.STRIPE_PRICE_UNLIMITED_MONTHLY
     ) {
       return "month";
@@ -118,10 +133,16 @@ function packageFromPrice(priceId: string | null | undefined, paid: boolean): Ma
   if (!paid) return "free";
   try {
     if (
+      priceId === process.env.STRIPE_PRICE_ADVISOR_UNLIMITED_MONTHLY ||
+      priceId === process.env.STRIPE_PRICE_ADVISOR_UNLIMITED_YEARLY
+    ) {
+      return "advisor";
+    }
+    if (
       priceId === process.env.STRIPE_PRICE_ADVISOR_MONTHLY ||
       priceId === process.env.STRIPE_PRICE_ADVISOR_YEARLY
     ) {
-      return "advisor";
+      return "advisor_lite";
     }
     if (
       priceId === process.env.STRIPE_PRICE_UNLIMITED_MONTHLY ||
@@ -142,6 +163,7 @@ function signedInFree(): Entitlement {
     stripeConfigured: stripeReady(),
     advisorStripeConfigured: advisorStripeReady(),
     unlimitedStripeConfigured: unlimitedStripeReady(),
+    advisorUnlimitedStripeConfigured: advisorUnlimitedStripeReady(),
     status: "none",
   };
 }
@@ -165,9 +187,9 @@ async function loadSubscription(userId: string): Promise<SubRow | null> {
 export const getBillingConfig = createServerFn({ method: "GET" }).handler(
   async () => {
     try {
-      return { stripeConfigured: stripeReady(), advisorStripeConfigured: advisorStripeReady(), unlimitedStripeConfigured: unlimitedStripeReady(), monthly: 4, yearly: 40 };
+      return { stripeConfigured: stripeReady(), advisorStripeConfigured: advisorStripeReady(), unlimitedStripeConfigured: unlimitedStripeReady(), advisorUnlimitedStripeConfigured: advisorUnlimitedStripeReady(), monthly: 4, yearly: 40 };
     } catch {
-      return { stripeConfigured: false, advisorStripeConfigured: false, unlimitedStripeConfigured: false, monthly: 4, yearly: 40 };
+      return { stripeConfigured: false, advisorStripeConfigured: false, unlimitedStripeConfigured: false, advisorUnlimitedStripeConfigured: false, monthly: 4, yearly: 40 };
     }
   },
 );
@@ -201,9 +223,11 @@ export const getEntitlement = createServerFn({ method: "GET" })
         accountLimit: paid ? null : FREE_ACCOUNT_LIMIT,
         contributionLimit: paid ? null : FREE_CONTRIBUTION_LIMIT,
         incomeLimit: paid ? null : FREE_INCOME_LIMIT,
+        profileLimit: profileLimitFor(plan),
         stripeConfigured: stripeReady(),
         advisorStripeConfigured: advisorStripeReady(),
         unlimitedStripeConfigured: unlimitedStripeReady(),
+        advisorUnlimitedStripeConfigured: advisorUnlimitedStripeReady(),
         status: row?.status ?? "none",
         periodEnd,
       };
@@ -218,23 +242,31 @@ export const startCheckout = createServerFn({ method: "POST" })
     (input: {
       interval: "month" | "year";
       origin: string;
-      package?: "individual" | "unlimited" | "advisor";
+      package?: "individual" | "unlimited" | "advisor" | "advisor_lite";
       trialCode?: string;
     }) => input,
   )
   .handler(async ({ context, data }) => {
-    const { getStripe, priceIdFor, stripeConfigured, advisorStripeConfigured, unlimitedStripeConfigured } =
+    const { getStripe, priceIdFor, stripeConfigured, advisorStripeConfigured, unlimitedStripeConfigured, advisorUnlimitedStripeConfigured } =
       await import("./stripe.server");
     const pkg =
       data.package === "advisor"
         ? "advisor"
-        : data.package === "unlimited"
-          ? "unlimited"
-          : "individual";
+        : data.package === "advisor_lite"
+          ? "advisor_lite"
+          : data.package === "unlimited"
+            ? "unlimited"
+            : "individual";
     if (pkg === "advisor") {
+      if (!advisorUnlimitedStripeConfigured()) {
+        throw new Error(
+          "Advisor Unlimited checkout is not connected yet. Add STRIPE_PRICE_ADVISOR_UNLIMITED_MONTHLY and STRIPE_PRICE_ADVISOR_UNLIMITED_YEARLY in Vercel.",
+        );
+      }
+    } else if (pkg === "advisor_lite") {
       if (!advisorStripeConfigured()) {
         throw new Error(
-          "Advisor checkout is not connected yet. Add STRIPE_PRICE_ADVISOR_MONTHLY and STRIPE_PRICE_ADVISOR_YEARLY in Vercel.",
+          "Advisor Lite checkout is not connected yet. Add STRIPE_PRICE_ADVISOR_MONTHLY and STRIPE_PRICE_ADVISOR_YEARLY in Vercel.",
         );
       }
     } else if (pkg === "unlimited") {
@@ -254,7 +286,7 @@ export const startCheckout = createServerFn({ method: "POST" })
     const { dropIfUnknownToStripe } = await import("./stripe.server");
     const dropped = await dropIfUnknownToStripe(context.userId, existing);
     const promoTrialDays = trialDaysForCode(data.trialCode);
-    const trialDays = promoTrialDays ?? (pkg === "advisor" ? ADVISOR_TRIAL_DAYS : null);
+    const trialDays = promoTrialDays ?? (pkg === "advisor_lite" ? ADVISOR_TRIAL_DAYS : null);
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceIdFor(data.interval, pkg), quantity: 1 }],

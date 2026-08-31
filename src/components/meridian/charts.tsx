@@ -360,7 +360,7 @@ export function NetWorthChart({
               to="/pricing"
               className="text-[#e8c547] underline decoration-[#e8c547]/80 underline-offset-4 hover:text-[#f6e7b0]"
             >
-              Individual Unlimited (or Advisor)
+              Individual Unlimited or Advisor
             </Link>
           </p>
         </div>

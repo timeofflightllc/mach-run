@@ -23,6 +23,9 @@ export function useEntitlement() {
             unlimitedStripeConfigured: Boolean(
               (cfg as { unlimitedStripeConfigured?: boolean }).unlimitedStripeConfigured,
             ),
+            advisorUnlimitedStripeConfigured: Boolean(
+              (cfg as { advisorUnlimitedStripeConfigured?: boolean }).advisorUnlimitedStripeConfigured,
+            ),
           });
         })
         .catch(() => {
@@ -64,4 +67,9 @@ export function atContributionCap(count: number, ent: Entitlement): boolean {
 export function atIncomeCap(count: number, ent: Entitlement): boolean {
   if (previewUnlimited() || ent.paid) return false;
   return ent.incomeLimit != null && count >= ent.incomeLimit;
+}
+
+export function atProfileCap(count: number, ent: Entitlement): boolean {
+  if (ent.profileLimit == null) return false;
+  return count >= ent.profileLimit;
 }
