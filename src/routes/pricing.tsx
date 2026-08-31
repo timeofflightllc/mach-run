@@ -24,6 +24,28 @@ import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/pricing")({ component: Pricing });
 
+function billingSelectedLabel(interval: "month" | "year" | null): string | null {
+  if (interval === "year") return "(Annual billing selected)";
+  if (interval === "month") return "(Monthly billing selected)";
+  return null;
+}
+
+function YourPlanMark({ interval }: { interval: "month" | "year" | null }) {
+  const note = billingSelectedLabel(interval);
+  return (
+    <span className="max-w-[12rem] text-right">
+      <span className="inline-block rounded-sm bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent-fg">
+        Your plan
+      </span>
+      {note ? (
+        <span className="mt-1 block text-[10px] font-medium leading-snug text-fg">
+          {note}
+        </span>
+      ) : null}
+    </span>
+  );
+}
+
 function Pricing() {
   const ent = useEntitlement();
   const { user } = useCurrentUserState();
@@ -166,6 +188,12 @@ function Pricing() {
                       ? MACH_YEARLY_USD
                       : MACH_MONTHLY_USD
               }${ent.interval === "year" ? "/year" : "/month"}.`
+        }${
+          ent.interval === "year"
+            ? " (Annual billing selected)"
+            : ent.interval === "month"
+              ? " (Monthly billing selected)"
+              : ""
         }`;
 
   return (
@@ -366,9 +394,7 @@ function Pricing() {
                 Individual
               </p>
               {onIndividual ? (
-                <span className="rounded-sm bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent-fg">
-                  Your plan
-                </span>
+                <YourPlanMark interval={ent.interval} />
               ) : interval === "year" ? (
                 <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-subtle">
                   Two months free
@@ -422,9 +448,7 @@ function Pricing() {
                 Individual Unlimited
               </p>
               {onUnlimited ? (
-                <span className="rounded-sm bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent-fg">
-                  Your plan
-                </span>
+                <YourPlanMark interval={ent.interval} />
               ) : interval === "year" ? (
                 <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-subtle">
                   Two months free
@@ -442,6 +466,7 @@ function Pricing() {
               <li>Everything in Individual, plus:</li>
               <li>Live Net Worth radar — assets vs liabilities</li>
               <li>Liabilities (car, student, HELOC, other)</li>
+              <li>Encrypted MACH RUN backup download</li>
               <li>Pay yearly, two months on us</li>
             </ul>
             {!signedIn ? (
@@ -479,9 +504,7 @@ function Pricing() {
                 Advisor Lite
               </p>
               {onAdvisorLite ? (
-                <span className="rounded-sm bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent-fg">
-                  Your plan
-                </span>
+                <YourPlanMark interval={ent.interval} />
               ) : (
                 <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-subtle">
                   {advisorTrialLabel}
@@ -535,9 +558,7 @@ function Pricing() {
                 Advisor Unlimited
               </p>
               {onAdvisor ? (
-                <span className="rounded-sm bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent-fg">
-                  Your plan
-                </span>
+                <YourPlanMark interval={ent.interval} />
               ) : interval === "year" ? (
                 <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-subtle">
                   Two months free

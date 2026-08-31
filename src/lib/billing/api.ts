@@ -10,6 +10,7 @@ import {
   addCap,
   clampPlan,
   paidFromStatus,
+  planChangePath,
   profileLimitFor,
   trialDaysForCode,
   normalizePromoCode,
@@ -283,8 +284,25 @@ export const startCheckout = createServerFn({ method: "POST" })
     const origin = sanitizeOrigin(data.origin);
     const stripe = await getStripe();
     const existing = await loadSubscription(context.userId);
-    const { dropIfUnknownToStripe } = await import("./stripe.server");
+    const { dropIfUnknownToStripe, startProratedPlanChange } = await import("./stripe.server");
     const dropped = await dropIfUnknownToStripe(context.userId, existing);
+    const targetPriceId = priceIdFor(data.interval, pkg);
+    const change = dropped
+      ? "checkout"
+      : planChangePath(existing, targetPriceId);
+    if (change === "already") {
+      return { url: `${origin}/?checkout=success` };
+    }
+    if (change === "prorate" && existing?.stripe_customer_id && existing.stripe_subscription_id) {
+      return startProratedPlanChange({
+        customerId: existing.stripe_customer_id,
+        subscriptionId: existing.stripe_subscription_id,
+        newPriceId: targetPriceId,
+        userId: context.userId,
+        pkg,
+        returnUrl: `${origin}/?checkout=success`,
+      });
+    }
     const promoTrialDays = trialDaysForCode(data.trialCode);
     const trialDays = promoTrialDays ?? (pkg === "advisor_lite" ? ADVISOR_TRIAL_DAYS : null);
     const session = await stripe.checkout.sessions.create({

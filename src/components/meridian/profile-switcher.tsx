@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { BackupPasswordModal } from "@/components/meridian/backup-modal";
 import {
-  exportProfileBlob,
-  parseProfileBlob,
-  useProfileStore,
-} from "@/lib/plan/profile-store";
+  backupFileName,
+  decryptPlanBackup,
+  encryptPlanBackup,
+  triggerBackupDownload,
+} from "@/lib/plan/backup-file";
+import { useProfileStore } from "@/lib/plan/profile-store";
 import { usePlanStore } from "@/lib/plan/store";
 import type { Entitlement } from "@/lib/billing/limits";
-import { isAdvisorPlan } from "@/lib/billing/limits";
+import { canDownloadBackup, isAdvisorPlan } from "@/lib/billing/limits";
 import { atProfileCap } from "@/lib/billing/use-entitlement";
 
 export function canUseProfiles(ent: Entitlement): boolean {
@@ -15,13 +19,17 @@ export function canUseProfiles(ent: Entitlement): boolean {
 
 export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
   const allowed = canUseProfiles(ent);
-  const plan = usePlanStore((s) => s.plan);
+  const navigate = useNavigate();
   const setPlan = usePlanStore((s) => s.setPlan);
   const profiles = useProfileStore((s) => s.profiles);
   const activeId = useProfileStore((s) => s.activeId);
   const [open, setOpen] = useState(false);
   const [renameId, setRenameId] = useState<string | null>(null);
   const [nameDraft, setNameDraft] = useState("");
+  const [backupMode, setBackupMode] = useState<"download" | "import" | null>(null);
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [backupError, setBackupError] = useState<string | null>(null);
+  const [pendingImport, setPendingImport] = useState<string | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -56,29 +64,49 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
     setOpen(false);
   }
 
-  function onExport() {
-    const live = usePlanStore.getState().plan;
-    useProfileStore.getState().snapshotCurrent(live);
-    const blob = new Blob([exportProfileBlob(label, live)], { type: "application/json" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${label.replace(/[^\w.-]+/g, "_") || "mach-run"}.json`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+  function startExport() {
+    if (!canDownloadBackup(ent.plan)) {
+      void navigate({ to: "/pricing" });
+      return;
+    }
+    setBackupError(null);
+    setBackupMode("download");
     setOpen(false);
   }
 
-  function onImportFile(file: File) {
-    if (atProfileCap(useProfileStore.getState().profiles.length, ent)) return;
-    void file.text().then((text) => {
-      const parsed = parseProfileBlob(text);
-      if (!parsed) return;
-      const next = useProfileStore
-        .getState()
-        .importProfile(parsed.name, parsed.plan, usePlanStore.getState().plan);
-      setPlan(next);
-      setOpen(false);
-    });
+  function startImportPicker() {
+    if (!canDownloadBackup(ent.plan)) {
+      void navigate({ to: "/pricing" });
+      return;
+    }
+    fileRef.current?.click();
+  }
+
+  async function onBackupConfirm(password: string) {
+    setBackupBusy(true);
+    setBackupError(null);
+    try {
+      if (backupMode === "download") {
+        const live = usePlanStore.getState().plan;
+        useProfileStore.getState().snapshotCurrent(live);
+        const text = await encryptPlanBackup(label, live, password);
+        triggerBackupDownload(backupFileName(label), text);
+        setBackupMode(null);
+      } else if (backupMode === "import" && pendingImport) {
+        if (atProfileCap(useProfileStore.getState().profiles.length, ent)) return;
+        const parsed = await decryptPlanBackup(pendingImport, password);
+        const next = useProfileStore
+          .getState()
+          .importProfile(parsed.name, parsed.plan, usePlanStore.getState().plan);
+        setPlan(next);
+        setPendingImport(null);
+        setBackupMode(null);
+      }
+    } catch (err) {
+      setBackupError(err instanceof Error ? err.message : "Backup failed.");
+    } finally {
+      setBackupBusy(false);
+    }
   }
 
   return (
@@ -157,14 +185,14 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
           </button>
           <button
             type="button"
-            onClick={onExport}
+            onClick={startExport}
             className="block w-full px-3 py-2 text-left text-sm text-muted hover:bg-surface hover:text-fg"
           >
             Export MACH RUN file
           </button>
           <button
             type="button"
-            onClick={() => fileRef.current?.click()}
+            onClick={startImportPicker}
             disabled={capped}
             className="block w-full px-3 py-2 text-left text-sm text-muted hover:bg-surface hover:text-fg disabled:cursor-not-allowed disabled:text-subtle"
           >
@@ -173,15 +201,36 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
           <input
             ref={fileRef}
             type="file"
-            accept="application/json,.json"
+            accept=".machrun,application/octet-stream"
             className="hidden"
             onChange={(e) => {
               const f = e.target.files?.[0];
-              if (f) onImportFile(f);
               e.target.value = "";
+              if (!f) return;
+              void f.text().then((text) => {
+                setPendingImport(text);
+                setBackupError(null);
+                setBackupMode("import");
+                setOpen(false);
+              });
             }}
           />
         </div>
+      ) : null}
+
+      {backupMode ? (
+        <BackupPasswordModal
+          mode={backupMode}
+          busy={backupBusy}
+          error={backupError}
+          onCancel={() => {
+            if (backupBusy) return;
+            setBackupMode(null);
+            setPendingImport(null);
+            setBackupError(null);
+          }}
+          onConfirm={(password) => void onBackupConfirm(password)}
+        />
       ) : null}
     </div>
   );

@@ -8,7 +8,10 @@ type StripeClient = {
   };
   checkout: { sessions: { create: (args: Record<string, unknown>) => Promise<{ url?: string | null; customer?: unknown; subscription?: unknown; metadata?: Record<string, string>; client_reference_id?: string | null }> } };
   billingPortal: { sessions: { create: (args: Record<string, unknown>) => Promise<{ url: string }> } };
-  subscriptions: { retrieve: (id: string) => Promise<StripeSubscription> };
+  subscriptions: {
+    retrieve: (id: string) => Promise<StripeSubscription>;
+    update: (id: string, args: Record<string, unknown>) => Promise<StripeSubscription>;
+  };
 };
 
 type StripeEvent = { type: string; data: { object: Record<string, unknown> } };
@@ -19,7 +22,7 @@ type StripeSubscription = {
   customer: string | { id: string };
   metadata?: Record<string, string>;
   current_period_end?: number;
-  items: { data: Array<{ price: { id: string }; current_period_end?: number }> };
+  items: { data: Array<{ id?: string; price: { id: string }; current_period_end?: number }> };
 };
 
 type StripeCheckoutSession = {
@@ -243,6 +246,50 @@ export async function dropIfUnknownToStripe(
     if (!/No such (customer|subscription)/i.test(msg)) return false;
     await clearSubscription(userId);
     return true;
+  }
+}
+
+/**
+ * Same Stripe subscription, new price. Unused time on the old plan is credited
+ * against unused time on the new plan so the card is only charged the difference.
+ */
+export async function startProratedPlanChange(opts: {
+  customerId: string;
+  subscriptionId: string;
+  newPriceId: string;
+  userId: string;
+  pkg: string;
+  returnUrl: string;
+}): Promise<{ url: string }> {
+  const stripe = await getStripe();
+  const sub = await stripe.subscriptions.retrieve(opts.subscriptionId);
+  const itemId = sub.items.data[0]?.id;
+  if (!itemId) throw new Error("That subscription has no item to update.");
+  try {
+    const portal = await stripe.billingPortal.sessions.create({
+      customer: opts.customerId,
+      return_url: opts.returnUrl,
+      flow_data: {
+        type: "subscription_update_confirm",
+        subscription_update_confirm: {
+          subscription: opts.subscriptionId,
+          items: [{ id: itemId, price: opts.newPriceId, quantity: 1 }],
+        },
+      },
+    });
+    return { url: portal.url };
+  } catch {
+    await stripe.subscriptions.update(opts.subscriptionId, {
+      items: [{ id: itemId, price: opts.newPriceId }],
+      proration_behavior: "always_invoice",
+      payment_behavior: "error_if_incomplete",
+      metadata: {
+        ...(sub.metadata ?? {}),
+        userId: opts.userId,
+        package: opts.pkg,
+      },
+    });
+    return { url: opts.returnUrl };
   }
 }
 

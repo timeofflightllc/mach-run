@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
   addCap,
+  canDownloadBackup,
   clampPlan,
   hasBalanceSheet,
   packageLabel,
   paidFromStatus,
+  planChangePath,
   profileLimitFor,
 } from "./limits.ts";
 
@@ -49,10 +51,34 @@ test("hasBalanceSheet Unlimited and both Advisor SKUs", () => {
   assert.equal(hasBalanceSheet("advisor"), true);
 });
 
+test("encrypted backup is Unlimited and Advisor only", () => {
+  assert.equal(canDownloadBackup("free"), false);
+  assert.equal(canDownloadBackup("individual"), false);
+  assert.equal(canDownloadBackup("unlimited"), true);
+  assert.equal(canDownloadBackup("advisor_lite"), true);
+  assert.equal(canDownloadBackup("advisor"), true);
+});
+
 test("Advisor Lite is 5 profiles; Unlimited is uncapped", () => {
   assert.equal(profileLimitFor("advisor_lite"), 5);
   assert.equal(profileLimitFor("advisor"), null);
   assert.equal(profileLimitFor("unlimited"), 0);
   assert.equal(packageLabel("advisor_lite"), "Advisor Lite");
   assert.equal(packageLabel("advisor"), "Advisor Unlimited");
+});
+
+test("paid upgrade uses prorate instead of a second checkout", () => {
+  const individualYear = {
+    status: "active",
+    stripe_subscription_id: "sub_1",
+    stripe_customer_id: "cus_1",
+    price_id: "price_individual_year",
+  };
+  assert.equal(planChangePath(null, "price_unlimited_year"), "checkout");
+  assert.equal(
+    planChangePath({ ...individualYear, status: "canceled" }, "price_unlimited_year"),
+    "checkout",
+  );
+  assert.equal(planChangePath(individualYear, "price_individual_year"), "already");
+  assert.equal(planChangePath(individualYear, "price_unlimited_year"), "prorate");
 });

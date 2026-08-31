@@ -80,6 +80,11 @@ export function packageLabel(plan: MachPackage): string {
   return "Free";
 }
 
+/** Encrypted .machrun backup. Individual $4 and Free do not get this. */
+export function canDownloadBackup(plan: MachPackage): boolean {
+  return plan === "unlimited" || isAdvisorPlan(plan);
+}
+
 /** Net Worth chart + Liabilities list. Individual $4 does not get these. */
 export function hasBalanceSheet(plan: MachPackage): boolean {
   return plan === "unlimited" || plan === "advisor" || plan === "advisor_lite";
@@ -90,6 +95,30 @@ export function profileLimitFor(plan: MachPackage): number | null {
   if (plan === "advisor") return null;
   if (plan === "advisor_lite") return ADVISOR_LITE_PROFILE_LIMIT;
   return 0;
+}
+
+export type PlanChangePath = "checkout" | "already" | "prorate";
+
+/** Paid Stripe sub on a different price → update in place and credit unused time. */
+export function planChangePath(
+  row: {
+    status: string | null;
+    stripe_subscription_id: string | null;
+    stripe_customer_id: string | null;
+    price_id: string | null;
+  } | null,
+  targetPriceId: string,
+): PlanChangePath {
+  if (
+    !row ||
+    !paidFromStatus(row.status) ||
+    !row.stripe_subscription_id ||
+    !row.stripe_customer_id
+  ) {
+    return "checkout";
+  }
+  if (row.price_id && row.price_id === targetPriceId) return "already";
+  return "prorate";
 }
 
 /** Free users can keep what they already saved; they cannot grow past the cap. */

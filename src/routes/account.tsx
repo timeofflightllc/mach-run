@@ -1,22 +1,42 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { BackupPasswordModal } from "@/components/meridian/backup-modal";
 import { BrandLockup } from "@/components/meridian/mach-mark";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
+import { startBillingPortal } from "@/lib/billing/api";
+import { canDownloadBackup } from "@/lib/billing/limits";
+import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { authClient } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { RedirectToSignIn } from "@/lib/auth/gates";
+import {
+  backupFileName,
+  decryptPlanBackup,
+  encryptPlanBackup,
+  triggerBackupDownload,
+} from "@/lib/plan/backup-file";
+import { usePlanStore } from "@/lib/plan/store";
 
 export const Route = createFileRoute("/account")({ component: Account });
 
 function Account() {
   const { user, isPending } = useCurrentUserState();
+  const ent = useEntitlement();
+  const navigate = useNavigate();
+  const setPlan = usePlanStore((s) => s.setPlan);
   const [name, setName] = useState(user?.displayName ?? "");
   const [email, setEmail] = useState(user?.primaryEmail ?? "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"profile" | "password" | null>(null);
+  const [busy, setBusy] = useState<"profile" | "password" | "billing" | null>(null);
+  const [backupMode, setBackupMode] = useState<"download" | "import" | null>(null);
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [backupError, setBackupError] = useState<string | null>(null);
+  const [pendingImport, setPendingImport] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const backupOk = canDownloadBackup(ent.plan);
 
   useEffect(() => {
     if (!user) return;
@@ -32,6 +52,65 @@ function Account() {
     );
   }
   if (!user || user.isDevFallback) return <RedirectToSignIn />;
+
+  async function openBilling() {
+    setBusy("billing");
+    setError(null);
+    setMsg(null);
+    try {
+      const { url } = await startBillingPortal({
+        data: { origin: window.location.origin },
+      });
+      window.location.href = url;
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not open billing. Pick a plan first.",
+      );
+      setBusy(null);
+    }
+  }
+
+  function startBackupDownload() {
+    if (!backupOk) {
+      void navigate({ to: "/pricing" });
+      return;
+    }
+    setBackupError(null);
+    setBackupMode("download");
+  }
+
+  function startBackupImport() {
+    if (!backupOk) {
+      void navigate({ to: "/pricing" });
+      return;
+    }
+    fileRef.current?.click();
+  }
+
+  async function onBackupConfirm(password: string) {
+    setBackupBusy(true);
+    setBackupError(null);
+    try {
+      if (backupMode === "download") {
+        const live = usePlanStore.getState().plan;
+        const text = await encryptPlanBackup("Household", live, password);
+        triggerBackupDownload(backupFileName("Household"), text);
+        setBackupMode(null);
+      } else if (backupMode === "import" && pendingImport) {
+        const parsed = await decryptPlanBackup(pendingImport, password);
+        setPlan(parsed.plan);
+        setPendingImport(null);
+        setBackupMode(null);
+        setMsg("MACH RUN backup imported.");
+      }
+    } catch (err) {
+      setBackupError(err instanceof Error ? err.message : "Backup failed.");
+    } finally {
+      setBackupBusy(false);
+    }
+  }
 
   async function saveProfile(e: FormEvent) {
     e.preventDefault();
@@ -105,12 +184,71 @@ function Account() {
           </p>
         </header>
 
-        <Link
-          to="/pricing"
-          className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90"
-        >
-          Manage billing
-        </Link>
+        <div className="space-y-2">
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={() => void openBilling()}
+            className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90 disabled:opacity-60"
+          >
+            {busy === "billing" ? "Opening…" : "Manage billing"}
+          </button>
+          <p className="text-sm text-muted">
+            Card, invoices, and cancel.{" "}
+            <Link to="/pricing" className="underline underline-offset-4 hover:text-fg">
+              Change plan
+            </Link>
+          </p>
+        </div>
+
+        <div className="space-y-2 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
+          <p className="font-display text-lg text-fg">Encrypted MACH RUN backup</p>
+          {backupOk ? (
+            <>
+              <p className="text-sm text-muted">
+                Download a locked copy of this household. MACH RUN does not keep the
+                password.
+              </p>
+              <button
+                type="button"
+                onClick={startBackupDownload}
+                className="inline-flex h-11 w-full items-center justify-center rounded-lg px-4 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+              >
+                Download MACH RUN backup
+              </button>
+              <button
+                type="button"
+                onClick={startBackupImport}
+                className="inline-flex h-11 w-full items-center justify-center rounded-lg px-4 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+              >
+                Import MACH RUN backup
+              </button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept=".machrun,application/octet-stream"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  e.target.value = "";
+                  if (!f) return;
+                  void f.text().then((text) => {
+                    setPendingImport(text);
+                    setBackupError(null);
+                    setBackupMode("import");
+                  });
+                }}
+              />
+            </>
+          ) : (
+            <p className="text-sm text-muted">
+              Encrypted backup is on Individual Unlimited.{" "}
+              <Link to="/pricing" className="underline underline-offset-4 hover:text-fg">
+                See plans
+              </Link>
+            </p>
+          )}
+        </div>
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
         {msg ? <p className="text-sm text-muted">{msg}</p> : null}
@@ -170,6 +308,20 @@ function Account() {
           </Link>
         </p>
       </div>
+      {backupMode ? (
+        <BackupPasswordModal
+          mode={backupMode}
+          busy={backupBusy}
+          error={backupError}
+          onCancel={() => {
+            if (backupBusy) return;
+            setBackupMode(null);
+            setPendingImport(null);
+            setBackupError(null);
+          }}
+          onConfirm={(password) => void onBackupConfirm(password)}
+        />
+      ) : null}
     </main>
   );
 }
