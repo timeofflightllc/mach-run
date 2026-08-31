@@ -180,9 +180,61 @@ function Account() {
           </p>
           <h1 className="mt-2 font-display text-3xl text-fg">Your MACH Run identity</h1>
           <p className="mt-2 text-sm text-muted">
-            Name and email for this login.
+            Name and email for this login only.
           </p>
         </header>
+
+        {error ? <p className="text-sm text-negative">{error}</p> : null}
+        {msg ? <p className="text-sm text-muted">{msg}</p> : null}
+
+        <form
+          onSubmit={(e) => void saveProfile(e)}
+          className="space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
+        >
+          <Field label="Name">
+            <TextInput value={name} onChange={(e) => setName(e.target.value)} />
+          </Field>
+          <Field label="Email" hint="Apple / Google / X logins may not let MACH RUN change this.">
+            <TextInput
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </Field>
+          <PrimaryButton disabled={busy !== null}>
+            {busy === "profile" ? "Saving…" : "Save profile"}
+          </PrimaryButton>
+        </form>
+
+        <form
+          onSubmit={(e) => void savePassword(e)}
+          className="space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
+        >
+          <p className="font-display text-lg text-fg">Password</p>
+          <p className="text-sm text-muted">
+            Only applies if you registered with email. Continue with Apple, Google
+            and X keep their own passwords.
+          </p>
+          <Field label="Current password">
+            <TextInput
+              type="password"
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+            />
+          </Field>
+          <Field label="New password">
+            <TextInput
+              type="password"
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+          </Field>
+          <PrimaryButton disabled={busy !== null || !currentPassword || !newPassword}>
+            {busy === "password" ? "Saving…" : "Update password"}
+          </PrimaryButton>
+        </form>
 
         <div className="space-y-2">
           <button
@@ -249,58 +301,6 @@ function Account() {
             </p>
           )}
         </div>
-
-        {error ? <p className="text-sm text-negative">{error}</p> : null}
-        {msg ? <p className="text-sm text-muted">{msg}</p> : null}
-
-        <form
-          onSubmit={(e) => void saveProfile(e)}
-          className="space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
-        >
-          <Field label="Name">
-            <TextInput value={name} onChange={(e) => setName(e.target.value)} />
-          </Field>
-          <Field label="Email" hint="Apple / Google / X logins may not let MACH RUN change this.">
-            <TextInput
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </Field>
-          <PrimaryButton disabled={busy !== null}>
-            {busy === "profile" ? "Saving…" : "Save profile"}
-          </PrimaryButton>
-        </form>
-
-        <form
-          onSubmit={(e) => void savePassword(e)}
-          className="space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
-        >
-          <p className="font-display text-lg text-fg">Password</p>
-          <p className="text-sm text-muted">
-            Only applies if you registered with email. Continue with Apple, Google
-            and X keep their own passwords.
-          </p>
-          <Field label="Current password">
-            <TextInput
-              type="password"
-              autoComplete="current-password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-            />
-          </Field>
-          <Field label="New password">
-            <TextInput
-              type="password"
-              autoComplete="new-password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
-          </Field>
-          <PrimaryButton disabled={busy !== null || !currentPassword || !newPassword}>
-            {busy === "password" ? "Saving…" : "Update password"}
-          </PrimaryButton>
-        </form>
 
         <p className="text-sm text-subtle">
           <Link to="/" className="underline-offset-4 hover:text-fg hover:underline">

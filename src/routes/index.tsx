@@ -409,7 +409,7 @@ function Home() {
               <HouseholdForm />
             </Section>
             <Section
-              title="Accounts"
+              title="Accounts - Assets"
               hint="Your financial lowdown — add your accounts, update balances, define account types, set as spendable and decide to include in net worth."
               defaultOpen={false}
             >
@@ -417,7 +417,7 @@ function Home() {
             </Section>
             {hasBalanceSheet(ent.plan) ? (
               <Section
-                title="Liabilities"
+                title="Accounts - Liabilities"
                 hint="Car, student, HELOC, personal, credit card. Remaining principal comes off net worth. House mortgages stay on the real estate account."
                 defaultOpen={false}
               >
