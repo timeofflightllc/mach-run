@@ -9,6 +9,8 @@ import {
   ADVISOR_YEARLY_USD,
   MACH_MONTHLY_USD,
   MACH_YEARLY_USD,
+  UNLIMITED_MONTHLY_USD,
+  UNLIMITED_YEARLY_USD,
   TRIAL_PROMO_DAYS,
   packageLabel,
   trialDaysForCode,
@@ -28,6 +30,9 @@ function Pricing() {
   const [interval, setInterval] = useState<"month" | "year">(
     ent.interval === "year" ? "year" : "month",
   );
+  const [audience, setAudience] = useState<"individual" | "advisor">(
+    ent.plan === "advisor" ? "advisor" : "individual",
+  );
   const [trialCode, setTrialCode] = useState("");
   const promoDays = trialDaysForCode(trialCode);
   const typedCode = trialCode.trim().length > 0;
@@ -36,9 +41,10 @@ function Pricing() {
 
   const onFree = signedIn && !ent.paid;
   const onIndividual = signedIn && ent.paid && ent.plan === "individual";
+  const onUnlimited = signedIn && ent.paid && ent.plan === "unlimited";
   const onAdvisor = signedIn && ent.plan === "advisor";
 
-  async function checkout(pkg: "individual" | "advisor") {
+  async function checkout(pkg: "individual" | "unlimited" | "advisor") {
     if (codeInvalid) {
       setError("That code isn’t valid.");
       return;
@@ -76,6 +82,7 @@ function Pricing() {
   }
 
   const indPrice = interval === "year" ? MACH_YEARLY_USD : MACH_MONTHLY_USD;
+  const unlPrice = interval === "year" ? UNLIMITED_YEARLY_USD : UNLIMITED_MONTHLY_USD;
   const advPrice = interval === "year" ? ADVISOR_YEARLY_USD : ADVISOR_MONTHLY_USD;
   const per = interval === "year" ? "/year" : "/month";
   const codeHint = hasTrial
@@ -92,6 +99,15 @@ function Pricing() {
       : hasTrial
         ? `Start ${TRIAL_PROMO_DAYS}-day trial · $${indPrice}${per}`
         : `Choose Individual · $${indPrice}${per}`;
+  const unlimitedSignIn = hasTrial
+    ? `Sign in, then start ${TRIAL_PROMO_DAYS}-day trial`
+    : "Sign in, then choose Individual Unlimited";
+  const unlimitedButton =
+    busy === `unlimited-${interval}`
+      ? "Redirecting…"
+      : hasTrial
+        ? `Start ${TRIAL_PROMO_DAYS}-day trial · $${unlPrice}${per}`
+        : `Choose Unlimited · $${unlPrice}${per}`;
   const advisorTrialLabel = `${hasTrial ? TRIAL_PROMO_DAYS : ADVISOR_TRIAL_DAYS}-day trial`;
   const advisorSubtitle = hasTrial
     ? interval === "year"
@@ -124,15 +140,19 @@ function Pricing() {
                   ? ent.interval === "year"
                     ? ADVISOR_YEARLY_USD
                     : ADVISOR_MONTHLY_USD
-                  : ent.interval === "year"
-                    ? MACH_YEARLY_USD
-                    : MACH_MONTHLY_USD
+                  : ent.plan === "unlimited"
+                    ? ent.interval === "year"
+                      ? UNLIMITED_YEARLY_USD
+                      : UNLIMITED_MONTHLY_USD
+                    : ent.interval === "year"
+                      ? MACH_YEARLY_USD
+                      : MACH_MONTHLY_USD
               }${ent.interval === "year" ? "/year" : "/month"}.`
         }`;
 
   return (
     <main className="min-h-screen px-4 py-10 text-fg" style={{ backgroundColor: "#0a1835" }}>
-      <div className="mx-auto w-full max-w-5xl">
+      <div className="mx-auto w-full max-w-7xl">
         <Link to="/" className="inline-block opacity-90 hover:opacity-100">
           <BrandLockup />
         </Link>
@@ -141,17 +161,30 @@ function Pricing() {
           <h1 className="font-display text-4xl leading-tight text-fg sm:text-5xl">
             Pick a package.
             <br />
-            Monthly or yearly — your call.
+            Personal or Professional.
           </h1>
           <p className="mt-5 font-display text-2xl leading-snug text-fg sm:text-3xl">
-            Two months free on yearly.
+            Monthly or yearly. Two months free on yearly.
           </p>
-          <p className="mt-6 text-base leading-relaxed text-muted">
-            Individual account is a cup of coffee a month.
-          </p>
-          <p className="mt-3 text-base leading-relaxed text-muted">
-            Advisor account has a 7-day free trial to see how awesome it is.
-          </p>
+          {audience === "advisor" ? (
+            <>
+              <p className="mt-6 text-base leading-relaxed text-muted">
+                Advisor Unlimited is live — named client profiles and a 7-day trial.
+              </p>
+              <p className="mt-3 text-base leading-relaxed text-muted">
+                Advisor Lite is coming soon.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-6 text-base leading-relaxed text-muted">
+                Individual is a cup of coffee a month for the full cash-flow MACH RUN.
+              </p>
+              <p className="mt-3 text-base leading-relaxed text-muted">
+                Individual Unlimited adds Net Worth and Liabilities.
+              </p>
+            </>
+          )}
           <p className="mt-6 rounded-lg bg-surface px-4 py-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)]">
             {ent.signedIn && currentText ? (
               currentText
@@ -173,10 +206,36 @@ function Pricing() {
           <div className="inline-flex rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
             <button
               type="button"
+              aria-pressed={audience === "individual"}
+              onClick={() => setAudience("individual")}
+              className={cn(
+                "h-11 rounded-md px-5 text-sm font-medium",
+                audience === "individual" ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
+              )}
+            >
+              Personal
+            </button>
+            <button
+              type="button"
+              aria-pressed={audience === "advisor"}
+              onClick={() => setAudience("advisor")}
+              className={cn(
+                "h-11 rounded-md px-5 text-sm font-medium",
+                audience === "advisor" ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
+              )}
+            >
+              Professional
+            </button>
+          </div>
+        </div>
+        <div className="mt-3 flex justify-center">
+          <div className="inline-flex rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+            <button
+              type="button"
               aria-pressed={interval === "month"}
               onClick={() => setInterval("month")}
               className={cn(
-                "h-11 rounded-md px-5 text-sm font-medium",
+                "h-10 rounded-md px-4 text-sm font-medium",
                 interval === "month" ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
               )}
             >
@@ -187,7 +246,7 @@ function Pricing() {
               aria-pressed={interval === "year"}
               onClick={() => setInterval("year")}
               className={cn(
-                "h-11 rounded-md px-5 text-sm font-medium",
+                "h-10 rounded-md px-4 text-sm font-medium",
                 interval === "year" ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
               )}
             >
@@ -197,8 +256,10 @@ function Pricing() {
         </div>
         <p className="mt-2 text-center text-xs text-subtle">
           {interval === "year"
-            ? "Yearly: two months on us for Individual and Advisor."
-            : `Advisor includes a ${ADVISOR_TRIAL_DAYS}-day free trial (card on file).`}
+            ? "Yearly: two months on us."
+            : audience === "advisor"
+              ? `Advisor Unlimited includes a ${ADVISOR_TRIAL_DAYS}-day free trial (card on file).`
+              : "Monthly or yearly — yearly is two months free."}
         </p>
 
         <div className="mx-auto mt-6 max-w-md">
@@ -251,7 +312,11 @@ function Pricing() {
               <li>One household.</li>
               <li>Limit 2 accounts · 2 contributions · 2 incomes</li>
               <li>Limited OODA analysis, a paragraph or two</li>
-              <li>Limits disappear for a cup of coffee a month</li>
+              <li>
+                {audience === "advisor"
+                  ? "Same free start. Paid advisor packages sit next to it."
+                  : "Net Worth stays locked until Individual Unlimited"}
+              </li>
             </ul>
             {!signedIn ? (
               <a
@@ -269,6 +334,8 @@ function Pricing() {
             )}
           </article>
 
+          {audience === "individual" ? (
+            <>
           <article
             className={cn(
               "flex flex-col rounded-xl bg-elevated p-6 shadow-[0_0_0_1px_var(--color-border)]",
@@ -301,7 +368,7 @@ function Pricing() {
               <li>Unlimited contributions and incomes</li>
               <li>Full MACH OODA Financial Analysis</li>
               <li>OODA AI on this MACH RUN</li>
-              <li>Pay yearly, 2 months on us</li>
+              <li>Net Worth stays locked — unlock on Unlimited</li>
             </ul>
             {!signedIn ? (
               <a
@@ -328,12 +395,89 @@ function Pricing() {
           <article
             className={cn(
               "flex flex-col rounded-xl bg-elevated p-6 shadow-[0_0_0_1px_var(--color-border)]",
+              onUnlimited && "shadow-[0_0_0_2px_var(--color-accent)]",
+            )}
+          >
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">
+                Individual Unlimited
+              </p>
+              {onUnlimited ? (
+                <span className="rounded-sm bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent-fg">
+                  Your plan
+                </span>
+              ) : interval === "year" ? (
+                <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-subtle">
+                  Two months free
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-3 font-display text-4xl tabular-nums">
+              ${unlPrice}
+              <span className="text-xl text-muted">{per}</span>
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              The household balance sheet on top of Individual
+            </p>
+            <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
+              <li>Everything in Individual, plus:</li>
+              <li>Live Net Worth radar — assets vs liabilities</li>
+              <li>Liabilities (car, student, HELOC, other)</li>
+              <li>Pay yearly, two months on us</li>
+            </ul>
+            {!signedIn ? (
+              <a
+                href="/login"
+                className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90"
+              >
+                {unlimitedSignIn}
+              </a>
+            ) : onUnlimited ? (
+              <PrimaryButton className="mt-6" disabled={busy !== null} onClick={() => void portal()}>
+                {busy === "portal" ? "Opening…" : "Manage billing"}
+              </PrimaryButton>
+            ) : (
+              <PrimaryButton
+                className="mt-6"
+                disabled={busy !== null}
+                onClick={() => void checkout("unlimited")}
+              >
+                {unlimitedButton}
+              </PrimaryButton>
+            )}
+          </article>
+            </>
+          ) : (
+            <>
+          <article className="relative flex flex-col rounded-xl bg-elevated p-6 opacity-55 shadow-[0_0_0_1px_var(--color-border)]">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">
+                Advisor Lite
+              </p>
+              <span className="rounded-sm bg-surface px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-muted">
+                Coming soon
+              </span>
+            </div>
+            <p className="mt-3 font-display text-4xl tabular-nums text-muted">—</p>
+            <p className="mt-1 text-sm text-muted">A lighter advisor package is on the way.</p>
+            <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
+              <li>Details coming soon.</li>
+              <li>For now, Advisor Unlimited is the live advisor package.</li>
+            </ul>
+            <p className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-surface px-4 text-sm font-medium text-muted shadow-[0_0_0_1px_var(--color-border)]">
+              Coming soon
+            </p>
+          </article>
+
+          <article
+            className={cn(
+              "flex flex-col rounded-xl bg-elevated p-6 shadow-[0_0_0_1px_var(--color-border)]",
               onAdvisor && "shadow-[0_0_0_2px_var(--color-accent)]",
             )}
           >
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">
-                Advisor
+                Advisor Unlimited
               </p>
               {onAdvisor ? (
                 <span className="rounded-sm bg-accent px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-accent-fg">
@@ -353,7 +497,7 @@ function Pricing() {
               {advisorSubtitle}
             </p>
             <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
-              <li>Everything in Individual, plus:</li>
+              <li>Everything in Individual Unlimited, plus:</li>
               <li>Unlimited named profiles (client IDs)</li>
               <li>Dropdown to switch Client profiles</li>
               <li>Export / import a MACH RUN file</li>
@@ -380,12 +524,20 @@ function Pricing() {
               </PrimaryButton>
             )}
           </article>
+            </>
+          )}
         </div>
 
         {error ? <p className="mt-6 text-sm text-negative">{error}</p> : null}
         {!ent.stripeConfigured ? (
           <p className="mt-6 text-sm text-subtle">
             Individual checkout turns on when MACH RUN is published with Stripe.
+          </p>
+        ) : null}
+        {ent.stripeConfigured && !ent.unlimitedStripeConfigured ? (
+          <p className="mt-3 text-sm text-subtle">
+            Individual Unlimited checkout needs STRIPE_PRICE_UNLIMITED_MONTHLY and
+            STRIPE_PRICE_UNLIMITED_YEARLY in Vercel, then a redeploy.
           </p>
         ) : null}
         {ent.stripeConfigured && !ent.advisorStripeConfigured ? (

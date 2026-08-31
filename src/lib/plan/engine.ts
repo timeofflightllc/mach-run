@@ -21,7 +21,8 @@ import {
 } from "./rmd.ts";
 import { normalizeOwner } from "./family-owners.ts";
 import { irsAnnualCap, irsLimitClass } from "./irs-limits.ts";
-import { mortgagePaymentDue, portfolioEquity } from "./mortgage.ts";
+import { mortgagePaymentDue, portfolioEquity, remainingMortgage } from "./mortgage.ts";
+import { liabilityPaymentDue, remainingLiability } from "./liability.ts";
 import type {
   FundingGap,
   IncomeStage,
@@ -360,6 +361,9 @@ export function simulate(raw: Plan): SimResult {
       if (p.kind !== "real_estate") continue;
       spending += mortgagePaymentDue(p.mortgage, cursor);
     }
+    for (const l of plan.liabilities ?? []) {
+      spending += liabilityPaymentDue(l, cursor);
+    }
 
     const due: { portfolioId: string; amount: number; matchPct: number }[] = [];
     let planned = 0;
@@ -486,11 +490,23 @@ export function simulate(raw: Plan): SimResult {
     const byBucket = emptyBuckets();
     let spendableEnd = 0;
     let netWorthEnd = 0;
+    let assetsEnd = 0;
+    let liabilitiesEnd = 0;
     for (const p of plan.portfolios) {
       const v = values.get(p.id) ?? 0;
       byBucket[p.taxBucket] += v;
-      if (p.includeInNetWorth) netWorthEnd += portfolioEquity({ ...p, currentValue: v }, cursor);
+      if (p.includeInNetWorth) {
+        const debt = p.kind === "real_estate" ? remainingMortgage(p.mortgage, cursor) : 0;
+        assetsEnd += v;
+        liabilitiesEnd += debt;
+        netWorthEnd += v - debt;
+      }
       if (p.spendable) spendableEnd += v;
+    }
+    for (const l of plan.liabilities ?? []) {
+      const debt = remainingLiability(l, cursor);
+      liabilitiesEnd += debt;
+      netWorthEnd -= debt;
     }
 
     totalContributed += appliedContrib;
@@ -508,6 +524,10 @@ export function simulate(raw: Plan): SimResult {
       spendableEndReal: spendableEnd / inflationIndex,
       netWorthEnd,
       netWorthEndReal: netWorthEnd / inflationIndex,
+      assetsEnd,
+      assetsEndReal: assetsEnd / inflationIndex,
+      liabilitiesEnd,
+      liabilitiesEndReal: liabilitiesEnd / inflationIndex,
       contributions: appliedContrib,
       plannedContributions: planned,
       withdrawals,
@@ -557,6 +577,10 @@ export function simulate(raw: Plan): SimResult {
       endSpendableReal: last.spendableEndReal,
       endNetWorth: last.netWorthEnd,
       endNetWorthReal: last.netWorthEndReal,
+      endAssets: last.assetsEnd,
+      endAssetsReal: last.assetsEndReal,
+      endLiabilities: last.liabilitiesEnd,
+      endLiabilitiesReal: last.liabilitiesEndReal,
       contributions: sum((m) => m.contributions),
       plannedContributions: sum((m) => m.plannedContributions),
       withdrawals: sum((m) => m.withdrawals),
@@ -683,7 +707,12 @@ export function startingSpendable(plan: Plan): number {
 
 export function startingNetWorth(plan: Plan): number {
   const asOf = plan.assumptions.asOfDate;
-  return plan.portfolios
+  const equity = plan.portfolios
     .filter((p) => p.includeInNetWorth)
     .reduce((s, p) => s + portfolioEquity(p, asOf), 0);
+  const extra = (plan.liabilities ?? []).reduce(
+    (s, l) => s + remainingLiability(l, asOf),
+    0,
+  );
+  return equity - extra;
 }

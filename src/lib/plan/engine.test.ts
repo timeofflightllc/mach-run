@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createDefaultPlan } from "./defaults.ts";
 import { simulate } from "./engine.ts";
+import { remainingLiability } from "./liability.ts";
+import { remainingMortgage } from "./mortgage.ts";
 import { ssBenefitFromPia, ssScheduleDates } from "./social-security.ts";
 import type { IncomeStream } from "./types.ts";
 
@@ -464,6 +466,59 @@ test("IRS cap: $3000/mo 401k stops when $24,500 is full; match follows", () => {
   assert.ok(Math.abs(jan.contributions - 6000) < 2);
   assert.ok(Math.abs(sep.contributions - 1000) < 2);
   assert.ok(oct.contributions < 1);
+});
+
+test("house mortgage plus car loan: net worth is assets minus both remaining principals", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-08-01";
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultReturnPct = 0;
+  plan.spending = [];
+  plan.incomes = [];
+  const mortgage = {
+    originationDate: "2020-08-01",
+    aprPct: 4,
+    monthlyPi: 1500,
+    termYears: 30,
+    includeInSpending: true,
+    associated: true,
+  };
+  plan.portfolios = [
+    {
+      id: "house",
+      name: "House",
+      kind: "real_estate",
+      owner: "joint",
+      currentValue: 400_000,
+      returnPct: 0,
+      taxBucket: "none",
+      spendable: false,
+      includeInNetWorth: true,
+      mortgage,
+    },
+  ];
+  const car = {
+    id: "lia-car",
+    name: "Car",
+    kind: "car" as const,
+    balance: 20_000,
+    originationDate: "2023-08-01",
+    aprPct: 6,
+    monthlyPi: 400,
+    termYears: 6,
+    includeInSpending: true,
+    owner: "primary",
+  };
+  plan.liabilities = [car];
+  const result = simulate(plan);
+  const first = result.months[0];
+  const houseDebt = remainingMortgage(mortgage, "2026-08-01");
+  const carDebt = remainingLiability(car, "2026-08-01");
+  const expected = 400_000 - houseDebt - carDebt;
+  assert.ok(houseDebt > 0 && carDebt > 0);
+  assert.ok(Math.abs(first.netWorthEnd - expected) < 2);
+  assert.ok(Math.abs(first.assetsEnd - 400_000) < 2);
+  assert.ok(Math.abs(first.liabilitiesEnd - (houseDebt + carDebt)) < 2);
 });
 
 

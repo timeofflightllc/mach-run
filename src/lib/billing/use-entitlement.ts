@@ -20,6 +20,9 @@ export function useEntitlement() {
             advisorStripeConfigured: Boolean(
               (cfg as { advisorStripeConfigured?: boolean }).advisorStripeConfigured,
             ),
+            unlimitedStripeConfigured: Boolean(
+              (cfg as { unlimitedStripeConfigured?: boolean }).unlimitedStripeConfigured,
+            ),
           });
         })
         .catch(() => {

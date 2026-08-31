@@ -9,6 +9,8 @@ import {
   streamWindow,
 } from "./engine.ts";
 import { usd, usdCompact } from "./format.ts";
+import { remainingLiability, liabilityPayoffDate } from "./liability.ts";
+import { mortgageAssociated, mortgagePayoffDate, remainingMortgage } from "./mortgage.ts";
 import { rmdStartAge } from "./rmd.ts";
 import type { Plan, SimResult } from "./types.ts";
 
@@ -459,6 +461,9 @@ export function buildPeerBrief(
     );
   }
 
+  const debt = debtSentence(plan, month0?.liabilitiesEnd);
+  if (debt) add("Debt", debt);
+
   if (sim.depletedAge != null) {
     add(
       "Runway",
@@ -472,6 +477,36 @@ export function buildPeerBrief(
   }
 
   return pack();
+}
+
+/** One sentence: remaining principal now, last loan payoff. Null if no modeled loans. */
+export function debtSentence(plan: Plan, remainingNow?: number): string | null {
+  const asOf = plan.assumptions.asOfDate;
+  let remaining = 0;
+  let lastPayoff: string | null = null;
+  let any = false;
+
+  for (const p of plan.portfolios) {
+    if (p.kind !== "real_estate" || !mortgageAssociated(p.mortgage)) continue;
+    any = true;
+    remaining += remainingMortgage(p.mortgage, asOf);
+    const pay = mortgagePayoffDate(p.mortgage);
+    if (pay && (!lastPayoff || pay > lastPayoff)) lastPayoff = pay;
+  }
+  for (const l of plan.liabilities ?? []) {
+    if (!(l.monthlyPi > 0) || !(l.termYears > 0)) continue;
+    any = true;
+    remaining += remainingLiability(l, asOf);
+    const pay = liabilityPayoffDate(l);
+    if (pay && (!lastPayoff || pay > lastPayoff)) lastPayoff = pay;
+  }
+  if (!any) return null;
+  const now = remainingNow != null && Number.isFinite(remainingNow) ? remainingNow : remaining;
+  if (now < 1) {
+    return "Modeled loans are paid off as of this MACH Run.";
+  }
+  const when = lastPayoff ? lastPayoff.slice(0, 7) : "the end of the term you entered";
+  return `Remaining debt now is ${usd(now)}. Last modeled loan pays off ${when}.`;
 }
 
 function rmdAdvice(plan: Plan, sim: SimResult): string {

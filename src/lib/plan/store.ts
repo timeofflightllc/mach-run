@@ -6,6 +6,7 @@ import type {
   Child,
   ContributionRule,
   IncomeStream,
+  Liability,
   Plan,
   Portfolio,
   SpendingPhase,
@@ -23,6 +24,9 @@ interface PlanState {
   updatePortfolio: (id: string, patch: Partial<Portfolio>) => void;
   addPortfolio: (row: Portfolio) => void;
   removePortfolio: (id: string) => void;
+  updateLiability: (id: string, patch: Partial<Liability>) => void;
+  addLiability: (row: Liability) => void;
+  removeLiability: (id: string) => void;
   updateContribution: (id: string, patch: Partial<ContributionRule>) => void;
   addContribution: (row: ContributionRule) => void;
   removeContribution: (id: string) => void;
@@ -85,6 +89,29 @@ export const usePlanStore = create<PlanState>()(
                   ? null
                   : s.plan.assumptions.sweepPortfolioId,
             },
+          },
+        })),
+      updateLiability: (id, patch) =>
+        set((s) => ({
+          plan: {
+            ...s.plan,
+            liabilities: (s.plan.liabilities ?? []).map((l) =>
+              l.id === id ? { ...l, ...patch } : l,
+            ),
+          },
+        })),
+      addLiability: (row) =>
+        set((s) => ({
+          plan: {
+            ...s.plan,
+            liabilities: [...(s.plan.liabilities ?? []), row],
+          },
+        })),
+      removeLiability: (id) =>
+        set((s) => ({
+          plan: {
+            ...s.plan,
+            liabilities: (s.plan.liabilities ?? []).filter((l) => l.id !== id),
           },
         })),
       updateContribution: (id, patch) =>

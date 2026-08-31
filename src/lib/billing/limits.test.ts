@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { addCap, clampPlan, paidFromStatus } from "./limits.ts";
+import { addCap, clampPlan, hasBalanceSheet, paidFromStatus } from "./limits.ts";
 
 test("free add cap grandfathers existing rows", () => {
   assert.equal(addCap(0, false, 2), 2);
@@ -32,4 +32,11 @@ test("paid statuses", () => {
   assert.equal(paidFromStatus("trialing"), true);
   assert.equal(paidFromStatus("canceled"), false);
   assert.equal(paidFromStatus("none"), false);
+});
+
+test("hasBalanceSheet only Unlimited and Advisor", () => {
+  assert.equal(hasBalanceSheet("free"), false);
+  assert.equal(hasBalanceSheet("individual"), false);
+  assert.equal(hasBalanceSheet("unlimited"), true);
+  assert.equal(hasBalanceSheet("advisor"), true);
 });

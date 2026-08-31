@@ -3,6 +3,8 @@ export const FREE_CONTRIBUTION_LIMIT = 2;
 export const FREE_INCOME_LIMIT = 2;
 export const MACH_MONTHLY_USD = 4;
 export const MACH_YEARLY_USD = 40;
+export const UNLIMITED_MONTHLY_USD = 15;
+export const UNLIMITED_YEARLY_USD = 130;
 export const ADVISOR_MONTHLY_USD = 69;
 export const ADVISOR_YEARLY_USD = 690;
 export const ADVISOR_TRIAL_DAYS = 7;
@@ -21,7 +23,7 @@ export function trialDaysForCode(raw: string | null | undefined): number | null 
   return null;
 }
 
-export type MachPackage = "free" | "individual" | "advisor";
+export type MachPackage = "free" | "individual" | "unlimited" | "advisor";
 
 export type Entitlement = {
   signedIn: boolean;
@@ -36,6 +38,7 @@ export type Entitlement = {
   status: string | null;
   periodEnd: string | null;
   billed: MachPackage;
+  unlimitedStripeConfigured?: boolean;
 };
 
 export const GUEST_ENTITLEMENT: Entitlement = {
@@ -59,8 +62,14 @@ export function paidFromStatus(status: string | null | undefined): boolean {
 
 export function packageLabel(plan: MachPackage): string {
   if (plan === "advisor") return "Advisor";
+  if (plan === "unlimited") return "Individual Unlimited";
   if (plan === "individual") return "Individual";
   return "Free";
+}
+
+/** Net Worth chart + Liabilities list. Individual $4 does not get these. */
+export function hasBalanceSheet(plan: MachPackage): boolean {
+  return plan === "unlimited" || plan === "advisor";
 }
 
 /** Free users can keep what they already saved; they cannot grow past the cap. */

@@ -4,13 +4,14 @@ import { AuthSlot } from "@/components/meridian/auth-slot";
 import { ProfileSwitcher } from "@/components/meridian/profile-switcher";
 import { MACH_RESET_BASELINE } from "@/components/meridian/account-menu";
 import { CalculateButton } from "@/components/meridian/calculate-button";
-import { CashChart, WealthChart } from "@/components/meridian/charts";
+import { CashChart, NetWorthChart, WealthChart } from "@/components/meridian/charts";
 import { Pinnable, useChartPins } from "@/components/meridian/chart-pin";
 import { ContributionForm } from "@/components/meridian/contribution-form";
 import { HouseholdForm } from "@/components/meridian/household-form";
 import { IncomeForm } from "@/components/meridian/income-form";
 import { KpiStrip } from "@/components/meridian/kpi-strip";
 import { PortfolioForm } from "@/components/meridian/portfolio-form";
+import { LiabilityForm } from "@/components/meridian/liability-form";
 import { PeerBriefCard } from "@/components/meridian/peer-brief";
 import { OodaAiCard } from "@/components/meridian/ooda-ai";
 import { Section } from "@/components/meridian/section";
@@ -25,6 +26,7 @@ import { usePlanStore } from "@/lib/plan/store";
 import { useProfileStore } from "@/lib/plan/profile-store";
 import { useCloudPlan } from "@/lib/plan/use-cloud-plan";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
+import { hasBalanceSheet } from "@/lib/billing/limits";
 import { getEntitlement } from "@/lib/billing/api";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
@@ -33,6 +35,8 @@ export const Route = createFileRoute("/")({ component: Home });
 
 function ActChartColumn({ plan, sim }: { plan: Plan; sim: SimResult }) {
   const pins = useChartPins();
+  const ent = useEntitlement();
+  const unlocked = hasBalanceSheet(ent.plan);
   return (
     <div className="flex min-w-0 flex-col gap-4">
       <div ref={pins.wealthSlot}>
@@ -53,6 +57,11 @@ function ActChartColumn({ plan, sim }: { plan: Plan; sim: SimResult }) {
           onPin={pins.toggleCash}
         />
       </Pinnable>
+      <NetWorthChart
+        plan={plan}
+        sim={sim}
+        locked={!unlocked}
+      />
     </div>
   );
 }
@@ -406,6 +415,15 @@ function Home() {
             >
               <PortfolioForm />
             </Section>
+            {hasBalanceSheet(ent.plan) ? (
+              <Section
+                title="Liabilities"
+                hint="Car, student, HELOC, personal, credit card. Remaining principal comes off net worth. House mortgages stay on the real estate account."
+                defaultOpen={false}
+              >
+                <LiabilityForm />
+              </Section>
+            ) : null}
             <CalculateButton onCalculate={calculate} />
           </div>
           <div className="flex flex-col gap-3">
@@ -493,7 +511,7 @@ function Home() {
                     />
                   </div>
                   <div className="flex min-w-0 flex-col gap-4">
-                    <PhaseLabel id="ooda-radar" label="Money Radar" />
+                    <PhaseLabel id="ooda-radar" label="Radar" />
                     <ActChartColumn plan={displayPlan} sim={sim} />
                     <OodaAiCard
                       plan={displayPlan}

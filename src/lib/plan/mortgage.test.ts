@@ -41,3 +41,9 @@ test("P&I drops out of spending after payoff", () => {
   assert.equal(mortgagePaymentDue({ ...m, includeInSpending: false }, "2020-08-01"), 0);
   assert.equal(mortgagePaymentDue(m, "2050-08-01"), 0);
 });
+
+test("unchecked associated loan is ignored", () => {
+  const off = { ...m, associated: false };
+  assert.equal(remainingMortgage(off, "2020-08-01"), 0);
+  assert.equal(mortgagePaymentDue(off, "2020-08-01"), 0);
+});

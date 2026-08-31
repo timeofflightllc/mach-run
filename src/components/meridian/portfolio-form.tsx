@@ -272,7 +272,13 @@ function RealEstateMortgage({
         </span>
       </label>
       {associated ? (
-        <div className="mt-3">
+        <div
+          className="mt-3 rounded-md px-3 py-3"
+          style={{
+            background: "color-mix(in oklab, #e8c547 8%, transparent)",
+            boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 35%, transparent)",
+          }}
+        >
           <p className="text-xs font-medium tracking-wide text-[#e8c547]">
             Associated loan / mortgage
           </p>
@@ -343,4 +349,3 @@ function RealEstateMortgage({
     </div>
   );
 }
-

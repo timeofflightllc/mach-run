@@ -79,18 +79,32 @@ function advisorStripeReady(): boolean {
   }
 }
 
+function unlimitedStripeReady(): boolean {
+  try {
+    return Boolean(
+      process.env.STRIPE_SECRET_KEY &&
+        process.env.STRIPE_PRICE_UNLIMITED_MONTHLY &&
+        process.env.STRIPE_PRICE_UNLIMITED_YEARLY,
+    );
+  } catch {
+    return false;
+  }
+}
+
 function intervalFromPrice(priceId: string | null | undefined, paid: boolean): "month" | "year" | null {
   if (!paid) return null;
   try {
     if (
       priceId === process.env.STRIPE_PRICE_YEARLY ||
-      priceId === process.env.STRIPE_PRICE_ADVISOR_YEARLY
+      priceId === process.env.STRIPE_PRICE_ADVISOR_YEARLY ||
+      priceId === process.env.STRIPE_PRICE_UNLIMITED_YEARLY
     ) {
       return "year";
     }
     if (
       priceId === process.env.STRIPE_PRICE_MONTHLY ||
-      priceId === process.env.STRIPE_PRICE_ADVISOR_MONTHLY
+      priceId === process.env.STRIPE_PRICE_ADVISOR_MONTHLY ||
+      priceId === process.env.STRIPE_PRICE_UNLIMITED_MONTHLY
     ) {
       return "month";
     }
@@ -109,6 +123,12 @@ function packageFromPrice(priceId: string | null | undefined, paid: boolean): Ma
     ) {
       return "advisor";
     }
+    if (
+      priceId === process.env.STRIPE_PRICE_UNLIMITED_MONTHLY ||
+      priceId === process.env.STRIPE_PRICE_UNLIMITED_YEARLY
+    ) {
+      return "unlimited";
+    }
   } catch {
     /* env missing */
   }
@@ -121,6 +141,7 @@ function signedInFree(): Entitlement {
     signedIn: true,
     stripeConfigured: stripeReady(),
     advisorStripeConfigured: advisorStripeReady(),
+    unlimitedStripeConfigured: unlimitedStripeReady(),
     status: "none",
   };
 }
@@ -144,9 +165,9 @@ async function loadSubscription(userId: string): Promise<SubRow | null> {
 export const getBillingConfig = createServerFn({ method: "GET" }).handler(
   async () => {
     try {
-      return { stripeConfigured: stripeReady(), advisorStripeConfigured: advisorStripeReady(), monthly: 4, yearly: 40 };
+      return { stripeConfigured: stripeReady(), advisorStripeConfigured: advisorStripeReady(), unlimitedStripeConfigured: unlimitedStripeReady(), monthly: 4, yearly: 40 };
     } catch {
-      return { stripeConfigured: false, advisorStripeConfigured: false, monthly: 4, yearly: 40 };
+      return { stripeConfigured: false, advisorStripeConfigured: false, unlimitedStripeConfigured: false, monthly: 4, yearly: 40 };
     }
   },
 );
@@ -182,6 +203,7 @@ export const getEntitlement = createServerFn({ method: "GET" })
         incomeLimit: paid ? null : FREE_INCOME_LIMIT,
         stripeConfigured: stripeReady(),
         advisorStripeConfigured: advisorStripeReady(),
+        unlimitedStripeConfigured: unlimitedStripeReady(),
         status: row?.status ?? "none",
         periodEnd,
       };
@@ -196,18 +218,29 @@ export const startCheckout = createServerFn({ method: "POST" })
     (input: {
       interval: "month" | "year";
       origin: string;
-      package?: "individual" | "advisor";
+      package?: "individual" | "unlimited" | "advisor";
       trialCode?: string;
     }) => input,
   )
   .handler(async ({ context, data }) => {
-    const { getStripe, priceIdFor, stripeConfigured, advisorStripeConfigured } =
+    const { getStripe, priceIdFor, stripeConfigured, advisorStripeConfigured, unlimitedStripeConfigured } =
       await import("./stripe.server");
-    const pkg = data.package === "advisor" ? "advisor" : "individual";
+    const pkg =
+      data.package === "advisor"
+        ? "advisor"
+        : data.package === "unlimited"
+          ? "unlimited"
+          : "individual";
     if (pkg === "advisor") {
       if (!advisorStripeConfigured()) {
         throw new Error(
           "Advisor checkout is not connected yet. Add STRIPE_PRICE_ADVISOR_MONTHLY and STRIPE_PRICE_ADVISOR_YEARLY in Vercel.",
+        );
+      }
+    } else if (pkg === "unlimited") {
+      if (!unlimitedStripeConfigured()) {
+        throw new Error(
+          "Individual Unlimited checkout is not connected yet. Add STRIPE_PRICE_UNLIMITED_MONTHLY and STRIPE_PRICE_UNLIMITED_YEARLY in Vercel.",
         );
       }
     } else if (!stripeConfigured()) {

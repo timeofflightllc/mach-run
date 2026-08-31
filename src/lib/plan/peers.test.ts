@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createDefaultPlan } from "./defaults.ts";
 import { simulate } from "./engine.ts";
-import { buildPeerBrief, nestEggTrack, percentileFromKnots } from "./peers.ts";
+import { buildPeerBrief, debtSentence, nestEggTrack, percentileFromKnots } from "./peers.ts";
 
 test("percentile interpolates between knots", () => {
   const knots = [
@@ -178,5 +178,57 @@ test("nest egg goal says extra monthly when the pile will miss", () => {
   const brief = buildPeerBrief(plan, sim, { expanded: true });
   assert.match(brief.headline, /not on track/i);
   assert.match(brief.paragraphs.join(" "), /more per month/i);
+});
+
+test("debt sentence names remaining principal and last payoff year", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-08-01";
+  plan.portfolios = [
+    {
+      id: "house",
+      name: "House",
+      kind: "real_estate",
+      owner: "joint",
+      currentValue: 400_000,
+      returnPct: 0,
+      taxBucket: "none",
+      spendable: false,
+      includeInNetWorth: true,
+      mortgage: {
+        originationDate: "2020-08-01",
+        aprPct: 4,
+        monthlyPi: 1500,
+        termYears: 30,
+        includeInSpending: true,
+        associated: true,
+      },
+    },
+  ];
+  plan.liabilities = [
+    {
+      id: "lia-car",
+      name: "Car",
+      kind: "car",
+      balance: 20_000,
+      originationDate: "2023-08-01",
+      aprPct: 6,
+      monthlyPi: 400,
+      termYears: 6,
+      includeInSpending: true,
+      owner: "primary",
+    },
+  ];
+  const line = debtSentence(plan);
+  assert.ok(line);
+  assert.match(line, /Remaining debt now is/);
+  assert.match(line, /Last modeled loan pays off 2050-08/);
+  const sim = simulate(plan);
+  const brief = buildPeerBrief(plan, sim, { expanded: true });
+  assert.match(brief.paragraphs.join(" "), /Remaining debt now is/);
+});
+
+test("debt sentence is null when there are no loans", () => {
+  const plan = createDefaultPlan();
+  assert.equal(debtSentence(plan), null);
 });
 

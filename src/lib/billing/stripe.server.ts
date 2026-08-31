@@ -53,6 +53,18 @@ export function advisorStripeConfigured(): boolean {
   }
 }
 
+export function unlimitedStripeConfigured(): boolean {
+  try {
+    return Boolean(
+      process.env.STRIPE_SECRET_KEY &&
+        process.env.STRIPE_PRICE_UNLIMITED_MONTHLY &&
+        process.env.STRIPE_PRICE_UNLIMITED_YEARLY,
+    );
+  } catch {
+    return false;
+  }
+}
+
 export async function getStripe(): Promise<StripeClient> {
   const key = process.env.STRIPE_SECRET_KEY;
   if (!key) throw new Error("Stripe is not configured.");
@@ -62,21 +74,27 @@ export async function getStripe(): Promise<StripeClient> {
 
 export function priceIdFor(
   interval: "month" | "year",
-  pkg: "individual" | "advisor" = "individual",
+  pkg: "individual" | "unlimited" | "advisor" = "individual",
 ): string {
   const id =
     pkg === "advisor"
       ? interval === "year"
         ? process.env.STRIPE_PRICE_ADVISOR_YEARLY
         : process.env.STRIPE_PRICE_ADVISOR_MONTHLY
-      : interval === "year"
-        ? process.env.STRIPE_PRICE_YEARLY
-        : process.env.STRIPE_PRICE_MONTHLY;
+      : pkg === "unlimited"
+        ? interval === "year"
+          ? process.env.STRIPE_PRICE_UNLIMITED_YEARLY
+          : process.env.STRIPE_PRICE_UNLIMITED_MONTHLY
+        : interval === "year"
+          ? process.env.STRIPE_PRICE_YEARLY
+          : process.env.STRIPE_PRICE_MONTHLY;
   if (!id) {
     throw new Error(
       pkg === "advisor"
         ? "Advisor Stripe prices are not configured yet."
-        : "Stripe prices are not configured.",
+        : pkg === "unlimited"
+          ? "Individual Unlimited Stripe prices are not configured yet."
+          : "Stripe prices are not configured.",
     );
   }
   return id;
@@ -84,7 +102,7 @@ export function priceIdFor(
 
 export function packageFromPriceId(
   priceId: string | null | undefined,
-): "individual" | "advisor" | null {
+): "individual" | "unlimited" | "advisor" | null {
   if (!priceId) return null;
   try {
     if (
@@ -92,6 +110,12 @@ export function packageFromPriceId(
       priceId === process.env.STRIPE_PRICE_ADVISOR_YEARLY
     ) {
       return "advisor";
+    }
+    if (
+      priceId === process.env.STRIPE_PRICE_UNLIMITED_MONTHLY ||
+      priceId === process.env.STRIPE_PRICE_UNLIMITED_YEARLY
+    ) {
+      return "unlimited";
     }
     if (
       priceId === process.env.STRIPE_PRICE_MONTHLY ||

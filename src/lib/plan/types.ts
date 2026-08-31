@@ -79,6 +79,27 @@ export interface Portfolio {
   mortgage?: Mortgage | null;
 }
 
+export type LiabilityKind =
+  | "car"
+  | "student"
+  | "heloc"
+  | "personal"
+  | "credit_card"
+  | "other";
+
+export interface Liability {
+  id: string;
+  name: string;
+  kind: LiabilityKind;
+  balance: number;
+  aprPct: number;
+  monthlyPi: number;
+  originationDate: string;
+  termYears: number;
+  includeInSpending: boolean;
+  owner: string;
+}
+
 export interface ContributionRule {
   id: string;
   label: string;
@@ -168,6 +189,7 @@ export interface Plan {
   stages: IncomeStage[];
   assumptions: Assumptions;
   portfolios: Portfolio[];
+  liabilities: Liability[];
   contributions: ContributionRule[];
   incomes: IncomeStream[];
   spending: SpendingPhase[];
@@ -185,6 +207,10 @@ export interface MonthSnapshot {
   spendableEndReal: number;
   netWorthEnd: number;
   netWorthEndReal: number;
+  assetsEnd: number;
+  assetsEndReal: number;
+  liabilitiesEnd: number;
+  liabilitiesEndReal: number;
   contributions: number;
   plannedContributions: number;
   withdrawals: number;
@@ -208,6 +234,10 @@ export interface YearSnapshot {
   endSpendableReal: number;
   endNetWorth: number;
   endNetWorthReal: number;
+  endAssets: number;
+  endAssetsReal: number;
+  endLiabilities: number;
+  endLiabilitiesReal: number;
   contributions: number;
   plannedContributions: number;
   withdrawals: number;

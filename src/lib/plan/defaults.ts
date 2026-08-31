@@ -27,6 +27,7 @@ export function createDefaultPlan(): Plan {
     },
     stages: [],
     portfolios: [],
+    liabilities: [],
     contributions: [],
     incomes: [
       {
@@ -58,6 +59,7 @@ export function ensurePlan(plan: Plan): Plan {
     ...plan,
     children: Array.isArray(plan.children) ? plan.children : [],
     portfolios: Array.isArray(plan.portfolios) ? plan.portfolios : [],
+    liabilities: Array.isArray(plan.liabilities) ? plan.liabilities : [],
     contributions: Array.isArray(plan.contributions) ? plan.contributions : [],
     incomes: Array.isArray(plan.incomes) ? plan.incomes : [],
     spending: Array.isArray(plan.spending) ? plan.spending : [],
