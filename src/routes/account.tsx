@@ -155,7 +155,7 @@ function Account() {
       if (err) {
         throw new Error(
           err.message ??
-            "Could not change password. If you signed in with Google or X, change it there.",
+            "Could not change password. If you signed in with Apple, Google or X, change it there.",
         );
       }
       setCurrentPassword("");
@@ -206,8 +206,8 @@ function Account() {
           {backupOk ? (
             <>
               <p className="text-sm text-muted">
-                Download a locked copy of this household. MACH RUN does not keep the
-                password.
+                Download a locked copy of this household. Use a unique backup-file
+                password — not your machrun.com sign-in. MACH RUN does not store it.
               </p>
               <button
                 type="button"
@@ -260,7 +260,7 @@ function Account() {
           <Field label="Name">
             <TextInput value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
-          <Field label="Email" hint="Google / X logins may not let MACH RUN change this.">
+          <Field label="Email" hint="Apple / Google / X logins may not let MACH RUN change this.">
             <TextInput
               type="email"
               value={email}
@@ -278,8 +278,8 @@ function Account() {
         >
           <p className="font-display text-lg text-fg">Password</p>
           <p className="text-sm text-muted">
-            Only applies if you registered with email. Google and X keep their own
-            passwords.
+            Only applies if you registered with email. Continue with Apple, Google
+            and X keep their own passwords.
           </p>
           <Field label="Current password">
             <TextInput

@@ -230,6 +230,9 @@ function Pricing() {
               <p className="mt-3 text-base leading-relaxed text-muted">
                 Individual Unlimited adds Net Worth and Liabilities.
               </p>
+              <p className="mt-3 text-base leading-relaxed text-muted">
+                Professional financial advisors have even more capability built in.
+              </p>
             </>
           )}
           <p className="mt-6 rounded-lg bg-surface px-4 py-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)]">
@@ -275,7 +278,35 @@ function Pricing() {
             </button>
           </div>
         </div>
-        <div className="mt-3 flex justify-center">
+
+        <div className="mx-auto mt-6 max-w-md">
+          <label className="flex min-w-0 flex-col gap-1.5">
+            <span className="text-xs font-medium tracking-wide text-muted">
+              Do you have a coupon code?
+            </span>
+            <TextInput
+              value={trialCode}
+              onChange={(e) => {
+                setTrialCode(e.target.value);
+                setError(null);
+              }}
+              placeholder=""
+              autoComplete="off"
+              spellCheck={false}
+              aria-invalid={codeInvalid}
+            />
+          </label>
+          <p
+            className={cn(
+              "mt-2 text-sm",
+              hasTrial ? "text-fg" : codeInvalid ? "text-negative" : "text-subtle",
+            )}
+          >
+            {codeHint}
+          </p>
+        </div>
+
+        <div className="mt-6 flex justify-center">
           <div className="inline-flex rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
             <button
               type="button"
@@ -308,33 +339,6 @@ function Pricing() {
               ? `Advisor Lite includes a ${ADVISOR_TRIAL_DAYS}-day free trial (card on file).`
               : "Monthly or yearly — yearly is two months free."}
         </p>
-
-        <div className="mx-auto mt-6 max-w-md">
-          <label className="flex min-w-0 flex-col gap-1.5">
-            <span className="text-xs font-medium tracking-wide text-muted">
-              Do you have a coupon code?
-            </span>
-            <TextInput
-              value={trialCode}
-              onChange={(e) => {
-                setTrialCode(e.target.value);
-                setError(null);
-              }}
-              placeholder=""
-              autoComplete="off"
-              spellCheck={false}
-              aria-invalid={codeInvalid}
-            />
-          </label>
-          <p
-            className={cn(
-              "mt-2 text-sm",
-              hasTrial ? "text-fg" : codeInvalid ? "text-negative" : "text-subtle",
-            )}
-          >
-            {codeHint}
-          </p>
-        </div>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           <article

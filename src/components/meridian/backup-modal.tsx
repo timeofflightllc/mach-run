@@ -1,8 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 
-const NOTE =
-  "MACH RUN does not keep this password. Forget it, this file is gone. We cannot reset it.";
+const DOWNLOAD_NOTE =
+  "This is not your machrun.com sign-in. Create a unique password for this backup file only. MACH RUN does not store it. If you forget it, this file cannot be opened, and we cannot reset it.";
+
+const IMPORT_NOTE =
+  "Enter the password you created for this backup file — not your machrun.com sign-in.";
 
 export function BackupPasswordModal({
   mode,
@@ -50,9 +53,11 @@ export function BackupPasswordModal({
         <p id="backup-modal-title" className="font-display text-lg text-fg">
           {title}
         </p>
-        <p className="mt-3 text-sm leading-relaxed text-muted">{NOTE}</p>
+        <p className="mt-3 text-sm leading-relaxed text-muted">
+          {mode === "download" ? DOWNLOAD_NOTE : IMPORT_NOTE}
+        </p>
         <div className="mt-4 space-y-3">
-          <Field label="Backup password">
+          <Field label="Backup file password">
             <TextInput
               type="password"
               autoComplete="new-password"
@@ -62,7 +67,7 @@ export function BackupPasswordModal({
             />
           </Field>
           {mode === "download" ? (
-            <Field label="Confirm password">
+            <Field label="Confirm backup file password">
               <TextInput
                 type="password"
                 autoComplete="new-password"
