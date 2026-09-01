@@ -221,7 +221,7 @@ test("debt sentence names remaining principal and last payoff year", () => {
   const line = debtSentence(plan);
   assert.ok(line);
   assert.match(line, /Remaining debt now is/);
-  assert.match(line, /Last modeled loan pays off 2050-08/);
+  assert.match(line, /Last modeled loan pays off Aug 2050/);
   const sim = simulate(plan);
   const brief = buildPeerBrief(plan, sim, { expanded: true });
   assert.match(brief.paragraphs.join(" "), /Remaining debt now is/);
@@ -230,5 +230,58 @@ test("debt sentence names remaining principal and last payoff year", () => {
 test("debt sentence is null when there are no loans", () => {
   const plan = createDefaultPlan();
   assert.equal(debtSentence(plan), null);
+});
+
+test("OODA paychecks sort by start date and print month then year", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1976-01-01";
+  plan.incomes = [
+    {
+      id: "later",
+      name: "Pension",
+      kind: "pension",
+      monthlyAmount: 2000,
+      startDate: "2036-09-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+    {
+      id: "earlier",
+      name: "W-2",
+      kind: "salary",
+      monthlyAmount: 10_000,
+      startDate: "2026-08-01",
+      endDate: "2036-08-01",
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.portfolios = [
+    {
+      id: "p1",
+      name: "Brokerage",
+      kind: "taxable",
+      owner: "Joint",
+      currentValue: 100_000,
+      returnPct: null,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  const sim = simulate(plan);
+  const pay = buildPeerBrief(plan, sim, { expanded: true }).sections.find(
+    (s) => s.title === "Paychecks",
+  );
+  assert.ok(pay);
+  const w2 = pay.body.indexOf("W-2");
+  const pension = pay.body.indexOf("Pension");
+  assert.ok(w2 >= 0 && pension > w2);
+  assert.match(pay.body, /Aug 2026/);
+  assert.match(pay.body, /Sep 2036/);
+  assert.doesNotMatch(pay.body, /2026-08/);
 });
 

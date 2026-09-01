@@ -39,6 +39,14 @@ export function yearMonth(iso: string): string {
   return "";
 }
 
+/** User-facing month then year, e.g. Aug 2026. */
+export function formatMonthYear(isoDate: string | null | undefined): string {
+  if (!isoDate) return "";
+  const d = parseDate(isoDate);
+  if (Number.isNaN(d.getTime())) return isoDate.trim();
+  return format(d, "MMM yyyy");
+}
+
 export function iso(d: Date): string {
   return format(d, "yyyy-MM-dd");
 }

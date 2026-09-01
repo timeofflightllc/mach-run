@@ -537,7 +537,7 @@ function Home() {
                     />
                   </div>
                   <div className="flex min-w-0 flex-col gap-4">
-                    <PhaseLabel id="ooda-radar" label="Radar" />
+                    <PhaseLabel id="ooda-radar" label="Financial Radar" />
                     <ActChartColumn plan={displayPlan} sim={sim} />
                     <OodaAiCard
                       plan={displayPlan}

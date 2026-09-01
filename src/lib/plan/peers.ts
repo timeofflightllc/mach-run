@@ -1,4 +1,4 @@
-import { ageYears, dateAtAge, monthStart, validIso, yearlyRateToMonthly } from "./dates.ts";
+import { ageYears, dateAtAge, formatMonthYear, monthStart, validIso, yearlyRateToMonthly } from "./dates.ts";
 import {
   monthlyIncomeAt,
   representativeAnnualIncome,
@@ -360,12 +360,18 @@ export function buildPeerBrief(
   }
 
   if (namedIncomes.length) {
-    const listed = namedIncomes
+    const listed = [...namedIncomes]
+      .sort((a, b) => {
+        const as = streamWindow(plan, a).start;
+        const bs = streamWindow(plan, b).start;
+        if (as !== bs) return as < bs ? -1 : 1;
+        return (a.name || a.kind).localeCompare(b.name || b.kind);
+      })
       .map((s) => {
         const win = streamWindow(plan, s);
         const amt = streamBenefitToday(plan, s, asOf);
-        const end = win.end ? win.end.slice(0, 7) : "open";
-        return `${s.name.trim() || s.kind}  ${usd(amt, true)}/mo  (${win.start.slice(0, 7)} → ${end})`;
+        const end = win.end ? formatMonthYear(win.end) : "open";
+        return `${s.name.trim() || s.kind}  ${usd(amt, true)}/mo  (${formatMonthYear(win.start)} → ${end})`;
       })
       .join("\n");
     add(
@@ -435,7 +441,7 @@ export function buildPeerBrief(
           : null;
       add(
         "Retirement landing",
-        `Retirement goal is ${ret.date.slice(0, 7)}${retAge != null ? ` (age ${retAge})` : ""}. Spendable there: ${usd(ret.spendableReal)} in today's dollars. Modeled retirement income ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo) from the stages you entered.`,
+        `Retirement goal is ${formatMonthYear(ret.date)}${retAge != null ? ` (age ${retAge})` : ""}. Spendable there: ${usd(ret.spendableReal)} in today's dollars. Modeled retirement income ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo) from the stages you entered.`,
       );
     }
   } else {
@@ -505,7 +511,7 @@ export function debtSentence(plan: Plan, remainingNow?: number): string | null {
   if (now < 1) {
     return "Modeled loans are paid off as of this MACH Run.";
   }
-  const when = lastPayoff ? lastPayoff.slice(0, 7) : "the end of the term you entered";
+  const when = lastPayoff ? formatMonthYear(lastPayoff) : "the end of the term you entered";
   return `Remaining debt now is ${usd(now)}. Last modeled loan pays off ${when}.`;
 }
 
