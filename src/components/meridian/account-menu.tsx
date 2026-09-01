@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { authEnabled, signOut } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
-import { engageIdleLock } from "@/lib/idle-lock";
+import { engageIdleLock, idleLockArmed } from "@/lib/idle-lock";
 import { usePlanStore } from "@/lib/plan/store";
 
 export const MACH_RESET_BASELINE = "mach-reset-baseline";
@@ -14,7 +14,13 @@ export function AccountMenu() {
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  const [pinSet, setPinSet] = useState(false);
   const root = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    setPinSet(idleLockArmed(user.id));
+  }, [user, open]);
 
   useEffect(() => {
     if (!open) return;
@@ -67,13 +73,16 @@ export function AccountMenu() {
             role="menuitem"
             onClick={() => {
               setOpen(false);
-              if (!user || !engageIdleLock(user.id)) {
-                void navigate({ to: "/account" });
+              if (!user) return;
+              if (pinSet) {
+                engageIdleLock(user.id);
+                return;
               }
+              void navigate({ to: "/account", hash: "idle-lock" });
             }}
             className="block w-full px-3 py-2.5 text-left text-sm text-fg hover:bg-surface"
           >
-            Engage idle privacy lock
+            {pinSet ? "Engage idle privacy lock" : "Set idle privacy pin"}
           </button>
           <Link
             to="/pricing"

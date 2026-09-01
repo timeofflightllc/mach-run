@@ -23,6 +23,15 @@ export function IdleLockSettings({ userId }: { userId: string }) {
     setEnabled(Boolean(prefs?.enabled && prefs.pinHash));
   }, [userId]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#idle-lock") return;
+    document.getElementById("idle-lock")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, []);
+
   async function turnOn(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -62,6 +71,7 @@ export function IdleLockSettings({ userId }: { userId: string }) {
 
   return (
     <form
+      id="idle-lock"
       onSubmit={(e) => void turnOn(e)}
       className="space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
     >
