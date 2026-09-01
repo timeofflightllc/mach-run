@@ -97,7 +97,7 @@ export function ContributionForm() {
           return (
             <li
               key={c.id}
-              className="rounded-lg bg-elevated p-3 shadow-[0_0_0_1px_var(--color-border)]"
+              className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
             >
               <div className="mb-2 flex items-center gap-2">
                 <TextInput

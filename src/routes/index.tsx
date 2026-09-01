@@ -371,6 +371,20 @@ function Home() {
           ))}
         </nav>
         <GuestOnly>
+          <div
+            className="border-t py-2.5 text-center"
+            style={{
+              background: "var(--color-section-lift)",
+              borderColor: "var(--color-section-lift-border)",
+            }}
+          >
+            <p className="page-gutter mx-auto max-w-none text-sm font-bold leading-relaxed text-[#c5e0cc]">
+              Get started — open Family, then Accounts. Continue down the
+              inputs and complete your first OODA Loop with Calculate.
+              <br />
+              That’s a MACH RUN.
+            </p>
+          </div>
           <div className="border-t border-[#5c4a18] bg-[#241c0c]">
             <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-1.5 py-2.5 text-center sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-3">
               <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-2 py-0.5 font-display text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1a1408]">
@@ -467,14 +481,26 @@ function Home() {
           {sim ? (
             <div className="flex flex-col gap-4">
               {!ent.paid ? (
-                <div className="flex flex-col gap-3 rounded-xl bg-elevated px-5 py-4 shadow-[0_0_0_1px_var(--color-border)] sm:flex-row sm:items-center sm:justify-between">
-                  <p className="text-sm leading-relaxed text-muted">
-                    This MACH Run is on Free. Unlimited opens every account,
-                    every stage, the full OODA, and OODA AI.
+                <div
+                  className="flex flex-col gap-3 rounded-xl px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                  style={{
+                    background: "var(--color-section)",
+                    boxShadow: "0 0 0 1px var(--color-section-border)",
+                  }}
+                >
+                  <p className="text-sm leading-relaxed text-[#c5e0cc]">
+                    This MACH Run is on Free. Upgrade to open more features
+                    including accounts, incomes, the full OODA Analysis and
+                    OODA AI.
                   </p>
                   <Link
                     to="/pricing"
-                    className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
+                    className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg px-4 text-sm font-medium"
+                    style={{
+                      background: "var(--color-section-lift)",
+                      color: "#d7f0de",
+                      boxShadow: "0 0 0 1px var(--color-section-lift-border)",
+                    }}
                   >
                     Upgrade to MACH Run Unlimited
                   </Link>

@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { authEnabled, signOut } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { engageIdleLock } from "@/lib/idle-lock";
 import { usePlanStore } from "@/lib/plan/store";
 
 export const MACH_RESET_BASELINE = "mach-reset-baseline";
 
 export function AccountMenu() {
   const { user } = useCurrentUserState();
+  const navigate = useNavigate();
   const reset = usePlanStore((s) => s.reset);
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -60,6 +62,19 @@ export function AccountMenu() {
           >
             Account profile
           </Link>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => {
+              setOpen(false);
+              if (!user || !engageIdleLock(user.id)) {
+                void navigate({ to: "/account" });
+              }
+            }}
+            className="block w-full px-3 py-2.5 text-left text-sm text-fg hover:bg-surface"
+          >
+            Engage idle privacy lock
+          </button>
           <Link
             to="/pricing"
             role="menuitem"

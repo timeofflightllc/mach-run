@@ -37,7 +37,7 @@ export function VaKids({ stream }: { stream: IncomeStream }) {
   const dependentsStart = rating >= 30;
 
   return (
-    <div className="mt-1 flex flex-col gap-3 rounded-lg bg-surface p-3 shadow-[0_0_0_1px_var(--color-border)]">
+    <div className="mt-1 flex flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
       <Field
         label="VA rating (%)"
         hint="Schedular table only — no SMC. 2026 rates, effective Dec 1, 2025."

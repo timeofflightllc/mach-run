@@ -14,6 +14,13 @@ const SILVER = "0.773 0.804 0.839"; // #c5cdd6
 const BODY = "0.102 0.141 0.220"; // #1a2438
 const MUTED = "0.290 0.349 0.420";
 const WHITE = "1 1 1";
+const GREEN_DEEP = "0.102 0.208 0.149"; // #1a3526
+const GREEN_MID = "0.141 0.337 0.227"; // #24563a
+const GREEN_LINE = "0.290 0.533 0.376"; // #4a8860
+const SAGE = "0.616 0.729 0.604"; // #9dba9a
+const SAGE_WASH = "0.925 0.957 0.933";
+const GOLD = "0.910 0.773 0.278"; // #e8c547
+const GOLD_INK = "0.420 0.340 0.080";
 
 function pdfEscape(s: string): string {
   return s
@@ -63,7 +70,7 @@ function jpegSize(bytes: Uint8Array): { w: number; h: number } {
 
 async function loadLogo(): Promise<{ bytes: Uint8Array; w: number; h: number } | null> {
   try {
-    const res = await fetch("/brand/mach-run-logo.jpg?v=12");
+    const res = await fetch("/brand/mach-run-logo.jpg?v=20");
     if (!res.ok) return null;
     const bytes = new Uint8Array(await res.arrayBuffer());
     const { w, h } = jpegSize(bytes);
@@ -183,17 +190,19 @@ function headerOps(
     `${textLeft} ${y0 + 62} Td`,
     `(${pdfEscape(`MACH OODA Financial Analysis${continued}`)}) Tj`,
     "/F1 9 Tf",
-    `${SILVER} rg`,
+    `${SAGE} rg`,
     `0 -14 Td`,
     "(The Supersonic Financial Calculator) Tj",
     "/F1 8 Tf",
+    `${SILVER} rg`,
     `0 -12 Td`,
     `(${pdfEscape(runAt ? `Run ${runAt}` : "MACH RUN.com")}) Tj`,
     "ET",
     "q",
-    `${SILVER} RG`,
-    "1.25 w",
-    `0 ${y0} m ${PAGE_W} ${y0} l S`,
+    `${GOLD} rg`,
+    `0 ${y0} ${PAGE_W} 3 re f`,
+    `${GREEN_MID} rg`,
+    `0 ${y0 - 6} ${PAGE_W} 6 re f`,
     "Q",
   );
   return ops.join("\n");
@@ -202,18 +211,20 @@ function headerOps(
 function footerOps(pageNo: number, pageCount: number): string {
   return [
     "q",
+    `${GOLD} rg`,
+    `0 ${FOOTER_H} ${PAGE_W} 2.5 re f`,
     `${NAVY} rg`,
     `0 0 ${PAGE_W} ${FOOTER_H} re f`,
     "Q",
     "BT",
     "/F1 8 Tf",
-    `${SILVER} rg`,
+    `${SAGE} rg`,
     "54 16 Td",
     "(MACH RUN.com) Tj",
     "ET",
     "BT",
     "/F1 8 Tf",
-    `${SILVER} rg`,
+    `${GOLD} rg`,
     "196 16 Td",
     "(For entertainment purposes only) Tj",
     "ET",
@@ -282,18 +293,29 @@ export async function downloadAnalysisPdf(
     }
     if (b.kind === "rule") {
       flow.push({
-        h: 10,
+        h: 12,
         ops: (y) =>
-          `q ${NAVY} RG 0.6 w ${MARGIN_X} ${y + 4} m ${MARGIN_X + contentWidth} ${y + 4} l S Q`,
+          [
+            `q ${GOLD} rg ${MARGIN_X} ${y + 3} 22 2.5 re f`,
+            `${GREEN_LINE} rg ${MARGIN_X + 26} ${y + 3.4} ${contentWidth - 26} 1.6 re f Q`,
+          ].join(" "),
       });
       continue;
     }
     if (b.kind === "display") {
-      pushLines(wrapText(b.text, titleChars), "/F2", b.size, NAVY, b.size + 4, 4);
+      pushLines(wrapText(b.text, titleChars), "/F2", b.size, GREEN_DEEP, b.size + 4, 4);
       continue;
     }
     if (b.kind === "title") {
-      pushLines([b.text], "/F2", 12, NAVY, 16, 2);
+      const title = b.text;
+      flow.push({
+        h: 18,
+        ops: (y) =>
+          [
+            `q ${GOLD} rg ${MARGIN_X} ${y + 1} 6 6 re f Q`,
+            textOps("/F2", 12, GREEN_MID, MARGIN_X + 12, y, title),
+          ].join("\n"),
+      });
       continue;
     }
     if (b.kind === "body") {
@@ -301,27 +323,41 @@ export async function downloadAnalysisPdf(
       continue;
     }
     if (b.kind === "muted") {
-      pushLines(wrapText(b.text, bodyChars), "/F1", 9, MUTED, 12, 2);
+      pushLines(wrapText(b.text, bodyChars), "/F1", 9, GREEN_MID, 12, 2);
       continue;
     }
     if (b.kind === "italic") {
-      pushLines(wrapText(b.text, italicChars), "/F3", 8, MUTED, 11, 2);
+      const lines = wrapText(b.text, italicChars);
+      lines.forEach((line, i) => {
+        flow.push({
+          h: 11 + (i === lines.length - 1 ? 2 : 0),
+          ops: (y) =>
+            [
+              i === 0 ? `q ${GOLD} rg ${MARGIN_X - 8} ${y - 2} 2.2 12 re f Q` : "",
+              textOps("/F3", 8, MUTED, MARGIN_X, y, line),
+            ]
+              .filter(Boolean)
+              .join("\n"),
+        });
+      });
       continue;
     }
     if (b.kind === "metric") {
       const label = b.label.toUpperCase();
       flow.push({
-        h: 16,
+        h: 20,
         ops: (y) =>
           [
-            textOps("/F1", 8, MUTED, MARGIN_X, y, label),
-            textOps("/F2", 11, NAVY, MARGIN_X + 130, y, b.value),
+            `q ${SAGE_WASH} rg ${MARGIN_X} ${y - 5} ${contentWidth} 18 re f`,
+            `${GOLD} rg ${MARGIN_X} ${y - 5} 3 18 re f Q`,
+            textOps("/F1", 8, GOLD_INK, MARGIN_X + 10, y, label),
+            textOps("/F2", 11, GREEN_DEEP, MARGIN_X + 130, y, b.value),
           ].join("\n"),
       });
     }
   }
 
-  const bodyTop = PAGE_H - HEADER_H - 22;
+  const bodyTop = PAGE_H - HEADER_H - 28;
   const bodyBottom = FOOTER_H + 18;
   const pages: Line[][] = [];
   let cur: Line[] = [];

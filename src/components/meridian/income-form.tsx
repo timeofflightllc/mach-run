@@ -175,7 +175,7 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
   }
 
   return (
-    <li className="rounded-lg bg-elevated p-3 shadow-[0_0_0_1px_var(--color-border)]">
+    <li className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
       <div className="mb-2 flex items-center gap-2">
         <span className="shrink-0 text-xs font-medium uppercase tracking-[0.16em] text-subtle">
           Income {i + 1}

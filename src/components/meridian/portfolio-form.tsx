@@ -73,7 +73,7 @@ export function PortfolioForm() {
         {plan.portfolios.map((p) => (
           <li
             key={p.id}
-            className="rounded-lg bg-elevated p-3 shadow-[0_0_0_1px_var(--color-border)]"
+            className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
           >
             <div className="mb-2 flex items-center justify-between gap-2">
               <TextInput
@@ -89,46 +89,6 @@ export function PortfolioForm() {
               </DangerButton>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <Field label="Value">
-                <MoneyInput
-                  min={0}
-                  value={Math.round(p.currentValue * 100) / 100}
-                  onValue={(n) => updatePortfolio(p.id, { currentValue: n })}
-                />
-              </Field>
-              {p.kind === "annuity" ? (
-                <Field
-                  label="Amount invested"
-                  hint="Premiums paid — cost basis. Earnings come out first and are ordinary income; basis comes out tax-free."
-                >
-                  <MoneyInput
-                    min={0}
-                    value={Math.round((p.costBasis ?? 0) * 100) / 100}
-                    onValue={(n) => updatePortfolio(p.id, { costBasis: n })}
-                  />
-                </Field>
-              ) : null}
-              <Field label="Return %">
-                <NumberInput
-                  step={0.1}
-                  value={p.returnPct ?? plan.assumptions.defaultReturnPct}
-                  onValue={(n) => updatePortfolio(p.id, { returnPct: n })}
-                />
-              </Field>
-              <Field label="Account owner">
-                <SelectInput
-                  value={normalizeOwner(p.owner)}
-                  onChange={(e) =>
-                    updatePortfolio(p.id, { owner: e.target.value })
-                  }
-                >
-                  {familyOwnerOptions(plan, p.kind).map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </SelectInput>
-              </Field>
               <Field label="Kind">
                 <SelectInput
                   value={p.kind}
@@ -191,6 +151,46 @@ export function PortfolioForm() {
                     Net Worth
                   </label>
                 </div>
+              </Field>
+              <Field label="Value">
+                <MoneyInput
+                  min={0}
+                  value={Math.round(p.currentValue * 100) / 100}
+                  onValue={(n) => updatePortfolio(p.id, { currentValue: n })}
+                />
+              </Field>
+              {p.kind === "annuity" ? (
+                <Field
+                  label="Amount invested"
+                  hint="Premiums paid — cost basis. Earnings come out first and are ordinary income; basis comes out tax-free."
+                >
+                  <MoneyInput
+                    min={0}
+                    value={Math.round((p.costBasis ?? 0) * 100) / 100}
+                    onValue={(n) => updatePortfolio(p.id, { costBasis: n })}
+                  />
+                </Field>
+              ) : null}
+              <Field label="Return %">
+                <NumberInput
+                  step={0.1}
+                  value={p.returnPct ?? plan.assumptions.defaultReturnPct}
+                  onValue={(n) => updatePortfolio(p.id, { returnPct: n })}
+                />
+              </Field>
+              <Field label="Account owner">
+                <SelectInput
+                  value={normalizeOwner(p.owner)}
+                  onChange={(e) =>
+                    updatePortfolio(p.id, { owner: e.target.value })
+                  }
+                >
+                  {familyOwnerOptions(plan, p.kind).map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </SelectInput>
               </Field>
             </div>
             {p.kind === "real_estate" ? (

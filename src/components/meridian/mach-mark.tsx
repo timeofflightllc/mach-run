@@ -96,10 +96,10 @@ export function MachWordmark({
   return (
     <span className={cn("inline-flex shrink-0 items-center", className)} aria-label="MACH RUN.com">
       <img
-        src="/brand/mach-run-logo.jpg?v=12"
+        src="/brand/mach-run-logo.jpg?v=20"
         alt="MACH RUN.com"
-        width={761}
-        height={268}
+        width={1522}
+        height={536}
         className={cn(
           "block h-auto shrink-0 object-contain object-left",
           large
@@ -176,7 +176,7 @@ export function MachFooter() {
               Privacy
             </Link>
             {" — "}$4/month or $40/year unlocks unlimited accounts, contribution
-            rules, income stages, and the full OODA.
+            rules, income stages, Net Worth, and the full OODA.
           </p>
           <p>
             * MACH OODA AI analysis and OODA AI questions are for

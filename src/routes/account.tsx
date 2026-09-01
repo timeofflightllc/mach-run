@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { BackupPasswordModal } from "@/components/meridian/backup-modal";
 import { BrandLockup } from "@/components/meridian/mach-mark";
+import { IdleLockSettings } from "@/components/meridian/idle-lock-settings";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import { startBillingPortal } from "@/lib/billing/api";
 import { canDownloadBackup } from "@/lib/billing/limits";
@@ -301,6 +302,8 @@ function Account() {
             </p>
           )}
         </div>
+
+        <IdleLockSettings userId={user.id} />
 
         <p className="text-sm text-subtle">
           <Link to="/" className="underline-offset-4 hover:text-fg hover:underline">
