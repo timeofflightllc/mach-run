@@ -217,6 +217,25 @@ export const auth = betterAuth({
   // Local email/password — toggled only via `./email-password` (not a plugin).
   ...(emailAndPasswordEnabled ? { emailAndPassword: { enabled: true } } : {}),
 
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          try {
+            const { notifyOwnerOfSignup } = await import("../notify/signup");
+            await notifyOwnerOfSignup({
+              id: user.id,
+              name: user.name,
+              email: user.email,
+            });
+          } catch {
+            // Sign-up must succeed even if the owner ping fails.
+          }
+        },
+      },
+    },
+  },
+
   ...(apple
     ? {
         socialProviders: {

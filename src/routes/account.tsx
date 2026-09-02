@@ -7,6 +7,7 @@ import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import { startBillingPortal } from "@/lib/billing/api";
 import { canDownloadBackup } from "@/lib/billing/limits";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
+import { sendTestSignupAlert, signupAlertStatus } from "@/lib/notify/api";
 import { authClient } from "@/lib/auth/client";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { RedirectToSignIn } from "@/lib/auth/gates";
@@ -31,7 +32,9 @@ function Account() {
   const [newPassword, setNewPassword] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"profile" | "password" | "billing" | null>(null);
+  const [busy, setBusy] = useState<"profile" | "password" | "billing" | "alert" | null>(null);
+  const [alertOwner, setAlertOwner] = useState(false);
+  const [alertReady, setAlertReady] = useState(false);
   const [backupMode, setBackupMode] = useState<"download" | "import" | null>(null);
   const [backupBusy, setBackupBusy] = useState(false);
   const [backupError, setBackupError] = useState<string | null>(null);
@@ -43,6 +46,14 @@ function Account() {
     if (!user) return;
     setName(user.displayName ?? "");
     setEmail(user.primaryEmail ?? "");
+    void signupAlertStatus()
+      .then((s) => {
+        setAlertOwner(s.owner);
+        setAlertReady(s.configured);
+      })
+      .catch(() => {
+        setAlertOwner(false);
+      });
   }, [user]);
 
   if (isPending) {
@@ -169,6 +180,20 @@ function Account() {
     }
   }
 
+  async function sendOwnerAlert() {
+    setBusy("alert");
+    setError(null);
+    setMsg(null);
+    try {
+      await sendTestSignupAlert();
+      setMsg("Test signup alert sent. Check the owner inbox.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not send the test alert.");
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <main className="min-h-screen px-4 py-10 text-fg" style={{ backgroundColor: "#0a1835" }}>
       <div className="mx-auto w-full max-w-lg space-y-8">
@@ -187,6 +212,25 @@ function Account() {
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
         {msg ? <p className="text-sm text-muted">{msg}</p> : null}
+
+        {alertOwner ? (
+          <div className="space-y-2 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
+            <p className="font-display text-lg text-fg">Signup alerts</p>
+            <p className="text-sm text-muted">
+              {alertReady
+                ? "This inbox gets an email when someone creates a MACH RUN account. The new user is not copied."
+                : "This inbox is marked as the owner, but Resend is not connected yet. Add RESEND_API_KEY and MACH_NOTIFY_EMAIL in Vercel."}
+            </p>
+            <button
+              type="button"
+              disabled={busy !== null || !alertReady}
+              onClick={() => void sendOwnerAlert()}
+              className="inline-flex h-11 w-full items-center justify-center rounded-lg px-4 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated disabled:opacity-60"
+            >
+              {busy === "alert" ? "Sending…" : "Send a test signup alert"}
+            </button>
+          </div>
+        ) : null}
 
         <form
           onSubmit={(e) => void saveProfile(e)}

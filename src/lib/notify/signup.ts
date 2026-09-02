@@ -1,0 +1,133 @@
+/**
+ * Owner ping when a MACH RUN account is created.
+ * Resend REST — no SDK. Missing keys = no-op so sign-up never fails.
+ */
+
+export type SignupNotice = {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+};
+
+export type NotifyResult =
+  | { ok: true; skipped?: undefined }
+  | { ok: false; skipped: true; reason: string }
+  | { ok: false; skipped?: false; reason: string };
+
+function env(key: string): string {
+  return (process.env[key] ?? "").trim();
+}
+
+export function notifyRecipients(): string[] {
+  return env("MACH_NOTIFY_EMAIL")
+    .split(/[,;]/)
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+export function notifyConfigured(): boolean {
+  return Boolean(env("RESEND_API_KEY") && notifyRecipients().length);
+}
+
+export function isNotifyOwner(email: string | null | undefined): boolean {
+  if (!email) return false;
+  return notifyRecipients().includes(email.trim().toLowerCase());
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&" + "amp;")
+    .replace(/</g, "&" + "lt;")
+    .replace(/>/g, "&" + "gt;")
+    .replace(/"/g, "&" + "quot;");
+}
+
+export function ownerSignupEmail(notice: SignupNotice): { subject: string; html: string; text: string } {
+  const name = (notice.name ?? "").trim() || "—";
+  const email = (notice.email ?? "").trim() || "no email on file";
+  const when = new Date().toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "America/Chicago",
+  });
+  const subject = `New MACH RUN account — ${email}`;
+  const text = [
+    "New MACH RUN account",
+    `Name: ${name}`,
+    `Email: ${email}`,
+    `User id: ${notice.id}`,
+    `When: ${when} CT`,
+  ].join("\n");
+  const html = `<!doctype html>
+<html>
+<body style="margin:0;padding:0;background:#07101f;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#07101f;padding:24px 12px;">
+    <tr><td align="center">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#0a1835;border:1px solid #2a3d63;border-radius:12px;">
+        <tr><td style="padding:20px 24px 8px;font-family:Georgia,Times,serif;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:#c9d4e8;">
+          MACH RUN
+        </td></tr>
+        <tr><td style="padding:0 24px 16px;font-family:Georgia,Times,serif;font-size:22px;color:#f4f7fb;">
+          New account
+        </td></tr>
+        <tr><td style="padding:0 24px 20px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#c9d4e8;">
+          Someone just registered on machrun.com.
+        </td></tr>
+        <tr><td style="padding:0 24px 24px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#122448;border-radius:8px;">
+            <tr><td style="padding:14px 16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#e8eef8;">
+              <div style="color:#8fa3c4;font-size:12px;text-transform:uppercase;letter-spacing:.08em;">Name</div>
+              <div style="margin:2px 0 12px;">${escapeHtml(name)}</div>
+              <div style="color:#8fa3c4;font-size:12px;text-transform:uppercase;letter-spacing:.08em;">Email</div>
+              <div style="margin:2px 0 12px;">${escapeHtml(email)}</div>
+              <div style="color:#8fa3c4;font-size:12px;text-transform:uppercase;letter-spacing:.08em;">When</div>
+              <div style="margin:2px 0 0;">${escapeHtml(when)} CT</div>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:0 24px 20px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#8fa3c4;">
+          This is an owner alert. The new user was not copied.
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+  return { subject, html, text };
+}
+
+export async function notifyOwnerOfSignup(notice: SignupNotice): Promise<NotifyResult> {
+  const key = env("RESEND_API_KEY");
+  const to = notifyRecipients();
+  if (!key) return { ok: false, skipped: true, reason: "RESEND_API_KEY is not set." };
+  if (!to.length) return { ok: false, skipped: true, reason: "MACH_NOTIFY_EMAIL is not set." };
+
+  const from = env("MACH_NOTIFY_FROM") || "MACH RUN <beth.t@example.com>";
+  const mail = ownerSignupEmail(notice);
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from,
+        to,
+        subject: mail.subject,
+        html: mail.html,
+        text: mail.text,
+      }),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      return { ok: false, reason: `Resend ${res.status}: ${detail.slice(0, 180)}` };
+    }
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      reason: err instanceof Error ? err.message : "Could not reach Resend.",
+    };
+  }
+}
