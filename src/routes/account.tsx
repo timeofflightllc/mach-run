@@ -197,9 +197,17 @@ function Account() {
   return (
     <main className="min-h-screen px-4 py-10 text-fg" style={{ backgroundColor: "#0a1835" }}>
       <div className="mx-auto w-full max-w-lg space-y-8">
-        <Link to="/" className="inline-block opacity-90 hover:opacity-100">
-          <BrandLockup />
-        </Link>
+        <div className="flex items-start justify-between gap-4">
+          <Link to="/" className="inline-block opacity-90 hover:opacity-100">
+            <BrandLockup />
+          </Link>
+          <Link
+            to="/"
+            className="mt-1 inline-flex h-10 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+          >
+            Exit Account Profile
+          </Link>
+        </div>
         <header>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">
             Account profile

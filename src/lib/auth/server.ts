@@ -222,8 +222,8 @@ export const auth = betterAuth({
       create: {
         after: async (user) => {
           try {
-            const { notifyOwnerOfSignup } = await import("../notify/signup");
-            await notifyOwnerOfSignup({
+            const { onAccountCreated } = await import("../notify/signup");
+            await onAccountCreated({
               id: user.id,
               name: user.name,
               email: user.email,

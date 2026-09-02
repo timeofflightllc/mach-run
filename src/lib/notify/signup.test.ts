@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { isNotifyOwner, ownerSignupEmail } from "./signup.ts";
+import { isNotifyOwner, ownerSignupEmail, welcomeSignupEmail } from "./signup.ts";
 
 test("owner signup email names the new account and is not a welcome letter", () => {
   const mail = ownerSignupEmail({
@@ -12,8 +12,23 @@ test("owner signup email names the new account and is not a welcome letter", () 
   assert.match(mail.html, /Pat Flyer/);
   assert.match(mail.html, /pat@example.com/);
   assert.match(mail.text, /User id: u_1/);
-  assert.doesNotMatch(mail.html, /Welcome to MACH RUN/);
+  assert.doesNotMatch(mail.html, /Welcome aboard/);
   assert.match(mail.html, /The new user was not copied/);
+});
+
+test("welcome email is short, names next steps, and carries the disclaimer", () => {
+  const mail = welcomeSignupEmail({
+    id: "u_3",
+    name: "Pat Flyer",
+    email: "pat@example.com",
+  });
+  assert.equal(mail.subject, "Welcome to MACH RUN");
+  assert.match(mail.text, /^Hi Pat,/);
+  assert.match(mail.text, /Open Family, then Accounts/);
+  assert.match(mail.text, /Hit Calculate/);
+  assert.match(mail.text, /entertainment and education/);
+  assert.match(mail.html, /machrun.com/);
+  assert.doesNotMatch(mail.html, /User id/);
 });
 
 test("HTML escapes a hostile name", () => {
@@ -24,6 +39,16 @@ test("HTML escapes a hostile name", () => {
   });
   assert.doesNotMatch(mail.html, /<img src/);
   assert.match(mail.html, /lt;img/);
+});
+
+test("welcome email escapes a hostile first name", () => {
+  const mail = welcomeSignupEmail({
+    id: "u_4",
+    name: `<script>alert(1)</script> Flyer`,
+    email: "a@b.c",
+  });
+  assert.doesNotMatch(mail.html, /<script>/);
+  assert.match(mail.html, /lt;script/);
 });
 
 test("isNotifyOwner is case-insensitive and ignores blanks", () => {
