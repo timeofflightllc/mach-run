@@ -28,6 +28,62 @@ function formatTip(value: unknown) {
   return usd(Number(value ?? 0));
 }
 
+type ChartSpan = 5 | 10 | 20 | "horizon";
+
+function spanOptions(endAge: number): { id: ChartSpan; label: string }[] {
+  return [
+    { id: 5, label: "5-Year" },
+    { id: 10, label: "10-Year" },
+    { id: 20, label: "20-Year" },
+    { id: "horizon", label: `Horizon (age ${endAge})` },
+  ];
+}
+
+function yearsInView(sim: SimResult, asOfDate: string, span: ChartSpan) {
+  const startYear = Number(asOfDate.slice(0, 4));
+  if (span === "horizon") return sim.years;
+  const sliced = sim.years.filter(
+    (y) => y.year >= startYear && y.year <= startYear + span,
+  );
+  return sliced.length ? sliced : sim.years;
+}
+
+function ChartSpanBar({
+  span,
+  endAge,
+  onChange,
+  pinned,
+  onPin,
+}: {
+  span: ChartSpan;
+  endAge: number;
+  onChange: (next: ChartSpan) => void;
+  pinned?: boolean;
+  onPin?: () => void;
+}) {
+  return (
+    <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
+      <div className="inline-flex rounded-md bg-elevated p-0.5 shadow-[0_0_0_1px_var(--color-border)]">
+        {spanOptions(endAge).map((o) => (
+          <button
+            key={String(o.id)}
+            type="button"
+            aria-pressed={span === o.id}
+            onClick={() => onChange(o.id)}
+            className={cn(
+              "h-7 rounded px-2 text-[11px] font-medium leading-none",
+              span === o.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
+            )}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+      {onPin ? <PinToggle pinned={Boolean(pinned)} onToggle={onPin} /> : null}
+    </div>
+  );
+}
+
 export function WealthChart({
   plan,
   sim,
@@ -40,7 +96,9 @@ export function WealthChart({
   onPin?: () => void;
 }) {
   const real = plan.assumptions.dollars === "real";
-  const data = sim.years.map((y) => ({
+  const [span, setSpan] = useState<ChartSpan>("horizon");
+  const years = yearsInView(sim, plan.assumptions.asOfDate, span);
+  const data = years.map((y) => ({
     year: y.year,
     spendable: Math.round(real ? y.endSpendableReal : y.endSpendable),
     netWorth: Math.round(real ? y.endNetWorthReal : y.endNetWorth),
@@ -48,15 +106,19 @@ export function WealthChart({
 
   return (
     <div className="rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)] sm:p-5">
-      <div className="flex items-start justify-between gap-2">
-        <h2 className="font-display text-lg font-medium text-fg">Spendable wealth</h2>
-        {onPin ? <PinToggle pinned={Boolean(pinned)} onToggle={onPin} /> : null}
-      </div>
-      <p className="mb-4 text-xs text-subtle">
+      <h2 className="font-display text-lg font-medium text-fg">Spendable wealth</h2>
+      <p className="mb-4 mt-1 text-xs text-subtle">
         {real ? "Inflation-adjusted (today's dollars)" : "Future dollars"} ·
         Roth / taxable / TSP marked spendable. Houses and 529s sit in net worth
         only.
       </p>
+      <ChartSpanBar
+        span={span}
+        endAge={plan.assumptions.projectionEndAge}
+        onChange={setSpan}
+        pinned={pinned}
+        onPin={onPin}
+      />
       <div className="h-64 sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -122,7 +184,9 @@ export function CashChart({
   const real = plan.assumptions.dollars === "real";
   const inf = plan.assumptions.inflationPct / 100;
   const asOfYear = Number(plan.assumptions.asOfDate.slice(0, 4));
-  const data = sim.years.map((y) => {
+  const [span, setSpan] = useState<ChartSpan>("horizon");
+  const years = yearsInView(sim, plan.assumptions.asOfDate, span);
+  const data = years.map((y) => {
     const yearsOut = y.year - asOfYear;
     const deflator = real ? (1 + inf) ** yearsOut : 1;
     return {
@@ -136,16 +200,20 @@ export function CashChart({
 
   return (
     <div className="rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)] sm:p-5">
-      <div className="flex items-start justify-between gap-2">
-        <h2 className="font-display text-lg font-medium text-fg">Annual cash flow</h2>
-        {onPin ? <PinToggle pinned={Boolean(pinned)} onToggle={onPin} /> : null}
-      </div>
-      <p className="mb-4 text-xs text-subtle">
+      <h2 className="font-display text-lg font-medium text-fg">Annual cash flow</h2>
+      <p className="mb-4 mt-1 text-xs text-subtle">
         Gross income vs spending vs planned contributions. Guaranteed (gold
         line) is pension, other retirement income, military retired pay, VA, and
         Social Security. Salary, bonus, allowance, and other income are earned —
         they drop off when that stage ends.
       </p>
+      <ChartSpanBar
+        span={span}
+        endAge={plan.assumptions.projectionEndAge}
+        onChange={setSpan}
+        pinned={pinned}
+        onPin={onPin}
+      />
       <div className="h-64 sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -214,23 +282,12 @@ export function CashChart({
   );
 }
 
-type ChartSpan = 5 | 10 | 20 | "horizon";
-
 const FAKE_NET_WORTH = Array.from({ length: 21 }, (_, i) => {
   const year = 1969 + i;
   const assets = 1_234_000 + i * 123_400;
   const liabilities = Math.max(0, 987_000 - i * 48_500);
   return { year, assets, liabilities, netWorth: assets - liabilities };
 });
-
-function yearsInView(sim: SimResult, asOfDate: string, span: ChartSpan) {
-  const startYear = Number(asOfDate.slice(0, 4));
-  if (span === "horizon") return sim.years;
-  const sliced = sim.years.filter(
-    (y) => y.year >= startYear && y.year <= startYear + span,
-  );
-  return sliced.length ? sliced : sim.years;
-}
 
 export function NetWorthChart({
   plan,
@@ -258,12 +315,6 @@ export function NetWorthChart({
   const data = locked
     ? FAKE_NET_WORTH.slice(0, span === "horizon" ? undefined : span + 1)
     : live;
-  const opts: { id: ChartSpan; label: string }[] = [
-    { id: 5, label: "5-Year" },
-    { id: 10, label: "10-Year" },
-    { id: 20, label: "20-Year" },
-    { id: "horizon", label: `Horizon (age ${plan.assumptions.projectionEndAge})` },
-  ];
 
   return (
     <div className="relative rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)] sm:p-5">
@@ -274,25 +325,13 @@ export function NetWorthChart({
             ? "Sample only — 1969 dollars, made-up balances. Your numbers unlock on Individual Unlimited."
             : `${real ? "Inflation-adjusted (today's dollars)" : "Future dollars"} · Assets minus remaining loans.${!hasDebt ? " No loan on this MACH Run, so assets and net worth overlap." : ""}`}
         </p>
-        <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
-          <div className="inline-flex rounded-md bg-elevated p-0.5 shadow-[0_0_0_1px_var(--color-border)]">
-            {opts.map((o) => (
-              <button
-                key={String(o.id)}
-                type="button"
-                aria-pressed={span === o.id}
-                onClick={() => setSpan(o.id)}
-                className={cn(
-                  "h-7 rounded px-2 text-[11px] font-medium leading-none",
-                  span === o.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
-                )}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-          {onPin ? <PinToggle pinned={Boolean(pinned)} onToggle={onPin} /> : null}
-        </div>
+        <ChartSpanBar
+          span={span}
+          endAge={plan.assumptions.projectionEndAge}
+          onChange={setSpan}
+          pinned={pinned}
+          onPin={onPin}
+        />
         <div className="h-64 sm:h-80">
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
@@ -368,4 +407,3 @@ export function NetWorthChart({
     </div>
   );
 }
-
