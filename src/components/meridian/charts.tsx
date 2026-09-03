@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { usd, usdCompact } from "@/lib/plan/format";
 import { PinToggle } from "@/components/meridian/chart-pin";
-import type { MonthSnapshot, Plan, SimResult } from "@/lib/plan/types";
+import type { MonthSnapshot, Plan, SimResult, YearSnapshot } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 
 const tooltipStyle = {
@@ -50,21 +50,69 @@ function yearsInView(sim: SimResult, asOfDate: string, span: ChartSpan) {
   return sliced.length ? sliced : sim.years;
 }
 
-function monthsInSpan(sim: SimResult, asOfDate: string, years: 5 | 10): MonthSnapshot[] {
-  const startY = Number(asOfDate.slice(0, 4));
-  const startM = Number(asOfDate.slice(5, 7)) || 1;
-  const startIdx = startY * 12 + startM;
-  const endIdx = startIdx + years * 12;
-  const sliced = sim.months.filter((m) => {
-    const i = m.year * 12 + m.month;
-    return i >= startIdx && i <= endIdx;
-  });
-  if (sliced.length) return sliced;
-  return sim.months.slice(0, years * 12 + 1);
-}
-
 function pad2(n: number) {
   return n < 10 ? `0${n}` : String(n);
+}
+
+function monthsFromYears(years: YearSnapshot[], spanYears: 5 | 10): MonthSnapshot[] {
+  if (!years.length) return [];
+  const start = years[0].year;
+  const end = Math.min(years[years.length - 1].year, start + spanYears);
+  const byYear = new Map(years.map((y) => [y.year, y]));
+  const out: MonthSnapshot[] = [];
+  let prev = byYear.get(start) ?? years[0];
+  for (let year = start; year <= end; year++) {
+    const next = byYear.get(year) ?? prev;
+    for (let month = 1; month <= 12; month++) {
+      const w = month / 12;
+      const mix = (a: number, b: number) => a + (b - a) * w;
+      out.push({
+        date: `${year}-${pad2(month)}-01`,
+        year,
+        month,
+        primaryAge: next.primaryAge,
+        spouseAge: next.spouseAge,
+        portfolioEnd: mix(prev.endPortfolio, next.endPortfolio),
+        portfolioEndReal: mix(prev.endPortfolioReal, next.endPortfolioReal),
+        spendableEnd: mix(prev.endSpendable, next.endSpendable),
+        spendableEndReal: mix(prev.endSpendableReal, next.endSpendableReal),
+        netWorthEnd: mix(prev.endNetWorth, next.endNetWorth),
+        netWorthEndReal: mix(prev.endNetWorthReal, next.endNetWorthReal),
+        assetsEnd: mix(prev.endAssets, next.endAssets),
+        assetsEndReal: mix(prev.endAssetsReal, next.endAssetsReal),
+        liabilitiesEnd: mix(prev.endLiabilities, next.endLiabilities),
+        liabilitiesEndReal: mix(prev.endLiabilitiesReal, next.endLiabilitiesReal),
+        contributions: next.contributions / 12,
+        plannedContributions: next.plannedContributions / 12,
+        withdrawals: next.withdrawals / 12,
+        income: next.income / 12,
+        incomeTaxable: 0,
+        tax: next.tax / 12,
+        spending: next.spending / 12,
+        surplus: next.surplus / 12,
+        guaranteed: next.guaranteed / 12,
+        incomeByKind: {},
+        byBucket: { roth: 0, pre_tax: 0, taxable: 0, none: 0 },
+      });
+    }
+    prev = next;
+  }
+  return out;
+}
+
+function monthsInSpan(sim: SimResult, asOfDate: string, years: 5 | 10): MonthSnapshot[] {
+  if (sim.months.length) {
+    const startY = Number(asOfDate.slice(0, 4));
+    const startM = Number(asOfDate.slice(5, 7)) || 1;
+    const startIdx = startY * 12 + startM;
+    const endIdx = startIdx + years * 12;
+    const sliced = sim.months.filter((m) => {
+      const i = m.year * 12 + m.month;
+      return i >= startIdx && i <= endIdx;
+    });
+    if (sliced.length) return sliced;
+  }
+  return monthsFromYears(yearsInView(sim, asOfDate, years), years);
 }
 
 function formatAxisTick(t: string | number, span: ChartSpan): string {
