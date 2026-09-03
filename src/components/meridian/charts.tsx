@@ -13,7 +13,7 @@ import {
 } from "recharts";
 import { usd, usdCompact } from "@/lib/plan/format";
 import { PinToggle } from "@/components/meridian/chart-pin";
-import type { Plan, SimResult } from "@/lib/plan/types";
+import type { MonthSnapshot, Plan, SimResult } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 
 const tooltipStyle = {
@@ -23,6 +23,8 @@ const tooltipStyle = {
   fontSize: 12,
   color: "var(--color-fg)",
 };
+
+const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function formatTip(value: unknown) {
   return usd(Number(value ?? 0));
@@ -46,6 +48,44 @@ function yearsInView(sim: SimResult, asOfDate: string, span: ChartSpan) {
     (y) => y.year >= startYear && y.year <= startYear + span,
   );
   return sliced.length ? sliced : sim.years;
+}
+
+function monthsInSpan(sim: SimResult, asOfDate: string, years: 5 | 10): MonthSnapshot[] {
+  const startY = Number(asOfDate.slice(0, 4));
+  const startM = Number(asOfDate.slice(5, 7)) || 1;
+  const startIdx = startY * 12 + startM;
+  const endIdx = startIdx + years * 12;
+  const sliced = sim.months.filter((m) => {
+    const i = m.year * 12 + m.month;
+    return i >= startIdx && i <= endIdx;
+  });
+  if (sliced.length) return sliced;
+  return sim.months.slice(0, years * 12 + 1);
+}
+
+function pad2(n: number) {
+  return n < 10 ? `0${n}` : String(n);
+}
+
+function formatAxisTick(t: string | number, span: ChartSpan): string {
+  if (span === 20 || span === "horizon") return String(t);
+  const raw = String(t);
+  if (span === 10) {
+    const [y, q] = raw.split("-");
+    return `${q} ${y.slice(2)}`;
+  }
+  const [y, m] = raw.split("-");
+  return `${MONTH_SHORT[Number(m) - 1] ?? m} ${y.slice(2)}`;
+}
+
+function axisProps(span: ChartSpan) {
+  return {
+    interval: span === 5 ? 2 : span === 10 ? 1 : ("preserveStartEnd" as const),
+    minTickGap: span === 5 ? 8 : 16,
+    angle: span === 5 || span === 10 ? -35 : 0,
+    textAnchor: span === 5 || span === 10 ? ("end" as const) : ("middle" as const),
+    height: span === 5 || span === 10 ? 46 : 28,
+  };
 }
 
 function ChartSpanBar({
@@ -84,6 +124,176 @@ function ChartSpanBar({
   );
 }
 
+type WealthPoint = { t: string | number; spendable: number; netWorth: number };
+
+function wealthPoints(plan: Plan, sim: SimResult, span: ChartSpan): WealthPoint[] {
+  const real = plan.assumptions.dollars === "real";
+  if (span === 5) {
+    return monthsInSpan(sim, plan.assumptions.asOfDate, 5).map((m) => ({
+      t: `${m.year}-${pad2(m.month)}`,
+      spendable: Math.round(real ? m.spendableEndReal : m.spendableEnd),
+      netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
+    }));
+  }
+  if (span === 10) {
+    const byQ = new Map<string, MonthSnapshot>();
+    for (const m of monthsInSpan(sim, plan.assumptions.asOfDate, 10)) {
+      const q = Math.ceil(m.month / 3);
+      byQ.set(`${m.year}-Q${q}`, m);
+    }
+    return [...byQ.entries()].map(([t, m]) => ({
+      t,
+      spendable: Math.round(real ? m.spendableEndReal : m.spendableEnd),
+      netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
+    }));
+  }
+  return yearsInView(sim, plan.assumptions.asOfDate, span).map((y) => ({
+    t: y.year,
+    spendable: Math.round(real ? y.endSpendableReal : y.endSpendable),
+    netWorth: Math.round(real ? y.endNetWorthReal : y.endNetWorth),
+  }));
+}
+
+type CashPoint = {
+  t: string | number;
+  income: number;
+  spending: number;
+  guaranteed: number;
+  contributions: number;
+};
+
+function cashPoints(plan: Plan, sim: SimResult, span: ChartSpan): CashPoint[] {
+  const real = plan.assumptions.dollars === "real";
+  const inf = plan.assumptions.inflationPct / 100;
+  const asOfYear = Number(plan.assumptions.asOfDate.slice(0, 4));
+  const asOfMonth = Number(plan.assumptions.asOfDate.slice(5, 7)) || 1;
+  const deflate = (year: number, month: number, value: number) => {
+    if (!real) return value;
+    const yearsOut = year - asOfYear + (month - asOfMonth) / 12;
+    return value / (1 + inf) ** yearsOut;
+  };
+
+  if (span === 5) {
+    return monthsInSpan(sim, plan.assumptions.asOfDate, 5).map((m) => ({
+      t: `${m.year}-${pad2(m.month)}`,
+      income: Math.round(deflate(m.year, m.month, m.income) * 12),
+      spending: Math.round(deflate(m.year, m.month, m.spending) * 12),
+      guaranteed: Math.round(deflate(m.year, m.month, m.guaranteed) * 12),
+      contributions: Math.round(deflate(m.year, m.month, m.contributions) * 12),
+    }));
+  }
+  if (span === 10) {
+    const buckets = new Map<string, MonthSnapshot[]>();
+    for (const m of monthsInSpan(sim, plan.assumptions.asOfDate, 10)) {
+      const key = `${m.year}-Q${Math.ceil(m.month / 3)}`;
+      const arr = buckets.get(key) ?? [];
+      arr.push(m);
+      buckets.set(key, arr);
+    }
+    return [...buckets.entries()].map(([t, arr]) => {
+      const sum = (fn: (m: MonthSnapshot) => number) => arr.reduce((s, m) => s + fn(m), 0);
+      return {
+        t,
+        income: Math.round(sum((m) => deflate(m.year, m.month, m.income)) * 4),
+        spending: Math.round(sum((m) => deflate(m.year, m.month, m.spending)) * 4),
+        guaranteed: Math.round(sum((m) => deflate(m.year, m.month, m.guaranteed)) * 4),
+        contributions: Math.round(sum((m) => deflate(m.year, m.month, m.contributions)) * 4),
+      };
+    });
+  }
+  return yearsInView(sim, plan.assumptions.asOfDate, span).map((y) => {
+    const yearsOut = y.year - asOfYear;
+    const deflator = real ? (1 + inf) ** yearsOut : 1;
+    return {
+      t: y.year,
+      income: Math.round(y.income / deflator),
+      spending: Math.round(y.spending / deflator),
+      guaranteed: Math.round(y.guaranteed / deflator),
+      contributions: Math.round(y.contributions / deflator),
+    };
+  });
+}
+
+type NwPoint = { t: string | number; assets: number; liabilities: number; netWorth: number };
+
+function netWorthPoints(plan: Plan, sim: SimResult, span: ChartSpan): NwPoint[] {
+  const real = plan.assumptions.dollars === "real";
+  if (span === 5) {
+    return monthsInSpan(sim, plan.assumptions.asOfDate, 5).map((m) => ({
+      t: `${m.year}-${pad2(m.month)}`,
+      assets: Math.round(real ? m.assetsEndReal : m.assetsEnd),
+      liabilities: Math.round(real ? m.liabilitiesEndReal : m.liabilitiesEnd),
+      netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
+    }));
+  }
+  if (span === 10) {
+    const byQ = new Map<string, MonthSnapshot>();
+    for (const m of monthsInSpan(sim, plan.assumptions.asOfDate, 10)) {
+      byQ.set(`${m.year}-Q${Math.ceil(m.month / 3)}`, m);
+    }
+    return [...byQ.entries()].map(([t, m]) => ({
+      t,
+      assets: Math.round(real ? m.assetsEndReal : m.assetsEnd),
+      liabilities: Math.round(real ? m.liabilitiesEndReal : m.liabilitiesEnd),
+      netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
+    }));
+  }
+  return yearsInView(sim, plan.assumptions.asOfDate, span).map((y) => ({
+    t: y.year,
+    assets: Math.round(real ? y.endAssetsReal : y.endAssets),
+    liabilities: Math.round(real ? y.endLiabilitiesReal : y.endLiabilities),
+    netWorth: Math.round(real ? y.endNetWorthReal : y.endNetWorth),
+  }));
+}
+
+function fakeNetWorthPoints(span: ChartSpan): NwPoint[] {
+  if (span === 5) {
+    const out: NwPoint[] = [];
+    for (let i = 0; i < 5; i++) {
+      const a0 = 1_234_000 + i * 123_400;
+      const a1 = 1_234_000 + (i + 1) * 123_400;
+      const l0 = Math.max(0, 987_000 - i * 48_500);
+      const l1 = Math.max(0, 987_000 - (i + 1) * 48_500);
+      for (let m = 1; m <= 12; m++) {
+        const w = (m - 1) / 12;
+        const assets = a0 + (a1 - a0) * w;
+        const liabilities = l0 + (l1 - l0) * w;
+        out.push({
+          t: `${1969 + i}-${pad2(m)}`,
+          assets: Math.round(assets),
+          liabilities: Math.round(liabilities),
+          netWorth: Math.round(assets - liabilities),
+        });
+      }
+    }
+    return out;
+  }
+  if (span === 10) {
+    const out: NwPoint[] = [];
+    for (let i = 0; i < 10; i++) {
+      const year = 1969 + i;
+      const assets = 1_234_000 + i * 123_400;
+      const liabilities = Math.max(0, 987_000 - i * 48_500);
+      for (let q = 1; q <= 4; q++) {
+        out.push({
+          t: `${year}-Q${q}`,
+          assets,
+          liabilities,
+          netWorth: assets - liabilities,
+        });
+      }
+    }
+    return out;
+  }
+  const years = span === 20 ? 21 : 21;
+  return Array.from({ length: years }, (_, i) => {
+    const year = 1969 + i;
+    const assets = 1_234_000 + i * 123_400;
+    const liabilities = Math.max(0, 987_000 - i * 48_500);
+    return { t: year, assets, liabilities, netWorth: assets - liabilities };
+  });
+}
+
 export function WealthChart({
   plan,
   sim,
@@ -97,12 +307,8 @@ export function WealthChart({
 }) {
   const real = plan.assumptions.dollars === "real";
   const [span, setSpan] = useState<ChartSpan>("horizon");
-  const years = yearsInView(sim, plan.assumptions.asOfDate, span);
-  const data = years.map((y) => ({
-    year: y.year,
-    spendable: Math.round(real ? y.endSpendableReal : y.endSpendable),
-    netWorth: Math.round(real ? y.endNetWorthReal : y.endNetWorth),
-  }));
+  const data = wealthPoints(plan, sim, span);
+  const x = axisProps(span);
 
   return (
     <div className="rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)] sm:p-5">
@@ -121,13 +327,19 @@ export function WealthChart({
       />
       <div className="h-64 sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
             <CartesianGrid stroke="var(--color-border)" vertical={false} />
             <XAxis
-              dataKey="year"
+              dataKey="t"
+              tickFormatter={(t) => formatAxisTick(t, span)}
               tick={{ fill: "var(--color-muted)", fontSize: 11 }}
               tickLine={false}
               axisLine={{ stroke: "var(--color-border)" }}
+              interval={x.interval}
+              minTickGap={x.minTickGap}
+              angle={x.angle}
+              textAnchor={x.textAnchor}
+              height={x.height}
             />
             <YAxis
               tickFormatter={(v) => usdCompact(v)}
@@ -138,6 +350,7 @@ export function WealthChart({
             />
             <Tooltip
               formatter={formatTip}
+              labelFormatter={(t) => formatAxisTick(t as string | number, span)}
               contentStyle={tooltipStyle}
               labelStyle={{ color: "var(--color-fg)" }}
               itemStyle={{ color: "var(--color-muted)" }}
@@ -182,21 +395,9 @@ export function CashChart({
   onPin?: () => void;
 }) {
   const real = plan.assumptions.dollars === "real";
-  const inf = plan.assumptions.inflationPct / 100;
-  const asOfYear = Number(plan.assumptions.asOfDate.slice(0, 4));
   const [span, setSpan] = useState<ChartSpan>("horizon");
-  const years = yearsInView(sim, plan.assumptions.asOfDate, span);
-  const data = years.map((y) => {
-    const yearsOut = y.year - asOfYear;
-    const deflator = real ? (1 + inf) ** yearsOut : 1;
-    return {
-      year: y.year,
-      income: Math.round(y.income / deflator),
-      spending: Math.round(y.spending / deflator),
-      guaranteed: Math.round(y.guaranteed / deflator),
-      contributions: Math.round(y.contributions / deflator),
-    };
-  });
+  const data = cashPoints(plan, sim, span);
+  const x = axisProps(span);
 
   return (
     <div className="rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)] sm:p-5">
@@ -206,6 +407,9 @@ export function CashChart({
         line) is pension, other retirement income, military retired pay, VA, and
         Social Security. Salary, bonus, allowance, and other income are earned —
         they drop off when that stage ends.
+        {span === 5 || span === 10
+          ? " Values stay annualized so the scale matches the longer views."
+          : ""}
       </p>
       <ChartSpanBar
         span={span}
@@ -216,13 +420,19 @@ export function CashChart({
       />
       <div className="h-64 sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+          <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
             <CartesianGrid stroke="var(--color-border)" vertical={false} />
             <XAxis
-              dataKey="year"
+              dataKey="t"
+              tickFormatter={(t) => formatAxisTick(t, span)}
               tick={{ fill: "var(--color-muted)", fontSize: 11 }}
               tickLine={false}
               axisLine={{ stroke: "var(--color-border)" }}
+              interval={x.interval}
+              minTickGap={x.minTickGap}
+              angle={x.angle}
+              textAnchor={x.textAnchor}
+              height={x.height}
             />
             <YAxis
               tickFormatter={(v) => usdCompact(v)}
@@ -233,6 +443,7 @@ export function CashChart({
             />
             <Tooltip
               formatter={formatTip}
+              labelFormatter={(t) => formatAxisTick(t as string | number, span)}
               contentStyle={tooltipStyle}
               labelStyle={{ color: "var(--color-fg)" }}
               itemStyle={{ color: "var(--color-muted)" }}
@@ -282,13 +493,6 @@ export function CashChart({
   );
 }
 
-const FAKE_NET_WORTH = Array.from({ length: 21 }, (_, i) => {
-  const year = 1969 + i;
-  const assets = 1_234_000 + i * 123_400;
-  const liabilities = Math.max(0, 987_000 - i * 48_500);
-  return { year, assets, liabilities, netWorth: assets - liabilities };
-});
-
 export function NetWorthChart({
   plan,
   sim,
@@ -304,17 +508,10 @@ export function NetWorthChart({
 }) {
   const real = plan.assumptions.dollars === "real";
   const [span, setSpan] = useState<ChartSpan>(10);
-  const years = yearsInView(sim, plan.assumptions.asOfDate, span);
-  const hasDebt = years.some((y) => (real ? y.endLiabilitiesReal : y.endLiabilities) > 1);
-  const live = years.map((y) => ({
-    year: y.year,
-    assets: Math.round(real ? y.endAssetsReal : y.endAssets),
-    liabilities: Math.round(real ? y.endLiabilitiesReal : y.endLiabilities),
-    netWorth: Math.round(real ? y.endNetWorthReal : y.endNetWorth),
-  }));
-  const data = locked
-    ? FAKE_NET_WORTH.slice(0, span === "horizon" ? undefined : span + 1)
-    : live;
+  const live = netWorthPoints(plan, sim, span);
+  const data = locked ? fakeNetWorthPoints(span) : live;
+  const hasDebt = data.some((d) => d.liabilities > 1);
+  const x = axisProps(span);
 
   return (
     <div className="relative rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)] sm:p-5">
@@ -334,13 +531,19 @@ export function NetWorthChart({
         />
         <div className="h-64 sm:h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid stroke="var(--color-border)" vertical={false} />
               <XAxis
-                dataKey="year"
+                dataKey="t"
+                tickFormatter={(t) => formatAxisTick(t, span)}
                 tick={{ fill: "var(--color-muted)", fontSize: 11 }}
                 tickLine={false}
                 axisLine={{ stroke: "var(--color-border)" }}
+                interval={x.interval}
+                minTickGap={x.minTickGap}
+                angle={x.angle}
+                textAnchor={x.textAnchor}
+                height={x.height}
               />
               <YAxis
                 tickFormatter={(v) => usdCompact(v)}
@@ -351,6 +554,7 @@ export function NetWorthChart({
               />
               <Tooltip
                 formatter={formatTip}
+                labelFormatter={(t) => formatAxisTick(t as string | number, span)}
                 contentStyle={tooltipStyle}
                 labelStyle={{ color: "var(--color-fg)" }}
                 itemStyle={{ color: "var(--color-muted)" }}
