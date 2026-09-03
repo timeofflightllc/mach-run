@@ -52,7 +52,7 @@ function Login() {
           <Link to="/" className="inline-flex justify-center">
             <BrandLockup size="lg" />
           </Link>
-          <p className="mt-3 max-w-sm text-center text-xs leading-relaxed text-subtle">
+          <p className="mt-4 max-w-md text-center text-base leading-relaxed text-muted sm:text-lg">
             Free to use with limits. A cup of coffee a month for unlimited. Pay
             for a year, get two months on us.
           </p>

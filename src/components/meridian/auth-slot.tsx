@@ -26,7 +26,7 @@ export function AuthSlot({ saved }: { saved?: "idle" | "saving" | "saved" | "gue
             href="/login"
             className="inline-flex h-11 items-center justify-end rounded-lg px-0 text-sm font-medium text-muted hover:bg-surface hover:text-fg sm:px-3"
           >
-            Sign in
+            Sign In / Create Account
           </a>
         </>
       )}
