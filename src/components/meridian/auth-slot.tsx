@@ -22,12 +22,23 @@ export function AuthSlot({ saved }: { saved?: "idle" | "saving" | "saved" | "gue
           >
             Pricing
           </a>
-          <a
-            href="/login"
-            className="inline-flex h-11 items-center justify-end rounded-lg px-0 text-sm font-medium text-muted hover:bg-surface hover:text-fg sm:px-3"
-          >
-            Sign In / Create Account
-          </a>
+          <p className="inline-flex h-11 items-center justify-end gap-0.5 px-0 text-[11px] font-medium leading-tight sm:gap-1 sm:px-3 sm:text-sm">
+            <a
+              href="/login"
+              className="rounded-lg px-1 py-1 text-muted hover:bg-surface hover:text-fg"
+            >
+              Sign In
+            </a>
+            <span className="text-subtle" aria-hidden>
+              /
+            </span>
+            <a
+              href="/login?mode=up"
+              className="rounded-lg px-1 py-1 text-muted hover:bg-surface hover:text-fg"
+            >
+              Create Account
+            </a>
+          </p>
         </>
       )}
     </div>

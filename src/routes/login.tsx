@@ -4,10 +4,16 @@ import { GROK_PROVIDERS, appleSignInEnabled, authClient, authEnabled, signIn, si
 import { BrandLockup } from "@/components/meridian/mach-mark";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 
-export const Route = createFileRoute("/login")({ component: Login });
+export const Route = createFileRoute("/login")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    mode: search.mode === "up" ? ("up" as const) : ("in" as const),
+  }),
+  component: Login,
+});
 
 function Login() {
-  const [mode, setMode] = useState<"in" | "up">("in");
+  const start = Route.useSearch();
+  const [mode, setMode] = useState<"in" | "up">(start.mode);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
