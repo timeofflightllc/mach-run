@@ -1,4 +1,7 @@
 {
-  "title": "The Supersonic Financial Calculator",
-  "color": "0c0f14"
+  "title": "MACH RUN",
+  "description": "The Supersonic Financial Calculator. Measure, Allocate, Compound, Harvest.",
+  "color": "0a1835",
+  "card": "custom",
+  "image": "/og.jpg"
 }

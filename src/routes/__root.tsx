@@ -18,6 +18,25 @@ export const Route = createRootRoute({
           "The Supersonic Financial Calculator. Measure, Allocate, Compound, Harvest.",
       },
       { name: "theme-color", content: "#0a1835" },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://machrun.com/" },
+      { property: "og:title", content: "MACH RUN" },
+      {
+        property: "og:description",
+        content:
+          "The Supersonic Financial Calculator. Measure, Allocate, Compound, Harvest.",
+      },
+      { property: "og:image", content: "https://machrun.com/og.jpg" },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "MACH RUN" },
+      {
+        name: "twitter:description",
+        content:
+          "The Supersonic Financial Calculator. Measure, Allocate, Compound, Harvest.",
+      },
+      { name: "twitter:image", content: "https://machrun.com/og.jpg" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
