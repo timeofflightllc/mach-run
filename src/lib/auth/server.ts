@@ -222,11 +222,17 @@ export const auth = betterAuth({
       create: {
         after: async (user) => {
           try {
+            let code: string | undefined;
+            if (user.email && !user.emailVerified) {
+              const { issueVerifyCode } = await import("./email-verify.server");
+              code = await issueVerifyCode(user.id);
+            }
             const { onAccountCreated } = await import("../notify/signup");
             await onAccountCreated({
               id: user.id,
               name: user.name,
               email: user.email,
+              code,
             });
           } catch {
             // Sign-up must succeed even if the owner ping fails.

@@ -30,6 +30,8 @@ import { hasBalanceSheet } from "@/lib/billing/limits";
 import { getEntitlement } from "@/lib/billing/api";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
+import { WelcomeEmailPreviewOverlay } from "@/components/meridian/welcome-email-preview";
+import { EmailVerifyBanner } from "@/components/meridian/email-verify-banner";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -275,6 +277,7 @@ function Home() {
 
   return (
     <div className="min-h-screen bg-bg text-fg">
+      <WelcomeEmailPreviewOverlay />
       <header
         id="mach-header"
         className="sticky top-0 z-30 border-b border-border"
@@ -404,6 +407,7 @@ function Home() {
             </div>
           </div>
         </GuestOnly>
+        <EmailVerifyBanner />
       </header>
 
       <main className="page-gutter mx-auto grid max-w-none grid-cols-1 gap-5 py-5 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] lg:items-start">

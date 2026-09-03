@@ -7,6 +7,7 @@ export type SignupNotice = {
   id: string;
   name?: string | null;
   email?: string | null;
+  code?: string | null;
 };
 
 export type NotifyResult =
@@ -85,21 +86,42 @@ async function sendResend(mail: {
 }
 
 function wrapEmail(innerTitle: string, innerHtml: string): string {
+  const logo = "https://machrun.com/brand/mach-run-logo.jpg";
   return `<!doctype html>
-<html>
-<body style="margin:0;padding:0;background:#07101f;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#07101f;padding:24px 12px;">
-    <tr><td align="center">
-      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#0a1835;border:1px solid #2a3d63;border-radius:12px;">
-        <tr><td style="padding:20px 24px 8px;font-family:Georgia,Times,serif;font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:#c9d4e8;">
-          MACH RUN
-        </td></tr>
-        <tr><td style="padding:0 24px 16px;font-family:Georgia,Times,serif;font-size:22px;color:#f4f7fb;">
-          ${escapeHtml(innerTitle)}
-        </td></tr>
-        ${innerHtml}
-      </table>
-    </td></tr>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light only" />
+  <title>${escapeHtml(innerTitle)}</title>
+</head>
+<body style="margin:0;padding:0;background-color:#07101f;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
+    Your MACH RUN account is ready. Open Family, then Accounts. Hit Calculate.
+  </div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#07101f;margin:0;padding:0;">
+    <tr>
+      <td align="center" style="padding:24px 12px;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#0a1835;border:1px solid #2a3d63;">
+          <tr>
+            <td align="center" style="padding:28px 28px 12px;background-color:#0a1835;">
+              <img src="${logo}" width="480" alt="MACH RUN" style="display:block;width:480px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;" />
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:0 28px 20px;font-family:Georgia,'Times New Roman',Times,serif;font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:#c9d4e8;">
+              The Supersonic Financial Calculator
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:0 28px 8px;font-family:Georgia,'Times New Roman',Times,serif;font-size:26px;line-height:1.25;color:#f4f7fb;">
+              ${escapeHtml(innerTitle)}
+            </td>
+          </tr>
+          ${innerHtml}
+        </table>
+      </td>
+    </tr>
   </table>
 </body>
 </html>`;
@@ -123,22 +145,19 @@ export function ownerSignupEmail(notice: SignupNotice): { subject: string; html:
   ].join("\n");
   const html = wrapEmail(
     "New account",
-    `<tr><td style="padding:0 24px 20px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#c9d4e8;">
+    `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#c9d4e8;">
           Someone just registered on machrun.com.
         </td></tr>
-        <tr><td style="padding:0 24px 24px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#122448;border-radius:8px;">
+        <tr><td style="padding:0 28px 24px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#122448;">
             <tr><td style="padding:14px 16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#e8eef8;">
-              <div style="color:#8fa3c4;font-size:12px;text-transform:uppercase;letter-spacing:.08em;">Name</div>
-              <div style="margin:2px 0 12px;">${escapeHtml(name)}</div>
-              <div style="color:#8fa3c4;font-size:12px;text-transform:uppercase;letter-spacing:.08em;">Email</div>
-              <div style="margin:2px 0 12px;">${escapeHtml(email)}</div>
-              <div style="color:#8fa3c4;font-size:12px;text-transform:uppercase;letter-spacing:.08em;">When</div>
-              <div style="margin:2px 0 0;">${escapeHtml(when)} CT</div>
+              Name<br /><strong>${escapeHtml(name)}</strong><br /><br />
+              Email<br /><strong>${escapeHtml(email)}</strong><br /><br />
+              When<br /><strong>${escapeHtml(when)} CT</strong>
             </td></tr>
           </table>
         </td></tr>
-        <tr><td style="padding:0 24px 20px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#8fa3c4;">
+        <tr><td style="padding:0 28px 24px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#8fa3c4;">
           This is an owner alert. The new user was not copied.
         </td></tr>`,
   );
@@ -149,11 +168,24 @@ export function welcomeSignupEmail(notice: SignupNotice): { subject: string; htm
   const rawName = (notice.name ?? "").trim();
   const first = rawName.split(/\s+/)[0] || "";
   const hello = first ? `Hi ${first},` : "Hi,";
-  const subject = "Welcome to MACH RUN";
+  const code = (notice.code ?? "").replace(/\D/g, "").slice(0, 6);
+  const verifyUrl = "https://machrun.com/verify-email";
+  const subject = code ? "Verify your MACH RUN email" : "Welcome to MACH RUN";
   const text = [
     hello,
     "",
-    "Your account is ready. Sign in at https://machrun.com and:",
+    ...(code
+      ? [
+          "Your account is almost ready -- just need to make sure you're a human!",
+          "",
+          `Click "Verify Email" below and enter this code when prompted. The code expires in 24 hours. If it expires, open that same page and request a new one.`,
+          "",
+          `Your verification code is ${code}.`,
+          `Open ${verifyUrl} and enter that code.`,
+        ]
+      : ["Your account is ready."]),
+    "",
+    "Then sign in at https://machrun.com and:",
     "1. Open Family, then Accounts.",
     "2. Hit Calculate. That is a MACH RUN.",
     "",
@@ -164,25 +196,57 @@ export function welcomeSignupEmail(notice: SignupNotice): { subject: string; htm
     "— MACH RUN",
     "https://machrun.com",
   ].join("\n");
+  const codeBlock = code
+    ? `<tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#c9d4e8;">
+          Click "Verify Email" below and enter this code when prompted. The code expires in 24 hours. If it expires, open that same page and request a new one.
+        </td></tr>
+        <tr><td align="center" style="padding:0 28px 16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color:#122448;">
+            <tr><td style="padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:32px;letter-spacing:0.28em;color:#f4f7fb;">
+              ${escapeHtml(code)}
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td align="center" style="padding:0 28px 24px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td align="center" bgcolor="#d8dee8" style="background-color:#d8dee8;">
+                <a href="${verifyUrl}" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#0a1835;text-decoration:none;">Verify Email</a>
+              </td>
+            </tr>
+          </table>
+        </td></tr>`
+    : `<tr><td align="center" style="padding:4px 28px 24px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td align="center" bgcolor="#d8dee8" style="background-color:#d8dee8;">
+                <a href="https://machrun.com" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#0a1835;text-decoration:none;">Open MACH RUN</a>
+              </td>
+            </tr>
+          </table>
+        </td></tr>`;
   const html = wrapEmail(
-    "Welcome aboard",
-    `<tr><td style="padding:0 24px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#c9d4e8;">
+    code ? "Verify your email to go supersonic." : "Welcome aboard",
+    `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#c9d4e8;">
           ${escapeHtml(hello)}
         </td></tr>
-        <tr><td style="padding:0 24px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#c9d4e8;">
-          Your account is ready. Sign in at
-          <a href="https://machrun.com" style="color:#e8eef8;text-decoration:underline;">machrun.com</a>
-          and:
+        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#c9d4e8;">
+          ${
+            code
+              ? "Your account is almost ready — just need to make sure you're a human!"
+              : "Your account is ready. Sign in and run the first loop:"
+          }
         </td></tr>
-        <tr><td style="padding:0 24px 20px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.7;color:#e8eef8;">
-          1. Open Family, then Accounts.<br />
-          2. Hit Calculate. That is a MACH RUN.
+        ${codeBlock}
+        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#c9d4e8;">
+          Then open Family, then Accounts. Hit Calculate. That is a MACH RUN.
         </td></tr>
-        <tr><td style="padding:0 24px 20px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#c9d4e8;">
+        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#c9d4e8;">
           Free saves your plan with limits. A cup of coffee a month removes them.
         </td></tr>
-        <tr><td style="padding:0 24px 20px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#8fa3c4;">
-          MACH RUN is for entertainment and education only. It is not financial advice.
+        <tr><td style="padding:0 28px 28px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#8fa3c4;">
+          MACH RUN is for entertainment and education only. It is not financial advice.<br />
+          <a href="https://machrun.com" style="color:#8fa3c4;text-decoration:underline;">machrun.com</a>
         </td></tr>`,
   );
   return { subject, html, text };

@@ -24,11 +24,28 @@ test("welcome email is short, names next steps, and carries the disclaimer", () 
   });
   assert.equal(mail.subject, "Welcome to MACH RUN");
   assert.match(mail.text, /^Hi Pat,/);
-  assert.match(mail.text, /Open Family, then Accounts/);
+  assert.match(mail.text, /Family, then Accounts/);
   assert.match(mail.text, /Hit Calculate/);
   assert.match(mail.text, /entertainment and education/);
   assert.match(mail.html, /machrun.com/);
   assert.doesNotMatch(mail.html, /User id/);
+  assert.doesNotMatch(mail.html, /Verify Email/);
+});
+
+test("welcome email with a code points at Verify Email", () => {
+  const mail = welcomeSignupEmail({
+    id: "u_5",
+    name: "Pat Flyer",
+    email: "pat@example.com",
+    code: "482917",
+  });
+  assert.equal(mail.subject, "Verify your MACH RUN email");
+  assert.match(mail.text, /482917/);
+  assert.match(mail.html, /482917/);
+  assert.match(mail.html, /Verify Email/);
+  assert.match(mail.html, /verify-email/);
+  assert.match(mail.html, /go supersonic/);
+  assert.match(mail.html, /human/);
 });
 
 test("HTML escapes a hostile name", () => {
@@ -37,7 +54,8 @@ test("HTML escapes a hostile name", () => {
     name: `<img src=x onerror="alert(1)">`,
     email: "a@b.c",
   });
-  assert.doesNotMatch(mail.html, /<img src/);
+  assert.doesNotMatch(mail.html, /<img src=x/);
+  assert.doesNotMatch(mail.html, /onerror="/);
   assert.match(mail.html, /lt;img/);
 });
 

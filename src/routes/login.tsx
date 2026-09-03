@@ -28,6 +28,8 @@ function Login() {
           callbackURL: "/",
         });
         if (err) throw new Error(err.message ?? "Could not create the account.");
+        window.location.href = "/verify-email";
+        return;
       } else {
         const { error: err } = await authClient.signIn.email({
           email: email.trim(),
