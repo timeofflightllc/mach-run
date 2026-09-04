@@ -559,6 +559,7 @@ function Account() {
             setDeleteError(null);
             if (!deleteReturn) setDeleteReauthed(false);
           }}
+          onManageBilling={() => void openBilling()}
           onReauth={(providerId) => void startDeleteReauth(providerId)}
           onConfirm={(password) => void confirmDeleteAccount(password)}
         />

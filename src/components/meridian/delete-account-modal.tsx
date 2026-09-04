@@ -9,6 +9,7 @@ export function DeleteAccountModal({
   busy,
   error,
   onCancel,
+  onManageBilling,
   onReauth,
   onConfirm,
 }: {
@@ -18,6 +19,7 @@ export function DeleteAccountModal({
   busy: boolean;
   error: string | null;
   onCancel: () => void;
+  onManageBilling: () => void;
   onReauth: (providerId: string) => void;
   onConfirm: (password: string) => void;
 }) {
@@ -45,9 +47,20 @@ export function DeleteAccountModal({
           Close account
         </p>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          This is not canceling a credit-card plan. This deletes the login,
-          saved MACH RUN, billing record on file, and email preferences from
-          our servers. It cannot be undone.
+          This is not canceling a credit-card plan — to do that,{" "}
+          <button
+            type="button"
+            onClick={onManageBilling}
+            className="underline underline-offset-4 hover:text-fg"
+          >
+            click here
+          </button>
+          .{" "}
+          {hasPassword
+            ? "Type your password below and select Yes, delete ALL of my information. This cannot be undone."
+            : "Confirm below and select Yes, delete ALL of my information. This cannot be undone."}{" "}
+          That deletes the login, saved MACH RUN, billing record on file, and
+          email preferences from our servers.
         </p>
 
         {hasPassword ? (
