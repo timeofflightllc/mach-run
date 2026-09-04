@@ -634,9 +634,12 @@ function Pricing() {
           </p>
         ) : null}
 
-        <p className="mt-10 text-sm text-subtle">
-          <Link to="/" className="underline-offset-4 hover:text-fg hover:underline">
-            Back to the engine
+        <p className="mt-10 flex justify-center">
+          <Link
+            to="/"
+            className="inline-flex h-11 items-center justify-center rounded-lg px-5 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+          >
+            Back to MACH Run
           </Link>
         </p>
       </div>
