@@ -380,7 +380,7 @@ export async function clampPlanForUser(userId: string, plan: Plan): Promise<Plan
       select plan_json from mach_plans where user_id = ${userId} limit 1
     `;
     const raw = saved[0]?.plan_json;
-    const parsed = openPlanPayload(raw) as Plan | null;
+    const parsed = (await openPlanPayload(raw)) as Plan | null;
     existingPorts = Array.isArray(parsed?.portfolios) ? parsed.portfolios.length : 0;
     existingRules = Array.isArray(parsed?.contributions)
       ? parsed.contributions.length

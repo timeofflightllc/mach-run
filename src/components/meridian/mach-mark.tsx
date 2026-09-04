@@ -171,12 +171,16 @@ export function MachFooter() {
             <Link to="/pricing" className="text-muted underline-offset-4 hover:text-fg hover:underline">
               Free vs MACH RUN paid
             </Link>
-            {" · "}
+            {" — "}$4/month or $40/year unlocks unlimited accounts, contribution
+            rules, income stages, Net Worth, and the full OODA.
+          </p>
+          <p>
             <Link to="/privacy" className="text-muted underline-offset-4 hover:text-fg hover:underline">
               Privacy
             </Link>
-            {" — "}$4/month or $40/year unlocks unlimited accounts, contribution
-            rules, income stages, Net Worth, and the full OODA.
+            {" — "}
+            Your MACH Run data is encrypted in transit (HTTPS) and encrypted at
+            rest on the server.
           </p>
           <p>
             * MACH OODA AI analysis and OODA AI questions are for

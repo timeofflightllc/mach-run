@@ -83,10 +83,8 @@ function Privacy() {
             <h2 className="font-medium text-fg">Who sees the numbers</h2>
             <p>
               Your MACH Run is tied to your login. Other MACH RUN users cannot see
-              it. Saved plans are encrypted at rest in our database. That protects
-              a stolen disk or backup file. It does not mean MACHRUN.COM operators
-              are blind — we hold the server key, so we can open a plan if we must
-              operate, secure, or repair the service.
+              it. Data is encrypted in transit (HTTPS) and saved plans are
+              encrypted at rest on the server.
             </p>
           </section>
 

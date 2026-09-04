@@ -1,24 +1,43 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
-
 const TYPE = "mach-plan-at-rest";
-const ALG = "aes-256-gcm";
+const ALG = "AES-GCM";
 
 type Envelope = {
   t: typeof TYPE;
   v: 1;
-  alg: typeof ALG;
+  alg: "aes-256-gcm";
   iv: string;
-  tag: string;
   data: string;
+  tag?: string;
 };
 
-function keyBytes(): Buffer | null {
-  const raw = process.env.MACH_PLAN_AT_REST_KEY?.trim();
-  if (raw && raw.length >= 16) {
-    return createHash("sha256").update(raw).digest();
-  }
-  if (process.env.VERCEL_ENV === "production") return null;
-  return createHash("sha256").update("mach-run-preview-at-rest-v1").digest();
+function secretSource(): string | null {
+  const raw =
+    typeof process !== "undefined" ? process.env.MACH_PLAN_AT_REST_KEY?.trim() : "";
+  if (raw && raw.length >= 16) return raw;
+  const vercelEnv =
+    typeof process !== "undefined" ? process.env.VERCEL_ENV : undefined;
+  if (vercelEnv === "production") return null;
+  return "mach-run-preview-at-rest-v1";
+}
+
+function bytesToB64(bytes: Uint8Array): string {
+  let s = "";
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s);
+}
+
+function b64ToBytes(b64: string): Uint8Array {
+  const s = atob(b64);
+  const out = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+  return out;
+}
+
+async function keyBytes(): Promise<CryptoKey | null> {
+  const secret = secretSource();
+  if (!secret) return null;
+  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(secret));
+  return crypto.subtle.importKey("raw", hash, ALG, false, ["encrypt", "decrypt"]);
 }
 
 export function isAtRestEnvelope(value: unknown): value is Envelope {
@@ -27,32 +46,28 @@ export function isAtRestEnvelope(value: unknown): value is Envelope {
   return (
     o.t === TYPE &&
     o.v === 1 &&
-    o.alg === ALG &&
     typeof o.iv === "string" &&
-    typeof o.tag === "string" &&
     typeof o.data === "string"
   );
 }
 
-export function sealPlanPayload(payload: unknown): unknown {
-  const key = keyBytes();
+export async function sealPlanPayload(payload: unknown): Promise<unknown> {
+  const key = await keyBytes();
   if (!key) return payload;
-  const iv = randomBytes(12);
-  const cipher = createCipheriv(ALG, key, iv);
-  const plain = Buffer.from(JSON.stringify(payload), "utf8");
-  const data = Buffer.concat([cipher.update(plain), cipher.final()]);
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const plain = new TextEncoder().encode(JSON.stringify(payload));
+  const sealed = await crypto.subtle.encrypt({ name: ALG, iv }, key, plain);
   const env: Envelope = {
     t: TYPE,
     v: 1,
-    alg: ALG,
-    iv: iv.toString("base64"),
-    tag: cipher.getAuthTag().toString("base64"),
-    data: data.toString("base64"),
+    alg: "aes-256-gcm",
+    iv: bytesToB64(iv),
+    data: bytesToB64(new Uint8Array(sealed)),
   };
   return env;
 }
 
-export function openPlanPayload(raw: unknown): unknown {
+export async function openPlanPayload(raw: unknown): Promise<unknown> {
   if (raw == null) return null;
   let parsed: unknown = raw;
   if (typeof raw === "string") {
@@ -63,13 +78,21 @@ export function openPlanPayload(raw: unknown): unknown {
     }
   }
   if (!isAtRestEnvelope(parsed)) return parsed;
-  const key = keyBytes();
+  const key = await keyBytes();
   if (!key) throw new Error("plan at rest: missing MACH_PLAN_AT_REST_KEY");
-  const decipher = createDecipheriv(ALG, key, Buffer.from(parsed.iv, "base64"));
-  decipher.setAuthTag(Buffer.from(parsed.tag, "base64"));
-  const plain = Buffer.concat([
-    decipher.update(Buffer.from(parsed.data, "base64")),
-    decipher.final(),
-  ]);
-  return JSON.parse(plain.toString("utf8")) as unknown;
+  const iv = b64ToBytes(parsed.iv);
+  let data = b64ToBytes(parsed.data);
+  if (parsed.tag) {
+    const tag = b64ToBytes(parsed.tag);
+    const joined = new Uint8Array(data.length + tag.length);
+    joined.set(data);
+    joined.set(tag, data.length);
+    data = joined;
+  }
+  const plain = await crypto.subtle.decrypt(
+    { name: ALG, iv: iv.buffer as ArrayBuffer },
+    key,
+    data.buffer as ArrayBuffer,
+  );
+  return JSON.parse(new TextDecoder().decode(plain)) as unknown;
 }

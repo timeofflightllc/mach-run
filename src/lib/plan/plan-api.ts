@@ -32,7 +32,7 @@ export const loadMachPlan = createServerFn({ method: "GET" })
       `;
       const raw = rows[0]?.plan_json;
       if (raw == null) return null;
-      const parsed = openPlanPayload(raw);
+      const parsed = await openPlanPayload(raw);
       if (isLibrary(parsed)) {
         const active =
           parsed.profiles.find((p) => p.id === parsed.activeId)?.plan ??
@@ -61,7 +61,7 @@ export const saveMachPlan = createServerFn({ method: "POST" })
             ),
           }
         : await clampPlanForUser(context.userId, data);
-      const stored = sealPlanPayload(payload);
+      const stored = await sealPlanPayload(payload);
       const sql = await getSql();
       await sql.query(
         `insert into mach_plans (user_id, plan_json, updated_at)
