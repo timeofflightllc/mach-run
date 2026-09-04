@@ -381,36 +381,6 @@ function Account() {
           </PrimaryButton>
         </form>
 
-        <form
-          onSubmit={(e) => void savePassword(e)}
-          className="space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
-        >
-          <p className="font-display text-lg text-fg">Password</p>
-          <p className="text-sm text-muted">
-            Only applies if you registered with email. Continue with Apple, Google
-            and X keep their own passwords.
-          </p>
-          <Field label="Current password">
-            <TextInput
-              type="password"
-              autoComplete="current-password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-            />
-          </Field>
-          <Field label="New password">
-            <TextInput
-              type="password"
-              autoComplete="new-password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-            />
-          </Field>
-          <PrimaryButton disabled={busy !== null || !currentPassword || !newPassword}>
-            {busy === "password" ? "Saving…" : "Update password"}
-          </PrimaryButton>
-        </form>
-
         <div
           id="email-preferences"
           className="space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
@@ -455,6 +425,36 @@ function Account() {
             To stop required account email, close the account below.
           </p>
         </div>
+
+        <form
+          onSubmit={(e) => void savePassword(e)}
+          className="space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
+        >
+          <p className="font-display text-lg text-fg">Password</p>
+          <p className="text-sm text-muted">
+            Only applies if you registered with email. Continue with Apple, Google
+            and X keep their own passwords.
+          </p>
+          <Field label="Current password">
+            <TextInput
+              type="password"
+              autoComplete="current-password"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+            />
+          </Field>
+          <Field label="New password">
+            <TextInput
+              type="password"
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+          </Field>
+          <PrimaryButton disabled={busy !== null || !currentPassword || !newPassword}>
+            {busy === "password" ? "Saving…" : "Update password"}
+          </PrimaryButton>
+        </form>
 
         <IdleLockSettings userId={user.id} />
 
@@ -528,9 +528,12 @@ function Account() {
         </div>
         </div>
 
-        <p className="text-sm text-subtle">
-          <Link to="/" className="underline-offset-4 hover:text-fg hover:underline">
-            Back to the engine
+        <p className="flex justify-center">
+          <Link
+            to="/"
+            className="inline-flex h-11 items-center justify-center rounded-lg px-5 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+          >
+            Back to MACH Run
           </Link>
         </p>
       </div>
