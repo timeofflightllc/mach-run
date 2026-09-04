@@ -73,7 +73,7 @@ export function IdleLockSettings({ userId }: { userId: string }) {
     <form
       id="idle-lock"
       onSubmit={(e) => void turnOn(e)}
-      className="space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
+      className="h-full space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
     >
       <p className="font-display text-lg text-fg">Idle lock</p>
       <p className="text-sm leading-relaxed text-muted">

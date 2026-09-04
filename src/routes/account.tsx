@@ -361,10 +361,10 @@ function Account() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:items-start">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:items-stretch">
         <form
           onSubmit={(e) => void saveProfile(e)}
-          className="space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
+          className="h-full space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
         >
           <Field label="Name">
             <TextInput value={name} onChange={(e) => setName(e.target.value)} />
@@ -383,7 +383,7 @@ function Account() {
 
         <div
           id="email-preferences"
-          className="space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
+          className="h-full space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
         >
           <p className="font-display text-lg text-fg">Email preferences</p>
           <label className="flex items-start gap-3 text-sm text-fg">
@@ -428,7 +428,7 @@ function Account() {
 
         <form
           onSubmit={(e) => void savePassword(e)}
-          className="space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
+          className="h-full space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
         >
           <p className="font-display text-lg text-fg">Password</p>
           <p className="text-sm text-muted">
@@ -458,7 +458,7 @@ function Account() {
 
         <IdleLockSettings userId={user.id} />
 
-        <div className="space-y-2 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
+        <div className="h-full space-y-2 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
           <p className="font-display text-lg text-fg">Encrypted MACH RUN backup</p>
           {backupOk ? (
             <>
@@ -507,7 +507,7 @@ function Account() {
           )}
         </div>
 
-        <div className="space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
+        <div className="h-full space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
           <p className="font-display text-lg text-fg">Close account</p>
           <p className="text-sm leading-relaxed text-muted">
             This is not canceling a paid plan. Closing the account deletes this
