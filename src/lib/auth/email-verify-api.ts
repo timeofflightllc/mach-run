@@ -24,7 +24,27 @@ export const submitEmailVerifyCode = createServerFn({ method: "POST" })
   }))
   .handler(async ({ context, data }) => {
     const { consumeVerifyCode } = await import("./email-verify.server");
-    return consumeVerifyCode(context.userId, data.code);
+    const result = await consumeVerifyCode(context.userId, data.code);
+    if (!result.ok) return result;
+    try {
+      const sql = await getSql();
+      const rows = await sql.query<{ email: string | null; name: string | null }>(
+        `select email, name from "user" where id = $1 limit 1`,
+        [context.userId],
+      );
+      const user = rows[0];
+      if (user?.email) {
+        const { sendFirstFlightEmail } = await import("../notify/signup");
+        await sendFirstFlightEmail({
+          id: context.userId,
+          name: user.name,
+          email: user.email,
+        });
+      }
+    } catch {
+      /* verify already stuck; mail is best-effort */
+    }
+    return result;
   });
 
 export const resendEmailVerifyCode = createServerFn({ method: "POST" })

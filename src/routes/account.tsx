@@ -1,14 +1,17 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { BackupPasswordModal } from "@/components/meridian/backup-modal";
+import { DeleteAccountModal } from "@/components/meridian/delete-account-modal";
 import { BrandLockup } from "@/components/meridian/mach-mark";
 import { IdleLockSettings } from "@/components/meridian/idle-lock-settings";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import { startBillingPortal } from "@/lib/billing/api";
 import { canDownloadBackup } from "@/lib/billing/limits";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
-import { sendTestSignupAlert, signupAlertStatus } from "@/lib/notify/api";
-import { authClient } from "@/lib/auth/client";
+import { sendTestSignupAlert, signupAlertStatus, emailPrefsStatus, setOptionalEmails } from "@/lib/notify/api";
+import { authClient, signIn, signInWithApple, signOut } from "@/lib/auth/client";
+import { deleteMyAccount, getDeleteOptions } from "@/lib/auth/delete-account-api";
+import type { DeleteProvider } from "@/lib/auth/delete-account";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { RedirectToSignIn } from "@/lib/auth/gates";
 import {
@@ -17,15 +20,23 @@ import {
   encryptPlanBackup,
   triggerBackupDownload,
 } from "@/lib/plan/backup-file";
+import { clearIdleLockPrefs } from "@/lib/idle-lock";
 import { usePlanStore } from "@/lib/plan/store";
 
-export const Route = createFileRoute("/account")({ component: Account });
+export const Route = createFileRoute("/account")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    delete: search.delete === "1" || search.delete === "true" ? "1" : undefined,
+  }),
+  component: Account,
+});
 
 function Account() {
   const { user, isPending } = useCurrentUserState();
+  const deleteReturn = Route.useSearch().delete === "1";
   const ent = useEntitlement();
   const navigate = useNavigate();
   const setPlan = usePlanStore((s) => s.setPlan);
+  const resetPlan = usePlanStore((s) => s.reset);
   const [name, setName] = useState(user?.displayName ?? "");
   const [email, setEmail] = useState(user?.primaryEmail ?? "");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -35,6 +46,14 @@ function Account() {
   const [busy, setBusy] = useState<"profile" | "password" | "billing" | "alert" | null>(null);
   const [alertOwner, setAlertOwner] = useState(false);
   const [alertReady, setAlertReady] = useState(false);
+  const [optionalOk, setOptionalOk] = useState(true);
+  const [prefsReady, setPrefsReady] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteHasPassword, setDeleteHasPassword] = useState(true);
+  const [deleteProviders, setDeleteProviders] = useState<DeleteProvider[]>([]);
+  const [deleteReauthed, setDeleteReauthed] = useState(false);
   const [backupMode, setBackupMode] = useState<"download" | "import" | null>(null);
   const [backupBusy, setBackupBusy] = useState(false);
   const [backupError, setBackupError] = useState<string | null>(null);
@@ -54,7 +73,41 @@ function Account() {
       .catch(() => {
         setAlertOwner(false);
       });
+    void emailPrefsStatus()
+      .then((p) => {
+        setOptionalOk(p.optionalOk);
+        setPrefsReady(true);
+      })
+      .catch(() => {
+        setOptionalOk(true);
+        setPrefsReady(true);
+      });
   }, [user]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.location.hash !== "#email-preferences") return;
+    document.getElementById("email-preferences")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [user, prefsReady]);
+
+  useEffect(() => {
+    if (!user || user.isDevFallback) return;
+    void getDeleteOptions()
+      .then((opts) => {
+        setDeleteHasPassword(opts.hasPassword);
+        setDeleteProviders(opts.providers);
+      })
+      .catch(() => {
+        setDeleteHasPassword(true);
+        setDeleteProviders([]);
+      });
+  }, [user]);
+
+  useEffect(() => {
+    if (!deleteReturn || !user) return;
+    setConfirmDelete(true);
+    setDeleteReauthed(true);
+  }, [deleteReturn, user]);
 
   if (isPending) {
     return (
@@ -180,6 +233,60 @@ function Account() {
     }
   }
 
+  async function toggleOptionalEmails(next: boolean) {
+    const prev = optionalOk;
+    setOptionalOk(next);
+    setError(null);
+    try {
+      const saved = await setOptionalEmails({ data: { optionalOk: next } });
+      setOptionalOk(saved.optionalOk);
+      setMsg(next ? "Optional MACH RUN emails are on." : "Optional MACH RUN emails are off.");
+    } catch (err) {
+      setOptionalOk(prev);
+      setError(err instanceof Error ? err.message : "Could not save email preferences.");
+    }
+  }
+
+  async function startDeleteReauth(providerId: string) {
+    setDeleteBusy(true);
+    setDeleteError(null);
+    try {
+      const dest = `${window.location.origin}/account?delete=1`;
+      if (providerId === "apple") await signInWithApple(dest);
+      else await signIn(providerId, { callbackURL: dest, errorCallbackURL: dest });
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Could not start sign-in.");
+      setDeleteBusy(false);
+    }
+  }
+
+  async function confirmDeleteAccount(password: string) {
+    setDeleteBusy(true);
+    setDeleteError(null);
+    try {
+      await deleteMyAccount({ data: { password } });
+      try {
+        clearIdleLockPrefs(user.id);
+      } catch {
+        /* local only */
+      }
+      try {
+        resetPlan();
+        window.localStorage.removeItem("mach-plan-v4");
+      } catch {
+        /* local only */
+      }
+      try {
+        await signOut("/");
+      } catch {
+        window.location.href = "/";
+      }
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Could not delete the account.");
+      setDeleteBusy(false);
+    }
+  }
+
   async function sendOwnerAlert() {
     setBusy("alert");
     setError(null);
@@ -289,6 +396,51 @@ function Account() {
           </PrimaryButton>
         </form>
 
+        <div
+          id="email-preferences"
+          className="space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
+        >
+          <p className="font-display text-lg text-fg">Email preferences</p>
+          <label className="flex items-start gap-3 text-sm text-fg">
+            <input
+              type="checkbox"
+              checked
+              disabled
+              className="mt-1 accent-accent"
+            />
+            <span>
+              <span className="font-medium">Required account emails</span>
+              <span className="mt-1 block text-muted">
+                Sign-in, verify, password, billing, and the first-flight checklist.
+                Always on while this account exists.
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-3 text-sm text-fg">
+            <input
+              type="checkbox"
+              checked={optionalOk}
+              disabled={!prefsReady}
+              onChange={(e) => void toggleOptionalEmails(e.target.checked)}
+              className="mt-1 accent-accent"
+            />
+            <span>
+              <span className="font-medium">Optional MACH RUN emails</span>
+              <span className="mt-1 block text-muted">
+                Product notes and other mail that is not required to run the
+                account. Uncheck to stop those.
+              </span>
+            </span>
+          </label>
+          <p className="text-sm text-muted">
+            We will never sell, give away, or otherwise compromise your email
+            and account information at any time, now and in the future.
+          </p>
+          <p className="text-sm text-subtle">
+            To stop required account email, cancel the account below.
+          </p>
+        </div>
+
         <div className="space-y-2">
           <button
             type="button"
@@ -357,6 +509,25 @@ function Account() {
 
         <IdleLockSettings userId={user.id} />
 
+        <div className="space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
+          <p className="font-display text-lg text-fg">Cancel account</p>
+          <p className="text-sm leading-relaxed text-muted">
+            Permanently delete this login and every MACH RUN saved to it. This
+            cannot be undone.
+          </p>
+          <button
+            type="button"
+            disabled={busy !== null || deleteBusy}
+            onClick={() => {
+              setDeleteError(null);
+              setConfirmDelete(true);
+            }}
+            className="inline-flex h-11 w-full items-center justify-center rounded-lg px-4 text-sm font-medium text-negative shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated disabled:opacity-60"
+          >
+            Cancel account and delete my information
+          </button>
+        </div>
+
         <p className="text-sm text-subtle">
           <Link to="/" className="underline-offset-4 hover:text-fg hover:underline">
             Back to the engine
@@ -375,6 +546,23 @@ function Account() {
             setBackupError(null);
           }}
           onConfirm={(password) => void onBackupConfirm(password)}
+        />
+      ) : null}
+      {confirmDelete ? (
+        <DeleteAccountModal
+          hasPassword={deleteHasPassword}
+          providers={deleteProviders}
+          reauthed={deleteReauthed}
+          busy={deleteBusy}
+          error={deleteError}
+          onCancel={() => {
+            if (deleteBusy) return;
+            setConfirmDelete(false);
+            setDeleteError(null);
+            if (!deleteReturn) setDeleteReauthed(false);
+          }}
+          onReauth={(providerId) => void startDeleteReauth(providerId)}
+          onConfirm={(password) => void confirmDeleteAccount(password)}
         />
       ) : null}
     </main>

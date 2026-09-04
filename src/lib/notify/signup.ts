@@ -85,8 +85,32 @@ async function sendResend(mail: {
   }
 }
 
-function wrapEmail(innerTitle: string, innerHtml: string): string {
+function wrapEmail(
+  innerTitle: string,
+  innerHtml: string,
+  preheader = "Your MACH RUN account is ready. Open Family, then Accounts. Hit Calculate.",
+  titleAlign: "left" | "center" = "left",
+  signupWhy = false,
+): string {
   const logo = "https://machrun.com/brand/mach-run-logo.jpg";
+  const why = signupWhy
+    ? `<tr>
+            <td align="center" style="padding:16px 12px 0;">
+              <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+                <tr>
+                  <td style="padding:4px 16px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.55;color:#8fa3c4;text-align:left;">
+                    You received this email only because you signed up for
+                    <a href="https://machrun.com" style="color:#8fa3c4;text-decoration:underline;">MACHRUN.com</a>.
+                    We do not buy, sell, or give away email addresses. We respect your privacy —
+                    <a href="https://machrun.com/privacy" style="color:#8fa3c4;text-decoration:underline;">Privacy policy</a>.
+                    <a href="https://machrun.com/account#email-preferences" style="color:#8fa3c4;text-decoration:underline;">Unsubscribe</a>
+                    opens your account profile, where you can turn off optional mail or cancel the account.
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`
+    : "";
   return `<!doctype html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -94,10 +118,15 @@ function wrapEmail(innerTitle: string, innerHtml: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light only" />
   <title>${escapeHtml(innerTitle)}</title>
+  <style type="text/css">
+    @media only screen and (max-width: 520px) {
+      .mach-tagline { display: none !important; font-size: 0 !important; line-height: 0 !important; max-height: 0 !important; overflow: hidden !important; padding: 0 !important; }
+    }
+  </style>
 </head>
 <body style="margin:0;padding:0;background-color:#07101f;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
-    Your MACH RUN account is ready. Open Family, then Accounts. Hit Calculate.
+    ${escapeHtml(preheader)}
   </div>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#07101f;margin:0;padding:0;">
     <tr>
@@ -108,18 +137,19 @@ function wrapEmail(innerTitle: string, innerHtml: string): string {
               <img src="${logo}" width="480" alt="MACH RUN" style="display:block;width:480px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;" />
             </td>
           </tr>
-          <tr>
-            <td align="center" style="padding:0 28px 20px;font-family:Georgia,'Times New Roman',Times,serif;font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:#c9d4e8;">
-              The Supersonic Financial Calculator
+          <tr class="mach-tagline">
+            <td class="mach-tagline" align="center" style="padding:0 28px 20px;font-family:Georgia,'Times New Roman',Times,serif;font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:#c9d4e8;">
+              THE SUPERSONIC FINANCIAL CALCULATOR
             </td>
           </tr>
           <tr>
-            <td style="padding:0 28px 8px;font-family:Georgia,'Times New Roman',Times,serif;font-size:26px;line-height:1.25;color:#f4f7fb;">
+            <td align="${titleAlign}" style="padding:0 28px 8px;font-family:Georgia,'Times New Roman',Times,serif;font-size:26px;line-height:1.25;color:#f4f7fb;text-align:${titleAlign};">
               ${escapeHtml(innerTitle)}
             </td>
           </tr>
           ${innerHtml}
         </table>
+        ${why}
       </td>
     </tr>
   </table>
@@ -193,6 +223,8 @@ export function welcomeSignupEmail(notice: SignupNotice): { subject: string; htm
     "",
     "MACH RUN is for entertainment and education only. It is not financial advice.",
     "",
+    SIGNUP_WHY_TEXT,
+    "",
     "— MACH RUN",
     "https://machrun.com",
   ].join("\n");
@@ -248,6 +280,9 @@ export function welcomeSignupEmail(notice: SignupNotice): { subject: string; htm
           MACH RUN is for entertainment and education only. It is not financial advice.<br />
           <a href="https://machrun.com" style="color:#8fa3c4;text-decoration:underline;">machrun.com</a>
         </td></tr>`,
+    undefined,
+    "left",
+    true,
   );
   return { subject, html, text };
 }
@@ -263,6 +298,124 @@ export async function sendWelcomeSignupEmail(notice: SignupNotice): Promise<Noti
   const to = (notice.email ?? "").trim();
   if (!to) return { ok: false, skipped: true, reason: "New user has no email." };
   const mail = welcomeSignupEmail(notice);
+  return sendResend({ to: [to], ...mail });
+}
+
+const FIRST_FLIGHT_STEPS = [
+  {
+    n: "1",
+    title: "Sign in",
+    body: "Open machrun.com.",
+  },
+  {
+    n: "2",
+    title: "OBSERVE",
+    body: "Family, goals, dates. Then the accounts you have now.",
+  },
+  {
+    n: "3",
+    title: "ORIENT",
+    body: "Income, then monthly spending.",
+  },
+  {
+    n: "4",
+    title: "DECIDE",
+    body: "Where investment dollars go.",
+  },
+  {
+    n: "5",
+    title: "ACT",
+    body: "Hit Calculate. Read the BLUF. Change something. Run it again.",
+  },
+];
+
+const SIGNUP_WHY_TEXT = [
+  "You received this email only because you signed up for MACHRUN.com. We do not buy, sell, or give away email addresses. We respect your privacy — Privacy policy: https://machrun.com/privacy",
+  "Unsubscribe opens your account profile, where you can turn off optional mail or cancel the account: https://machrun.com/account#email-preferences",
+].join("\n");
+
+export function firstFlightEmail(notice: SignupNotice): { subject: string; html: string; text: string } {
+  const rawName = (notice.name ?? "").trim();
+  const first = rawName.split(/\s+/)[0] || "";
+  const hello = first ? `Hi ${first},` : "Hi,";
+  const subject = "MACH RUN — First Flight Checklist";
+  const text = [
+    hello,
+    "",
+    "Email verified.",
+    "",
+    "FIRST FLIGHT CHECKLIST",
+    ...FIRST_FLIGHT_STEPS.map((s) => `${s.n}. ${s.title} — ${s.body}`),
+    "",
+    "Free saves your plan with limits. Pricing unlocks more.",
+    "",
+    "Kick the tires and light your financial fires.",
+    "",
+    "https://machrun.com",
+    "",
+    "MACH RUN is for entertainment and education only. It is not financial advice.",
+    "",
+    SIGNUP_WHY_TEXT,
+    "",
+    "— MACH RUN",
+    "https://machrun.com",
+  ].join("\n");
+  const rows = FIRST_FLIGHT_STEPS.map(
+    (s) => `<tr>
+              <td valign="top" style="width:36px;padding:10px 10px 10px 0;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#f4f7fb;">${s.n}.</td>
+              <td style="padding:10px 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#c9d4e8;">
+                <strong style="color:#f4f7fb;">${escapeHtml(s.title)}</strong><br />
+                ${escapeHtml(s.body)}
+              </td>
+            </tr>`,
+  ).join("");
+  const html = wrapEmail(
+    "First Flight Checklist",
+    `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#c9d4e8;">
+          ${escapeHtml(hello)}
+        </td></tr>
+        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#c9d4e8;">
+          Email verified. Fights On!
+        </td></tr>
+        <tr><td style="padding:0 28px 8px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#122448;">
+            <tr><td style="padding:8px 16px 12px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                ${rows}
+              </table>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:12px 28px 8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#c9d4e8;">
+          Free saves your plan with limits. Pricing unlocks more.
+        </td></tr>
+        <tr><td align="center" style="padding:8px 28px 8px;font-family:Georgia,'Times New Roman',Times,serif;font-size:17px;line-height:1.5;color:#f4f7fb;text-align:center;">
+          Kick the tires and light your financial fires.
+        </td></tr>
+        <tr><td align="center" style="padding:12px 28px 20px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td align="center" bgcolor="#d8dee8" style="background-color:#d8dee8;">
+                <a href="https://machrun.com" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#0a1835;text-decoration:none;">Open MACH RUN</a>
+              </td>
+            </tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:0 28px 28px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#8fa3c4;">
+          MACH RUN is for entertainment and education only. It is not financial advice.<br />
+          <a href="https://machrun.com" style="color:#8fa3c4;text-decoration:underline;">machrun.com</a>
+        </td></tr>`,
+    "Email verified. Open machrun.com.",
+    "center",
+    true,
+  );
+  return { subject, html, text };
+}
+
+export async function sendFirstFlightEmail(notice: SignupNotice): Promise<NotifyResult> {
+  const to = (notice.email ?? "").trim();
+  if (!to) return { ok: false, skipped: true, reason: "Verified user has no email." };
+  const mail = firstFlightEmail(notice);
   return sendResend({ to: [to], ...mail });
 }
 
