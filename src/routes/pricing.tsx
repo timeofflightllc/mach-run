@@ -199,9 +199,17 @@ function Pricing() {
   return (
     <main className="min-h-screen px-4 py-10 text-fg" style={{ backgroundColor: "#0a1835" }}>
       <div className="mx-auto w-full max-w-7xl">
-        <Link to="/" className="inline-block opacity-90 hover:opacity-100">
-          <BrandLockup />
-        </Link>
+        <div className="flex items-start justify-between gap-4">
+          <Link to="/" className="inline-block opacity-90 hover:opacity-100">
+            <BrandLockup />
+          </Link>
+          <Link
+            to="/"
+            className="mt-1 inline-flex h-10 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+          >
+            Exit Pricing
+          </Link>
+        </div>
 
         <header className="mt-10 max-w-[50.5rem]">
           <h1 className="font-display text-4xl leading-tight text-fg sm:text-5xl">
