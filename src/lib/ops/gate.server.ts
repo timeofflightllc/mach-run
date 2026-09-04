@@ -1,16 +1,12 @@
 import { getSessionUser } from "@/lib/auth/verify.server";
 import { isOwnerEmail, parseOpsPath, parseOwnerEmails } from "./gate";
 
-function env(key: string): string {
-  return (typeof process !== "undefined" ? process.env[key] ?? "" : "").trim();
-}
-
 export function opsPath(): string {
-  return parseOpsPath(env("MACH_OPS_PATH"));
+  return parseOpsPath(process.env.MACH_OPS_PATH);
 }
 
 export function ownerEmails(): string[] {
-  return parseOwnerEmails(env("MACH_OWNER_EMAILS"));
+  return parseOwnerEmails(process.env.MACH_OWNER_EMAILS);
 }
 
 export function isOpsOwnerEmail(email: string | null | undefined): boolean {
