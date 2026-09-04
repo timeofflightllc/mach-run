@@ -320,9 +320,6 @@ function Account() {
             Account profile
           </p>
           <h1 className="mt-2 font-display text-3xl text-fg">Your MACH Run identity</h1>
-          <p className="mt-2 text-sm text-muted">
-            Name and email for this login only.
-          </p>
         </header>
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
@@ -437,7 +434,7 @@ function Account() {
             and account information at any time, now and in the future.
           </p>
           <p className="text-sm text-subtle">
-            To stop required account email, cancel the account below.
+            To stop required account email, close the account below.
           </p>
         </div>
 
@@ -510,9 +507,10 @@ function Account() {
         <IdleLockSettings userId={user.id} />
 
         <div className="space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
-          <p className="font-display text-lg text-fg">Cancel account</p>
+          <p className="font-display text-lg text-fg">Close account</p>
           <p className="text-sm leading-relaxed text-muted">
-            Permanently delete this login and every MACH RUN saved to it. This
+            This is not canceling a paid plan. Closing the account deletes this
+            login and all saved MACH RUN information from our servers. That
             cannot be undone.
           </p>
           <button
@@ -524,7 +522,7 @@ function Account() {
             }}
             className="inline-flex h-11 w-full items-center justify-center rounded-lg px-4 text-sm font-medium text-negative shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated disabled:opacity-60"
           >
-            Cancel account and delete my information
+            Close account and delete all of my information
           </button>
         </div>
 

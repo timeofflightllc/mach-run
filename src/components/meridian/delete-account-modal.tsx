@@ -42,11 +42,12 @@ export function DeleteAccountModal({
         className="w-full max-w-md rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]"
       >
         <p id="delete-account-title" className="font-display text-lg text-fg">
-          Cancel account
+          Close account
         </p>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          This deletes the login, saved MACH RUN, billing record on file, and
-          email preferences. It cannot be undone.
+          This is not canceling a credit-card plan. This deletes the login,
+          saved MACH RUN, billing record on file, and email preferences from
+          our servers. It cannot be undone.
         </p>
 
         {hasPassword ? (
