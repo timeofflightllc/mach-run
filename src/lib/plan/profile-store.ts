@@ -4,6 +4,8 @@ import { createDefaultPlan, ensurePlan } from "./defaults";
 import { newId } from "./store";
 import type { Plan } from "./types";
 
+export const MACH_PROFILE_REMOVED = "mach-profile-removed";
+
 export type MachProfile = { id: string; name: string; plan: Plan };
 
 export type PlanLibrary = {

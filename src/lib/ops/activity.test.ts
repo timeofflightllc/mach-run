@@ -24,6 +24,7 @@ describe("user activity helpers", () => {
   it("labels calculate and pdf", () => {
     expect(activityLabel("calculate")).toMatch(/MACH Run/);
     expect(activityLabel("pdf")).toMatch(/PDF/);
+    expect(activityLabel("profile_delete")).toMatch(/client profile/);
     expect(
       describeActivity({
         id: "1",

@@ -15,6 +15,7 @@ export const recordOwnActivityFn = createServerFn({ method: "POST" })
       "plan_save",
       "backup_download",
       "backup_import",
+      "profile_delete",
     ];
     if (!allowed.includes(data.action)) return { ok: false as const };
     const { recordUserActivity } = await import("./activity.server");

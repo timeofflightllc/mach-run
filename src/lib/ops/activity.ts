@@ -3,7 +3,8 @@ export type MachActivityAction =
   | "pdf"
   | "plan_save"
   | "backup_download"
-  | "backup_import";
+  | "backup_import"
+  | "profile_delete";
 
 export type MachActivityShape = {
   accounts: number;
@@ -58,6 +59,7 @@ export function activityLabel(action: string): string {
   if (action === "plan_save") return "Saved plan shape";
   if (action === "backup_download") return "Downloaded backup";
   if (action === "backup_import") return "Imported backup";
+  if (action === "profile_delete") return "Deleted a client profile";
   return action;
 }
 
@@ -74,6 +76,10 @@ export function describeActivity(ev: MachActivityEvent): string {
     const profiles = Number(d.profiles);
     if (Number.isFinite(profiles) && profiles > 1) bits.push(`${profiles} profiles`);
     return bits.length ? bits.join(" · ") : "No blocks yet";
+  }
+  if (ev.action === "profile_delete") {
+    const n = Number(d.profiles);
+    return Number.isFinite(n) ? `${n} profiles left` : "";
   }
   return "";
 }

@@ -23,7 +23,7 @@ import { GuestOnly } from "@/lib/auth/gates";
 import { simulate } from "@/lib/plan/engine";
 import { buildPeerBrief, type PeerBrief } from "@/lib/plan/peers";
 import { usePlanStore } from "@/lib/plan/store";
-import { useProfileStore } from "@/lib/plan/profile-store";
+import { MACH_PROFILE_REMOVED, useProfileStore } from "@/lib/plan/profile-store";
 import { useCloudPlan } from "@/lib/plan/use-cloud-plan";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { hasBalanceSheet } from "@/lib/billing/limits";
@@ -171,7 +171,21 @@ function Home() {
       setRunError(null);
     }
     window.addEventListener(MACH_RESET_BASELINE, onReset);
-    return () => window.removeEventListener(MACH_RESET_BASELINE, onReset);
+    function onRemoved(ev: Event) {
+      const id = (ev as CustomEvent<{ id?: string }>).detail?.id;
+      if (!id) return;
+      setRuns((prev) => {
+        if (!(id in prev)) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    }
+    window.addEventListener(MACH_PROFILE_REMOVED, onRemoved);
+    return () => {
+      window.removeEventListener(MACH_RESET_BASELINE, onReset);
+      window.removeEventListener(MACH_PROFILE_REMOVED, onRemoved);
+    };
   }, []);
 
   useEffect(() => {

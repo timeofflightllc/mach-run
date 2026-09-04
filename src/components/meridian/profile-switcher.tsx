@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { BackupPasswordModal } from "@/components/meridian/backup-modal";
+import { ClientControlPanel } from "@/components/meridian/client-control-panel";
 import {
   backupFileName,
   decryptPlanBackup,
   encryptPlanBackup,
   triggerBackupDownload,
 } from "@/lib/plan/backup-file";
-import { useProfileStore } from "@/lib/plan/profile-store";
+import { saveMachPlan } from "@/lib/plan/plan-api";
+import { MACH_PROFILE_REMOVED, useProfileStore } from "@/lib/plan/profile-store";
 import { usePlanStore } from "@/lib/plan/store";
 import type { Entitlement } from "@/lib/billing/limits";
 import { canDownloadBackup, isAdvisorPlan } from "@/lib/billing/limits";
@@ -24,12 +26,15 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
   const profiles = useProfileStore((s) => s.profiles);
   const activeId = useProfileStore((s) => s.activeId);
   const [open, setOpen] = useState(false);
-  const [renameId, setRenameId] = useState<string | null>(null);
-  const [nameDraft, setNameDraft] = useState("");
   const [backupMode, setBackupMode] = useState<"download" | "import" | null>(null);
   const [backupBusy, setBackupBusy] = useState(false);
   const [backupError, setBackupError] = useState<string | null>(null);
   const [pendingImport, setPendingImport] = useState<string | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const [exportId, setExportId] = useState<string | null>(null);
+  const [deleteAfterExport, setDeleteAfterExport] = useState<string | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const root = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -61,17 +66,68 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
     if (atProfileCap(useProfileStore.getState().profiles.length, ent)) return;
     const next = useProfileStore.getState().addProfile(usePlanStore.getState().plan);
     setPlan(next);
+    persistLibrary(next);
     setOpen(false);
   }
 
-  function startExport() {
+  function startExport(id?: string) {
     if (!canDownloadBackup(ent.plan)) {
+      setDeleteAfterExport(null);
       void navigate({ to: "/pricing" });
       return;
     }
     setBackupError(null);
+    setExportId(id ?? useProfileStore.getState().activeId);
     setBackupMode("download");
     setOpen(false);
+  }
+
+  function persistLibrary(plan = usePlanStore.getState().plan) {
+    void saveMachPlan({ data: useProfileStore.getState().asLibrary(plan) }).catch(() => {
+      /* local store already updated */
+    });
+  }
+
+  async function commitDelete(id: string) {
+    const store = useProfileStore.getState();
+    const snapshot = {
+      profiles: store.profiles.map((p) => ({ ...p })),
+      activeId: store.activeId,
+    };
+    const currentPlan = usePlanStore.getState().plan;
+    const next = store.remove(id, currentPlan);
+    if (!next) return;
+    setPlan(next);
+    setDeleteBusy(true);
+    setDeleteError(null);
+    try {
+      const saved = await saveMachPlan({
+        data: useProfileStore.getState().asLibrary(next),
+      });
+      if (!saved || saved.ok !== true) throw new Error("save failed");
+      window.dispatchEvent(new CustomEvent(MACH_PROFILE_REMOVED, { detail: { id } }));
+      const left = useProfileStore.getState().profiles.length;
+      void import("@/lib/ops/activity-api").then(({ pingActivity }) => {
+        pingActivity("profile_delete", { profiles: left });
+      });
+      if (left <= 1) setPanelOpen(false);
+    } catch {
+      useProfileStore.setState(snapshot);
+      const restored = snapshot.profiles.find((p) => p.id === snapshot.activeId);
+      if (restored) setPlan(restored.plan);
+      setDeleteError("Could not save the library. That client is still here.");
+    } finally {
+      setDeleteBusy(false);
+    }
+  }
+
+  function onDeleteClient(id: string, opts?: { backupFirst?: boolean }) {
+    if (opts?.backupFirst) {
+      setDeleteAfterExport(id);
+      startExport(id);
+      return;
+    }
+    void commitDelete(id);
   }
 
   function startImportPicker() {
@@ -89,12 +145,21 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
       if (backupMode === "download") {
         const live = usePlanStore.getState().plan;
         useProfileStore.getState().snapshotCurrent(live);
-        const text = await encryptPlanBackup(label, live, password);
-        triggerBackupDownload(backupFileName(label), text);
+        const targetId = exportId ?? useProfileStore.getState().activeId;
+        const target =
+          useProfileStore.getState().profiles.find((p) => p.id === targetId) ??
+          useProfileStore.getState().profiles.find((p) => p.id === useProfileStore.getState().activeId);
+        const name = target?.name ?? label;
+        const plan = target && target.id !== useProfileStore.getState().activeId ? target.plan : live;
+        const text = await encryptPlanBackup(name, plan, password);
+        triggerBackupDownload(backupFileName(name), text);
         void import("@/lib/ops/activity-api").then(({ pingActivity }) => {
           pingActivity("backup_download");
         });
         setBackupMode(null);
+        const pendingDelete = deleteAfterExport;
+        setDeleteAfterExport(null);
+        if (pendingDelete) void commitDelete(pendingDelete);
       } else if (backupMode === "import" && pendingImport) {
         if (atProfileCap(useProfileStore.getState().profiles.length, ent)) return;
         const parsed = await decryptPlanBackup(pendingImport, password);
@@ -102,6 +167,7 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
           .getState()
           .importProfile(parsed.name, parsed.plan, usePlanStore.getState().plan);
         setPlan(next);
+        persistLibrary(next);
         void import("@/lib/ops/activity-api").then(({ pingActivity }) => {
           pingActivity("backup_import");
         });
@@ -134,94 +200,67 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
             MACH RUN profiles
           </p>
           {profiles.map((p) => (
-            <div key={p.id} className="flex items-center gap-1 px-1">
-              {renameId === p.id ? (
-                <input
-                  autoFocus
-                  value={nameDraft}
-                  onChange={(e) => setNameDraft(e.target.value)}
-                  onBlur={() => {
-                    useProfileStore.getState().rename(p.id, nameDraft);
-                    setRenameId(null);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      useProfileStore.getState().rename(p.id, nameDraft);
-                      setRenameId(null);
-                    }
-                  }}
-                  className="m-1 h-9 w-full rounded bg-bg px-2 text-sm text-fg"
-                />
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => onSwitch(p.id)}
-                  className={`flex-1 truncate px-2 py-2 text-left text-sm ${
-                    p.id === activeId ? "text-fg" : "text-muted hover:text-fg"
-                  }`}
-                >
-                  {p.name}
-                </button>
-              )}
-              <button
-                type="button"
-                className="px-1 text-xs text-subtle hover:text-fg"
-                onClick={() => {
-                  setRenameId(p.id);
-                  setNameDraft(p.name);
-                }}
-              >
-                Rename
-              </button>
-            </div>
+            <button
+              key={p.id}
+              type="button"
+              onClick={() => onSwitch(p.id)}
+              className={`block w-full truncate px-3 py-2 text-left text-sm ${
+                p.id === activeId ? "text-fg" : "text-muted hover:text-fg"
+              }`}
+            >
+              {p.name}
+            </button>
           ))}
           <div className="my-1 h-px bg-border" />
-          {capped ? (
-            <p className="px-3 py-2 text-xs leading-snug text-[#e8c547]">
-              Advisor Lite is 5 profiles. Upgrade to Advisor Unlimited for more.
-            </p>
-          ) : null}
           <button
             type="button"
-            onClick={onAdd}
-            disabled={capped}
-            className="block w-full px-3 py-2 text-left text-sm text-fg hover:bg-surface disabled:cursor-not-allowed disabled:text-subtle"
-          >
-            New profile
-          </button>
-          <button
-            type="button"
-            onClick={startExport}
-            className="block w-full px-3 py-2 text-left text-sm text-muted hover:bg-surface hover:text-fg"
-          >
-            Export MACH RUN file
-          </button>
-          <button
-            type="button"
-            onClick={startImportPicker}
-            disabled={capped}
-            className="block w-full px-3 py-2 text-left text-sm text-muted hover:bg-surface hover:text-fg disabled:cursor-not-allowed disabled:text-subtle"
-          >
-            Import MACH RUN file
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept=".machrun,application/octet-stream"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              e.target.value = "";
-              if (!f) return;
-              void f.text().then((text) => {
-                setPendingImport(text);
-                setBackupError(null);
-                setBackupMode("import");
-                setOpen(false);
-              });
+            onClick={() => {
+              setOpen(false);
+              setPanelOpen(true);
             }}
-          />
+            className="block w-full px-3 py-2 text-left text-sm text-fg hover:bg-surface"
+          >
+            Client Control Panel
+          </button>
         </div>
+      ) : null}
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept=".machrun,application/octet-stream"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f) return;
+          void f.text().then((text) => {
+            setPendingImport(text);
+            setBackupError(null);
+            setBackupMode("import");
+            setOpen(false);
+          });
+        }}
+      />
+
+      {panelOpen ? (
+        <ClientControlPanel
+          profiles={profiles}
+          activeId={activeId}
+          cap={ent.profileLimit}
+          capped={capped}
+          onClose={() => setPanelOpen(false)}
+          onRename={(id, name) => {
+            useProfileStore.getState().rename(id, name);
+            persistLibrary();
+          }}
+          onExport={(id) => startExport(id)}
+          onDelete={onDeleteClient}
+          onAdd={onAdd}
+          onImport={startImportPicker}
+          deleteBusy={deleteBusy}
+          deleteError={deleteError}
+        />
       ) : null}
 
       {backupMode ? (
@@ -234,6 +273,7 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
             setBackupMode(null);
             setPendingImport(null);
             setBackupError(null);
+            setDeleteAfterExport(null);
           }}
           onConfirm={(password) => void onBackupConfirm(password)}
         />
