@@ -11,6 +11,7 @@ type StripeClient = {
   subscriptions: {
     retrieve: (id: string) => Promise<StripeSubscription>;
     update: (id: string, args: Record<string, unknown>) => Promise<StripeSubscription>;
+    cancel: (id: string) => Promise<StripeSubscription>;
   };
 };
 

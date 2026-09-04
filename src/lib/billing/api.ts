@@ -106,7 +106,7 @@ function advisorUnlimitedStripeReady(): boolean {
   }
 }
 
-function intervalFromPrice(priceId: string | null | undefined, paid: boolean): "month" | "year" | null {
+export function intervalFromPrice(priceId: string | null | undefined, paid: boolean): "month" | "year" | null {
   if (!paid) return null;
   try {
     if (
@@ -131,7 +131,7 @@ function intervalFromPrice(priceId: string | null | undefined, paid: boolean): "
   return "month";
 }
 
-function packageFromPrice(priceId: string | null | undefined, paid: boolean): MachPackage {
+export function packageFromPrice(priceId: string | null | undefined, paid: boolean): MachPackage {
   if (!paid) return "free";
   try {
     if (
