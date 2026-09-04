@@ -18,6 +18,7 @@ import {
   type MachPackage,
 } from "./limits";
 import { ensurePlan } from "@/lib/plan/defaults";
+import { openPlanPayload } from "@/lib/plan/plan-at-rest";
 import type { Plan } from "@/lib/plan/types";
 
 type SubRow = {
@@ -379,12 +380,7 @@ export async function clampPlanForUser(userId: string, plan: Plan): Promise<Plan
       select plan_json from mach_plans where user_id = ${userId} limit 1
     `;
     const raw = saved[0]?.plan_json;
-    const parsed =
-      raw == null
-        ? null
-        : typeof raw === "string"
-          ? (JSON.parse(raw) as Plan)
-          : (raw as Plan);
+    const parsed = openPlanPayload(raw) as Plan | null;
     existingPorts = Array.isArray(parsed?.portfolios) ? parsed.portfolios.length : 0;
     existingRules = Array.isArray(parsed?.contributions)
       ? parsed.contributions.length

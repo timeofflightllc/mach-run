@@ -15,7 +15,7 @@ function Privacy() {
             machrun.com
           </p>
           <h1 className="mt-2 font-display text-4xl text-fg">Privacy policy</h1>
-          <p className="mt-2 text-sm text-muted">Last updated: August 27, 2026</p>
+          <p className="mt-2 text-sm text-muted">Last updated: September 3, 2026</p>
         </header>
 
         <div className="space-y-6 text-sm leading-relaxed text-muted">
@@ -83,7 +83,9 @@ function Privacy() {
             <h2 className="font-medium text-fg">Who sees the numbers</h2>
             <p>
               Your MACH Run is tied to your login. Other MACH RUN users cannot see
-              it. Site operators can access stored plans only as needed to
+              it. Saved plans are encrypted at rest in our database. That protects
+              a stolen disk or backup file. It does not mean MACHRUN.COM operators
+              are blind — we hold the server key, so we can open a plan if we must
               operate, secure, or repair the service.
             </p>
           </section>
@@ -111,6 +113,8 @@ function Privacy() {
             <h2 className="font-medium text-fg">Security</h2>
             <p>
               Passwords are hashed. Traffic is encrypted in transit (HTTPS).
+              Saved MACH Runs are encrypted at rest. Optional .machrun backup
+              files use a password only you know — we do not keep that password.
               No method is perfect. Do not reuse a bank password here. MACH
               Run is a planning tool, not a bank, broker, or custodian.
             </p>

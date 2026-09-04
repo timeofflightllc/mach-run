@@ -3,6 +3,7 @@ import { authMiddleware } from "@/lib/auth/middleware";
 import { getSql } from "@/lib/db";
 import { clampPlanForUser } from "@/lib/billing/api";
 import { ensurePlan } from "./defaults";
+import { openPlanPayload, sealPlanPayload } from "./plan-at-rest";
 import type { Plan } from "./types";
 import type { PlanLibrary } from "./profile-store";
 
@@ -31,7 +32,7 @@ export const loadMachPlan = createServerFn({ method: "GET" })
       `;
       const raw = rows[0]?.plan_json;
       if (raw == null) return null;
-      const parsed = typeof raw === "string" ? (JSON.parse(raw) as unknown) : raw;
+      const parsed = openPlanPayload(raw);
       if (isLibrary(parsed)) {
         const active =
           parsed.profiles.find((p) => p.id === parsed.activeId)?.plan ??
@@ -60,13 +61,14 @@ export const saveMachPlan = createServerFn({ method: "POST" })
             ),
           }
         : await clampPlanForUser(context.userId, data);
+      const stored = sealPlanPayload(payload);
       const sql = await getSql();
       await sql.query(
         `insert into mach_plans (user_id, plan_json, updated_at)
          values ($1, $2::jsonb, now())
          on conflict (user_id) do update
            set plan_json = excluded.plan_json, updated_at = now()`,
-        [context.userId, JSON.stringify(payload)],
+        [context.userId, JSON.stringify(stored)],
       );
       return { ok: true as const };
     } catch {

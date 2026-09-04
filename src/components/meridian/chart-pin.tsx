@@ -14,9 +14,11 @@ function headerOffset(): number {
 export function PinToggle({
   pinned,
   onToggle,
+  tone = "dark",
 }: {
   pinned: boolean;
   onToggle: () => void;
+  tone?: "dark" | "light";
 }) {
   return (
     <button
@@ -27,7 +29,9 @@ export function PinToggle({
         "inline-flex h-8 shrink-0 items-center gap-1 rounded-md px-2 text-xs font-medium",
         pinned
           ? "bg-accent text-accent-fg"
-          : "text-muted hover:bg-elevated hover:text-fg",
+          : tone === "light"
+            ? "bg-slate-100 text-slate-800 shadow-[0_0_0_1px_#94a3b8] hover:bg-slate-200"
+            : "text-muted hover:bg-elevated hover:text-fg",
       )}
     >
       <Pin className={cn("size-3.5", pinned && "fill-current")} />

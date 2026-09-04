@@ -41,7 +41,7 @@ export function DeleteAccountModal({
     >
       <form
         onSubmit={submit}
-        className="w-full max-w-md rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]"
+        className="w-full max-w-lg rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]"
       >
         <p id="delete-account-title" className="font-display text-lg text-fg">
           Close account
@@ -51,11 +51,10 @@ export function DeleteAccountModal({
           <button
             type="button"
             onClick={onManageBilling}
-            className="underline underline-offset-4 hover:text-fg"
+            className="whitespace-nowrap underline underline-offset-4 hover:text-fg"
           >
-            click here
-          </button>
-          .{" "}
+            click here.
+          </button>{" "}
           {hasPassword
             ? "Type your password below and select Yes, delete ALL of my information. This cannot be undone."
             : "Confirm below and select Yes, delete ALL of my information. This cannot be undone."}{" "}

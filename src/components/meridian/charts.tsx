@@ -17,12 +17,17 @@ import type { MonthSnapshot, Plan, SimResult, YearSnapshot } from "@/lib/plan/ty
 import { cn } from "@/lib/utils";
 
 const tooltipStyle = {
-  background: "var(--color-elevated)",
-  border: "1px solid var(--color-border)",
+  background: "#ffffff",
+  border: "1px solid #c8d2de",
   borderRadius: 8,
   fontSize: 12,
-  color: "var(--color-fg)",
+  color: "#1a2330",
 };
+
+const chartCard =
+  "rounded-xl bg-white p-4 text-slate-800 shadow-[0_0_0_1px_#c8d2de] sm:p-5";
+const tickFill = "#4b5b6e";
+const gridStroke = "#d5dde6";
 
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -151,7 +156,7 @@ function ChartSpanBar({
 }) {
   return (
     <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
-      <div className="inline-flex rounded-md bg-elevated p-0.5 shadow-[0_0_0_1px_var(--color-border)]">
+      <div className="inline-flex rounded-md bg-slate-100 p-0.5 shadow-[0_0_0_1px_#c8d2de]">
         {spanOptions(endAge).map((o) => (
           <button
             key={String(o.id)}
@@ -160,14 +165,14 @@ function ChartSpanBar({
             onClick={() => onChange(o.id)}
             className={cn(
               "h-7 rounded px-2 text-[11px] font-medium leading-none",
-              span === o.id ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
+              span === o.id ? "bg-accent text-accent-fg" : "text-slate-600 hover:text-slate-900",
             )}
           >
             {o.label}
           </button>
         ))}
       </div>
-      {onPin ? <PinToggle pinned={Boolean(pinned)} onToggle={onPin} /> : null}
+      {onPin ? <PinToggle pinned={Boolean(pinned)} onToggle={onPin} tone="light" /> : null}
     </div>
   );
 }
@@ -359,9 +364,9 @@ export function WealthChart({
   const x = axisProps(span);
 
   return (
-    <div className="rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)] sm:p-5">
-      <h2 className="font-display text-lg font-medium text-fg">Spendable wealth</h2>
-      <p className="mb-4 mt-1 text-xs text-subtle">
+    <div className={chartCard}>
+      <h2 className="font-display text-lg font-medium text-slate-900">Spendable wealth</h2>
+      <p className="mb-4 mt-1 text-xs text-slate-600">
         {real ? "Inflation-adjusted (today's dollars)" : "Future dollars"} ·
         Roth / taxable / TSP marked spendable. Houses and 529s sit in net worth
         only.
@@ -376,13 +381,13 @@ export function WealthChart({
       <div className="h-64 sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
-            <CartesianGrid stroke="var(--color-border)" vertical={false} />
+            <CartesianGrid stroke={gridStroke} vertical={false} />
             <XAxis
               dataKey="t"
               tickFormatter={(t) => formatAxisTick(t, span)}
-              tick={{ fill: "var(--color-muted)", fontSize: 11 }}
+              tick={{ fill: tickFill, fontSize: 11 }}
               tickLine={false}
-              axisLine={{ stroke: "var(--color-border)" }}
+              axisLine={{ stroke: gridStroke }}
               interval={x.interval}
               minTickGap={x.minTickGap}
               angle={x.angle}
@@ -391,7 +396,7 @@ export function WealthChart({
             />
             <YAxis
               tickFormatter={(v) => usdCompact(v)}
-              tick={{ fill: "var(--color-muted)", fontSize: 11 }}
+              tick={{ fill: tickFill, fontSize: 11 }}
               tickLine={false}
               axisLine={false}
               width={56}
@@ -400,10 +405,10 @@ export function WealthChart({
               formatter={formatTip}
               labelFormatter={(t) => formatAxisTick(t as string | number, span)}
               contentStyle={tooltipStyle}
-              labelStyle={{ color: "var(--color-fg)" }}
-              itemStyle={{ color: "var(--color-muted)" }}
+              labelStyle={{ color: "#1a2330" }}
+              itemStyle={{ color: "#4b5b6e" }}
             />
-            <Legend wrapperStyle={{ fontSize: 12, color: "var(--color-muted)" }} />
+            <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
             <Area
               type="monotone"
               dataKey="spendable"
@@ -418,7 +423,7 @@ export function WealthChart({
               type="monotone"
               dataKey="netWorth"
               name="Net worth"
-              stroke="var(--color-muted)"
+              stroke="#4b5b6e"
               strokeWidth={1.5}
               dot={false}
               strokeDasharray="4 4"
@@ -448,9 +453,9 @@ export function CashChart({
   const x = axisProps(span);
 
   return (
-    <div className="rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)] sm:p-5">
-      <h2 className="font-display text-lg font-medium text-fg">Annual cash flow</h2>
-      <p className="mb-4 mt-1 text-xs text-subtle">
+    <div className={chartCard}>
+      <h2 className="font-display text-lg font-medium text-slate-900">Annual cash flow</h2>
+      <p className="mb-4 mt-1 text-xs text-slate-600">
         Gross income vs spending vs planned contributions. Guaranteed (gold
         line) is pension, other retirement income, military retired pay, VA, and
         Social Security. Salary, bonus, allowance, and other income are earned —
@@ -469,13 +474,13 @@ export function CashChart({
       <div className="h-64 sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
-            <CartesianGrid stroke="var(--color-border)" vertical={false} />
+            <CartesianGrid stroke={gridStroke} vertical={false} />
             <XAxis
               dataKey="t"
               tickFormatter={(t) => formatAxisTick(t, span)}
-              tick={{ fill: "var(--color-muted)", fontSize: 11 }}
+              tick={{ fill: tickFill, fontSize: 11 }}
               tickLine={false}
-              axisLine={{ stroke: "var(--color-border)" }}
+              axisLine={{ stroke: gridStroke }}
               interval={x.interval}
               minTickGap={x.minTickGap}
               angle={x.angle}
@@ -484,7 +489,7 @@ export function CashChart({
             />
             <YAxis
               tickFormatter={(v) => usdCompact(v)}
-              tick={{ fill: "var(--color-muted)", fontSize: 11 }}
+              tick={{ fill: tickFill, fontSize: 11 }}
               tickLine={false}
               axisLine={false}
               width={56}
@@ -493,10 +498,10 @@ export function CashChart({
               formatter={formatTip}
               labelFormatter={(t) => formatAxisTick(t as string | number, span)}
               contentStyle={tooltipStyle}
-              labelStyle={{ color: "var(--color-fg)" }}
-              itemStyle={{ color: "var(--color-muted)" }}
+              labelStyle={{ color: "#1a2330" }}
+              itemStyle={{ color: "#4b5b6e" }}
             />
-            <Legend wrapperStyle={{ fontSize: 12, color: "var(--color-muted)" }} />
+            <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
             <Area
               type="monotone"
               dataKey="income"
@@ -520,7 +525,7 @@ export function CashChart({
               type="monotone"
               dataKey="contributions"
               name="Contributions"
-              stroke="var(--color-fg)"
+              stroke="#1a2330"
               strokeWidth={1.5}
               dot={false}
               isAnimationActive={false}
@@ -562,10 +567,10 @@ export function NetWorthChart({
   const x = axisProps(span);
 
   return (
-    <div className="relative rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)] sm:p-5">
+    <div className={cn("relative", chartCard)}>
       <div className={cn(locked && "pointer-events-none select-none opacity-60")}>
-        <h2 className="font-display text-lg font-medium text-fg">Net worth</h2>
-        <p className="mb-4 mt-1 text-xs text-subtle">
+        <h2 className="font-display text-lg font-medium text-slate-900">Net worth</h2>
+        <p className="mb-4 mt-1 text-xs text-slate-600">
           {locked
             ? "Sample only — 1969 dollars, made-up balances. Your numbers unlock on Individual Unlimited."
             : `${real ? "Inflation-adjusted (today's dollars)" : "Future dollars"} · Assets minus remaining loans.${!hasDebt ? " No loan on this MACH Run, so assets and net worth overlap." : ""}`}
@@ -584,7 +589,7 @@ export function NetWorthChart({
               <XAxis
                 dataKey="t"
                 tickFormatter={(t) => formatAxisTick(t, span)}
-                tick={{ fill: "var(--color-muted)", fontSize: 11 }}
+                tick={{ fill: tickFill, fontSize: 11 }}
                 tickLine={false}
                 axisLine={{ stroke: "var(--color-border)" }}
                 interval={x.interval}
@@ -595,7 +600,7 @@ export function NetWorthChart({
               />
               <YAxis
                 tickFormatter={(v) => usdCompact(v)}
-                tick={{ fill: "var(--color-muted)", fontSize: 11 }}
+                tick={{ fill: tickFill, fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
                 width={56}
@@ -604,10 +609,10 @@ export function NetWorthChart({
                 formatter={formatTip}
                 labelFormatter={(t) => formatAxisTick(t as string | number, span)}
                 contentStyle={tooltipStyle}
-                labelStyle={{ color: "var(--color-fg)" }}
-                itemStyle={{ color: "var(--color-muted)" }}
+                labelStyle={{ color: "#1a2330" }}
+                itemStyle={{ color: "#4b5b6e" }}
               />
-              <Legend wrapperStyle={{ fontSize: 12, color: "var(--color-muted)" }} />
+              <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
               <Area
                 type="monotone"
                 dataKey="assets"
