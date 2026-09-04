@@ -71,7 +71,7 @@ export async function sessionIsFresh(userId: string): Promise<boolean> {
   return Date.now() - stamp <= DELETE_REAUTH_MS;
 }
 
-async function wipeUserRows(userId: string): Promise<void> {
+export async function wipeUserRows(userId: string): Promise<void> {
   const sql = await getSql();
   const users = await sql.query<{ email: string }>(
     `select email from "user" where id = $1 limit 1`,

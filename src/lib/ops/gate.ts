@@ -19,3 +19,12 @@ export function isOwnerEmail(
   if (!email || owners.length === 0) return false;
   return owners.includes(email.trim().toLowerCase());
 }
+
+export function emailsMatch(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): boolean {
+  const left = (a ?? "").trim().toLowerCase();
+  const right = (b ?? "").trim().toLowerCase();
+  return Boolean(left) && left === right;
+}

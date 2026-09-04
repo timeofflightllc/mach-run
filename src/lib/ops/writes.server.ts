@@ -1,3 +1,4 @@
+import { wipeUserRows } from "@/lib/auth/delete-account.server";
 import { getSql } from "@/lib/db";
 import { packageLabel, paidFromStatus, type CheckoutPackage, type MachPackage } from "@/lib/billing/limits";
 import {
@@ -8,7 +9,9 @@ import {
 } from "@/lib/billing/stripe.server";
 import { ensureSubscriptionsTable } from "@/lib/billing/schema.server";
 import { recordAdminEvent } from "./audit.server";
+import { emailsMatch, isOwnerEmail } from "./gate";
 import type { OpsActor } from "./gate.server";
+import { ownerEmails } from "./gate.server";
 
 export type OpsWriteResult = { ok: true; message: string } | { ok: false; error: string };
 
@@ -23,6 +26,32 @@ async function emailFor(userId: string): Promise<string | null> {
   } catch {
     return null;
   }
+}
+
+async function idForEmail(email: string): Promise<string | null> {
+  const needle = email.trim().toLowerCase();
+  if (!needle) return null;
+  try {
+    const sql = await getSql();
+    const rows = await sql.query<{ id: string }>(
+      `select id from "user" where lower(email) = $1 limit 1`,
+      [needle],
+    );
+    return rows[0]?.id ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function resolveTarget(
+  userId: string,
+  email?: string,
+): Promise<{ id: string; email: string | null } | null> {
+  const id = userId.trim() || (email ? await idForEmail(email) : null);
+  if (!id) return null;
+  const stored = await emailFor(id);
+  if (stored == null && !(await userExists(id))) return null;
+  return { id, email: stored };
 }
 
 function addMonths(from: Date, months: number): Date {
@@ -61,17 +90,20 @@ export async function setOpsPackage(
   actor: OpsActor,
   input: {
     userId: string;
+    email?: string;
     plan: MachPackage;
     interval: "month" | "year";
     cancelNow?: boolean;
     note?: string;
   },
 ): Promise<OpsWriteResult> {
-  const targetEmail = await emailFor(input.userId);
-  if (targetEmail == null && !(await userExists(input.userId))) {
-    return { ok: false, error: "No person with that id." };
+  const target = await resolveTarget(input.userId, input.email);
+  if (!target) {
+    return { ok: false, error: "No person with that id or email." };
   }
-  const row = await loadSubscription(input.userId);
+  const userId = target.id;
+  const targetEmail = target.email;
+  const row = await loadSubscription(userId);
   const liveStripe = Boolean(row?.stripe_subscription_id && paidFromStatus(row.status));
 
   if (input.plan === "free") {
@@ -80,7 +112,7 @@ export async function setOpsPackage(
       if (input.cancelNow) {
         await stripe.subscriptions.cancel(row.stripe_subscription_id);
         await upsertSubscription({
-          userId: input.userId,
+          userId,
           customerId: row.stripe_customer_id,
           subscriptionId: row.stripe_subscription_id,
           status: "canceled",
@@ -95,7 +127,7 @@ export async function setOpsPackage(
     } else {
       await ensureSubscriptionsTable();
       await upsertSubscription({
-        userId: input.userId,
+        userId,
         customerId: row?.stripe_customer_id ?? null,
         subscriptionId: row?.stripe_subscription_id ?? null,
         status: "canceled",
@@ -105,7 +137,7 @@ export async function setOpsPackage(
     }
     await log(
       actor,
-      input.userId,
+      userId,
       "set_package",
       { plan: "free", cancelNow: Boolean(input.cancelNow), hadStripe: liveStripe },
       input.note,
@@ -113,8 +145,8 @@ export async function setOpsPackage(
     return {
       ok: true,
       message: input.cancelNow
-        ? `Set ${targetEmail ?? input.userId} to Free (ended now).`
-        : `Set ${targetEmail ?? input.userId} to Free at period end.`,
+        ? `Set ${targetEmail ?? userId} to Free (ended now).`
+        : `Set ${targetEmail ?? userId} to Free at period end.`,
     };
   }
 
@@ -136,27 +168,27 @@ export async function setOpsPackage(
       proration_behavior: "create_prorations",
       metadata: {
         ...(sub.metadata ?? {}),
-        userId: input.userId,
+        userId,
         package: pkg,
       },
     });
     await log(
       actor,
-      input.userId,
+      userId,
       "set_package",
       { plan: pkg, interval: input.interval, via: "stripe", priceId },
       input.note,
     );
     return {
       ok: true,
-      message: `Asked Stripe to move ${targetEmail ?? input.userId} to ${packageLabel(pkg)} (${input.interval}). Webhook will refresh the seat.`,
+      message: `Asked Stripe to move ${targetEmail ?? userId} to ${packageLabel(pkg)} (${input.interval}). Webhook will refresh the seat.`,
     };
   }
 
   const periodEnd = addMonths(new Date(), input.interval === "year" ? 12 : 1);
   await ensureSubscriptionsTable();
   await upsertSubscription({
-    userId: input.userId,
+    userId,
     customerId: row?.stripe_customer_id ?? null,
     subscriptionId: null,
     status: "active",
@@ -165,14 +197,14 @@ export async function setOpsPackage(
   });
   await log(
     actor,
-    input.userId,
+    userId,
     "set_package",
     { plan: pkg, interval: input.interval, via: "comp", priceId, periodEnd: periodEnd.toISOString() },
     input.note,
   );
   return {
     ok: true,
-    message: `Comp ${packageLabel(pkg)} on ${targetEmail ?? input.userId} through ${periodEnd.toISOString().slice(0, 10)}.`,
+    message: `Comp ${packageLabel(pkg)} on ${targetEmail ?? userId} through ${periodEnd.toISOString().slice(0, 10)}.`,
   };
 }
 
@@ -180,6 +212,7 @@ export async function compOpsTime(
   actor: OpsActor,
   input: {
     userId: string;
+    email?: string;
     mode: "month" | "year" | "custom";
     customEnd?: string;
     note: string;
@@ -187,8 +220,11 @@ export async function compOpsTime(
 ): Promise<OpsWriteResult> {
   const note = input.note.trim();
   if (!note) return { ok: false, error: "Comp time needs a short note." };
-  const row = await loadSubscription(input.userId);
-  const targetEmail = await emailFor(input.userId);
+  const target = await resolveTarget(input.userId, input.email);
+  if (!target) return { ok: false, error: "No person with that id or email." };
+  const userId = target.id;
+  const targetEmail = target.email;
+  const row = await loadSubscription(userId);
   const now = new Date();
   const currentEnd =
     row?.current_period_end == null
@@ -209,7 +245,7 @@ export async function compOpsTime(
   }
   await ensureSubscriptionsTable();
   await upsertSubscription({
-    userId: input.userId,
+    userId,
     customerId: row?.stripe_customer_id ?? null,
     subscriptionId: row?.stripe_subscription_id ?? null,
     status: paidFromStatus(row?.status) ? row?.status ?? "active" : "active",
@@ -218,41 +254,44 @@ export async function compOpsTime(
   });
   await log(
     actor,
-    input.userId,
+    userId,
     "comp_time",
     { mode: input.mode, periodEnd: periodEnd.toISOString() },
     note,
   );
   return {
     ok: true,
-    message: `Extended ${targetEmail ?? input.userId} through ${periodEnd.toISOString().slice(0, 10)}.`,
+    message: `Extended ${targetEmail ?? userId} through ${periodEnd.toISOString().slice(0, 10)}.`,
   };
 }
 
 export async function cancelOpsSubscription(
   actor: OpsActor,
-  input: { userId: string; when: "now" | "period_end"; note?: string },
+  input: { userId: string; email?: string; when: "now" | "period_end"; note?: string },
 ): Promise<OpsWriteResult> {
-  const row = await loadSubscription(input.userId);
-  const targetEmail = await emailFor(input.userId);
+  const target = await resolveTarget(input.userId, input.email);
+  if (!target) return { ok: false, error: "No person with that id or email." };
+  const userId = target.id;
+  const targetEmail = target.email;
+  const row = await loadSubscription(userId);
   if (!row?.stripe_subscription_id) {
     await ensureSubscriptionsTable();
     await upsertSubscription({
-      userId: input.userId,
+      userId,
       customerId: row?.stripe_customer_id ?? null,
       subscriptionId: null,
       status: "canceled",
       priceId: row?.price_id ?? null,
       periodEnd: new Date(),
     });
-    await log(actor, input.userId, "cancel", { when: input.when, via: "neon" }, input.note);
-    return { ok: true, message: `Cleared the seat for ${targetEmail ?? input.userId}. Login stays.` };
+    await log(actor, userId, "cancel", { when: input.when, via: "neon" }, input.note);
+    return { ok: true, message: `Cleared the seat for ${targetEmail ?? userId}. Login stays.` };
   }
   const stripe = await getStripe();
   if (input.when === "now") {
     await stripe.subscriptions.cancel(row.stripe_subscription_id);
     await upsertSubscription({
-      userId: input.userId,
+      userId,
       customerId: row.stripe_customer_id,
       subscriptionId: row.stripe_subscription_id,
       status: "canceled",
@@ -266,7 +305,7 @@ export async function cancelOpsSubscription(
   }
   await log(
     actor,
-    input.userId,
+    userId,
     "cancel",
     { when: input.when, via: "stripe", subscriptionId: row.stripe_subscription_id },
     input.note,
@@ -275,8 +314,48 @@ export async function cancelOpsSubscription(
     ok: true,
     message:
       input.when === "now"
-        ? `Canceled Stripe for ${targetEmail ?? input.userId} now. Login stays.`
-        : `Stripe will end at period end for ${targetEmail ?? input.userId}. Login stays.`,
+        ? `Canceled Stripe for ${targetEmail ?? userId} now. Login stays.`
+        : `Stripe will end at period end for ${targetEmail ?? userId}. Login stays.`,
+  };
+}
+
+export async function deleteOpsAccount(
+  actor: OpsActor,
+  input: { userId: string; email?: string; confirmEmail: string; note?: string },
+): Promise<OpsWriteResult> {
+  const target = await resolveTarget(input.userId, input.email);
+  if (!target?.email) {
+    return { ok: false, error: "No email on that account. Cannot confirm delete." };
+  }
+  const userId = target.id;
+  const targetEmail = target.email;
+  if (!emailsMatch(input.confirmEmail, targetEmail)) {
+    return { ok: false, error: "Typed email does not match that account." };
+  }
+  if (emailsMatch(actor.email, targetEmail) || actor.id === userId) {
+    return { ok: false, error: "You cannot delete your own desk login." };
+  }
+  if (isOwnerEmail(targetEmail, ownerEmails())) {
+    return { ok: false, error: "That email is on MACH_OWNER_EMAILS. Remove it from Vercel first." };
+  }
+  await log(
+    actor,
+    userId,
+    "delete_account",
+    { confirmEmail: targetEmail },
+    input.note,
+  );
+  try {
+    await wipeUserRows(userId);
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Delete failed after it was logged.",
+    };
+  }
+  return {
+    ok: true,
+    message: `Deleted ${targetEmail}. Login, plans, and Stripe seat are gone.`,
   };
 }
 

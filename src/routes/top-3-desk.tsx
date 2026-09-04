@@ -5,6 +5,7 @@ import { Field, SelectInput, TextInput } from "@/components/ui/field";
 import {
   cancelOpsSubscriptionFn,
   compOpsTimeFn,
+  deleteOpsAccountFn,
   listOpsEventsFn,
   listOpsRoster,
   probeOpsDoor,
@@ -280,7 +281,14 @@ function Top3DeskDoor() {
         </div>
 
         {selected ? (
-          <PersonPane row={selected} onDone={() => setTick((n) => n + 1)} />
+          <PersonPane
+            row={selected}
+            onDone={() => setTick((n) => n + 1)}
+            onDeleted={() => {
+              setOpenId(null);
+              setTick((n) => n + 1);
+            }}
+          />
         ) : null}
 
         <section className="rounded-xl bg-surface p-4 text-sm shadow-[0_0_0_1px_var(--color-border)]">
@@ -317,7 +325,15 @@ function CountTile({ label, value }: { label: string; value: number }) {
   );
 }
 
-function PersonPane({ row, onDone }: { row: OpsRosterRow; onDone: () => void }) {
+function PersonPane({
+  row,
+  onDone,
+  onDeleted,
+}: {
+  row: OpsRosterRow;
+  onDone: () => void;
+  onDeleted: () => void;
+}) {
   const who = row.email ?? row.id;
   const [pkg, setPkg] = useState<MachPackage>(row.plan);
   const [interval, setInterval] = useState<"month" | "year">(row.interval ?? "year");
@@ -328,7 +344,9 @@ function PersonPane({ row, onDone }: { row: OpsRosterRow; onDone: () => void }) 
   const [compNote, setCompNote] = useState("");
   const [cancelWhen, setCancelWhen] = useState<"period_end" | "now">("period_end");
   const [cancelNote, setCancelNote] = useState("");
-  const [busy, setBusy] = useState<"pkg" | "comp" | "cancel" | null>(null);
+  const [deleteEmail, setDeleteEmail] = useState("");
+  const [deleteNote, setDeleteNote] = useState("");
+  const [busy, setBusy] = useState<"pkg" | "comp" | "cancel" | "delete" | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [personLog, setPersonLog] = useState<OpsAdminEvent[]>([]);
@@ -348,9 +366,10 @@ function PersonPane({ row, onDone }: { row: OpsRosterRow; onDone: () => void }) 
   }, [row.id, row.periodEnd, row.status, row.plan]);
 
   async function run(
-    kind: "pkg" | "comp" | "cancel",
+    kind: "pkg" | "comp" | "cancel" | "delete",
     confirmText: string,
     work: () => Promise<{ ok: boolean; message?: string; error?: string }>,
+    after?: "done" | "deleted",
   ) {
     if (!window.confirm(confirmText)) return;
     setBusy(kind);
@@ -360,7 +379,8 @@ function PersonPane({ row, onDone }: { row: OpsRosterRow; onDone: () => void }) 
       const result = await work();
       if (result.ok) {
         setMsg(result.message ?? "Done.");
-        onDone();
+        if (after === "deleted") onDeleted();
+        else onDone();
       } else {
         setErr(result.error ?? "Could not save.");
       }
@@ -377,6 +397,7 @@ function PersonPane({ row, onDone }: { row: OpsRosterRow; onDone: () => void }) 
       <p className="mt-1 text-muted">
         {row.name ?? "No display name"}
         {row.isComp ? " · Comp seat" : ""}
+        {row.id ? ` · ${row.id}` : " · missing id"}
       </p>
       <dl className="mt-4 grid gap-2 sm:grid-cols-2">
         <Fact label="Package" value={row.packageLabel} />
@@ -467,6 +488,7 @@ function PersonPane({ row, onDone }: { row: OpsRosterRow; onDone: () => void }) 
                 () =>
                   setOpsPackageFn({
                     userId: row.id,
+                    email: row.email ?? "",
                     plan: pkg,
                     interval,
                     cancelNow,
@@ -516,6 +538,7 @@ function PersonPane({ row, onDone }: { row: OpsRosterRow; onDone: () => void }) 
                 () =>
                   compOpsTimeFn({
                     userId: row.id,
+                    email: row.email ?? "",
                     mode: compMode,
                     customEnd,
                     note: compNote,
@@ -554,6 +577,7 @@ function PersonPane({ row, onDone }: { row: OpsRosterRow; onDone: () => void }) 
                 () =>
                   cancelOpsSubscriptionFn({
                     userId: row.id,
+                    email: row.email ?? "",
                     when: cancelWhen,
                     note: cancelNote,
                   }),
@@ -561,6 +585,54 @@ function PersonPane({ row, onDone }: { row: OpsRosterRow; onDone: () => void }) 
             }
           >
             {busy === "cancel" ? "Saving…" : "Cancel subscription"}
+          </button>
+        </div>
+      </div>
+
+      <div className="mt-6 border-t border-border/70 pt-4">
+        <h3 className="font-medium text-negative">Delete account</h3>
+        <p className="mt-2 text-sm text-muted">
+          This is not cancel. It wipes login, saved MACH RUNs, and the Stripe seat.
+          Type the account email, then confirm twice. No undo. Owner emails cannot
+          be deleted from the desk.
+        </p>
+        <div className="mt-3 grid gap-3 sm:max-w-md">
+          <Field label="Type the email to confirm">
+            <TextInput
+              value={deleteEmail}
+              onChange={(e) => setDeleteEmail(e.target.value)}
+              placeholder={row.email ?? "email@example.com"}
+              autoComplete="off"
+            />
+          </Field>
+          <Field label="Note (optional)">
+            <TextInput value={deleteNote} onChange={(e) => setDeleteNote(e.target.value)} />
+          </Field>
+          <button
+            type="button"
+            disabled={busy !== null || !row.email}
+            className="rounded-lg border border-negative/50 px-3 py-2 text-negative disabled:opacity-40"
+            onClick={() => {
+              const typed = deleteEmail.trim();
+              if (!row.email || typed.toLowerCase() !== row.email.trim().toLowerCase()) {
+                setErr("Type the exact account email before delete.");
+                return;
+              }
+              void run(
+                "delete",
+                `Permanently delete ${row.email}? Login and plans will be gone. This cannot be undone.`,
+                () =>
+                  deleteOpsAccountFn({
+                    userId: row.id,
+                    email: row.email ?? "",
+                    confirmEmail: typed,
+                    note: deleteNote,
+                  }),
+                "deleted",
+              );
+            }}
+          >
+            {busy === "delete" ? "Deleting…" : "Delete this account"}
           </button>
         </div>
       </div>

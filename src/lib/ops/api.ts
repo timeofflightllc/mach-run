@@ -17,10 +17,21 @@ const opsSessionMiddleware = createMiddleware({ type: "function" })
     });
   });
 
-/**
- * Door check only. Returns allowed true/false.
- * Does not explain why. Client must not import gate.server.
- */
+function asRecord(input: unknown): Record<string, unknown> {
+  if (!input || typeof input !== "object") return {};
+  const obj = input as Record<string, unknown>;
+  if (obj.data && typeof obj.data === "object") return obj.data as Record<string, unknown>;
+  return obj;
+}
+
+function readUserRef(input: unknown): { userId: string; email: string } {
+  const raw = asRecord(input);
+  return {
+    userId: String(raw.userId ?? raw.id ?? ""),
+    email: String(raw.email ?? ""),
+  };
+}
+
 export const probeOpsDoor = createServerFn({ method: "GET" })
   .middleware([opsSessionMiddleware])
   .handler(async ({ context }) => {
@@ -58,23 +69,29 @@ export const listOpsRoster = createServerFn({ method: "POST" })
 export const setOpsPackageFn = createServerFn({ method: "POST" })
   .middleware([opsSessionMiddleware])
   .validator((input: {
-    userId: string;
+    userId?: string;
+    email?: string;
     plan: MachPackage;
     interval: "month" | "year";
     cancelNow?: boolean;
     note?: string;
-  }) => ({
-    userId: String(input?.userId ?? ""),
-    plan: input?.plan ?? "free",
-    interval: input?.interval === "year" ? ("year" as const) : ("month" as const),
-    cancelNow: Boolean(input?.cancelNow),
-    note: typeof input?.note === "string" ? input.note : "",
-  }))
+  }) => {
+    const ref = readUserRef(input);
+    const raw = asRecord(input);
+    return {
+      userId: ref.userId,
+      email: ref.email,
+      plan: (input?.plan ?? raw.plan ?? "free") as MachPackage,
+      interval: input?.interval === "year" || raw.interval === "year" ? ("year" as const) : ("month" as const),
+      cancelNow: Boolean(input?.cancelNow ?? raw.cancelNow),
+      note: typeof input?.note === "string" ? input.note : String(raw.note ?? ""),
+    };
+  })
   .handler(async ({ context, data }) => {
     const { getOpsActor } = await import("./gate.server");
     const actor = await getOpsActor(context.bearerToken);
     if (!actor) return { ok: false as const, error: "Not found." };
-    if (!data.userId) return { ok: false as const, error: "Missing person." };
+    if (!data.userId && !data.email) return { ok: false as const, error: "Missing person." };
     const { setOpsPackage } = await import("./writes.server");
     return setOpsPackage(actor, data);
   });
@@ -82,37 +99,70 @@ export const setOpsPackageFn = createServerFn({ method: "POST" })
 export const compOpsTimeFn = createServerFn({ method: "POST" })
   .middleware([opsSessionMiddleware])
   .validator((input: {
-    userId: string;
+    userId?: string;
+    email?: string;
     mode: "month" | "year" | "custom";
     customEnd?: string;
     note: string;
-  }) => ({
-    userId: String(input?.userId ?? ""),
-    mode: input?.mode === "year" || input?.mode === "custom" ? input.mode : ("month" as const),
-    customEnd: typeof input?.customEnd === "string" ? input.customEnd : "",
-    note: typeof input?.note === "string" ? input.note : "",
-  }))
+  }) => {
+    const ref = readUserRef(input);
+    return {
+      userId: ref.userId,
+      email: ref.email,
+      mode: input?.mode === "year" || input?.mode === "custom" ? input.mode : ("month" as const),
+      customEnd: typeof input?.customEnd === "string" ? input.customEnd : "",
+      note: typeof input?.note === "string" ? input.note : "",
+    };
+  })
   .handler(async ({ context, data }) => {
     const { getOpsActor } = await import("./gate.server");
     const actor = await getOpsActor(context.bearerToken);
     if (!actor) return { ok: false as const, error: "Not found." };
     const { compOpsTime } = await import("./writes.server");
-    return compOpsTime(actor, data);
+    return compOpsTime(actor, { ...data, userId: data.userId });
   });
 
 export const cancelOpsSubscriptionFn = createServerFn({ method: "POST" })
   .middleware([opsSessionMiddleware])
-  .validator((input: { userId: string; when: "now" | "period_end"; note?: string }) => ({
-    userId: String(input?.userId ?? ""),
-    when: input?.when === "now" ? ("now" as const) : ("period_end" as const),
-    note: typeof input?.note === "string" ? input.note : "",
-  }))
+  .validator((input: {
+    userId?: string;
+    email?: string;
+    when: "now" | "period_end";
+    note?: string;
+  }) => {
+    const ref = readUserRef(input);
+    return {
+      userId: ref.userId,
+      email: ref.email,
+      when: input?.when === "now" ? ("now" as const) : ("period_end" as const),
+      note: typeof input?.note === "string" ? input.note : "",
+    };
+  })
   .handler(async ({ context, data }) => {
     const { getOpsActor } = await import("./gate.server");
     const actor = await getOpsActor(context.bearerToken);
     if (!actor) return { ok: false as const, error: "Not found." };
     const { cancelOpsSubscription } = await import("./writes.server");
     return cancelOpsSubscription(actor, data);
+  });
+
+export const deleteOpsAccountFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((input: { userId?: string; email?: string; confirmEmail: string; note?: string }) => {
+    const ref = readUserRef(input);
+    return {
+      userId: ref.userId,
+      email: ref.email,
+      confirmEmail: String(input?.confirmEmail ?? asRecord(input).confirmEmail ?? ""),
+      note: typeof input?.note === "string" ? input.note : "",
+    };
+  })
+  .handler(async ({ context, data }) => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { ok: false as const, error: "Not found." };
+    const { deleteOpsAccount } = await import("./writes.server");
+    return deleteOpsAccount(actor, data);
   });
 
 export const listOpsEventsFn = createServerFn({ method: "POST" })
