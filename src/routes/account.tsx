@@ -303,7 +303,7 @@ function Account() {
 
   return (
     <main className="min-h-screen px-4 py-10 text-fg" style={{ backgroundColor: "#0a1835" }}>
-      <div className="mx-auto w-full max-w-lg space-y-8">
+      <div className="mx-auto w-full max-w-4xl space-y-8">
         <div className="flex items-start justify-between gap-4">
           <Link to="/" className="inline-block opacity-90 hover:opacity-100">
             <BrandLockup />
@@ -344,6 +344,24 @@ function Account() {
           </div>
         ) : null}
 
+        <div className="space-y-2">
+          <button
+            type="button"
+            disabled={busy !== null}
+            onClick={() => void openBilling()}
+            className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90 disabled:opacity-60 md:w-auto md:min-w-56"
+          >
+            {busy === "billing" ? "Opening…" : "Manage billing"}
+          </button>
+          <p className="text-sm text-muted">
+            Card, invoices, and cancel.{" "}
+            <Link to="/pricing" className="underline underline-offset-4 hover:text-fg">
+              Change plan
+            </Link>
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:items-start">
         <form
           onSubmit={(e) => void saveProfile(e)}
           className="space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
@@ -438,22 +456,7 @@ function Account() {
           </p>
         </div>
 
-        <div className="space-y-2">
-          <button
-            type="button"
-            disabled={busy !== null}
-            onClick={() => void openBilling()}
-            className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90 disabled:opacity-60"
-          >
-            {busy === "billing" ? "Opening…" : "Manage billing"}
-          </button>
-          <p className="text-sm text-muted">
-            Card, invoices, and cancel.{" "}
-            <Link to="/pricing" className="underline underline-offset-4 hover:text-fg">
-              Change plan
-            </Link>
-          </p>
-        </div>
+        <IdleLockSettings userId={user.id} />
 
         <div className="space-y-2 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
           <p className="font-display text-lg text-fg">Encrypted MACH RUN backup</p>
@@ -504,8 +507,6 @@ function Account() {
           )}
         </div>
 
-        <IdleLockSettings userId={user.id} />
-
         <div className="space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
           <p className="font-display text-lg text-fg">Close account</p>
           <p className="text-sm leading-relaxed text-muted">
@@ -524,6 +525,7 @@ function Account() {
           >
             Close account and delete all of my information
           </button>
+        </div>
         </div>
 
         <p className="text-sm text-subtle">
