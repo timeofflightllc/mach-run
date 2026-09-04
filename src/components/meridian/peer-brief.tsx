@@ -3,7 +3,8 @@ import { downloadAnalysisPdf } from "@/lib/plan/analysis-pdf";
 import type { PeerBrief } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { GuestOnly, RealSignedIn } from "@/lib/auth/gates";
-import { MACH_MONTHLY_USD } from "@/lib/billing/limits";
+import { MACH_MONTHLY_USD, hasBalanceSheet } from "@/lib/billing/limits";
+import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { OODA_DISCLAIMER } from "@/lib/plan/disclaimer";
 import { NestEggHeadline } from "@/components/meridian/verdict";
 import { nestEggTrack } from "@/lib/plan/peers";
@@ -24,6 +25,8 @@ export function PeerBriefCard({
   plan?: Plan;
   sim?: SimResult;
 }) {
+  const ent = useEntitlement();
+  const includeNetWorth = hasBalanceSheet(ent.plan);
   if (!ran) {
     return (
       <div className="rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]">
@@ -61,7 +64,7 @@ export function PeerBriefCard({
         </p>
         {plan && sim && brief.expanded ? (
           <PrimaryButton
-            onClick={() => void downloadAnalysisPdf(brief, plan, sim)}
+            onClick={() => void downloadAnalysisPdf(brief, plan, sim, { includeNetWorth })}
             className="w-auto shrink-0 px-4"
           >
             Save / Print PDF

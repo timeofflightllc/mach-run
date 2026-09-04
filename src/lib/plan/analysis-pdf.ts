@@ -80,6 +80,21 @@ async function loadLogo(): Promise<{ bytes: Uint8Array; w: number; h: number } |
   }
 }
 
+type ChartSeries = {
+  name: string;
+  color: string;
+  values: number[];
+  fill?: boolean;
+  dash?: boolean;
+};
+
+type ChartSpec = {
+  title: string;
+  note: string;
+  labels: string[];
+  series: ChartSeries[];
+};
+
 type Block =
   | { kind: "space"; h: number }
   | { kind: "rule" }
@@ -88,9 +103,202 @@ type Block =
   | { kind: "body"; text: string }
   | { kind: "muted"; text: string }
   | { kind: "italic"; text: string }
-  | { kind: "metric"; label: string; value: string };
+  | { kind: "metric"; label: string; value: string }
+  | { kind: "chart"; chart: ChartSpec };
 
-function buildBlocks(brief: PeerBrief, plan: Plan, sim: SimResult): Block[] {
+const CHART_H = 168;
+const RED = "0.722 0.275 0.275";
+
+function compactUsd(n: number): string {
+  const sign = n < 0 ? "-" : "";
+  const a = Math.abs(n);
+  if (a >= 1_000_000) return `${sign}$${(a / 1_000_000).toFixed(a >= 10_000_000 ? 0 : 1)}M`;
+  if (a >= 1_000) return `${sign}$${(a / 1_000).toFixed(a >= 10_000 ? 0 : 1)}k`;
+  return `${sign}$${Math.round(a)}`;
+}
+
+function horizonYears(sim: SimResult) {
+  return sim.years.length ? sim.years : [];
+}
+
+function yearLabels(years: { year: number }[]): string[] {
+  if (!years.length) return [];
+  return years.map((y) => String(y.year));
+}
+
+function wealthChart(plan: Plan, sim: SimResult): ChartSpec | null {
+  const years = horizonYears(sim);
+  if (years.length < 2) return null;
+  const real = plan.assumptions.dollars === "real";
+  return {
+    title: "Spendable wealth — horizon",
+    note: real ? "Today's dollars" : "Future dollars",
+    labels: yearLabels(years),
+    series: [
+      {
+        name: "Spendable",
+        color: GREEN_LINE,
+        values: years.map((y) => (real ? y.endSpendableReal : y.endSpendable)),
+        fill: true,
+      },
+      {
+        name: "Net worth",
+        color: MUTED,
+        values: years.map((y) => (real ? y.endNetWorthReal : y.endNetWorth)),
+        dash: true,
+      },
+    ],
+  };
+}
+
+function cashChart(plan: Plan, sim: SimResult): ChartSpec | null {
+  const years = horizonYears(sim);
+  if (years.length < 2) return null;
+  const real = plan.assumptions.dollars === "real";
+  const inf = plan.assumptions.inflationPct / 100;
+  const asOfYear = Number(plan.assumptions.asOfDate.slice(0, 4));
+  const scale = (year: number, v: number) =>
+    real ? v / (1 + inf) ** Math.max(0, year - asOfYear) : v;
+  return {
+    title: "Annual cash flow — horizon",
+    note: real ? "Today's dollars, annual" : "Future dollars, annual",
+    labels: yearLabels(years),
+    series: [
+      {
+        name: "Income",
+        color: GREEN_LINE,
+        values: years.map((y) => scale(y.year, y.income)),
+        fill: true,
+      },
+      {
+        name: "Spending",
+        color: RED,
+        values: years.map((y) => scale(y.year, y.spending)),
+      },
+      {
+        name: "Contributions",
+        color: BODY,
+        values: years.map((y) => scale(y.year, y.contributions)),
+      },
+      {
+        name: "Guaranteed",
+        color: GOLD,
+        values: years.map((y) => scale(y.year, y.guaranteed)),
+      },
+    ],
+  };
+}
+
+function netWorthChart(plan: Plan, sim: SimResult): ChartSpec | null {
+  const years = horizonYears(sim);
+  if (years.length < 2) return null;
+  const real = plan.assumptions.dollars === "real";
+  return {
+    title: "Net worth — horizon",
+    note: real ? "Today's dollars · assets minus loans" : "Future dollars · assets minus loans",
+    labels: yearLabels(years),
+    series: [
+      {
+        name: "Assets",
+        color: GREEN_MID,
+        values: years.map((y) => (real ? y.endAssetsReal : y.endAssets)),
+        fill: true,
+      },
+      {
+        name: "Liabilities",
+        color: RED,
+        values: years.map((y) => (real ? y.endLiabilitiesReal : y.endLiabilities)),
+      },
+      {
+        name: "Net worth",
+        color: GREEN_DEEP,
+        values: years.map((y) => (real ? y.endNetWorthReal : y.endNetWorth)),
+      },
+    ],
+  };
+}
+
+function chartOps(chart: ChartSpec, yTop: number, contentWidth: number): string {
+  const boxH = CHART_H - 10;
+  const boxY = yTop - boxH + 8;
+  const plotL = MARGIN_X + 46;
+  const plotR = MARGIN_X + contentWidth - 10;
+  const plotB = boxY + 28;
+  const plotT = boxY + boxH - 28;
+  const plotW = plotR - plotL;
+  const plotH = plotT - plotB;
+  const n = Math.max(chart.labels.length, 1);
+  const allVals = chart.series.flatMap((s) => s.values);
+  let min = Math.min(0, ...allVals);
+  let max = Math.max(0, ...allVals);
+  if (max <= min) max = min + 1;
+  const pad = (max - min) * 0.08;
+  min -= pad;
+  max += pad;
+  const xAt = (i: number) => plotL + (n <= 1 ? plotW / 2 : (i / (n - 1)) * plotW);
+  const yAt = (v: number) => plotB + ((v - min) / (max - min)) * plotH;
+
+  const ops: string[] = [
+    "q",
+    `${SAGE_WASH} rg`,
+    `${MARGIN_X} ${boxY} ${contentWidth} ${boxH} re f`,
+    `${GREEN_LINE} rg`,
+    `${MARGIN_X} ${boxY} 3 ${boxH} re f`,
+    "Q",
+    textOps("/F2", 11, GREEN_DEEP, MARGIN_X + 12, boxY + boxH - 16, chart.title),
+    textOps("/F1", 8, MUTED, MARGIN_X + 12, boxY + boxH - 26, chart.note),
+  ];
+
+  const ticks = 4;
+  for (let i = 0; i <= ticks; i++) {
+    const v = min + ((max - min) * i) / ticks;
+    const y = yAt(v);
+    ops.push(`q 0.82 0.86 0.84 RG 0.4 w ${plotL.toFixed(1)} ${y.toFixed(1)} m ${plotR.toFixed(1)} ${y.toFixed(1)} l S Q`);
+    ops.push(textOps("/F1", 7, MUTED, MARGIN_X + 10, y - 2, compactUsd(v)));
+  }
+
+  for (const s of chart.series) {
+    if (s.values.length < 2) continue;
+    const pts = s.values.map((v, i) => `${xAt(i).toFixed(1)} ${yAt(v).toFixed(1)}`);
+    if (s.fill) {
+      const fillPath = [
+        `${xAt(0).toFixed(1)} ${plotB.toFixed(1)} m`,
+        ...s.values.map((v, i) => `${xAt(i).toFixed(1)} ${yAt(v).toFixed(1)} l`),
+        `${xAt(s.values.length - 1).toFixed(1)} ${plotB.toFixed(1)} l`,
+        "h",
+      ].join(" ");
+      ops.push(`q 0.78 0.88 0.80 rg ${fillPath} f Q`);
+    }
+    const line = [`${pts[0]} m`, ...pts.slice(1).map((p) => `${p} l`)].join(" ");
+    const dash = s.dash ? "[4 3] 0 d" : "[] 0 d";
+    ops.push(`q ${s.color} RG 1.4 w ${dash} ${line} S Q`);
+  }
+
+  const tickIdx = n <= 2 ? [0, n - 1] : [0, Math.floor((n - 1) / 2), n - 1];
+  const seen = new Set<number>();
+  for (const i of tickIdx) {
+    if (i < 0 || i >= n || seen.has(i)) continue;
+    seen.add(i);
+    ops.push(textOps("/F1", 7, MUTED, xAt(i) - 12, plotB - 12, chart.labels[i] ?? ""));
+  }
+
+  let lx = MARGIN_X + 12;
+  const ly = boxY + 10;
+  for (const s of chart.series) {
+    ops.push(`q ${s.color} rg ${lx} ${ly} 8 3 re f Q`);
+    ops.push(textOps("/F1", 7, BODY, lx + 11, ly, s.name));
+    lx += 8 + 11 + s.name.length * 4.2 + 10;
+  }
+
+  return ops.join("\n");
+}
+
+function buildBlocks(
+  brief: PeerBrief,
+  plan: Plan,
+  sim: SimResult,
+  includeNetWorth: boolean,
+): Block[] {
   const who = [plan.primary.name.trim(), plan.spouse.name.trim()].filter(Boolean).join(" & ");
   const blocks: Block[] = [
     { kind: "italic", text: OODA_DISCLAIMER },
@@ -119,6 +327,25 @@ function buildBlocks(brief: PeerBrief, plan: Plan, sim: SimResult): Block[] {
     { kind: "rule" },
     { kind: "space", h: 8 },
   ];
+  const radar: Array<ChartSpec | null> = [wealthChart(plan, sim), cashChart(plan, sim)];
+  if (includeNetWorth) radar.push(netWorthChart(plan, sim));
+  const charts = radar.filter((c): c is ChartSpec => Boolean(c));
+  if (charts.length) {
+    blocks.push({ kind: "title", text: "Financial Radar — horizon" });
+    blocks.push({
+      kind: "muted",
+      text: includeNetWorth
+        ? "Spendable wealth, annual cash flow, and net worth across the full projection."
+        : "Spendable wealth and annual cash flow across the full projection.",
+    });
+    blocks.push({ kind: "space", h: 4 });
+    for (const chart of charts) {
+      blocks.push({ kind: "chart", chart });
+      blocks.push({ kind: "space", h: 8 });
+    }
+    blocks.push({ kind: "rule" });
+    blocks.push({ kind: "space", h: 8 });
+  }
   const sections = brief.sections?.length
     ? brief.sections
     : brief.paragraphs.map((body) => ({ title: "", body }));
@@ -252,6 +479,7 @@ export async function downloadAnalysisPdf(
   brief: PeerBrief,
   plan: Plan,
   sim: SimResult,
+  opts?: { includeNetWorth?: boolean },
 ): Promise<void> {
   const logoRaw = await loadLogo();
   let logoDraw: { drawW: number; drawH: number } | null = null;
@@ -261,7 +489,7 @@ export async function downloadAnalysisPdf(
     logoDraw = { drawW, drawH };
   }
 
-  const blocks = buildBlocks(brief, plan, sim);
+  const blocks = buildBlocks(brief, plan, sim, Boolean(opts?.includeNetWorth));
   const contentWidth = PAGE_W - MARGIN_X * 2;
   const bodyChars = 92;
   const titleChars = 72;
@@ -353,6 +581,14 @@ export async function downloadAnalysisPdf(
             textOps("/F1", 8, GOLD_INK, MARGIN_X + 10, y, label),
             textOps("/F2", 11, GREEN_DEEP, MARGIN_X + 130, y, b.value),
           ].join("\n"),
+      });
+      continue;
+    }
+    if (b.kind === "chart") {
+      const chart = b.chart;
+      flow.push({
+        h: CHART_H,
+        ops: (y) => chartOps(chart, y, contentWidth),
       });
     }
   }
