@@ -248,6 +248,14 @@ function Home() {
       setTab("act");
       if (!opts?.stay) setPendingPhase("ooda-act");
       void saveNow(snapshot);
+      try {
+        const { pingActivity } = await import("@/lib/ops/activity-api");
+        const { shapeFromPlan } = await import("@/lib/ops/activity");
+        const profiles = useProfileStore.getState().profiles.length || 1;
+        pingActivity("calculate", shapeFromPlan(snapshot, profiles));
+      } catch {
+        /* activity is optional */
+      }
       void getEntitlement()
         .then((liveEnt) => {
           if (!liveEnt?.paid) return;

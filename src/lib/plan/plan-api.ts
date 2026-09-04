@@ -70,6 +70,16 @@ export const saveMachPlan = createServerFn({ method: "POST" })
            set plan_json = excluded.plan_json, updated_at = now()`,
         [context.userId, JSON.stringify(stored)],
       );
+      try {
+        const { recordUserActivity, shapeFromUnknown } = await import("@/lib/ops/activity.server");
+        await recordUserActivity({
+          userId: context.userId,
+          action: "plan_save",
+          detail: shapeFromUnknown(payload),
+        });
+      } catch {
+        /* activity is optional */
+      }
       return { ok: true as const };
     } catch {
       return { ok: false as const };

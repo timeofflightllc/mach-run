@@ -5,6 +5,7 @@ import {
   type OpsRosterQuery,
   type OpsRosterResult,
 } from "./roster";
+import { EMPTY_ACTIVITY } from "./activity";
 
 const opsSessionMiddleware = createMiddleware({ type: "function" })
   .client(async ({ next }) => {
@@ -180,4 +181,18 @@ export const listOpsEventsFn = createServerFn({ method: "POST" })
       limit: 20,
     });
     return { allowed: true, ...result };
+  });
+
+export const listOpsActivityFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((input: { userId?: string }) => ({
+    userId: String(input?.userId ?? asRecord(input).userId ?? ""),
+  }))
+  .handler(async ({ context, data }) => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { allowed: false as const, ...EMPTY_ACTIVITY };
+    if (!data.userId) return { allowed: true as const, ...EMPTY_ACTIVITY };
+    const { loadUserActivity } = await import("./activity.server");
+    return { allowed: true as const, ...(await loadUserActivity(data.userId)) };
   });

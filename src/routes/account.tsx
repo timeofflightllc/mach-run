@@ -162,6 +162,9 @@ function Account() {
         const live = usePlanStore.getState().plan;
         const text = await encryptPlanBackup("Household", live, password);
         triggerBackupDownload(backupFileName("Household"), text);
+        void import("@/lib/ops/activity-api").then(({ pingActivity }) => {
+          pingActivity("backup_download");
+        });
         setBackupMode(null);
       } else if (backupMode === "import" && pendingImport) {
         const parsed = await decryptPlanBackup(pendingImport, password);
@@ -169,6 +172,9 @@ function Account() {
         setPendingImport(null);
         setBackupMode(null);
         setMsg("MACH RUN backup imported.");
+        void import("@/lib/ops/activity-api").then(({ pingActivity }) => {
+          pingActivity("backup_import");
+        });
       }
     } catch (err) {
       setBackupError(err instanceof Error ? err.message : "Backup failed.");

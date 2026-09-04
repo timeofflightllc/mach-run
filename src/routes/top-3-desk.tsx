@@ -6,12 +6,19 @@ import {
   cancelOpsSubscriptionFn,
   compOpsTimeFn,
   deleteOpsAccountFn,
+  listOpsActivityFn,
   listOpsEventsFn,
   listOpsRoster,
   probeOpsDoor,
   setOpsPackageFn,
 } from "@/lib/ops/api";
 import { actionLabel, type OpsAdminEvent } from "@/lib/ops/events";
+import {
+  activityLabel,
+  describeActivity,
+  EMPTY_ACTIVITY,
+  type MachActivitySummary,
+} from "@/lib/ops/activity";
 import type { MachPackage } from "@/lib/billing/limits";
 import { packageLabel } from "@/lib/billing/limits";
 import {
@@ -350,6 +357,7 @@ function PersonPane({
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [personLog, setPersonLog] = useState<OpsAdminEvent[]>([]);
+  const [activity, setActivity] = useState<MachActivitySummary>(EMPTY_ACTIVITY);
 
   useEffect(() => {
     let live = true;
@@ -359,6 +367,20 @@ function PersonPane({
       })
       .catch(() => {
         if (live) setPersonLog([]);
+      });
+    void listOpsActivityFn({ data: { userId: row.id } })
+      .then((r) => {
+        if (live && r.allowed) {
+          setActivity({
+            calculateCount: r.calculateCount,
+            pdfCount: r.pdfCount,
+            backupCount: r.backupCount,
+            events: r.events,
+          });
+        }
+      })
+      .catch(() => {
+        if (live) setActivity(EMPTY_ACTIVITY);
       });
     return () => {
       live = false;
@@ -409,6 +431,36 @@ function PersonPane({
         <Fact label="Stripe customer" value={row.stripeCustomerId ?? "—"} />
         <Fact label="Stripe subscription" value={row.stripeSubscriptionId ?? "—"} />
       </dl>
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        <CountTile label="MACH Runs" value={activity.calculateCount} />
+        <CountTile label="PDF downloads" value={activity.pdfCount} />
+        <CountTile label="Backups" value={activity.backupCount} />
+      </div>
+      <div className="mt-4 rounded-lg bg-elevated px-3 py-3">
+        <h3 className="text-xs font-medium uppercase tracking-wide text-subtle">
+          User activity
+        </h3>
+        <p className="mt-1 text-xs text-subtle">
+          Counts and block inventory only — no dollar amounts.
+        </p>
+        {activity.events.length === 0 ? (
+          <p className="mt-2 text-sm text-muted">
+            No Calculate, PDF, or plan-shape events yet. Totals start after this
+            deploy.
+          </p>
+        ) : (
+          <ul className="mt-2 max-h-56 space-y-2 overflow-y-auto text-sm text-muted">
+            {activity.events.map((ev) => (
+              <li key={ev.id}>
+                <span className="text-subtle">{fmtDate(ev.at)}</span>
+                {" · "}
+                <span className="text-fg">{activityLabel(ev.action)}</span>
+                {describeActivity(ev) ? ` — ${describeActivity(ev)}` : ""}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
       <div className="mt-4 flex flex-wrap gap-3">
         {row.stripeCustomerUrl ? (
           <a

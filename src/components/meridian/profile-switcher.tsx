@@ -91,6 +91,9 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
         useProfileStore.getState().snapshotCurrent(live);
         const text = await encryptPlanBackup(label, live, password);
         triggerBackupDownload(backupFileName(label), text);
+        void import("@/lib/ops/activity-api").then(({ pingActivity }) => {
+          pingActivity("backup_download");
+        });
         setBackupMode(null);
       } else if (backupMode === "import" && pendingImport) {
         if (atProfileCap(useProfileStore.getState().profiles.length, ent)) return;
@@ -99,6 +102,9 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
           .getState()
           .importProfile(parsed.name, parsed.plan, usePlanStore.getState().plan);
         setPlan(next);
+        void import("@/lib/ops/activity-api").then(({ pingActivity }) => {
+          pingActivity("backup_import");
+        });
         setPendingImport(null);
         setBackupMode(null);
       }

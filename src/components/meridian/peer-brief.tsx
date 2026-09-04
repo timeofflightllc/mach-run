@@ -64,7 +64,12 @@ export function PeerBriefCard({
         </p>
         {plan && sim && brief.expanded ? (
           <PrimaryButton
-            onClick={() => void downloadAnalysisPdf(brief, plan, sim, { includeNetWorth })}
+            onClick={() => {
+              void downloadAnalysisPdf(brief, plan, sim, { includeNetWorth });
+              void import("@/lib/ops/activity-api").then(({ pingActivity }) => {
+                pingActivity("pdf");
+              });
+            }}
             className="w-auto shrink-0 px-4"
           >
             Save / Print PDF
