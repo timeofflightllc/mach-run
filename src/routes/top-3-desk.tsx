@@ -72,7 +72,7 @@ function Top3DeskDoor() {
   useEffect(() => {
     if (gate !== "yes") return;
     let live = true;
-    void listOpsRoster({ q, plan, paid, status, offset })
+    void listOpsRoster({ data: { q, plan, paid, status, offset } })
       .then((r) => {
         if (!live) return;
         if (!r.allowed) {
@@ -91,7 +91,7 @@ function Top3DeskDoor() {
           setError("Roster is unavailable.");
         }
       });
-    void listOpsEventsFn({})
+    void listOpsEventsFn({ data: {} })
       .then((r) => {
         if (live && r.allowed) setFeed(r.events);
       })
@@ -353,7 +353,7 @@ function PersonPane({
 
   useEffect(() => {
     let live = true;
-    void listOpsEventsFn({ targetUserId: row.id })
+    void listOpsEventsFn({ data: { targetUserId: row.id } })
       .then((r) => {
         if (live && r.allowed) setPersonLog(r.events);
       })
@@ -487,12 +487,14 @@ function PersonPane({
                 `Set ${who} to ${label}${extra}?`,
                 () =>
                   setOpsPackageFn({
-                    userId: row.id,
-                    email: row.email ?? "",
-                    plan: pkg,
-                    interval,
-                    cancelNow,
-                    note: pkgNote,
+                    data: {
+                      userId: row.id,
+                      email: row.email ?? "",
+                      plan: pkg,
+                      interval,
+                      cancelNow,
+                      note: pkgNote,
+                    },
                   }),
               );
             }}
@@ -537,11 +539,13 @@ function PersonPane({
                 `Comp extra time for ${who}?`,
                 () =>
                   compOpsTimeFn({
-                    userId: row.id,
-                    email: row.email ?? "",
-                    mode: compMode,
-                    customEnd,
-                    note: compNote,
+                    data: {
+                      userId: row.id,
+                      email: row.email ?? "",
+                      mode: compMode,
+                      customEnd,
+                      note: compNote,
+                    },
                   }),
               )
             }
@@ -576,10 +580,12 @@ function PersonPane({
                 `Cancel the subscription for ${who} ${cancelWhen === "now" ? "now" : "at period end"}? Login stays.`,
                 () =>
                   cancelOpsSubscriptionFn({
-                    userId: row.id,
-                    email: row.email ?? "",
-                    when: cancelWhen,
-                    note: cancelNote,
+                    data: {
+                      userId: row.id,
+                      email: row.email ?? "",
+                      when: cancelWhen,
+                      note: cancelNote,
+                    },
                   }),
               )
             }
@@ -623,10 +629,12 @@ function PersonPane({
                 `Permanently delete ${row.email}? Login and plans will be gone. This cannot be undone.`,
                 () =>
                   deleteOpsAccountFn({
-                    userId: row.id,
-                    email: row.email ?? "",
-                    confirmEmail: typed,
-                    note: deleteNote,
+                    data: {
+                      userId: row.id,
+                      email: row.email ?? "",
+                      confirmEmail: typed,
+                      note: deleteNote,
+                    },
                   }),
                 "deleted",
               );
