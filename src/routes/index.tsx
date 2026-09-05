@@ -339,7 +339,7 @@ function Home() {
               <AuthSlot saved={saveStatus} />
             </div>
             <p className="min-w-0 text-left text-[11px] font-bold leading-snug tracking-[0.12em] text-muted sm:text-xs md:text-[13px]">
-              The Supersonic Financial Calculator
+              The Supersonic Retirement Calculator
             </p>
             <div className="flex justify-end md:hidden">
               <div className="inline-flex rounded-md bg-surface p-0.5 shadow-[0_0_0_1px_var(--color-border)]">

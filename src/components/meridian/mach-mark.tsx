@@ -134,7 +134,7 @@ export function BrandLockup({
             large ? "text-[13px] sm:text-sm" : "text-xs sm:text-[13px]",
           )}
         >
-          The Supersonic Financial Calculator
+          The Supersonic Retirement Calculator
         </span>
       ) : null}
     </span>

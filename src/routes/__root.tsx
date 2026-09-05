@@ -4,7 +4,7 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { IdleLockGate } from "@/components/meridian/idle-lock";
 import appCss from "../styles.css?url";
 
-const APP_NAME = "The Supersonic Financial Calculator";
+const APP_NAME = "The Supersonic Retirement Calculator";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -15,7 +15,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "The Supersonic Financial Calculator. Measure, Allocate, Compound, Harvest.",
+          "The Supersonic Retirement Calculator. Measure, Allocate, Compound, Harvest.",
       },
       { name: "theme-color", content: "#0a1835" },
       { property: "og:type", content: "website" },
@@ -24,7 +24,7 @@ export const Route = createRootRoute({
       {
         property: "og:description",
         content:
-          "The Supersonic Financial Calculator. Measure, Allocate, Compound, Harvest.",
+          "The Supersonic Retirement Calculator. Measure, Allocate, Compound, Harvest.",
       },
       { property: "og:image", content: "https://machrun.com/og.jpg" },
       { property: "og:image:width", content: "1200" },
@@ -34,7 +34,7 @@ export const Route = createRootRoute({
       {
         name: "twitter:description",
         content:
-          "The Supersonic Financial Calculator. Measure, Allocate, Compound, Harvest.",
+          "The Supersonic Retirement Calculator. Measure, Allocate, Compound, Harvest.",
       },
       { name: "twitter:image", content: "https://machrun.com/og.jpg" },
     ],

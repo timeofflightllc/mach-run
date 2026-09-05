@@ -421,7 +421,7 @@ function headerOps(
     "/F1 9 Tf",
     `${SAGE} rg`,
     `0 -14 Td`,
-    "(The Supersonic Financial Calculator) Tj",
+    "(The Supersonic Retirement Calculator) Tj",
     "/F1 8 Tf",
     `${SILVER} rg`,
     `0 -12 Td`,
