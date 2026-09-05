@@ -30,7 +30,7 @@ test("welcome email is short, names next steps, and carries the disclaimer", () 
   assert.match(mail.text, /Hit Calculate/);
   assert.match(mail.text, /entertainment and education/);
   assert.match(mail.html, /machrun.com/);
-  assert.match(mail.html, /THE SUPERSONIC FINANCIAL CALCULATOR/);
+  assert.match(mail.html, /THE SUPERSONIC RETIREMENT CALCULATOR/);
   assert.match(mail.html, /mach-tagline/);
   assert.doesNotMatch(mail.html, /User id/);
   assert.doesNotMatch(mail.html, /Verify Email/);

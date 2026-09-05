@@ -139,7 +139,7 @@ function wrapEmail(
           </tr>
           <tr class="mach-tagline">
             <td class="mach-tagline" align="center" style="padding:0 28px 20px;font-family:Georgia,'Times New Roman',Times,serif;font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:#c9d4e8;">
-              THE SUPERSONIC FINANCIAL CALCULATOR
+              THE SUPERSONIC RETIREMENT CALCULATOR
             </td>
           </tr>
           <tr>
@@ -226,6 +226,7 @@ export function welcomeSignupEmail(notice: SignupNotice): { subject: string; htm
     SIGNUP_WHY_TEXT,
     "",
     "— MACH RUN",
+    "The Supersonic Retirement Calculator",
     "https://machrun.com",
   ].join("\n");
   const codeBlock = code
@@ -358,6 +359,7 @@ export function firstFlightEmail(notice: SignupNotice): { subject: string; html:
     SIGNUP_WHY_TEXT,
     "",
     "— MACH RUN",
+    "The Supersonic Retirement Calculator",
     "https://machrun.com",
   ].join("\n");
   const rows = FIRST_FLIGHT_STEPS.map(
