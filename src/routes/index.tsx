@@ -14,7 +14,7 @@ import { PortfolioForm } from "@/components/meridian/portfolio-form";
 import { LiabilityForm } from "@/components/meridian/liability-form";
 import { PeerBriefCard } from "@/components/meridian/peer-brief";
 import { OodaAiCard } from "@/components/meridian/ooda-ai";
-import { Section } from "@/components/meridian/section";
+import { Section, SectionFoldToggle } from "@/components/meridian/section";
 import { SpendingForm } from "@/components/meridian/spending-form";
 import { Verdict } from "@/components/meridian/verdict";
 import { YearTable } from "@/components/meridian/year-table";
@@ -29,6 +29,12 @@ import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { hasBalanceSheet } from "@/lib/billing/limits";
 import { getEntitlement } from "@/lib/billing/api";
 import type { Plan, SimResult } from "@/lib/plan/types";
+import {
+  clearAllStoredRuns,
+  clearStoredRun,
+  loadStoredRuns,
+  saveStoredRun,
+} from "@/lib/plan/last-run";
 import { cn } from "@/lib/utils";
 import { WelcomeEmailPreviewOverlay } from "@/components/meridian/welcome-email-preview";
 import { EmailVerifyBanner } from "@/components/meridian/email-verify-banner";
@@ -152,7 +158,27 @@ function Home() {
         brief: PeerBrief;
       }
     >
-  >({});
+  >(() => {
+    const stored = loadStoredRuns();
+    const next: Record<
+      string,
+      { id: number; plan: Plan; sim: SimResult; brief: PeerBrief }
+    > = {};
+    for (const [key, row] of Object.entries(stored)) {
+      try {
+        const sim = simulate(row.plan);
+        next[key] = {
+          id: row.id,
+          plan: row.plan,
+          sim: { ...sim, months: [] },
+          brief: buildPeerBrief(row.plan, sim, { expanded: false }),
+        };
+      } catch {
+        /* skip a bad snapshot */
+      }
+    }
+    return next;
+  });
   const run = runs[runKey] ?? null;
 
   useEffect(() => {
@@ -169,6 +195,7 @@ function Home() {
     function onReset() {
       setRuns({});
       setRunError(null);
+      clearAllStoredRuns();
     }
     window.addEventListener(MACH_RESET_BASELINE, onReset);
     function onRemoved(ev: Event) {
@@ -180,6 +207,7 @@ function Home() {
         delete next[id];
         return next;
       });
+      clearStoredRun(id);
     }
     window.addEventListener(MACH_PROFILE_REMOVED, onRemoved);
     return () => {
@@ -250,15 +278,17 @@ function Home() {
       const snapshot = structuredClone(live) as Plan;
       const nextSim = simulate(snapshot);
       const brief = buildPeerBrief(snapshot, nextSim, { expanded: Boolean(ent.paid) });
+      const runId = Date.now();
       setRuns((prev) => ({
         ...prev,
         [key]: {
-          id: Date.now(),
+          id: runId,
           plan: snapshot,
           sim: { ...nextSim, months: [] },
           brief,
         },
       }));
+      saveStoredRun(key, { id: runId, plan: snapshot });
       setTab("act");
       if (!opts?.stay) setPendingPhase("ooda-act");
       void saveNow(snapshot);
@@ -440,7 +470,10 @@ function Home() {
           )}
         >
           <div className="flex flex-col gap-3">
-            <PhaseLabel id="ooda-observe" label="Observe" />
+            <div className="flex items-center justify-between gap-3">
+              <PhaseLabel id="ooda-observe" label="Observe" />
+              <SectionFoldToggle />
+            </div>
             <Section
               title="Family"
               hint="Names and birthdays, retirement goal date and nest egg amount, and what to do with leftover dollars after income minus spending (a.k.a. “sweep”)."

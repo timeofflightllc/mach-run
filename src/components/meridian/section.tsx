@@ -1,6 +1,54 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
+
+const FOLD_EVENT = "mach-ood-fold";
+
+function foldAll(open: boolean) {
+  window.dispatchEvent(new CustomEvent(FOLD_EVENT, { detail: { open } }));
+}
+
+export function SectionFoldToggle({ className }: { className?: string }) {
+  const [allOpen, setAllOpen] = useState<boolean | null>(null);
+
+  return (
+    <div
+      className={cn(
+        "inline-flex shrink-0 rounded-md bg-surface p-0.5 shadow-[0_0_0_1px_var(--color-border)]",
+        className,
+      )}
+    >
+      <button
+        type="button"
+        aria-pressed={allOpen === false}
+        onClick={() => {
+          foldAll(false);
+          setAllOpen(false);
+        }}
+        className={cn(
+          "h-8 rounded-md px-2.5 text-[11px] font-medium",
+          allOpen === false ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
+        )}
+      >
+        Close all
+      </button>
+      <button
+        type="button"
+        aria-pressed={allOpen === true}
+        onClick={() => {
+          foldAll(true);
+          setAllOpen(true);
+        }}
+        className={cn(
+          "h-8 rounded-md px-2.5 text-[11px] font-medium",
+          allOpen === true ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
+        )}
+      >
+        Open all
+      </button>
+    </div>
+  );
+}
 
 export function Section({
   id,
@@ -19,6 +67,15 @@ export function Section({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const root = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    function onFold(e: Event) {
+      const next = (e as CustomEvent<{ open?: boolean }>).detail?.open;
+      if (typeof next === "boolean") setOpen(next);
+    }
+    window.addEventListener(FOLD_EVENT, onFold);
+    return () => window.removeEventListener(FOLD_EVENT, onFold);
+  }, []);
 
   function collapse() {
     setOpen(false);
