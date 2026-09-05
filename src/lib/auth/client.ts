@@ -1,6 +1,7 @@
 import { genericOAuthClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { runPreSignInSignOut, runSignOut } from "../../../scripts/sign-out-plan.mjs";
+import { clearLocalMachRunWorkspace } from "@/lib/plan/clear-local";
 import { GROK_PROVIDERS } from "./providers";
 
 /**
@@ -278,7 +279,10 @@ export async function signOut(redirectTo = "/"): Promise<void> {
       const { error } = await authClient.signOut();
       if (error) throw new Error(error.message ?? "Sign-out failed");
     },
-    clearToken: () => setBearerToken(null),
+    clearToken: () => {
+      setBearerToken(null);
+      clearLocalMachRunWorkspace();
+    },
     redirect: () => {
       window.location.href = redirectTo;
     },

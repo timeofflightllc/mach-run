@@ -21,6 +21,7 @@ import {
   triggerBackupDownload,
 } from "@/lib/plan/backup-file";
 import { clearIdleLockPrefs } from "@/lib/idle-lock";
+import { clearLocalMachRunWorkspace } from "@/lib/plan/clear-local";
 import { usePlanStore } from "@/lib/plan/store";
 
 export const Route = createFileRoute("/account")({
@@ -36,7 +37,6 @@ function Account() {
   const ent = useEntitlement();
   const navigate = useNavigate();
   const setPlan = usePlanStore((s) => s.setPlan);
-  const resetPlan = usePlanStore((s) => s.reset);
   const [name, setName] = useState(user?.displayName ?? "");
   const [email, setEmail] = useState(user?.primaryEmail ?? "");
   const [currentPassword, setCurrentPassword] = useState("");
@@ -277,8 +277,7 @@ function Account() {
         /* local only */
       }
       try {
-        resetPlan();
-        window.localStorage.removeItem("mach-plan-v4");
+        clearLocalMachRunWorkspace();
       } catch {
         /* local only */
       }

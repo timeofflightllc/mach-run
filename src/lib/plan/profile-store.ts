@@ -26,6 +26,7 @@ interface ProfileState {
   remove: (id: string, currentPlan: Plan) => Plan | null;
   importProfile: (name: string, plan: Plan, currentPlan: Plan) => Plan;
   asLibrary: (currentPlan: Plan) => PlanLibrary;
+  resetLibrary: () => void;
 }
 
 function oneHousehold(plan: Plan): Pick<ProfileState, "profiles" | "activeId"> {
@@ -139,6 +140,7 @@ export const useProfileStore = create<ProfileState>()(
         const { profiles, activeId } = get();
         return { kind: "library", activeId, profiles };
       },
+      resetLibrary: () => set({ profiles: [], activeId: "" }),
     }),
     {
       name: "mach-profiles-v1",
