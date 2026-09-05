@@ -131,8 +131,8 @@ function wealthChart(plan: Plan, sim: SimResult): ChartSpec | null {
   if (years.length < 2) return null;
   const real = plan.assumptions.dollars === "real";
   return {
-    title: "Spendable wealth — horizon",
-    note: real ? "Today's dollars" : "Future dollars",
+    title: "Spendable Wealth",
+    note: real ? "Today's Dollars" : "Future Dollars",
     labels: yearLabels(years),
     series: [
       {
@@ -160,8 +160,8 @@ function cashChart(plan: Plan, sim: SimResult): ChartSpec | null {
   const scale = (year: number, v: number) =>
     real ? v / (1 + inf) ** Math.max(0, year - asOfYear) : v;
   return {
-    title: "Annual cash flow — horizon",
-    note: real ? "Today's dollars, annual" : "Future dollars, annual",
+    title: "Annual Cash Flow",
+    note: real ? "Today's Dollars" : "Future Dollars",
     labels: yearLabels(years),
     series: [
       {
@@ -194,8 +194,8 @@ function netWorthChart(plan: Plan, sim: SimResult): ChartSpec | null {
   if (years.length < 2) return null;
   const real = plan.assumptions.dollars === "real";
   return {
-    title: "Net worth — horizon",
-    note: real ? "Today's dollars · assets minus loans" : "Future dollars · assets minus loans",
+    title: "Net Worth",
+    note: real ? "Today's Dollars" : "Future Dollars",
     labels: yearLabels(years),
     series: [
       {
@@ -224,7 +224,7 @@ function chartOps(chart: ChartSpec, yTop: number, contentWidth: number): string 
   const plotL = MARGIN_X + 46;
   const plotR = MARGIN_X + contentWidth - 10;
   const plotB = boxY + 28;
-  const plotT = boxY + boxH - 28;
+  const plotT = boxY + boxH - 22;
   const plotW = plotR - plotL;
   const plotH = plotT - plotB;
   const n = Math.max(chart.labels.length, 1);
@@ -237,6 +237,8 @@ function chartOps(chart: ChartSpec, yTop: number, contentWidth: number): string 
   max += pad;
   const xAt = (i: number) => plotL + (n <= 1 ? plotW / 2 : (i / (n - 1)) * plotW);
   const yAt = (v: number) => plotB + ((v - min) / (max - min)) * plotH;
+  const noteW = chart.note.length * 4.4;
+  const noteX = MARGIN_X + contentWidth - 12 - noteW;
 
   const ops: string[] = [
     "q",
@@ -246,7 +248,7 @@ function chartOps(chart: ChartSpec, yTop: number, contentWidth: number): string 
     `${MARGIN_X} ${boxY} 3 ${boxH} re f`,
     "Q",
     textOps("/F2", 11, GREEN_DEEP, MARGIN_X + 12, boxY + boxH - 16, chart.title),
-    textOps("/F1", 8, MUTED, MARGIN_X + 12, boxY + boxH - 26, chart.note),
+    textOps("/F1", 8, MUTED, noteX, boxY + boxH - 15, chart.note),
   ];
 
   const ticks = 4;

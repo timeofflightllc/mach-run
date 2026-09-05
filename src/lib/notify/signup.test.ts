@@ -94,7 +94,7 @@ test("first-flight email is a numbered checklist after verify", () => {
   assert.match(mail.text, /Free saves your plan with limits/);
   assert.match(mail.html, /First Flight Checklist/);
   assert.match(mail.html, /text-align:center/);
-  assert.match(mail.html, /Fights On!/);
+  assert.match(mail.html, /Cleared for takeoff!/);
   assert.match(mail.html, /Kick the tires and light your financial fires/);
   assert.match(mail.text, /investment dollars/);
   assert.match(mail.html, /Pricing unlocks more/);

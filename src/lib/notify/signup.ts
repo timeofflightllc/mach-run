@@ -375,7 +375,7 @@ export function firstFlightEmail(notice: SignupNotice): { subject: string; html:
           ${escapeHtml(hello)}
         </td></tr>
         <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#c9d4e8;">
-          Email verified. Fights On!
+          Email verified. Cleared for takeoff!
         </td></tr>
         <tr><td style="padding:0 28px 8px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#122448;">
