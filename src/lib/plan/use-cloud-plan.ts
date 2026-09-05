@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { clearLocalMachRunWorkspace } from "./clear-local";
 import { loadMachPlan, saveMachPlan } from "./plan-api";
 import { usePlanStore } from "./store";
 import { useProfileStore } from "./profile-store";
@@ -34,13 +35,18 @@ export function useCloudPlan() {
   useEffect(() => {
     if (isPending) return;
     if (!userId) {
+      clearLocalMachRunWorkspace();
       setCloudReady(false);
       setStatus("guest");
       return;
     }
     let cancelled = false;
     setCloudReady(false);
-    void loadMachPlan()
+    void Promise.all([
+      Promise.resolve(usePlanStore.persist.rehydrate()),
+      Promise.resolve(useProfileStore.persist.rehydrate()),
+    ])
+      .then(() => loadMachPlan())
       .then((saved) => {
         if (cancelled) return;
         const local = usePlanStore.getState().plan;
@@ -48,6 +54,9 @@ export function useCloudPlan() {
         const library =
           saved && typeof saved === "object" && "library" in saved ? saved.library : null;
         if (library) useProfileStore.getState().hydrateLibrary(library);
+        else if (!useProfileStore.getState().profiles.length) {
+          useProfileStore.getState().hydrateFromPlan(local);
+        }
         if (cloudPlan && planWeight(cloudPlan) >= planWeight(local)) {
           setPlan(cloudPlan);
         }

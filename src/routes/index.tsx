@@ -20,6 +20,7 @@ import { Verdict } from "@/components/meridian/verdict";
 import { YearTable } from "@/components/meridian/year-table";
 import { MachFooter, BrandLockup } from "@/components/meridian/mach-mark";
 import { GuestOnly } from "@/lib/auth/gates";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { simulate } from "@/lib/plan/engine";
 import { buildPeerBrief, type PeerBrief } from "@/lib/plan/peers";
 import { usePlanStore } from "@/lib/plan/store";
@@ -141,6 +142,8 @@ function Home() {
   const plan = usePlanStore((s) => s.plan);
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
   const { status: saveStatus, saveNow } = useCloudPlan();
+  const { user, isPending } = useCurrentUserState();
+  const signedIn = Boolean(user?.id);
   const ent = useEntitlement();
   const [tab, setTab] = useState<"act" | "loop">("loop");
   const [activePhase, setActivePhase] = useState<string | null>(null);
@@ -158,7 +161,15 @@ function Home() {
         brief: PeerBrief;
       }
     >
-  >(() => {
+  >({});
+  const run = runs[runKey] ?? null;
+
+  useEffect(() => {
+    if (isPending) return;
+    if (!signedIn) {
+      setRuns({});
+      return;
+    }
     const stored = loadStoredRuns();
     const next: Record<
       string,
@@ -177,19 +188,8 @@ function Home() {
         /* skip a bad snapshot */
       }
     }
-    return next;
-  });
-  const run = runs[runKey] ?? null;
-
-  useEffect(() => {
-    void Promise.resolve(usePlanStore.persist.rehydrate());
-    void Promise.resolve(useProfileStore.persist.rehydrate()).then(() => {
-      const live = usePlanStore.getState().plan;
-      if (!useProfileStore.getState().profiles.length) {
-        useProfileStore.getState().hydrateFromPlan(live);
-      }
-    });
-  }, []);
+    setRuns(next);
+  }, [isPending, signedIn]);
 
   useEffect(() => {
     function onReset() {
