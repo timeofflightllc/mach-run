@@ -1,4 +1,5 @@
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from "@/lib/auth/provider";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { IdleLockGate } from "@/components/meridian/idle-lock";
@@ -71,6 +72,7 @@ export const Route = createRootRoute({
           <IdleLockGate />
           <Outlet />
         </AuthProvider>
+        <Analytics />
         <Scripts />
       </body>
     </html>
