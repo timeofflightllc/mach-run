@@ -222,20 +222,28 @@ export const auth = betterAuth({
       create: {
         after: async (user) => {
           try {
-            let code: string | undefined;
             if (user.email && !user.emailVerified) {
-              const { issueVerifyCode } = await import("./email-verify.server");
-              code = await issueVerifyCode(user.id);
+              const { deliverVerifyEmail } = await import("./email-verify.server");
+              const sent = await deliverVerifyEmail({
+                userId: user.id,
+                name: user.name ?? null,
+                email: user.email,
+              });
+              if (!sent.ok) {
+                console.warn("[verify-email] signup send failed:", sent.reason);
+              }
             }
-            const { onAccountCreated } = await import("../notify/signup");
-            await onAccountCreated({
+            const { notifyOwnerOfSignup } = await import("../notify/signup");
+            await notifyOwnerOfSignup({
               id: user.id,
               name: user.name,
               email: user.email,
-              code,
             });
-          } catch {
-            // Sign-up must succeed even if the owner ping fails.
+          } catch (err) {
+            console.warn(
+              "[verify-email] signup hook failed:",
+              err instanceof Error ? err.message : err,
+            );
           }
         },
       },

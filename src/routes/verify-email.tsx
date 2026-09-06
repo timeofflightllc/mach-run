@@ -4,6 +4,7 @@ import { BrandLockup } from "@/components/meridian/mach-mark";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import {
   emailVerifyStatus,
+  ensureEmailVerifyCode,
   resendEmailVerifyCode,
   submitEmailVerifyCode,
 } from "@/lib/auth/email-verify-api";
@@ -28,6 +29,9 @@ function VerifyEmail() {
     void emailVerifyStatus()
       .then((s) => {
         if (s.verified) navigate({ to: "/" });
+        else {
+          void ensureEmailVerifyCode().catch(() => {});
+        }
       })
       .catch(() => {});
   }, [isPending, user, navigate]);

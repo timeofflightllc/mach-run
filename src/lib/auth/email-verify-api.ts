@@ -47,7 +47,33 @@ export const submitEmailVerifyCode = createServerFn({ method: "POST" })
     return result;
   });
 
+async function sendCodeForSession(userId: string): Promise<
+  { ok: true; already?: true } | { ok: false; reason: string }
+> {
+  const sql = await getSql();
+  const rows = await sql.query<{ email: string | null; name: string | null; verified: boolean }>(
+    `select email, name, "emailVerified" as verified from "user" where id = $1 limit 1`,
+    [userId],
+  );
+  const user = rows[0];
+  if (!user?.email) return { ok: false, reason: "No email on this account." };
+  if (user.verified) return { ok: true, already: true };
+  const { deliverVerifyEmail } = await import("./email-verify.server");
+  const sent = await deliverVerifyEmail({
+    userId,
+    name: user.name,
+    email: user.email,
+  });
+  if (sent.ok) return { ok: true };
+  return { ok: false, reason: sent.reason };
+}
+
 export const resendEmailVerifyCode = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => sendCodeForSession(context.userId));
+
+/** First landing on /verify-email: send if the signup hook never got the mail out. */
+export const ensureEmailVerifyCode = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
     const sql = await getSql();
@@ -58,14 +84,17 @@ export const resendEmailVerifyCode = createServerFn({ method: "POST" })
     const user = rows[0];
     if (!user?.email) return { ok: false as const, reason: "No email on this account." };
     if (user.verified) return { ok: true as const, already: true as const };
-    const { issueVerifyCode } = await import("./email-verify.server");
-    const { sendWelcomeSignupEmail } = await import("../notify/signup");
-    const code = await issueVerifyCode(context.userId);
-    const sent = await sendWelcomeSignupEmail({
-      id: context.userId,
+
+    const { verifyEmailMeta, deliverVerifyEmail } = await import("./email-verify.server");
+    const meta = await verifyEmailMeta(context.userId);
+    const emailedAgo = meta.emailedAt ? Date.now() - meta.emailedAt.getTime() : Infinity;
+    if (meta.hasCode && meta.emailedAt && emailedAgo < 10 * 60 * 1000) {
+      return { ok: true as const };
+    }
+    const sent = await deliverVerifyEmail({
+      userId: context.userId,
       name: user.name,
       email: user.email,
-      code,
     });
     if (sent.ok) return { ok: true as const };
     return { ok: false as const, reason: sent.reason };
