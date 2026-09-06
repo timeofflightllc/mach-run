@@ -13,9 +13,9 @@ import {
   MACH_YEARLY_USD,
   UNLIMITED_MONTHLY_USD,
   UNLIMITED_YEARLY_USD,
-  TRIAL_PROMO_DAYS,
   isAdvisorPlan,
   packageLabel,
+  promoAppliesToPackage,
   trialDaysForCode,
 } from "@/lib/billing/limits";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
@@ -63,6 +63,10 @@ function Pricing() {
   const typedCode = trialCode.trim().length > 0;
   const codeInvalid = typedCode && promoDays == null;
   const hasTrial = promoDays != null;
+  const trialOnIndividual = promoAppliesToPackage(trialCode, "individual");
+  const trialOnUnlimited = promoAppliesToPackage(trialCode, "unlimited");
+  const trialOnAdvisorLite = promoAppliesToPackage(trialCode, "advisor_lite");
+  const trialOnAdvisor = promoAppliesToPackage(trialCode, "advisor");
 
   const onFree = signedIn && !ent.paid;
   const onIndividual = signedIn && ent.paid && ent.plan === "individual";
@@ -113,51 +117,53 @@ function Pricing() {
   const advUnlPrice = interval === "year" ? ADVISOR_UNLIMITED_YEARLY_USD : ADVISOR_UNLIMITED_MONTHLY_USD;
   const per = interval === "year" ? "/year" : "/month";
   const codeHint = hasTrial
-    ? `Valid code — ${TRIAL_PROMO_DAYS} days free, then the package you pick.`
+    ? trialOnIndividual
+      ? `Valid code — ${promoDays} days free, then the package you pick.`
+      : `Valid code — ${promoDays} days of Individual Unlimited, then $${UNLIMITED_MONTHLY_USD}/mo or $${UNLIMITED_YEARLY_USD}/year.`
     : codeInvalid
       ? "That code isn't valid."
       : "Type coupon code above.";
-  const individualSignIn = hasTrial
-    ? `Sign in, then start ${TRIAL_PROMO_DAYS}-day trial`
+  const individualSignIn = trialOnIndividual
+    ? `Sign in, then start ${promoDays}-day trial`
     : "Sign in, then choose Individual";
   const individualButton =
     busy === `individual-${interval}`
       ? "Redirecting…"
-      : hasTrial
-        ? `Start ${TRIAL_PROMO_DAYS}-day trial · $${indPrice}${per}`
+      : trialOnIndividual
+        ? `Start ${promoDays}-day trial · $${indPrice}${per}`
         : `Choose Individual · $${indPrice}${per}`;
-  const unlimitedSignIn = hasTrial
-    ? `Sign in, then start ${TRIAL_PROMO_DAYS}-day trial`
+  const unlimitedSignIn = trialOnUnlimited
+    ? `Sign in, then start ${promoDays}-day trial`
     : "Sign in, then choose Individual Unlimited";
   const unlimitedButton =
     busy === `unlimited-${interval}`
       ? "Redirecting…"
-      : hasTrial
-        ? `Start ${TRIAL_PROMO_DAYS}-day trial · $${unlPrice}${per}`
+      : trialOnUnlimited
+        ? `Start ${promoDays}-day trial · $${unlPrice}${per}`
         : `Choose Unlimited · $${unlPrice}${per}`;
-  const advisorTrialLabel = `${hasTrial ? TRIAL_PROMO_DAYS : ADVISOR_TRIAL_DAYS}-day trial`;
-  const advisorSubtitle = hasTrial
+  const advisorTrialLabel = `${trialOnAdvisorLite ? promoDays : ADVISOR_TRIAL_DAYS}-day trial`;
+  const advisorSubtitle = trialOnAdvisorLite
     ? interval === "year"
-      ? `${TRIAL_PROMO_DAYS}-day trial, 2 months free`
-      : `${TRIAL_PROMO_DAYS}-day trial, then $${ADVISOR_MONTHLY_USD}/month`
+      ? `${promoDays}-day trial, 2 months free`
+      : `${promoDays}-day trial, then $${ADVISOR_MONTHLY_USD}/month`
     : interval === "year"
       ? `${ADVISOR_TRIAL_DAYS}-day trial, 2 months free`
       : `${ADVISOR_TRIAL_DAYS}-day trial, then $${ADVISOR_MONTHLY_USD}/month`;
-  const advisorSignIn = hasTrial
-    ? `Sign in, then start ${TRIAL_PROMO_DAYS}-day trial`
+  const advisorSignIn = trialOnAdvisorLite
+    ? `Sign in, then start ${promoDays}-day trial`
     : "Sign in, then start Advisor Lite trial";
   const advisorLiteButton =
     busy === `advisor_lite-${interval}`
       ? "Redirecting…"
-      : `Start ${hasTrial ? TRIAL_PROMO_DAYS : ADVISOR_TRIAL_DAYS}-day trial`;
-  const advisorUnlSignIn = hasTrial
-    ? `Sign in, then start ${TRIAL_PROMO_DAYS}-day trial`
+      : `Start ${trialOnAdvisorLite ? promoDays : ADVISOR_TRIAL_DAYS}-day trial`;
+  const advisorUnlSignIn = trialOnAdvisor
+    ? `Sign in, then start ${promoDays}-day trial`
     : "Sign in, then choose Advisor Unlimited";
   const advisorUnlButton =
     busy === `advisor-${interval}`
       ? "Redirecting…"
-      : hasTrial
-        ? `Start ${TRIAL_PROMO_DAYS}-day trial · $${advUnlPrice}${per}`
+      : trialOnAdvisor
+        ? `Start ${promoDays}-day trial · $${advUnlPrice}${per}`
         : `Choose Unlimited · $${advUnlPrice}${per}`;
 
   const currentText = !ent.signedIn

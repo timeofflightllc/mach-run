@@ -13,6 +13,8 @@ export const ADVISOR_TRIAL_DAYS = 7;
 export const ADVISOR_LITE_PROFILE_LIMIT = 5;
 export const TRIAL_PROMO_CODE = "SUPER14";
 export const TRIAL_PROMO_DAYS = 14;
+export const MARVIN_PROMO_CODE = "MARVIN";
+export const MARVIN_PROMO_DAYS = 30;
 
 export function normalizePromoCode(raw: string | null | undefined): string {
   return (raw ?? "").trim().toUpperCase();
@@ -23,7 +25,19 @@ export function trialDaysForCode(raw: string | null | undefined): number | null 
   const code = normalizePromoCode(raw);
   if (!code) return null;
   if (code === TRIAL_PROMO_CODE) return TRIAL_PROMO_DAYS;
+  if (code === MARVIN_PROMO_CODE) return MARVIN_PROMO_DAYS;
   return null;
+}
+
+export function promoAppliesToPackage(
+  raw: string | null | undefined,
+  pkg: CheckoutPackage,
+): boolean {
+  const code = normalizePromoCode(raw);
+  if (!code) return false;
+  if (code === TRIAL_PROMO_CODE) return true;
+  if (code === MARVIN_PROMO_CODE) return pkg === "unlimited";
+  return false;
 }
 
 export type MachPackage = "free" | "individual" | "unlimited" | "advisor_lite" | "advisor";

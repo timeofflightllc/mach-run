@@ -14,6 +14,7 @@ import {
   profileLimitFor,
   trialDaysForCode,
   normalizePromoCode,
+  promoAppliesToPackage,
   type Entitlement,
   type MachPackage,
 } from "./limits";
@@ -304,7 +305,14 @@ export const startCheckout = createServerFn({ method: "POST" })
         returnUrl: `${origin}/?checkout=success`,
       });
     }
-    const promoTrialDays = trialDaysForCode(data.trialCode);
+    const promoTrialDays = promoAppliesToPackage(data.trialCode, pkg)
+      ? trialDaysForCode(data.trialCode)
+      : null;
+    if (normalizePromoCode(data.trialCode) && trialDaysForCode(data.trialCode) && !promoTrialDays) {
+      throw new Error(
+        "That code is for Individual Unlimited. Choose that package to use it.",
+      );
+    }
     const trialDays = promoTrialDays ?? (pkg === "advisor_lite" ? ADVISOR_TRIAL_DAYS : null);
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
