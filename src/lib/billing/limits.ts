@@ -15,6 +15,7 @@ export const TRIAL_PROMO_CODE = "SUPER14";
 export const TRIAL_PROMO_DAYS = 14;
 export const MARVIN_PROMO_CODE = "MARVIN";
 export const INVERTED_PROMO_CODE = "INVERTED";
+export const EAGLE_PROMO_CODE = "EAGLE";
 export const MARVIN_PROMO_DAYS = 30;
 
 export function normalizePromoCode(raw: string | null | undefined): string {
@@ -26,7 +27,7 @@ export function trialDaysForCode(raw: string | null | undefined): number | null 
   const code = normalizePromoCode(raw);
   if (!code) return null;
   if (code === TRIAL_PROMO_CODE) return TRIAL_PROMO_DAYS;
-  if (code === MARVIN_PROMO_CODE || code === INVERTED_PROMO_CODE) return MARVIN_PROMO_DAYS;
+  if (code === MARVIN_PROMO_CODE || code === INVERTED_PROMO_CODE || code === EAGLE_PROMO_CODE) return MARVIN_PROMO_DAYS;
   return null;
 }
 
@@ -37,7 +38,7 @@ export function promoAppliesToPackage(
   const code = normalizePromoCode(raw);
   if (!code) return false;
   if (code === TRIAL_PROMO_CODE) return true;
-  if (code === MARVIN_PROMO_CODE || code === INVERTED_PROMO_CODE) return pkg === "unlimited";
+  if (code === MARVIN_PROMO_CODE || code === INVERTED_PROMO_CODE || code === EAGLE_PROMO_CODE) return pkg === "unlimited";
   return false;
 }
 
