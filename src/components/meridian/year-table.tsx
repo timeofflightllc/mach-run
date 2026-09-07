@@ -2,6 +2,20 @@ import { useState } from "react";
 import { usd } from "@/lib/plan/format";
 import type { Plan, SimResult, YearCap } from "@/lib/plan/types";
 
+const KIND_LABEL: Record<string, string> = {
+  salary: "Salary / wages",
+  bonus: "Bonus",
+  allowance: "Allowance",
+  pension: "Pension",
+  military: "Military retired pay",
+  va: "VA disability",
+  ss: "Social Security",
+  other: "Other income",
+  other_retirement: "Other retirement",
+  rmd: "Required minimum distribution",
+  employer_match: "Employer match",
+};
+
 function capReasons(caps: YearCap[]): string[] {
   const lines: string[] = [];
   for (const cap of caps) {
@@ -27,19 +41,61 @@ function isCapped(caps: YearCap[]): boolean {
   return caps.some((c) => c.kind === "cash" || c.kind === "irs");
 }
 
+function incomeLines(
+  byKind: Record<string, number> | undefined,
+  scale: (n: number) => number,
+): { label: string; amount: number }[] {
+  const rows: { label: string; amount: number }[] = [];
+  for (const [kind, raw] of Object.entries(byKind ?? {})) {
+    if (raw <= 0.5) continue;
+    rows.push({
+      label: KIND_LABEL[kind] ?? kind.replace(/_/g, " "),
+      amount: scale(raw),
+    });
+  }
+  rows.sort((a, b) => b.amount - a.amount);
+  return rows;
+}
+
+type LedgerTip = {
+  year: number;
+  x: number;
+  y: number;
+  mode: "cap" | "income";
+};
+
+function tipPoint(e: { clientX: number; clientY: number }): { x: number; y: number } {
+  const pad = 14;
+  const width = 320;
+  const height = 200;
+  let x = e.clientX + pad;
+  let y = e.clientY + pad;
+  if (x + width > window.innerWidth - 8) x = e.clientX - width - pad;
+  if (y + height > window.innerHeight - 8) y = e.clientY - height - pad;
+  return { x: Math.max(8, x), y: Math.max(8, y) };
+}
+
 export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
   const real = plan.assumptions.dollars === "real";
   const inf = plan.assumptions.inflationPct / 100;
   const asOfYear = Number(plan.assumptions.asOfDate.slice(0, 4));
-  const [openYear, setOpenYear] = useState<number | null>(null);
+  const [tip, setTip] = useState<LedgerTip | null>(null);
   const capsByYear = new Map<number, YearCap[]>();
   for (const cap of sim.yearCaps ?? []) {
     const list = capsByYear.get(cap.year) ?? [];
     list.push(cap);
     capsByYear.set(cap.year, list);
   }
-  const openCaps = openYear == null ? [] : (capsByYear.get(openYear) ?? []);
-  const openLines = capReasons(openCaps);
+  const yearRow = tip ? sim.years.find((y) => y.year === tip.year) : undefined;
+
+  function showTip(
+    year: number,
+    mode: LedgerTip["mode"],
+    e: { clientX: number; clientY: number },
+  ) {
+    const pt = tipPoint(e);
+    setTip({ year, mode, ...pt });
+  }
 
   function flow(amount: number, year: number) {
     if (!real) return amount;
@@ -97,10 +153,16 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
     URL.revokeObjectURL(url);
   }
 
+  const capLines = tip?.mode === "cap" ? capReasons(capsByYear.get(tip.year) ?? []) : [];
+  const payLines =
+    tip?.mode === "income" && yearRow
+      ? incomeLines(yearRow.incomeByKind, (n) => flow(n, yearRow.year))
+      : [];
+
   return (
     <div className="overflow-hidden rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
       <div className="flex items-center justify-between gap-3 px-4 py-3">
-        <h2 className="font-display text-lg font-bold text-fg">Yearly Ledger</h2>
+        <h2 className="font-display text-xl font-bold text-fg">Yearly Ledger</h2>
         <button
           type="button"
           onClick={download}
@@ -109,25 +171,15 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           Download CSV
         </button>
       </div>
-      {openYear != null && openLines.length ? (
-        <div className="border-t border-border bg-elevated px-4 py-3 text-sm text-fg">
-          <p className="text-xs font-bold uppercase tracking-wider text-negative">
-            {openYear} capped
-          </p>
-          <ul className="mt-1.5 list-disc space-y-1 pl-4 text-sm text-muted">
-            {openLines.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        </div>
-      ) : sim.fundingGaps.length ? (
+      {sim.fundingGaps.length ? (
         <p className="border-t border-border px-4 py-3 text-sm text-muted">
-          Hover or tap <span className="font-bold text-negative">CAPPED</span> next
-          to a year to see why MACH RUN cut that year’s contributions.
+          Hover <span className="font-bold text-negative">CAPPED</span> for why
+          that year was cut. Hover an income amount for the paycheck mix.
         </p>
       ) : (
         <p className="border-t border-border px-4 py-3 text-xs text-subtle">
-          Identity: income + drawn = tax + spend + saved. Hover or tap{" "}
+          Identity: income + drawn = tax + spend + saved. Hover an income amount
+          for the mix. Hover{" "}
           <span className="font-bold text-negative">CAPPED</span> when a year is
           marked.
         </p>
@@ -160,15 +212,26 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                     {capped ? (
                       <button
                         type="button"
-                        aria-expanded={openYear === y.year}
-                        onMouseEnter={() => setOpenYear(y.year)}
-                        onFocus={() => setOpenYear(y.year)}
-                        onClick={() =>
-                          setOpenYear((cur) => (cur === y.year ? null : y.year))
-                        }
-                        className={`ml-1.5 text-xs font-bold uppercase tracking-wider text-negative underline decoration-dotted underline-offset-2 ${
-                          openYear === y.year ? "bg-elevated px-1" : ""
-                        }`}
+                        onMouseEnter={(e) => showTip(y.year, "cap", e)}
+                        onMouseMove={(e) => showTip(y.year, "cap", e)}
+                        onMouseLeave={() => setTip(null)}
+                        onFocus={(e) => {
+                          const r = e.currentTarget.getBoundingClientRect();
+                          showTip(y.year, "cap", {
+                            clientX: r.right,
+                            clientY: r.top,
+                          });
+                        }}
+                        onBlur={() => setTip(null)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          if (tip?.year === y.year && tip.mode === "cap") {
+                            setTip(null);
+                          } else {
+                            showTip(y.year, "cap", e);
+                          }
+                        }}
+                        className="ml-1.5 text-xs font-bold uppercase tracking-wider text-negative underline decoration-dotted underline-offset-2"
                       >
                         CAPPED
                       </button>
@@ -178,8 +241,24 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                     {plan.primary.birthDate ? y.primaryAge : "—"}/
                     {plan.spouse.birthDate ? y.spouseAge : "—"}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-fg">
-                    {usd(flow(y.income, y.year))}
+                  <td className="whitespace-nowrap px-3 py-2">
+                    <button
+                      type="button"
+                      onMouseEnter={(e) => showTip(y.year, "income", e)}
+                      onMouseMove={(e) => showTip(y.year, "income", e)}
+                      onMouseLeave={() => setTip(null)}
+                      onFocus={(e) => {
+                        const r = e.currentTarget.getBoundingClientRect();
+                        showTip(y.year, "income", {
+                          clientX: r.right,
+                          clientY: r.top,
+                        });
+                      }}
+                      onBlur={() => setTip(null)}
+                      className="cursor-help text-fg underline decoration-dotted underline-offset-2"
+                    >
+                      {usd(flow(y.income, y.year))}
+                    </button>
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-muted">
                     {usd(flow(y.tax, y.year))}
@@ -202,6 +281,53 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           </tbody>
         </table>
       </div>
+      {tip?.mode === "cap" && capLines.length ? (
+        <div
+          role="tooltip"
+          className="pointer-events-none fixed z-[80] w-80 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-elevated px-3 py-2.5 text-left shadow-lg"
+          style={{ left: tip.x, top: tip.y }}
+        >
+          <p className="text-xs font-bold uppercase tracking-wider text-negative">
+            {tip.year} capped
+          </p>
+          <ul className="mt-1.5 list-disc space-y-1 pl-4 text-sm leading-snug text-fg">
+            {capLines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {tip?.mode === "income" ? (
+        <div
+          role="tooltip"
+          className="pointer-events-none fixed z-[80] w-72 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-elevated px-3 py-2.5 text-left shadow-lg"
+          style={{ left: tip.x, top: tip.y }}
+        >
+          <p className="text-xs font-bold uppercase tracking-wider text-subtle">
+            {tip.year} income
+          </p>
+          {payLines.length ? (
+            <ul className="mt-1.5 space-y-1 text-sm text-fg">
+              {payLines.map((row) => (
+                <li key={row.label} className="flex justify-between gap-3">
+                  <span>{row.label}</span>
+                  <span className="tabular-nums">{usd(row.amount)}</span>
+                </li>
+              ))}
+              {yearRow ? (
+                <li className="flex justify-between gap-3 border-t border-border pt-1 font-medium">
+                  <span>Total</span>
+                  <span className="tabular-nums">
+                    {usd(flow(yearRow.income, yearRow.year))}
+                  </span>
+                </li>
+              ) : null}
+            </ul>
+          ) : (
+            <p className="mt-1.5 text-sm text-muted">No paychecks this year.</p>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -67,7 +67,7 @@ export function OodaAiCard({
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
         OODA AI*
       </p>
-      <p className="mt-2 font-display text-lg font-bold text-fg">
+      <p className="mt-2 font-display text-xl font-bold text-fg">
         Ask OODA AI about this financial summary:
       </p>
       <div className="mt-3">

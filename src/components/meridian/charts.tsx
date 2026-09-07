@@ -365,7 +365,7 @@ export function WealthChart({
 
   return (
     <div className={chartCard}>
-      <h2 className="font-display text-lg font-bold text-slate-900">Spendable Wealth</h2>
+      <h2 className="font-display text-xl font-bold text-slate-900">Spendable Wealth</h2>
       <p className="mb-4 mt-1 text-xs text-slate-600">
         {real ? "Inflation-adjusted (today's dollars)" : "Future dollars"} ·
         Roth / taxable / TSP marked spendable. Houses and 529s sit in net worth
@@ -454,7 +454,7 @@ export function CashChart({
 
   return (
     <div className={chartCard}>
-      <h2 className="font-display text-lg font-bold text-slate-900">Annual Cash Flow</h2>
+      <h2 className="font-display text-xl font-bold text-slate-900">Annual Cash Flow</h2>
       <p className="mb-4 mt-1 text-xs text-slate-600">
         Gross income vs spending vs planned contributions. Guaranteed (gold
         line) is pension, other retirement income, military retired pay, VA, and
@@ -569,7 +569,7 @@ export function NetWorthChart({
   return (
     <div className={cn("relative", chartCard)}>
       <div className={cn(locked && "pointer-events-none select-none opacity-60")}>
-        <h2 className="font-display text-lg font-bold text-slate-900">Net Worth</h2>
+        <h2 className="font-display text-xl font-bold text-slate-900">Net Worth</h2>
         <p className="mb-4 mt-1 text-xs text-slate-600">
           {locked
             ? "Sample only — 1969 dollars, made-up balances. Your numbers unlock on Individual Unlimited."
