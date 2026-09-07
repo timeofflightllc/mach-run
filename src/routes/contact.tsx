@@ -1,12 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { BrandLockup, MachFooter } from "@/components/meridian/mach-mark";
+import { SiteCopyBody } from "@/components/meridian/site-copy-view";
 import { SiteNav } from "@/components/meridian/site-nav";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 import type { ContactTopic } from "@/lib/notify/contact";
+import { loadPublicSiteCopy, pageBySlug } from "@/lib/site-copy/api";
 
-export const Route = createFileRoute("/contact")({ component: Contact });
+export const Route = createFileRoute("/contact")({
+  loader: () => loadPublicSiteCopy(),
+  component: Contact,
+});
 
 const TOPICS: { id: ContactTopic; label: string }[] = [
   { id: "general", label: "General Question" },
@@ -15,6 +20,8 @@ const TOPICS: { id: ContactTopic; label: string }[] = [
 ];
 
 function Contact() {
+  const copy = Route.useLoaderData();
+  const page = pageBySlug(copy, "contact");
   const [topic, setTopic] = useState<ContactTopic>("general");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -68,12 +75,10 @@ function Contact() {
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">
             machrun.com
           </p>
-          <h1 className="mt-2 font-display text-4xl text-fg">Contact</h1>
-          <p className="mt-2 text-sm text-muted">
-            Pick a lane. It goes to the MACH RUN inbox. Reply-to is the email
-            you type below.
-          </p>
+          <h1 className="mt-2 font-display text-4xl text-fg">{page.title}</h1>
+          {page.kicker ? <p className="mt-2 text-sm text-muted">{page.kicker}</p> : null}
         </header>
+        {page.body.trim() ? <SiteCopyBody body={page.body} /> : null}
 
         <div className="flex justify-center">
           <div className="inline-flex max-w-full flex-wrap justify-center rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">

@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from '@tanstack/react-router'
+import { SiteCopyDesk } from "@/components/ops/site-copy-desk";
 import { useEffect, useMemo, useState } from "react";
 import { MissingPage } from "@/components/missing-page";
 import { Field, SelectInput, TextInput } from "@/components/ui/field";
@@ -297,6 +298,8 @@ function Top3DeskDoor() {
             }}
           />
         ) : null}
+
+        <SiteCopyDesk />
 
         <section className="rounded-xl bg-surface p-4 text-sm shadow-[0_0_0_1px_var(--color-border)]">
           <h2 className="font-medium text-fg">Recent desk log</h2>
