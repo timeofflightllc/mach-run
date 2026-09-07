@@ -99,7 +99,7 @@ export function Section({
               {kicker}
             </span>
           ) : null}
-          <span className="block font-display text-base font-medium text-fg">
+          <span className="block font-display text-base font-bold text-fg">
             {title}
           </span>
           {hint ? (
