@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { BrandLockup } from "@/components/meridian/mach-mark";
+import { BrandLockup, MachFooter } from "@/components/meridian/mach-mark";
+import { SiteNav } from "@/components/meridian/site-nav";
 
 export const Route = createFileRoute("/privacy")({ component: Privacy });
 
@@ -10,12 +11,13 @@ function Privacy() {
         <Link to="/" className="inline-block opacity-90 hover:opacity-100">
           <BrandLockup framed />
         </Link>
+        <SiteNav />
         <header>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">
             machrun.com
           </p>
           <h1 className="mt-2 font-display text-4xl text-fg">Privacy policy</h1>
-          <p className="mt-2 text-sm text-muted">Last updated: September 3, 2026</p>
+          <p className="mt-2 text-sm text-muted">Last updated: September 7, 2026</p>
         </header>
 
         <div className="space-y-6 text-sm leading-relaxed text-muted">
@@ -132,7 +134,10 @@ function Privacy() {
             <p>
               You can edit or clear inputs in the calculator, update email and
               password on Account profile, manage billing with Stripe, and
-              sign out. For deletion of an account and stored plan, contact us
+              sign out. For deletion of an account and stored plan, use{" "}
+              <Link to="/contact" className="text-fg underline-offset-4 hover:underline">
+                Contact
+              </Link>{" "}
               from the email on that account.
             </p>
           </section>

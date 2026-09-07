@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
+import { SiteNav } from "@/components/meridian/site-nav";
 
 /** F-15: a same-color wake flows into the tail; a shock-chart leaves the nose. Nothing drawn over the airframe. */
 export function MachGlyph({ className }: { className?: string }) {
@@ -145,8 +146,9 @@ export function MachFooter() {
   return (
     <footer className="mt-8 border-t border-border">
       <div className="page-gutter mx-auto flex w-full flex-col gap-5 py-8">
-        <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <BrandLockup size="lg" framed />
+          <SiteNav className="text-base" />
         </div>
         <dl className="grid grid-cols-1 gap-4 text-sm text-muted md:grid-cols-4 md:gap-6">
           <div>
@@ -175,12 +177,12 @@ export function MachFooter() {
             rules, income stages, Net Worth, and the full OODA.
           </p>
           <p>
-            <Link to="/privacy" className="text-muted underline-offset-4 hover:text-fg hover:underline">
-              Privacy
+            <Link to="/privacy" className="text-fg font-medium underline underline-offset-4 hover:text-accent">
+              Privacy policy
             </Link>
             {" — "}
             Your MACH Run data is encrypted in transit (HTTPS) and encrypted at
-            rest on the server.
+            rest on the server. We do not sell it.
           </p>
           <p>
             * MACH OODA AI analysis and OODA AI questions are for

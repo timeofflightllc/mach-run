@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { BrandLockup, MachFooter } from "@/components/meridian/mach-mark";
+import { SiteNav } from "@/components/meridian/site-nav";
 import { PrimaryButton, TextInput } from "@/components/ui/field";
 import { startBillingPortal, startCheckout } from "@/lib/billing/api";
 import {
@@ -216,6 +217,7 @@ function Pricing() {
             Exit Pricing
           </Link>
         </div>
+        <SiteNav className="mt-4" />
 
         <header className="mt-10 max-w-[50.5rem]">
           <h1 className="font-display text-4xl leading-tight text-fg sm:text-5xl">
