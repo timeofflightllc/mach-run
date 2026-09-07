@@ -273,6 +273,7 @@ export function ContributionForm() {
                     <Field label="End (blank = open)">
                       <DateInput
                         value={c.endDate}
+                        clearable
                         onValue={(v) =>
                           updateContribution(c.id, {
                             endDate: v === "" ? null : v,

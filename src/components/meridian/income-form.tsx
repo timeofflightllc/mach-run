@@ -307,6 +307,7 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
         <Field label="End (blank = ongoing)">
           <DateInput
             value={s.endDate}
+            clearable
             onValue={(v) => updateIncome(s.id, { endDate: v === "" ? null : v })}
           />
         </Field>

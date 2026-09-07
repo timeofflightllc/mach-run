@@ -8,6 +8,7 @@ import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { OODA_DISCLAIMER } from "@/lib/plan/disclaimer";
 import { NestEggHeadline } from "@/components/meridian/verdict";
 import { nestEggTrack } from "@/lib/plan/peers";
+import { annuityEquivalentCopy } from "@/lib/plan/annuity-equivalent";
 import { PrimaryButton } from "@/components/ui/field";
 
 function Disclaimer() {
@@ -55,6 +56,9 @@ export function PeerBriefCard({
   const faded = clipped ? sections[2] : null;
 
   const egg = plan && sim ? nestEggTrack(plan, sim) : null;
+  const annuityCopy = brief.annuityEquivalent
+    ? annuityEquivalentCopy(brief.annuityEquivalent)
+    : null;
 
   return (
     <div className="rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]">
@@ -106,6 +110,17 @@ export function PeerBriefCard({
           </div>
         ) : null}
       </div>
+      {annuityCopy ? (
+        <details className="mt-4 rounded-lg bg-bg px-4 py-3 shadow-[0_0_0_1px_var(--color-border)]">
+          <summary className="cursor-pointer text-sm font-medium text-fg">
+            View guaranteed-paycheck equivalent (estimate)
+          </summary>
+          <div className="mt-3 space-y-2 text-sm leading-relaxed text-muted">
+            <p className="font-semibold text-fg">{annuityCopy.title}</p>
+            <p className="whitespace-pre-line">{annuityCopy.body}</p>
+          </div>
+        </details>
+      ) : null}
       {clipped ? (
         <div className="mt-4 flex flex-col items-center gap-2 border-t border-border pt-4 text-center">
           <GuestOnly>

@@ -170,10 +170,12 @@ export function DateInput({
   className,
   min,
   max,
+  clearable,
   ...props
 }: Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "onChange"> & {
   value: string | null;
   onValue: (v: string) => void;
+  clearable?: boolean;
 }) {
   const parts = splitIso(value);
   const [yearDraft, setYearDraft] = useState(parts.y);
@@ -283,6 +285,21 @@ export function DateInput({
         onBlur={onYearBlur}
         className={cn(datePartClass, "w-[4.75rem] px-2 text-center")}
       />
+      {clearable && (value || yearDraft || monthDraft || dayDraft) ? (
+        <button
+          type="button"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={() => {
+            setYearDraft("");
+            setMonthDraft("");
+            setDayDraft("");
+            onValue("");
+          }}
+          className="shrink-0 px-1.5 text-[11px] font-medium text-muted hover:text-fg"
+        >
+          Clear
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -293,10 +310,12 @@ export function MonthInput({
   className,
   min,
   max,
+  clearable,
   ...props
 }: Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "onChange"> & {
   value: string | null;
   onValue: (v: string) => void;
+  clearable?: boolean;
 }) {
   const parts = splitIso(value);
   const [yearDraft, setYearDraft] = useState(parts.y);
@@ -374,6 +393,20 @@ export function MonthInput({
         onBlur={onYearBlur}
         className={cn(datePartClass, "w-[4.75rem] px-2 text-center")}
       />
+      {clearable && (value || yearDraft || monthDraft) ? (
+        <button
+          type="button"
+          onMouseDown={(e) => e.stopPropagation()}
+          onClick={() => {
+            setYearDraft("");
+            setMonthDraft("");
+            onValue("");
+          }}
+          className="shrink-0 px-1.5 text-[11px] font-medium text-muted hover:text-fg"
+        >
+          Clear
+        </button>
+      ) : null}
     </div>
   );
 }

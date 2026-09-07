@@ -8,6 +8,7 @@ import {
   streamBenefitToday,
   streamWindow,
 } from "./engine.ts";
+import { guaranteedAnnuityEquivalent, type AnnuityEquivalent } from "./annuity-equivalent.ts";
 import { usd, usdCompact } from "./format.ts";
 import { remainingLiability, liabilityPayoffDate } from "./liability.ts";
 import { mortgageAssociated, mortgagePayoffDate, remainingMortgage } from "./mortgage.ts";
@@ -63,6 +64,7 @@ export interface PeerBrief {
   /** title + body, for tests and PDF fallback */
   paragraphs: string[];
   expanded: boolean;
+  annuityEquivalent?: AnnuityEquivalent | null;
 }
 
 export function percentileFromKnots(
@@ -322,6 +324,7 @@ export function buildPeerBrief(
     sections,
     paragraphs: sections.map((s) => `${s.title}: ${s.body}`),
     expanded,
+    annuityEquivalent: guaranteedAnnuityEquivalent(plan),
   });
 
   if (plan.portfolios.length === 0 && namedIncomes.length === 0) {

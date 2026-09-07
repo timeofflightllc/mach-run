@@ -57,6 +57,7 @@ export function SpendingForm() {
               <Field label="End (blank = open)">
                 <DateInput
                   value={s.endDate}
+                  clearable
                   onValue={(v) =>
                     updateSpending(s.id, { endDate: v === "" ? null : v })
                   }
