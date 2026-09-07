@@ -1,11 +1,39 @@
 import { usd } from "@/lib/plan/format";
-import type { Plan, SimResult } from "@/lib/plan/types";
+import type { Plan, SimResult, YearCap } from "@/lib/plan/types";
+
+function capCopy(cap: YearCap): { label: string; tone: string; title: string } {
+  if (cap.kind === "cash") {
+    const short = Math.max(0, cap.planned - cap.funded);
+    return {
+      label: "cash",
+      tone: "text-negative",
+      title: `${cap.year} — planned ${usd(cap.planned)}. Leftover after tax and spending: ${usd(cap.leftover)}. MACH RUN invested ${usd(cap.funded)}. Short ${usd(short)}. It will not invent cash.`,
+    };
+  }
+  if (cap.kind === "irs") {
+    return {
+      label: "irs",
+      tone: "text-[#e8c547]",
+      title: `${cap.year} — IRS annual limit cut ${usd(cap.irsCut)} from planned contributions because “cap to IRS limit” is on. Employee deferral stopped at the legal max. Employer match is extra and is not part of that limit.`,
+    };
+  }
+  return {
+    label: "match",
+    tone: "text-positive",
+    title: `${cap.year} — employer match of ${usd(cap.employerMatch)} is free money on top of take-home, not from leftover paycheck. MACH RUN adds it only on the employee dollars it actually invested.`,
+  };
+}
 
 export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
   const real = plan.assumptions.dollars === "real";
   const inf = plan.assumptions.inflationPct / 100;
   const asOfYear = Number(plan.assumptions.asOfDate.slice(0, 4));
-  const gapYears = new Set(sim.fundingGaps.map((g) => g.year));
+  const capsByYear = new Map<number, YearCap[]>();
+  for (const cap of sim.yearCaps ?? []) {
+    const list = capsByYear.get(cap.year) ?? [];
+    list.push(cap);
+    capsByYear.set(cap.year, list);
+  }
 
   function flow(amount: number, year: number) {
     if (!real) return amount;
@@ -23,6 +51,8 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
       "spending",
       "contributions",
       "plannedContributions",
+      "irsCut",
+      "employerMatch",
       "withdrawals",
       "surplus",
       "guaranteed",
@@ -40,6 +70,8 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
         y.spending.toFixed(2),
         y.contributions.toFixed(2),
         y.plannedContributions.toFixed(2),
+        (y.irsCut ?? 0).toFixed(2),
+        (y.employerMatch ?? 0).toFixed(2),
         y.withdrawals.toFixed(2),
         y.surplus.toFixed(2),
         y.guaranteed.toFixed(2),
@@ -78,13 +110,14 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           {sim.fundingGaps.length > 6
             ? ` (+${sim.fundingGaps.length - 6} more)`
             : ""}
-          . MACH RUN invested only the leftover. Cut contribution rules or spending,
-          or raise income — the ledger will not create money.
+          . MACH RUN invested only the leftover. Hover or tap CASH / IRS / MATCH
+          next to a year for that year’s reason.
         </p>
       ) : (
         <p className="border-t border-border px-4 py-3 text-xs text-subtle">
           Identity: income + drawn = tax + spend + saved. Saved is leftover
-          paycheck after tax and spending, including the surplus sweep.
+          paycheck after tax and spending, including the surplus sweep. Hover or
+          tap CASH / IRS / MATCH when a year is marked.
         </p>
       )}
       <div className="overflow-x-auto pb-2">
@@ -109,11 +142,19 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
               >
                 <td className="whitespace-nowrap px-4 py-2 text-fg">
                   {y.year}
-                  {gapYears.has(y.year) ? (
-                    <span className="ml-1 text-xs uppercase tracking-wider text-negative">
-                      capped
-                    </span>
-                  ) : null}
+                  {(capsByYear.get(y.year) ?? []).map((cap) => {
+                    const copy = capCopy(cap);
+                    return (
+                      <button
+                        key={cap.kind}
+                        type="button"
+                        title={copy.title}
+                        className={`ml-1 cursor-help text-xs uppercase tracking-wider underline decoration-dotted underline-offset-2 ${copy.tone}`}
+                      >
+                        {copy.label}
+                      </button>
+                    );
+                  })}
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-muted">
                   {plan.primary.birthDate ? y.primaryAge : "—"}/

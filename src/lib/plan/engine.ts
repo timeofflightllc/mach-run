@@ -32,6 +32,7 @@ import type {
   SimResult,
   StageMark,
   TaxBucket,
+  YearCap,
   YearSnapshot,
 } from "./types";
 
@@ -367,6 +368,7 @@ export function simulate(raw: Plan): SimResult {
 
     const due: { portfolioId: string; amount: number; matchPct: number }[] = [];
     let planned = 0;
+    let irsCut = 0;
     for (const rule of plan.contributions) {
       let amount = contributionDueThisMonth(plan, rule, cursor, monthsFromAsOf, infA);
       if (amount <= 0) continue;
@@ -376,6 +378,7 @@ export function simulate(raw: Plan): SimResult {
       const person =
         dest && normalizeOwner(dest.owner) === "spouse" ? "spouse" : "primary";
       const ytdKey = cls ? `${cursor.getFullYear()}|${person}|${cls}` : null;
+      const asked = amount;
       if (rule.capToIrsLimit && dest && cls && ytdKey) {
         const birth =
           person === "spouse" ? plan.spouse.birthDate : plan.primary.birthDate;
@@ -384,6 +387,7 @@ export function simulate(raw: Plan): SimResult {
         const used = irsYtd.get(ytdKey) ?? 0;
         amount = Math.min(amount, Math.max(0, cap - used));
       }
+      if (asked - amount > 0.5) irsCut += asked - amount;
       if (amount <= 0) continue;
       if (ytdKey) irsYtd.set(ytdKey, (irsYtd.get(ytdKey) ?? 0) + amount);
       const matchPct =
@@ -434,6 +438,7 @@ export function simulate(raw: Plan): SimResult {
 
     let appliedContrib = 0;
     let withdrawals = 0;
+    let employerMatch = 0;
     for (const t of rmdTakes) {
       const v = values.get(t.id) ?? 0;
       const take = Math.min(v, t.amount);
@@ -472,6 +477,7 @@ export function simulate(raw: Plan): SimResult {
         incomeByKind.employer_match = (incomeByKind.employer_match ?? 0) + match;
         appliedContrib += match;
         planned += match;
+        employerMatch += match;
       }
     } else if (leftover < -0.5) {
       withdrawals += withdrawNeed(plan, values, basis, -leftover, taxR);
@@ -530,6 +536,8 @@ export function simulate(raw: Plan): SimResult {
       liabilitiesEndReal: liabilitiesEnd / inflationIndex,
       contributions: appliedContrib,
       plannedContributions: planned,
+      irsCut,
+      employerMatch,
       withdrawals,
       income,
       incomeTaxable: taxableBase,
@@ -583,6 +591,8 @@ export function simulate(raw: Plan): SimResult {
       endLiabilitiesReal: last.liabilitiesEndReal,
       contributions: sum((m) => m.contributions),
       plannedContributions: sum((m) => m.plannedContributions),
+      irsCut: sum((m) => m.irsCut),
+      employerMatch: sum((m) => m.employerMatch),
       withdrawals: sum((m) => m.withdrawals),
       income: sum((m) => m.income),
       tax: sum((m) => m.tax),
@@ -624,6 +634,29 @@ export function simulate(raw: Plan): SimResult {
       leftover: Math.max(0, y.surplus),
       funded: Math.min(y.plannedContributions, Math.max(0, y.surplus)),
     }));
+
+  const yearCaps: YearCap[] = [];
+  for (const y of years) {
+    const leftover = Math.max(0, y.surplus);
+    const funded = Math.min(y.plannedContributions, leftover);
+    const base = {
+      year: y.year,
+      planned: y.plannedContributions,
+      leftover,
+      funded,
+      irsCut: y.irsCut,
+      employerMatch: y.employerMatch,
+    };
+    if (y.plannedContributions > leftover + 1) {
+      yearCaps.push({ ...base, kind: "cash" });
+    }
+    if (y.irsCut > 1) {
+      yearCaps.push({ ...base, kind: "irs" });
+    }
+    if (y.employerMatch > 0.5) {
+      yearCaps.push({ ...base, kind: "match" });
+    }
+  }
 
   const careerIso = format(stage1End, "yyyy-MM");
   const careerMonth =
@@ -673,6 +706,7 @@ export function simulate(raw: Plan): SimResult {
     years,
     stageMarks,
     fundingGaps,
+    yearCaps,
     depletedAge,
     depletedYear,
     retirement,

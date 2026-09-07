@@ -466,6 +466,70 @@ test("IRS cap: $3000/mo 401k stops when $24,500 is full; match follows", () => {
   assert.ok(Math.abs(jan.contributions - 6000) < 2);
   assert.ok(Math.abs(sep.contributions - 1000) < 2);
   assert.ok(oct.contributions < 1);
+  const y2026 = result.years.find((y) => y.year === 2026);
+  assert.ok(y2026);
+  assert.ok(y2026.irsCut > 1);
+  assert.ok(y2026.employerMatch > 1);
+  const kinds = new Set(result.yearCaps.filter((c) => c.year === 2026).map((c) => c.kind));
+  assert.ok(kinds.has("irs"));
+  assert.ok(kinds.has("match"));
+});
+
+test("year caps: cash when planned exceeds leftover", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-01-01";
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultReturnPct = 0;
+  plan.primary.birthDate = "1979-01-01";
+  plan.incomes = [
+    {
+      id: "job",
+      name: "Job",
+      kind: "salary",
+      monthlyAmount: 2000,
+      startDate: "2026-01-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.spending = [
+    {
+      id: "sp",
+      label: "Spend",
+      monthlyAmount: 1500,
+      startDate: "2026-01-01",
+      endDate: null,
+    },
+  ];
+  plan.portfolios = [
+    {
+      id: "t",
+      name: "Taxable",
+      kind: "taxable",
+      owner: "primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c",
+      label: "Too much",
+      portfolioId: "t",
+      monthlyAmount: 2000,
+      startDate: "2026-01-01",
+      endDate: null,
+    },
+  ];
+  const result = simulate(plan);
+  const cash = result.yearCaps.find((c) => c.year === 2026 && c.kind === "cash");
+  assert.ok(cash);
+  assert.ok(cash.planned > cash.leftover + 1);
 });
 
 test("house mortgage plus car loan: net worth is assets minus both remaining principals", () => {

@@ -213,6 +213,8 @@ export interface MonthSnapshot {
   liabilitiesEndReal: number;
   contributions: number;
   plannedContributions: number;
+  irsCut: number;
+  employerMatch: number;
   withdrawals: number;
   income: number;
   incomeTaxable: number;
@@ -240,6 +242,8 @@ export interface YearSnapshot {
   endLiabilitiesReal: number;
   contributions: number;
   plannedContributions: number;
+  irsCut: number;
+  employerMatch: number;
   withdrawals: number;
   income: number;
   tax: number;
@@ -254,6 +258,18 @@ export interface FundingGap {
   planned: number;
   leftover: number;
   funded: number;
+}
+
+export type YearCapKind = "cash" | "irs" | "match";
+
+export interface YearCap {
+  year: number;
+  kind: YearCapKind;
+  planned: number;
+  leftover: number;
+  funded: number;
+  irsCut: number;
+  employerMatch: number;
 }
 
 export interface StageMark {
@@ -283,6 +299,7 @@ export interface SimResult {
   years: YearSnapshot[];
   stageMarks: StageMark[];
   fundingGaps: FundingGap[];
+  yearCaps: YearCap[];
   depletedAge: number | null;
   depletedYear: number | null;
   retirement: RetirementMark | null;
