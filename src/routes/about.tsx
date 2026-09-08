@@ -37,6 +37,13 @@ function About() {
           {page.kicker ? <p className="mt-2 text-lg text-muted">{page.kicker}</p> : null}
         </header>
         <SiteCopyBody body={page.body} />
+        <figure className="mt-4 max-w-sm">
+          <img
+            src="/brand/cain-signature.jpg"
+            alt="Cain"
+            className="h-20 w-auto sm:h-24"
+          />
+        </figure>
       </div>
       <MachFooter />
     </main>
