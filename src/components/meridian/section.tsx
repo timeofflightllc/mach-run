@@ -8,6 +8,10 @@ function foldAll(open: boolean) {
   window.dispatchEvent(new CustomEvent(FOLD_EVENT, { detail: { open } }));
 }
 
+export function collapseAllOodSections() {
+  foldAll(false);
+}
+
 export function SectionFoldToggle({ className }: { className?: string }) {
   const [allOpen, setAllOpen] = useState<boolean | null>(null);
 
@@ -56,7 +60,7 @@ export function Section({
   title,
   hint,
   children,
-  defaultOpen = true,
+  defaultOpen = false,
 }: {
   id?: string;
   kicker?: string;

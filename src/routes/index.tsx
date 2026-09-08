@@ -14,7 +14,7 @@ import { PortfolioForm } from "@/components/meridian/portfolio-form";
 import { LiabilityForm } from "@/components/meridian/liability-form";
 import { PeerBriefCard } from "@/components/meridian/peer-brief";
 import { OodaAiCard } from "@/components/meridian/ooda-ai";
-import { Section, SectionFoldToggle } from "@/components/meridian/section";
+import { Section, SectionFoldToggle, collapseAllOodSections } from "@/components/meridian/section";
 import { SpendingForm } from "@/components/meridian/spending-form";
 import { Verdict } from "@/components/meridian/verdict";
 import { YearTable } from "@/components/meridian/year-table";
@@ -163,6 +163,10 @@ function Home() {
     >
   >({});
   const run = runs[runKey] ?? null;
+
+  useEffect(() => {
+    collapseAllOodSections();
+  }, []);
 
   useEffect(() => {
     if (isPending) return;
@@ -504,6 +508,7 @@ function Home() {
             <Section
               title="Income"
               hint="Name it, amount, start, end — add another for the next paycheck"
+              defaultOpen={false}
             >
               <IncomeForm />
             </Section>
@@ -521,6 +526,7 @@ function Home() {
             <Section
               title="Contributions"
               hint="Set your monthly contributions to the accounts created above. Different rules apply for different types of accounts, so ensure the “kind” of account is correctly set above."
+              defaultOpen={false}
             >
               <ContributionForm />
             </Section>
