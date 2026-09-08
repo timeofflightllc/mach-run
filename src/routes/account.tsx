@@ -308,7 +308,7 @@ function Account() {
 
   return (
     <main className="min-h-screen px-4 py-10 text-fg" style={{ backgroundColor: "#0a1835" }}>
-      <div className="mx-auto w-full max-w-4xl space-y-8">
+      <div className="mx-auto w-full max-w-7xl space-y-8">
         <div className="flex items-start justify-between gap-4">
           <Link to="/" className="inline-block opacity-90 hover:opacity-100">
             <BrandLockup />
