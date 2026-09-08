@@ -144,7 +144,7 @@ export function BrandLockup({
 
 export function MachFooter() {
   return (
-    <footer className="mt-8 border-t border-border">
+    <footer className="mt-8 border-t border-border bg-bg">
       <div className="page-gutter mx-auto flex w-full flex-col gap-5 py-8">
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <BrandLockup size="lg" framed />
