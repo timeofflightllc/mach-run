@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { BackupPasswordModal } from "@/components/meridian/backup-modal";
 import { DeleteAccountModal } from "@/components/meridian/delete-account-modal";
 import { BrandLockup } from "@/components/meridian/mach-mark";
+import { SiteMenu } from "@/components/meridian/site-nav";
 import { IdleLockSettings } from "@/components/meridian/idle-lock-settings";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import { startBillingPortal } from "@/lib/billing/api";
@@ -310,14 +311,17 @@ function Account() {
     <main className="min-h-screen px-4 py-10 text-fg" style={{ backgroundColor: "#0a1835" }}>
       <div className="mx-auto w-full max-w-7xl space-y-8">
         <div className="flex items-start justify-between gap-4">
-          <Link to="/" className="inline-block opacity-90 hover:opacity-100">
-            <BrandLockup />
-          </Link>
+          <div className="flex items-start gap-1">
+            <Link to="/" className="inline-block opacity-90 hover:opacity-100">
+              <BrandLockup />
+            </Link>
+            <SiteMenu className="mt-1" />
+          </div>
           <Link
             to="/"
             className="mt-1 inline-flex h-10 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
           >
-            Exit Account Profile
+            Home
           </Link>
         </div>
         <header>

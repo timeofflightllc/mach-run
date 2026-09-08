@@ -15,6 +15,7 @@ import { LiabilityForm } from "@/components/meridian/liability-form";
 import { PeerBriefCard } from "@/components/meridian/peer-brief";
 import { OodaAiCard } from "@/components/meridian/ooda-ai";
 import { Section, SectionFoldToggle, collapseAllOodSections } from "@/components/meridian/section";
+import { SiteMenu } from "@/components/meridian/site-nav";
 import { SpendingForm } from "@/components/meridian/spending-form";
 import { Verdict } from "@/components/meridian/verdict";
 import { YearTable } from "@/components/meridian/year-table";
@@ -341,8 +342,9 @@ function Home() {
       >
         <div className="page-gutter relative z-50 mx-auto max-w-none py-2.5">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1">
-            <div className="min-w-0">
+            <div className="flex min-w-0 items-center gap-1">
               <BrandLockup showTagline={false} />
+              <SiteMenu />
             </div>
             <div className="flex shrink-0 items-center justify-end gap-1.5">
               <div className="hidden rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)] md:flex">

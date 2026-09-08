@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { BrandLockup, MachFooter } from "@/components/meridian/mach-mark";
 import { SiteCopyBody } from "@/components/meridian/site-copy-view";
-import { SiteNav } from "@/components/meridian/site-nav";
+import { SiteMenu } from "@/components/meridian/site-nav";
 import { loadPublicSiteCopy, pageBySlug } from "@/lib/site-copy/api";
 
 export const Route = createFileRoute("/about")({
@@ -15,10 +15,20 @@ function About() {
   return (
     <main className="min-h-screen px-4 py-10 text-fg" style={{ backgroundColor: "#0a1835" }}>
       <div className="mx-auto w-full max-w-7xl space-y-8">
-        <Link to="/" className="inline-block opacity-90 hover:opacity-100">
-          <BrandLockup />
-        </Link>
-        <SiteNav />
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-1">
+            <Link to="/" className="inline-block opacity-90 hover:opacity-100">
+              <BrandLockup />
+            </Link>
+            <SiteMenu className="mt-1" />
+          </div>
+          <Link
+            to="/"
+            className="mt-1 inline-flex h-10 shrink-0 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+          >
+            Home
+          </Link>
+        </div>
         <header>
           <p className="text-sm font-medium uppercase tracking-[0.18em] text-subtle">
             machrun.com
