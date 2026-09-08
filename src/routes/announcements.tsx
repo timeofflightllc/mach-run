@@ -24,17 +24,17 @@ function Announcements() {
             machrun.com
           </p>
           <h1 className="mt-2 font-display text-4xl text-fg">{page.title}</h1>
-          {page.kicker ? <p className="mt-2 text-sm text-muted">{page.kicker}</p> : null}
+          {page.kicker ? <p className="mt-2 text-base text-muted">{page.kicker}</p> : null}
         </header>
         {page.body.trim() ? <SiteCopyBody body={page.body} /> : null}
         <ol className="space-y-5">
           {copy.announcements.map((item) => (
             <li key={item.id} className="border-b border-border pb-4 last:border-0">
-              <p className="text-xs font-medium uppercase tracking-wider text-subtle">
+              <p className="text-sm font-medium uppercase tracking-wider text-subtle">
                 {item.at}
               </p>
-              <h2 className="mt-1 font-display text-lg font-bold text-fg">{item.title}</h2>
-              <p className="mt-1 text-sm text-muted">{item.blurb}</p>
+              <h2 className="mt-1 font-display text-xl font-bold text-fg">{item.title}</h2>
+              <p className="mt-1 text-base text-muted">{item.blurb}</p>
             </li>
           ))}
         </ol>

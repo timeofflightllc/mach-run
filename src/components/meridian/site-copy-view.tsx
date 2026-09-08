@@ -27,7 +27,7 @@ export function SiteCopyBody({ body }: { body: string }) {
   const blocks = body.replace(/\r\n/g, "\n").trim().split(/\n{2,}/);
   if (!blocks[0]) return null;
   return (
-    <div className="space-y-5 text-sm leading-relaxed text-muted">
+    <div className="space-y-5 text-base leading-relaxed text-muted">
       {blocks.map((block, i) => {
         const lines = block.split("\n");
         if (lines[0]?.startsWith("# ")) {
@@ -35,7 +35,7 @@ export function SiteCopyBody({ body }: { body: string }) {
           const rest = lines.slice(1).join(" ").trim();
           return (
             <section key={i} className="space-y-2">
-              <h2 className="font-medium text-fg">{heading}</h2>
+              <h2 className="text-lg font-medium text-fg">{heading}</h2>
               {rest ? <p>{inline(rest)}</p> : null}
             </section>
           );

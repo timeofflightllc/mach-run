@@ -24,7 +24,7 @@ function Privacy() {
             machrun.com
           </p>
           <h1 className="mt-2 font-display text-4xl text-fg">{page.title}</h1>
-          {page.kicker ? <p className="mt-2 text-sm text-muted">{page.kicker}</p> : null}
+          {page.kicker ? <p className="mt-2 text-base text-muted">{page.kicker}</p> : null}
         </header>
         <SiteCopyBody body={page.body} />
       </div>
