@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Field, TextInput } from "@/components/ui/field";
-import { listOpsRoster } from "@/lib/ops/api";
+import { getOpsUserUsageFn, listOpsRoster } from "@/lib/ops/api";
+import { activityLabel, describeActivity } from "@/lib/ops/activity";
 import { OPS_ROSTER_PAGE, type OpsRosterRow } from "@/lib/ops/roster";
+import { EMPTY_USER_USAGE, type OpsUserUsage } from "@/lib/ops/user-usage";
 import { OpsDeleteAccount } from "./ops-delete-account";
 
 function fmtDate(value: string | null): string {
@@ -9,6 +11,13 @@ function fmtDate(value: string | null): string {
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return "—";
   return d.toISOString().slice(0, 10);
+}
+
+function fmtWhen(value: string | null): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return d.toISOString().slice(0, 16).replace("T", " ") + " UTC";
 }
 
 export function DeskUsers() {
@@ -52,8 +61,8 @@ export function DeskUsers() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted">
-        Click a person, then Delete. MACH RUN asks for your desk password, then
-        one more confirm. Packages stay on Roster.
+        Click a person for account facts and site use. Counts only — no dollar
+        amounts. Delete still asks for your desk password.
       </p>
       <div className="max-w-md">
         <Field label="Search">
@@ -133,41 +142,200 @@ export function DeskUsers() {
         </div>
       </div>
       {selected ? (
-        <section className="rounded-xl bg-surface p-4 text-sm shadow-[0_0_0_1px_var(--color-border)]">
-          <h2 className="font-display text-2xl text-fg">{selected.email ?? selected.id}</h2>
-          <p className="mt-1 text-muted">
-            {selected.name ?? "No display name"}
-            {selected.id ? ` · ${selected.id}` : ""}
-          </p>
-          <dl className="mt-4 grid gap-2 sm:grid-cols-2">
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-subtle">Package</dt>
-              <dd className="text-fg">{selected.packageLabel}</dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-subtle">Created</dt>
-              <dd className="text-fg">{fmtDate(selected.createdAt)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-subtle">Sign-in</dt>
-              <dd className="text-fg">{selected.authHint}</dd>
-            </div>
-            <div>
-              <dt className="text-xs uppercase tracking-wide text-subtle">Status</dt>
-              <dd className="text-fg">{selected.status}</dd>
-            </div>
-          </dl>
-          <div className="mt-6 border-t border-border/70 pt-4">
-            <OpsDeleteAccount
-              row={selected}
-              onDeleted={() => {
-                setOpenId(null);
-                setTick((n) => n + 1);
-              }}
-            />
-          </div>
-        </section>
+        <UserDetail
+          row={selected}
+          onDeleted={() => {
+            setOpenId(null);
+            setTick((n) => n + 1);
+          }}
+        />
       ) : null}
     </div>
   );
+}
+
+function UserDetail({
+  row,
+  onDeleted,
+}: {
+  row: OpsRosterRow;
+  onDeleted: () => void;
+}) {
+  const [usage, setUsage] = useState<OpsUserUsage>(EMPTY_USER_USAGE);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let live = true;
+    setLoading(true);
+    setUsage(EMPTY_USER_USAGE);
+    void getOpsUserUsageFn({ data: { userId: row.id } })
+      .then((raw) => {
+        if (!live) return;
+        const r = raw as OpsUserUsage;
+        setUsage({ ...EMPTY_USER_USAGE, ...r });
+        setLoading(false);
+      })
+      .catch(() => {
+        if (live) setLoading(false);
+      });
+    return () => {
+      live = false;
+    };
+  }, [row.id]);
+
+  const shape = usage.shape;
+
+  return (
+    <section className="rounded-xl bg-surface p-4 text-sm shadow-[0_0_0_1px_var(--color-border)]">
+      <h2 className="font-display text-2xl text-fg">{row.email ?? row.id}</h2>
+      <p className="mt-1 text-muted">
+        {row.name ?? "No display name"}
+        {row.id ? ` · ${row.id}` : ""}
+      </p>
+
+      <dl className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <Fact label="Package" value={row.packageLabel} />
+        <Fact label="Billing" value={intervalLabel(row.interval)} />
+        <Fact label="Status" value={row.status} />
+        <Fact label="Period end" value={fmtDate(row.periodEnd)} />
+        <Fact label="Created" value={fmtDate(row.createdAt)} />
+        <Fact label="Sign-in method" value={row.authHint} />
+        <Fact
+          label="Email verified"
+          value={
+            usage.emailVerified == null ? "—" : usage.emailVerified ? "Yes" : "No"
+          }
+        />
+        <Fact label="Stripe customer" value={row.stripeCustomerId ?? "—"} />
+        <Fact label="Stripe subscription" value={row.stripeSubscriptionId ?? "—"} />
+      </dl>
+
+      <div className="mt-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <Stat label="Sign-ins recorded" value={usage.loginCount} />
+        <Stat label="MACH Runs" value={usage.calculateCount} />
+        <Stat label="PDF downloads" value={usage.pdfCount} />
+        <Stat label="Backups" value={usage.backupCount} />
+      </div>
+
+      <dl className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        <Fact label="Most recent sign-in" value={fmtWhen(usage.lastLoginAt)} />
+        <Fact label="Active sessions" value={String(usage.activeSessions)} />
+        <Fact label="Last device" value={usage.deviceHint ?? "—"} />
+        <Fact label="Last MACH Run" value={fmtWhen(usage.lastCalculateAt)} />
+        <Fact label="Last PDF" value={fmtWhen(usage.lastPdfAt)} />
+        <Fact label="Plan last saved" value={fmtWhen(usage.planSavedAt)} />
+      </dl>
+      <div className="mt-2">
+        <Fact
+          label="Recent IPs"
+          value={usage.lastIps.length ? usage.lastIps.join(" · ") : "—"}
+        />
+      </div>
+
+      <div className="mt-4 rounded-lg bg-elevated px-3 py-3">
+        <h3 className="text-xs font-medium uppercase tracking-wide text-subtle">
+          Household inventory
+        </h3>
+        <p className="mt-1 text-xs text-subtle">
+          Block counts from the saved plan. No balances, names, or birthdays.
+        </p>
+        {loading ? (
+          <p className="mt-2 text-sm text-muted">Loading usage…</p>
+        ) : !usage.planPresent && !shape ? (
+          <p className="mt-2 text-sm text-muted">No MACH RUN saved yet.</p>
+        ) : (
+          <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+            <Stat label="Profiles" value={shape?.profiles ?? 0} />
+            <Stat label="Family people" value={shape?.familyPeople ?? 0} />
+            <Stat label="Accounts" value={shape?.accounts ?? 0} />
+            <Stat label="Incomes" value={shape?.incomes ?? 0} />
+            <Stat label="Contributions" value={shape?.contributions ?? 0} />
+            <Stat label="Spending rules" value={shape?.spending ?? 0} />
+            <Stat label="Liabilities" value={shape?.liabilities ?? 0} />
+            <Stat label="Mortgages" value={shape?.mortgages ?? 0} />
+          </dl>
+        )}
+        {usage.planLocked ? (
+          <p className="mt-2 text-xs text-muted">
+            Saved plan is encrypted. Inventory above is from the last Calculate
+            if one exists.
+          </p>
+        ) : null}
+      </div>
+
+      <div className="mt-4 rounded-lg bg-elevated px-3 py-3">
+        <h3 className="text-xs font-medium uppercase tracking-wide text-subtle">
+          Recent activity
+        </h3>
+        {usage.events.length === 0 ? (
+          <p className="mt-2 text-sm text-muted">
+            No Calculate, PDF, sign-in, or save events yet. Sign-in counts start
+            after this deploy.
+          </p>
+        ) : (
+          <ul className="mt-2 max-h-56 space-y-2 overflow-y-auto text-sm text-muted">
+            {usage.events.map((ev) => (
+              <li key={ev.id}>
+                <span className="text-subtle">{fmtWhen(ev.at)}</span>
+                {" · "}
+                <span className="text-fg">{activityLabel(ev.action)}</span>
+                {describeActivity(ev) ? ` — ${describeActivity(ev)}` : ""}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-3">
+        {row.stripeCustomerUrl ? (
+          <a
+            className="text-fg underline underline-offset-4"
+            href={row.stripeCustomerUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open customer in Stripe
+          </a>
+        ) : null}
+        {row.stripeSubscriptionUrl ? (
+          <a
+            className="text-fg underline underline-offset-4"
+            href={row.stripeSubscriptionUrl}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open subscription in Stripe
+          </a>
+        ) : null}
+      </div>
+
+      <div className="mt-6 border-t border-border/70 pt-4">
+        <OpsDeleteAccount row={row} onDeleted={onDeleted} />
+      </div>
+    </section>
+  );
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-xs uppercase tracking-wide text-subtle">{label}</dt>
+      <dd className="break-all text-fg">{value}</dd>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-xl bg-elevated px-3 py-2 shadow-[0_0_0_1px_var(--color-border)]">
+      <p className="text-[11px] uppercase tracking-wide text-subtle">{label}</p>
+      <p className="font-display text-2xl tabular-nums text-fg">{value}</p>
+    </div>
+  );
+}
+
+function intervalLabel(value: OpsRosterRow["interval"]): string {
+  if (value === "year") return "Yearly";
+  if (value === "month") return "Monthly";
+  return "—";
 }

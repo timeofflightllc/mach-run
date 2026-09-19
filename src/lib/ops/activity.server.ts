@@ -1,6 +1,9 @@
 import { getSql } from "@/lib/db";
 import {
   EMPTY_ACTIVITY,
+  addShapes,
+  emptyShape,
+  shapeFromPlan,
   type MachActivityAction,
   type MachActivityEvent,
   type MachActivityShape,
@@ -38,6 +41,9 @@ function asShape(detail: Record<string, unknown> | null | undefined): string {
     detail.spending,
     detail.liabilities,
     detail.profiles,
+    detail.familyPeople,
+    detail.stages,
+    detail.mortgages,
   ].join("|");
 }
 
@@ -85,7 +91,7 @@ export async function loadUserActivity(userId: string): Promise<MachActivitySumm
     const sql = await getSql();
     const counts = await sql.query<{ action: string; n: string | number }>(
       `select action, count(*)::int as n from mach_user_activity
-       where user_id = $1 and action in ('calculate', 'pdf', 'backup_download')
+       where user_id = $1 and action in ('calculate', 'pdf', 'backup_download', 'login')
        group by action`,
       [userId],
     );
@@ -121,6 +127,7 @@ export async function loadUserActivity(userId: string): Promise<MachActivitySumm
       calculateCount: tally.calculate ?? 0,
       pdfCount: tally.pdf ?? 0,
       backupCount: tally.backup_download ?? 0,
+      loginCount: tally.login ?? 0,
       events,
     };
   } catch {
@@ -130,21 +137,18 @@ export async function loadUserActivity(userId: string): Promise<MachActivitySumm
 
 export function shapeFromUnknown(raw: unknown): MachActivityShape {
   const obj = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
+  if (obj.kind === "library" && Array.isArray(obj.profiles)) {
+    const profiles = obj.profiles as { plan?: unknown }[];
+    return profiles.reduce((acc, prof) => {
+      const plan = prof?.plan && typeof prof.plan === "object" ? prof.plan : {};
+      return addShapes(acc, shapeFromPlan(plan as Parameters<typeof shapeFromPlan>[0], 1));
+    }, emptyShape(0));
+  }
   const plan =
-    obj.kind === "library" && Array.isArray(obj.profiles)
-      ? ((obj.profiles as { plan?: unknown }[])[0]?.plan ?? {})
-      : obj.plan && typeof obj.plan === "object"
-        ? obj.plan
-        : raw;
-  const p = plan && typeof plan === "object" ? (plan as Record<string, unknown>) : {};
-  const profiles =
-    obj.kind === "library" && Array.isArray(obj.profiles) ? obj.profiles.length : 1;
-  return {
-    accounts: Array.isArray(p.portfolios) ? p.portfolios.length : 0,
-    incomes: Array.isArray(p.incomes) ? p.incomes.length : 0,
-    contributions: Array.isArray(p.contributions) ? p.contributions.length : 0,
-    spending: Array.isArray(p.spending) ? p.spending.length : 0,
-    liabilities: Array.isArray(p.liabilities) ? p.liabilities.length : 0,
-    profiles,
-  };
+    obj.plan && typeof obj.plan === "object"
+      ? obj.plan
+      : raw && typeof raw === "object"
+        ? raw
+        : {};
+  return shapeFromPlan(plan as Parameters<typeof shapeFromPlan>[0], 1);
 }

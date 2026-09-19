@@ -133,7 +133,7 @@ function Top3DeskDoor() {
           <h1 className="mt-2 font-display text-4xl text-fg">Top 3 Desk</h1>
           <p className="mt-2 text-sm text-muted">
             {tab === "users"
-              ? "Users. Click a person, then delete with your desk password."
+              ? "Users. Click a person for site use, then delete with your desk password."
               : tab === "copy"
                 ? "Site copy. Pages and announcements."
                 : "Roster. Packages only — no household numbers."}
@@ -410,6 +410,7 @@ function PersonPane({
             calculateCount: r.calculateCount,
             pdfCount: r.pdfCount,
             backupCount: r.backupCount,
+            loginCount: r.loginCount ?? 0,
             events: r.events,
           });
         }

@@ -80,6 +80,7 @@ export async function wipeUserRows(userId: string): Promise<void> {
   const stored = users[0]?.email ?? null;
   await cancelStripeIfAny(userId);
   await sql.query(`delete from mach_plans where user_id = $1`, [userId]).catch(() => undefined);
+  await sql.query(`delete from mach_user_activity where user_id = $1`, [userId]).catch(() => undefined);
   await sql.query(`delete from mach_subscriptions where user_id = $1`, [userId]).catch(() => undefined);
   await sql.query(`delete from mach_email_prefs where user_id = $1`, [userId]).catch(() => undefined);
   await sql.query(`delete from email_verify_codes where user_id = $1`, [userId]).catch(() => undefined);

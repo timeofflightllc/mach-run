@@ -5,7 +5,8 @@ import {
   type OpsRosterQuery,
   type OpsRosterResult,
 } from "./roster";
-import { EMPTY_ACTIVITY } from "./activity";
+import { EMPTY_ACTIVITY, type MachActivitySummary } from "./activity";
+import { EMPTY_USER_USAGE, type OpsUserUsage } from "./user-usage";
 
 const opsSessionMiddleware = createMiddleware({ type: "function" })
   .client(async ({ next }) => {
@@ -207,11 +208,26 @@ export const listOpsActivityFn = createServerFn({ method: "POST" })
   .validator((input: { userId?: string }) => ({
     userId: String(input?.userId ?? asRecord(input).userId ?? ""),
   }))
-  .handler(async ({ context, data }) => {
+  .handler(async ({ context, data }): Promise<{ allowed: boolean } & MachActivitySummary> => {
     const { getOpsActor } = await import("./gate.server");
     const actor = await getOpsActor(context.bearerToken);
-    if (!actor) return { allowed: false as const, ...EMPTY_ACTIVITY };
-    if (!data.userId) return { allowed: true as const, ...EMPTY_ACTIVITY };
+    if (!actor) return { allowed: false, ...EMPTY_ACTIVITY };
+    if (!data.userId) return { allowed: true, ...EMPTY_ACTIVITY };
     const { loadUserActivity } = await import("./activity.server");
-    return { allowed: true as const, ...(await loadUserActivity(data.userId)) };
+    return { allowed: true, ...(await loadUserActivity(data.userId)) };
   });
+
+export const getOpsUserUsageFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((input: { userId?: string }) => ({
+    userId: String(input?.userId ?? asRecord(input).userId ?? ""),
+  }))
+  .handler(async ({ context, data }): Promise<{ allowed: boolean } & OpsUserUsage> => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { allowed: false, ...EMPTY_USER_USAGE };
+    if (!data.userId) return { allowed: true, ...EMPTY_USER_USAGE };
+    const { loadOpsUserUsage } = await import("./user-usage.server");
+    return { allowed: true, ...(await loadOpsUserUsage(data.userId)) };
+  });
+

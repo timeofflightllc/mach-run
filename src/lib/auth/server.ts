@@ -237,6 +237,21 @@ export const auth = betterAuth({
         },
       },
     },
+    session: {
+      create: {
+        after: async (session) => {
+          try {
+            const { recordUserActivity } = await import("../ops/activity.server");
+            await recordUserActivity({
+              userId: session.userId,
+              action: "login",
+            });
+          } catch {
+            /* login count is best-effort */
+          }
+        },
+      },
+    },
   },
 
   ...(apple

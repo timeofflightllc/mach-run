@@ -18,6 +18,9 @@ describe("user activity helpers", () => {
       spending: 1,
       liabilities: 3,
       profiles: 1,
+      familyPeople: 0,
+      stages: 0,
+      mortgages: 0,
     });
   });
 
