@@ -9,7 +9,9 @@ import {
 } from "@/lib/billing/stripe.server";
 import { ensureSubscriptionsTable } from "@/lib/billing/schema.server";
 import { recordAdminEvent } from "./audit.server";
-import { emailsMatch, isOwnerEmail } from "./gate";
+import { emailsMatch } from "./gate";
+import { opsDeleteBlockReason, opsDeletePasswordMissing } from "./desk-delete";
+import { verifyOpsDeskPassword } from "./desk-password.server";
 import type { OpsActor } from "./gate.server";
 import { ownerEmails } from "./gate.server";
 
@@ -321,23 +323,32 @@ export async function cancelOpsSubscription(
 
 export async function deleteOpsAccount(
   actor: OpsActor,
-  input: { userId: string; email?: string; confirmEmail: string; note?: string },
+  input: {
+    userId: string;
+    email?: string;
+    actorPassword: string;
+    note?: string;
+  },
 ): Promise<OpsWriteResult> {
+  const passwordErr = opsDeletePasswordMissing(input.actorPassword);
+  if (passwordErr) return { ok: false, error: passwordErr };
   const target = await resolveTarget(input.userId, input.email);
-  if (!target?.email) {
-    return { ok: false, error: "No email on that account. Cannot confirm delete." };
-  }
+  if (!target) return { ok: false, error: "No person with that id or email." };
   const userId = target.id;
   const targetEmail = target.email;
-  if (!emailsMatch(input.confirmEmail, targetEmail)) {
-    return { ok: false, error: "Typed email does not match that account." };
+  const blocked = opsDeleteBlockReason({
+    actorId: actor.id,
+    actorEmail: actor.email,
+    targetId: userId,
+    targetEmail,
+    owners: ownerEmails(),
+  });
+  if (blocked) return { ok: false, error: blocked };
+  if (input.email && targetEmail && !emailsMatch(input.email, targetEmail)) {
+    return { ok: false, error: "That row no longer matches this email. Refresh the desk." };
   }
-  if (emailsMatch(actor.email, targetEmail) || actor.id === userId) {
-    return { ok: false, error: "You cannot delete your own desk login." };
-  }
-  if (isOwnerEmail(targetEmail, ownerEmails())) {
-    return { ok: false, error: "That email is on MACH_OWNER_EMAILS. Remove it from Vercel first." };
-  }
+  const auth = await verifyOpsDeskPassword(actor.id, input.actorPassword);
+  if (!auth.ok) return auth;
   await log(
     actor,
     userId,
@@ -347,6 +358,10 @@ export async function deleteOpsAccount(
   );
   try {
     await wipeUserRows(userId);
+    const sql = await getSql();
+    await sql
+      .query(`delete from mach_user_activity where user_id = $1`, [userId])
+      .catch(() => undefined);
   } catch (err) {
     return {
       ok: false,

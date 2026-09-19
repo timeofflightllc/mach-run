@@ -1,12 +1,13 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { SiteCopyDesk } from "@/components/ops/site-copy-desk";
+import { DeskUsers } from "@/components/ops/desk-users";
+import { OpsDeleteAccount } from "@/components/ops/ops-delete-account";
 import { useEffect, useMemo, useState } from "react";
 import { MissingPage } from "@/components/missing-page";
 import { Field, SelectInput, TextInput } from "@/components/ui/field";
 import {
   cancelOpsSubscriptionFn,
   compOpsTimeFn,
-  deleteOpsAccountFn,
   listOpsActivityFn,
   listOpsEventsFn,
   listOpsRoster,
@@ -50,6 +51,7 @@ function intervalLabel(value: OpsRosterRow["interval"]): string {
 
 function Top3DeskDoor() {
   const [gate, setGate] = useState<"wait" | "no" | "yes">("wait");
+  const [tab, setTab] = useState<"roster" | "users" | "copy">("roster");
   const [q, setQ] = useState("");
   const [plan, setPlan] = useState<OpsPlanFilter>("all");
   const [paid, setPaid] = useState<OpsPaidFilter>("all");
@@ -129,13 +131,45 @@ function Top3DeskDoor() {
             MACH RUN
           </p>
           <h1 className="mt-2 font-display text-4xl text-fg">Top 3 Desk</h1>
-          <p className="mt-2 text-sm text-muted">Roster. Packages only — no household numbers.</p>
+          <p className="mt-2 text-sm text-muted">
+            {tab === "users"
+              ? "Users. Click a person, then delete with your desk password."
+              : tab === "copy"
+                ? "Site copy. Pages and announcements."
+                : "Roster. Packages only — no household numbers."}
+          </p>
           <p className="mt-3 max-w-3xl text-xs text-subtle">
             Vercel Deployment Protection password: Preview deployments only. Never on
             Production. Production lock is MACH_OWNER_EMAILS plus this page’s 404.
           </p>
         </header>
 
+        <div className="flex max-w-md rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+          {(
+            [
+              ["roster", "Roster"],
+              ["users", "Users"],
+              ["copy", "Copy"],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              className={
+                "h-11 flex-1 rounded-md text-sm font-medium " +
+                (tab === id ? "bg-accent text-accent-fg" : "text-muted")
+              }
+              onClick={() => setTab(id)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "users" ? <DeskUsers /> : null}
+        {tab === "copy" ? <SiteCopyDesk /> : null}
+        {tab === "roster" ? (
+          <>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
           <CountTile label="Free" value={counts.free} />
           <CountTile label="Individual" value={counts.individual} />
@@ -299,8 +333,6 @@ function Top3DeskDoor() {
           />
         ) : null}
 
-        <SiteCopyDesk />
-
         <section className="rounded-xl bg-surface p-4 text-sm shadow-[0_0_0_1px_var(--color-border)]">
           <h2 className="font-medium text-fg">Recent desk log</h2>
           {feed.length === 0 ? (
@@ -321,6 +353,8 @@ function Top3DeskDoor() {
             </ul>
           )}
         </section>
+          </>
+        ) : null}
       </div>
     </main>
   );
@@ -354,9 +388,7 @@ function PersonPane({
   const [compNote, setCompNote] = useState("");
   const [cancelWhen, setCancelWhen] = useState<"period_end" | "now">("period_end");
   const [cancelNote, setCancelNote] = useState("");
-  const [deleteEmail, setDeleteEmail] = useState("");
-  const [deleteNote, setDeleteNote] = useState("");
-  const [busy, setBusy] = useState<"pkg" | "comp" | "cancel" | "delete" | null>(null);
+  const [busy, setBusy] = useState<"pkg" | "comp" | "cancel" | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [personLog, setPersonLog] = useState<OpsAdminEvent[]>([]);
@@ -391,10 +423,9 @@ function PersonPane({
   }, [row.id, row.periodEnd, row.status, row.plan]);
 
   async function run(
-    kind: "pkg" | "comp" | "cancel" | "delete",
+    kind: "pkg" | "comp" | "cancel",
     confirmText: string,
     work: () => Promise<{ ok: boolean; message?: string; error?: string }>,
-    after?: "done" | "deleted",
   ) {
     if (!window.confirm(confirmText)) return;
     setBusy(kind);
@@ -404,8 +435,7 @@ function PersonPane({
       const result = await work();
       if (result.ok) {
         setMsg(result.message ?? "Done.");
-        if (after === "deleted") onDeleted();
-        else onDone();
+        onDone();
       } else {
         setErr(result.error ?? "Could not save.");
       }
@@ -651,53 +681,7 @@ function PersonPane({
       </div>
 
       <div className="mt-6 border-t border-border/70 pt-4">
-        <h3 className="font-medium text-negative">Delete account</h3>
-        <p className="mt-2 text-sm text-muted">
-          This is not cancel. It wipes login, saved MACH RUNs, and the Stripe seat.
-          Type the account email, then confirm twice. No undo. Owner emails cannot
-          be deleted from the desk.
-        </p>
-        <div className="mt-3 grid gap-3 sm:max-w-md">
-          <Field label="Type the email to confirm">
-            <TextInput
-              value={deleteEmail}
-              onChange={(e) => setDeleteEmail(e.target.value)}
-              placeholder={row.email ?? "email@example.com"}
-              autoComplete="off"
-            />
-          </Field>
-          <Field label="Note (optional)">
-            <TextInput value={deleteNote} onChange={(e) => setDeleteNote(e.target.value)} />
-          </Field>
-          <button
-            type="button"
-            disabled={busy !== null || !row.email}
-            className="rounded-lg border border-negative/50 px-3 py-2 text-negative disabled:opacity-40"
-            onClick={() => {
-              const typed = deleteEmail.trim();
-              if (!row.email || typed.toLowerCase() !== row.email.trim().toLowerCase()) {
-                setErr("Type the exact account email before delete.");
-                return;
-              }
-              void run(
-                "delete",
-                `Permanently delete ${row.email}? Login and plans will be gone. This cannot be undone.`,
-                () =>
-                  deleteOpsAccountFn({
-                    data: {
-                      userId: row.id,
-                      email: row.email ?? "",
-                      confirmEmail: typed,
-                      note: deleteNote,
-                    },
-                  }),
-                "deleted",
-              );
-            }}
-          >
-            {busy === "delete" ? "Deleting…" : "Delete this account"}
-          </button>
-        </div>
+        <OpsDeleteAccount row={row} onDeleted={onDeleted} />
       </div>
 
       <div className="mt-6 border-t border-border/70 pt-4">

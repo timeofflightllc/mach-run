@@ -147,15 +147,34 @@ export const cancelOpsSubscriptionFn = createServerFn({ method: "POST" })
     return cancelOpsSubscription(actor, data);
   });
 
+export const checkOpsDeskPasswordFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((input: { password?: string }) => ({
+    password: String(input?.password ?? asRecord(input).password ?? ""),
+  }))
+  .handler(async ({ context, data }) => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { ok: false as const, error: "Not found." };
+    const { verifyOpsDeskPassword } = await import("./desk-password.server");
+    return verifyOpsDeskPassword(actor.id, data.password);
+  });
+
 export const deleteOpsAccountFn = createServerFn({ method: "POST" })
   .middleware([opsSessionMiddleware])
-  .validator((input: { userId?: string; email?: string; confirmEmail: string; note?: string }) => {
+  .validator((input: {
+    userId?: string;
+    email?: string;
+    actorPassword?: string;
+    note?: string;
+  }) => {
     const ref = readUserRef(input);
+    const raw = asRecord(input);
     return {
       userId: ref.userId,
       email: ref.email,
-      confirmEmail: String(input?.confirmEmail ?? asRecord(input).confirmEmail ?? ""),
-      note: typeof input?.note === "string" ? input.note : "",
+      actorPassword: String(input?.actorPassword ?? raw.actorPassword ?? ""),
+      note: typeof input?.note === "string" ? input.note : String(raw.note ?? ""),
     };
   })
   .handler(async ({ context, data }) => {
