@@ -31,6 +31,7 @@ import {
   type OpsRosterRow,
   type OpsStatusFilter,
 } from "@/lib/ops/roster";
+import { RISK_GRADE_CLASS, type RiskGrade } from "@/lib/ops/risk";
 
 export const Route = createFileRoute("/top-3-desk")({
   component: Top3DeskDoor,
@@ -241,9 +242,10 @@ function Top3DeskDoor() {
         {error ? <p className="text-sm text-negative">{error}</p> : null}
 
         <div className="overflow-x-auto rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
-          <table className="w-full min-w-[720px] text-left text-sm">
+          <table className="w-full min-w-[800px] text-left text-sm">
             <thead className="text-xs uppercase tracking-wide text-subtle">
               <tr>
+                <th className="px-3 py-2 font-medium">Risk</th>
                 <th className="px-3 py-2 font-medium">Email</th>
                 <th className="px-3 py-2 font-medium">Name</th>
                 <th className="px-3 py-2 font-medium">Package</th>
@@ -256,7 +258,7 @@ function Top3DeskDoor() {
             <tbody>
               {rows.length === 0 ? (
                 <tr>
-                  <td className="px-3 py-6 text-muted" colSpan={7}>
+                  <td className="px-3 py-6 text-muted" colSpan={8}>
                     {counts.free +
                       counts.individual +
                       counts.unlimited +
@@ -277,6 +279,9 @@ function Top3DeskDoor() {
                     }
                     onClick={() => setOpenId(row.id === openId ? null : row.id)}
                   >
+                    <td className="px-3 py-2">
+                      <RiskMark grade={row.riskGrade ?? "C"} label={row.riskLabel} />
+                    </td>
                     <td className="px-3 py-2 text-fg">{row.email ?? "—"}</td>
                     <td className="px-3 py-2 text-muted">{row.name ?? "—"}</td>
                     <td className="px-3 py-2 text-fg">
@@ -357,6 +362,25 @@ function Top3DeskDoor() {
         ) : null}
       </div>
     </main>
+  );
+}
+
+function RiskMark({
+  grade,
+  label,
+  className = "",
+}: {
+  grade: RiskGrade;
+  label?: string;
+  className?: string;
+}) {
+  return (
+    <span
+      className={"font-display font-semibold tabular-nums " + RISK_GRADE_CLASS[grade] + " " + className}
+      title={label}
+    >
+      {grade}
+    </span>
   );
 }
 
@@ -449,12 +473,34 @@ function PersonPane({
 
   return (
     <section className="rounded-xl bg-surface p-4 text-sm shadow-[0_0_0_1px_var(--color-border)]">
-      <h2 className="font-display text-2xl text-fg">{who}</h2>
-      <p className="mt-1 text-muted">
-        {row.name ?? "No display name"}
-        {row.isComp ? " · Comp seat" : ""}
-        {row.id ? ` · ${row.id}` : " · missing id"}
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-2xl text-fg">{who}</h2>
+          <p className="mt-1 text-muted">
+            {row.name ?? "No display name"}
+            {row.isComp ? " · Comp seat" : ""}
+            {row.id ? ` · ${row.id}` : " · missing id"}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs uppercase tracking-wide text-subtle">Bot / spam guess</p>
+          <RiskMark
+            grade={row.riskGrade ?? "C"}
+            label={row.riskLabel}
+            className="text-5xl leading-none"
+          />
+          <p className={"mt-1 text-sm " + RISK_GRADE_CLASS[row.riskGrade ?? "C"]}>
+            {row.riskLabel ?? ""}
+          </p>
+        </div>
+      </div>
+      {row.riskReasons?.length ? (
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-muted">
+          {row.riskReasons.map((reason) => (
+            <li key={reason}>{reason}</li>
+          ))}
+        </ul>
+      ) : null}
       <dl className="mt-4 grid gap-2 sm:grid-cols-2">
         <Fact label="Package" value={row.packageLabel} />
         <Fact label="Billing" value={intervalLabel(row.interval)} />
