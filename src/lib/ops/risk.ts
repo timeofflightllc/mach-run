@@ -134,6 +134,22 @@ export function looksGeneratedLocal(local: string): boolean {
   return false;
 }
 
+/** Gmail ignores dots. Farms stuff first.last.m.i.d.dle+digits to mint unique inboxes. */
+export function looksDottedFarm(local: string, domain: string): boolean {
+  const host = domain.toLowerCase();
+  const gmail = host === "gmail.com" || host === "googlemail.com";
+  const parts = local.split(".").filter(Boolean);
+  const dots = parts.length - 1;
+  const tiny = parts.filter((p) => p.length <= 2).length;
+  const numeric = parts.some((p) => /^\d+$/.test(p) || /^\d+\.\d+$/.test(p));
+  if (gmail && dots >= 3) return true;
+  if (gmail && dots >= 2 && tiny >= 3) return true;
+  if (gmail && dots >= 2 && numeric) return true;
+  const hyphens = (local.match(/-/g) ?? []).length;
+  if (hyphens >= 2 && local.length <= 20) return true;
+  return false;
+}
+
 function oauthHint(authHint: string): boolean {
   const h = authHint.toLowerCase();
   return h.includes("apple") || h.includes("google") || h.includes("x") || h.includes("twitter");
@@ -173,7 +189,13 @@ export function scoreBotRisk(input: RiskInput): RiskResult {
     score -= 10;
     reasons.push("Email is verified.");
   }
-  if (TRUSTED_DOMAINS.has(domain) || domain.endsWith(".mil") || domain.endsWith(".gov")) {
+  const stuffed = looksDottedFarm(local, domain);
+  const generated = looksGeneratedLocal(local) || looksGeneratedLocal(local.replace(/\./g, ""));
+  if (
+    !stuffed &&
+    !generated &&
+    (TRUSTED_DOMAINS.has(domain) || domain.endsWith(".mil") || domain.endsWith(".gov"))
+  ) {
     score -= 8;
     reasons.push("Ordinary consumer or .mil/.gov mailbox.");
   }
@@ -197,7 +219,10 @@ export function scoreBotRisk(input: RiskInput): RiskResult {
     score += 42;
     reasons.push("Disposable / throwaway email domain.");
   }
-  if (looksGeneratedLocal(local)) {
+  if (stuffed) {
+    score += 28;
+    reasons.push("Mailbox looks like a dotted-Gmail / hyphen farm.");
+  } else if (generated) {
     score += 16;
     reasons.push("Mailbox name looks generated.");
   }

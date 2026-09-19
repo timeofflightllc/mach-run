@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   gradeFromScore,
+  looksDottedFarm,
   looksGeneratedLocal,
   scoreBotRisk,
   type RiskInput,
@@ -66,6 +67,37 @@ describe("bot / spam risk grade", () => {
   it("flags generated local-parts", () => {
     expect(looksGeneratedLocal("a8f3c91e2b7d44aa90cc")).toBe(true);
     expect(looksGeneratedLocal("cain.olde")).toBe(false);
+  });
+
+  it("flags Gmail-dot farms and hyphen farms, not first.last", () => {
+    expect(looksDottedFarm("k.tor.m.on.d.be.rind.aln", "gmail.com")).toBe(true);
+    expect(looksDottedFarm("m.a.s.onsmith.8.07", "gmail.com")).toBe(true);
+    expect(looksDottedFarm("rrk.md.7", "gmail.com")).toBe(true);
+    expect(looksDottedFarm("pr.o.bab.ly.q.u.y", "gmail.com")).toBe(true);
+    expect(looksDottedFarm("native-sts-br", "msn.com")).toBe(true);
+    expect(looksDottedFarm("john.smith", "gmail.com")).toBe(false);
+    expect(looksDottedFarm("cain.olde", "gmail.com")).toBe(false);
+  });
+
+  it("does not give dotted Gmail farms a trusted-inbox pass", () => {
+    const r = scoreBotRisk({
+      ...base,
+      email: "a.b.c.d.ef.g.hi@gmail.com",
+      emailVerified: false,
+      name: "",
+      authHint: "Email",
+      paid: false,
+      calculateCount: 0,
+      loginCount: 1,
+      pdfCount: 0,
+      backupCount: 0,
+      planPresent: false,
+      createdAt: "2026-09-19T00:00:00.000Z",
+      sharedIpUsers: 0,
+      userAgents: ["Mozilla/5.0"],
+    });
+    expect(["D", "F"]).toContain(r.grade);
+    expect(r.reasons.some((x) => /farm/i.test(x))).toBe(true);
   });
 
   it("treats unverified email-only new accounts as weaker than OAuth", () => {
