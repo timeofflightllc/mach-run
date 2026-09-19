@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { GROK_PROVIDERS, appleSignInEnabled, authClient, authEnabled, signIn, signInWithApple } from "@/lib/auth/client";
 import { BrandLockup } from "@/components/meridian/mach-mark";
+import { TurnstileBox, turnstileEnabled } from "@/components/auth/turnstile-box";
+import { startPendingSignup } from "@/lib/auth/pending-signup-api";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 
 export const Route = createFileRoute("/login")({
@@ -19,6 +21,9 @@ function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState("");
+
 
   async function onEmail(e: FormEvent) {
     e.preventDefault();
@@ -27,13 +32,25 @@ function Login() {
     setError(null);
     try {
       if (mode === "up") {
-        const { error: err } = await authClient.signUp.email({
-          email: email.trim(),
-          password,
-          name: name.trim() || email.trim(),
-          callbackURL: "/",
+        if (turnstileEnabled() && !captcha) {
+          throw new Error("Confirm you’re not a robot before creating an account.");
+        }
+        const started = await startPendingSignup({
+          data: {
+            email: email.trim(),
+            password,
+            name: name.trim() || email.trim(),
+            captcha: captcha ?? "",
+            honeypot,
+          },
         });
-        if (err) throw new Error(err.message ?? "Could not create the account.");
+        if (!started.ok) throw new Error(started.reason);
+        try {
+          sessionStorage.setItem("mach-pending-email", email.trim().toLowerCase());
+          sessionStorage.setItem("mach-pending-password", password);
+        } catch {
+          /* private mode */
+        }
         window.location.href = "/verify-email";
         return;
       } else {
@@ -52,7 +69,13 @@ function Login() {
   }
 
   return (
-    <main className="grid min-h-screen place-items-center px-4 py-12 text-fg" style={{ backgroundColor: "#0a1835" }}>
+    <main className="relative grid min-h-screen place-items-center px-4 py-12 text-fg" style={{ backgroundColor: "#0a1835" }}>
+      <Link
+        to="/"
+        className="absolute right-4 top-10 inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+      >
+        Home
+      </Link>
       <div className="w-full max-w-lg space-y-8">
         <div className="flex flex-col items-center text-center">
           <Link to="/" className="inline-flex justify-center">
@@ -68,7 +91,10 @@ function Login() {
           <div className="flex rounded-lg bg-bg p-1 shadow-[0_0_0_1px_var(--color-border)]">
             <button
               type="button"
-              onClick={() => setMode("in")}
+              onClick={() => {
+                setMode("in");
+                setCaptcha(null);
+              }}
               className={`h-11 flex-1 rounded-md text-sm font-medium ${
                 mode === "in" ? "bg-accent text-accent-fg" : "text-muted"
               }`}
@@ -77,7 +103,10 @@ function Login() {
             </button>
             <button
               type="button"
-              onClick={() => setMode("up")}
+              onClick={() => {
+                setMode("up");
+                setCaptcha(null);
+              }}
               className={`h-11 flex-1 rounded-md text-sm font-medium ${
                 mode === "up" ? "bg-accent text-accent-fg" : "text-muted"
               }`}
@@ -119,6 +148,20 @@ function Login() {
                     autoComplete={mode === "up" ? "new-password" : "current-password"}
                   />
                 </Field>
+                {mode === "up" ? (
+                  <>
+                    <label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden">
+                      Company website
+                      <input
+                        tabIndex={-1}
+                        autoComplete="off"
+                        value={honeypot}
+                        onChange={(ev) => setHoneypot(ev.target.value)}
+                      />
+                    </label>
+                    {turnstileEnabled() ? <TurnstileBox onToken={setCaptcha} /> : null}
+                  </>
+                ) : null}
                 {error ? <p className="text-sm text-negative">{error}</p> : null}
                 <PrimaryButton type="submit" disabled={busy} className="w-full">
                   {busy

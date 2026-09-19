@@ -176,7 +176,7 @@ export function ownerSignupEmail(notice: SignupNotice): { subject: string; html:
   const html = wrapEmail(
     "New account",
     `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#c9d4e8;">
-          Someone just registered on machrun.com.
+          Someone verified their email and a MACH RUN account was created.
         </td></tr>
         <tr><td style="padding:0 28px 24px;">
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#122448;">
@@ -206,7 +206,7 @@ export function welcomeSignupEmail(notice: SignupNotice): { subject: string; htm
     "",
     ...(code
       ? [
-          "Your account is almost ready -- just need to make sure you're a human!",
+          "Your MACH RUN account is not created until you enter this code. That keeps junk registrations out.",
           "",
           `Click "Verify Email" below and enter this code when prompted. The code expires in 24 hours. If it expires, open that same page and request a new one.`,
           "",
@@ -266,7 +266,7 @@ export function welcomeSignupEmail(notice: SignupNotice): { subject: string; htm
         <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#c9d4e8;">
           ${
             code
-              ? "Your account is almost ready — just need to make sure you're a human!"
+              ? "Your MACH RUN account is not created until you enter this code. That keeps junk registrations out."
               : "Your account is ready. Sign in and run the first loop:"
           }
         </td></tr>

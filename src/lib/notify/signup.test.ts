@@ -53,7 +53,7 @@ test("welcome email with a code points at Verify Email", () => {
   assert.match(mail.html, /Verify Email/);
   assert.match(mail.html, /verify-email/);
   assert.match(mail.html, /go supersonic/);
-  assert.match(mail.html, /human/);
+  assert.match(mail.text, /account is not created until you enter this code/);
 });
 
 test("HTML escapes a hostile name", () => {

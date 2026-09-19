@@ -2,6 +2,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { BrandLockup } from "@/components/meridian/mach-mark";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
+import { authClient } from "@/lib/auth/client";
+import {
+  completePendingSignup,
+  resendPendingSignup,
+} from "@/lib/auth/pending-signup-api";
 import {
   emailVerifyStatus,
   ensureEmailVerifyCode,
@@ -10,31 +15,65 @@ import {
 } from "@/lib/auth/email-verify-api";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 
+const PENDING_EMAIL = "mach-pending-email";
+const PENDING_PASSWORD = "mach-pending-password";
+
 export const Route = createFileRoute("/verify-email")({ component: VerifyEmail });
+
+function readPending() {
+  try {
+    return {
+      email: window.sessionStorage.getItem(PENDING_EMAIL) ?? "",
+      password: window.sessionStorage.getItem(PENDING_PASSWORD) ?? "",
+    };
+  } catch {
+    return { email: "", password: "" };
+  }
+}
+
+function clearPending() {
+  try {
+    window.sessionStorage.removeItem(PENDING_EMAIL);
+    window.sessionStorage.removeItem(PENDING_PASSWORD);
+  } catch {
+    /* ignore */
+  }
+}
 
 function VerifyEmail() {
   const navigate = useNavigate();
   const { user, isPending } = useCurrentUserState();
+  const [pendingEmail, setPendingEmail] = useState("");
+  const [pendingPassword, setPendingPassword] = useState("");
+  const [ready, setReady] = useState(false);
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState<"check" | "send" | null>(null);
 
   useEffect(() => {
-    if (isPending) return;
+    const p = readPending();
+    setPendingEmail(p.email);
+    setPendingPassword(p.password);
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!ready || isPending) return;
+    if (pendingEmail && !user) return;
     if (!user) {
-      window.location.href = "/login";
+      window.location.href = "/login?mode=up";
       return;
     }
     void emailVerifyStatus()
       .then((s) => {
         if (s.verified) navigate({ to: "/" });
-        else {
-          void ensureEmailVerifyCode().catch(() => {});
-        }
+        else void ensureEmailVerifyCode().catch(() => {});
       })
       .catch(() => {});
-  }, [isPending, user, navigate]);
+  }, [ready, isPending, user, pendingEmail, navigate]);
+
+  const waitingOnPending = Boolean(pendingEmail && !user);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -42,6 +81,26 @@ function VerifyEmail() {
     setError(null);
     setMsg(null);
     try {
+      if (waitingOnPending) {
+        const result = await completePendingSignup({
+          data: { email: pendingEmail, code },
+        });
+        if (!result.ok) {
+          setError(result.reason);
+          return;
+        }
+        if (pendingPassword) {
+          const { error: err } = await authClient.signIn.email({
+            email: pendingEmail,
+            password: pendingPassword,
+            callbackURL: "/",
+          });
+          if (err) throw new Error(err.message ?? "Account created. Sign in.");
+        }
+        clearPending();
+        window.location.href = "/";
+        return;
+      }
       const result = await submitEmailVerifyCode({ data: { code } });
       if (!result.ok) {
         setError(result.reason);
@@ -60,6 +119,15 @@ function VerifyEmail() {
     setError(null);
     setMsg(null);
     try {
+      if (waitingOnPending) {
+        const result = await resendPendingSignup({ data: { email: pendingEmail } });
+        if (!result.ok) {
+          setError(result.reason);
+          return;
+        }
+        setMsg("A new code is on the way. Check the same inbox.");
+        return;
+      }
       const result = await resendEmailVerifyCode();
       if (!result.ok) {
         setError(result.reason);
@@ -76,6 +144,8 @@ function VerifyEmail() {
       setBusy(null);
     }
   }
+
+  const inbox = waitingOnPending ? pendingEmail : (user?.primaryEmail ?? "your inbox");
 
   return (
     <main
@@ -98,9 +168,10 @@ function VerifyEmail() {
             </p>
             <h1 className="font-display text-3xl text-fg">Enter the 6-digit code</h1>
             <p className="text-sm text-muted">
-              We sent it to {user?.primaryEmail ?? "your inbox"}. This proves
-              you can read that mailbox. It is not a password. Codes last 24
-              hours — if yours expired, request a new one below.
+              We sent it to {inbox}. Your MACH RUN account is{" "}
+              <span className="text-fg">not created until this code is accepted</span>
+              . That is how we keep junk registrations out of the user list.
+              Codes last 24 hours.
             </p>
           </header>
           {error ? <p className="text-sm text-negative">{error}</p> : null}
@@ -117,7 +188,7 @@ function VerifyEmail() {
             />
           </Field>
           <PrimaryButton type="submit" disabled={busy !== null || code.length !== 6}>
-            {busy === "check" ? "Checking…" : "Verify Email"}
+            {busy === "check" ? "Checking…" : "Create my account"}
           </PrimaryButton>
           <button
             type="button"

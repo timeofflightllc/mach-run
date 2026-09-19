@@ -222,17 +222,6 @@ export const auth = betterAuth({
       create: {
         after: async (user) => {
           try {
-            if (user.email && !user.emailVerified) {
-              const { deliverVerifyEmail } = await import("./email-verify.server");
-              const sent = await deliverVerifyEmail({
-                userId: user.id,
-                name: user.name ?? null,
-                email: user.email,
-              });
-              if (!sent.ok) {
-                console.warn("[verify-email] signup send failed:", sent.reason);
-              }
-            }
             const { notifyOwnerOfSignup } = await import("../notify/signup");
             await notifyOwnerOfSignup({
               id: user.id,
@@ -241,7 +230,7 @@ export const auth = betterAuth({
             });
           } catch (err) {
             console.warn(
-              "[verify-email] signup hook failed:",
+              "[signup] owner notify failed:",
               err instanceof Error ? err.message : err,
             );
           }
