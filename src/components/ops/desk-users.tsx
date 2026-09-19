@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Field, TextInput } from "@/components/ui/field";
+import { paidFromStatus } from "@/lib/billing/limits";
 import { getOpsUserUsageFn, listOpsRoster } from "@/lib/ops/api";
 import { activityLabel, describeActivity } from "@/lib/ops/activity";
 import { OPS_ROSTER_PAGE, type OpsRosterRow } from "@/lib/ops/roster";
+import { RISK_GRADE_CLASS, scoreBotRisk, type RiskGrade } from "@/lib/ops/risk";
 import { EMPTY_USER_USAGE, type OpsUserUsage } from "@/lib/ops/user-usage";
 import { OpsDeleteAccount } from "./ops-delete-account";
 
@@ -61,8 +63,9 @@ export function DeskUsers() {
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted">
-        Click a person for account facts and site use. Counts only — no dollar
-        amounts. Delete still asks for your desk password.
+        Click a person for account facts and site use. Risk is a guess from
+        email, IPs, sign-in history, and usage — not a verdict. Counts only, no
+        dollar amounts. Delete still asks for your desk password.
       </p>
       <div className="max-w-md">
         <Field label="Search">
@@ -78,9 +81,10 @@ export function DeskUsers() {
       </div>
       {error ? <p className="text-sm text-negative">{error}</p> : null}
       <div className="overflow-x-auto rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
-        <table className="w-full min-w-[640px] text-left text-sm">
+        <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="text-xs uppercase tracking-wide text-subtle">
             <tr>
+              <th className="px-3 py-2 font-medium">Risk</th>
               <th className="px-3 py-2 font-medium">Email</th>
               <th className="px-3 py-2 font-medium">Name</th>
               <th className="px-3 py-2 font-medium">Package</th>
@@ -91,7 +95,7 @@ export function DeskUsers() {
           <tbody>
             {rows.length === 0 ? (
               <tr>
-                <td className="px-3 py-6 text-muted" colSpan={5}>
+                <td className="px-3 py-6 text-muted" colSpan={6}>
                   {total === 0 && !q
                     ? "No registered users yet."
                     : "No people match that search."}
@@ -107,6 +111,9 @@ export function DeskUsers() {
                   }
                   onClick={() => setOpenId(row.id === openId ? null : row.id)}
                 >
+                  <td className="px-3 py-2">
+                    <RiskMark grade={row.riskGrade ?? "C"} label={row.riskLabel} />
+                  </td>
                   <td className="px-3 py-2 text-fg">{row.email ?? "—"}</td>
                   <td className="px-3 py-2 text-muted">{row.name ?? "—"}</td>
                   <td className="px-3 py-2 text-fg">{row.packageLabel}</td>
@@ -184,13 +191,52 @@ function UserDetail({
   }, [row.id]);
 
   const shape = usage.shape;
+  const risk = useMemo(
+    () =>
+      scoreBotRisk({
+        email: row.email,
+        emailVerified: usage.emailVerified ?? row.emailVerified,
+        name: row.name,
+        createdAt: row.createdAt,
+        authHint: row.authHint,
+        paid: paidFromStatus(row.status),
+        isComp: row.isComp,
+        calculateCount: usage.calculateCount,
+        loginCount: usage.loginCount,
+        pdfCount: usage.pdfCount,
+        backupCount: usage.backupCount,
+        planPresent: usage.planPresent,
+        lastIps: usage.lastIps.length ? usage.lastIps : [],
+        userAgents: usage.userAgents ?? [],
+        sharedIpUsers: row.sharedIpUsers,
+      }),
+    [row, usage],
+  );
 
   return (
     <section className="rounded-xl bg-surface p-4 text-sm shadow-[0_0_0_1px_var(--color-border)]">
-      <h2 className="font-display text-2xl text-fg">{row.email ?? row.id}</h2>
-      <p className="mt-1 text-muted">
-        {row.name ?? "No display name"}
-        {row.id ? ` · ${row.id}` : ""}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="font-display text-2xl text-fg">{row.email ?? row.id}</h2>
+          <p className="mt-1 text-muted">
+            {row.name ?? "No display name"}
+            {row.id ? ` · ${row.id}` : ""}
+          </p>
+        </div>
+        <div className="text-right">
+          <p className="text-xs uppercase tracking-wide text-subtle">Bot / spam guess</p>
+          <RiskMark grade={risk.grade} label={risk.label} className="text-5xl leading-none" />
+          <p className={"mt-1 text-sm " + RISK_GRADE_CLASS[risk.grade]}>{risk.label}</p>
+        </div>
+      </div>
+      <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-muted">
+        {risk.reasons.map((reason) => (
+          <li key={reason}>{reason}</li>
+        ))}
+      </ul>
+      <p className="mt-2 text-xs text-subtle">
+        Heuristic only. Cross-checks email, IPs shared with other users, sign-in
+        history, user-agent, and whether they ever ran a MACH Run.
       </p>
 
       <dl className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -313,6 +359,25 @@ function UserDetail({
         <OpsDeleteAccount row={row} onDeleted={onDeleted} />
       </div>
     </section>
+  );
+}
+
+function RiskMark({
+  grade,
+  label,
+  className = "",
+}: {
+  grade: RiskGrade;
+  label?: string;
+  className?: string;
+}) {
+  return (
+    <span
+      className={"font-display font-semibold tabular-nums " + RISK_GRADE_CLASS[grade] + " " + className}
+      title={label}
+    >
+      {grade}
+    </span>
   );
 }
 

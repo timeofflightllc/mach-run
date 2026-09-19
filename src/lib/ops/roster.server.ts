@@ -5,6 +5,8 @@ import {
 } from "@/lib/billing/api";
 import { packageLabel, paidFromStatus, type MachPackage } from "@/lib/billing/limits";
 import { getSql } from "@/lib/db";
+import { EMPTY_RISK, scoreBotRisk } from "./risk";
+import { loadRiskSignalsByUser } from "./risk.server";
 import {
   EMPTY_OPS_COUNTS,
   OPS_ROSTER_PAGE,
@@ -100,6 +102,12 @@ function toRow(
     stripeSubscriptionId: subscriptionId,
     ...stripeUrls(customerId, subscriptionId),
     isComp: paid && !subscriptionId,
+    emailVerified: null,
+    riskGrade: EMPTY_RISK.grade,
+    riskScore: EMPTY_RISK.score,
+    riskLabel: EMPTY_RISK.label,
+    riskReasons: EMPTY_RISK.reasons,
+    sharedIpUsers: 0,
   };
 }
 
@@ -180,6 +188,37 @@ export async function loadOpsRoster(query: OpsRosterQuery): Promise<OpsRosterRes
     const mapped = users.map((user) =>
       toRow(user, subByUser.get(user.id), providersByUser.get(user.id) ?? []),
     );
+    try {
+      const signals = await loadRiskSignalsByUser();
+      for (const row of mapped) {
+        const sig = signals.get(row.id);
+        if (sig) row.emailVerified = sig.emailVerified;
+        const risk = scoreBotRisk({
+          email: row.email,
+          emailVerified: sig?.emailVerified ?? row.emailVerified,
+          name: row.name,
+          createdAt: row.createdAt,
+          authHint: row.authHint,
+          paid: paidFromStatus(row.status),
+          isComp: row.isComp,
+          calculateCount: sig?.calculateCount ?? 0,
+          loginCount: sig?.loginCount ?? 0,
+          pdfCount: sig?.pdfCount ?? 0,
+          backupCount: sig?.backupCount ?? 0,
+          planPresent: sig?.planPresent ?? false,
+          lastIps: sig?.lastIps ?? [],
+          userAgents: sig?.userAgents ?? [],
+          sharedIpUsers: sig?.sharedIpUsers ?? 0,
+        });
+        row.riskGrade = risk.grade;
+        row.riskScore = risk.score;
+        row.riskLabel = risk.label;
+        row.riskReasons = risk.reasons;
+        row.sharedIpUsers = sig?.sharedIpUsers ?? 0;
+      }
+    } catch {
+      /* risk grade is best-effort */
+    }
     const filtered = mapped.filter((row) => matchesQuery(row, query));
     return {
       allowed: true,

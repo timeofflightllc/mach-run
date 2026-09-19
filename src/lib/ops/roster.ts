@@ -1,4 +1,5 @@
 import type { MachPackage } from "@/lib/billing/limits";
+import type { RiskGrade } from "./risk";
 
 export const OPS_ROSTER_PAGE = 100;
 
@@ -22,6 +23,12 @@ export type OpsRosterRow = {
   stripeCustomerUrl: string | null;
   stripeSubscriptionUrl: string | null;
   isComp: boolean;
+  emailVerified: boolean | null;
+  riskGrade: RiskGrade;
+  riskScore: number;
+  riskLabel: string;
+  riskReasons: string[];
+  sharedIpUsers: number;
 };
 
 export type OpsRosterCounts = {

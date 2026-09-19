@@ -14,6 +14,7 @@ export type OpsUserUsage = MachActivitySummary & {
   activeSessions: number;
   lastIps: string[];
   deviceHint: string | null;
+  userAgents: string[];
   emailVerified: boolean | null;
   planSavedAt: string | null;
   planPresent: boolean;
@@ -31,6 +32,7 @@ export const EMPTY_USER_USAGE: OpsUserUsage = {
   activeSessions: 0,
   lastIps: [],
   deviceHint: null,
+  userAgents: [],
   emailVerified: null,
   planSavedAt: null,
   planPresent: false,

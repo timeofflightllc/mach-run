@@ -75,6 +75,12 @@ export async function loadOpsUserUsage(userId: string): Promise<OpsUserUsage> {
       usage.deviceHint = deviceHintFromUa(newest.userAgent);
     }
     usage.lastIps = lastUniqueIps(sessions.map((s) => s.ipAddress));
+    const uas: string[] = [];
+    for (const s of sessions) {
+      const ua = (s.userAgent ?? "").trim();
+      if (ua && !uas.includes(ua) && uas.length < 6) uas.push(ua);
+    }
+    usage.userAgents = uas;
   } catch {
     /* session table optional */
   }
