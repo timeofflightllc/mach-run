@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createDefaultPlan } from "./defaults.ts";
 import {
+  annuityEquivalentCopy,
   guaranteedAnnuityEquivalent,
   presentValueOfGuaranteedStream,
   ZERO_RISK_DISCOUNT_PCT,
@@ -73,4 +74,8 @@ test("two guaranteed checks stack in the combined total", () => {
   assert.equal(eq.lines.length, 2);
   assert.ok(eq.totalPvToday > 1_000_000);
   assert.ok(Math.abs(eq.totalPvToday - eq.lines[0].pvToday - eq.lines[1].pvToday) < 1);
+  const copy = annuityEquivalentCopy(eq);
+  assert.equal(copy.rows.length, 2);
+  assert.match(copy.total, /\$/);
+  assert.equal(copy.rows[1]?.running, copy.total);
 });

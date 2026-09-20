@@ -277,6 +277,9 @@ test("OODA paychecks sort by start date and print month then year", () => {
     (s) => s.title === "Paychecks",
   );
   assert.ok(pay);
+  assert.ok(pay.columns?.rows.length === 2);
+  assert.equal(pay.columns?.rows[0]?.name, "W-2");
+  assert.equal(pay.columns?.rows[1]?.name, "Pension");
   const w2 = pay.body.indexOf("W-2");
   const pension = pay.body.indexOf("Pension");
   assert.ok(w2 >= 0 && pension > w2);

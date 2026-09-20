@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { downloadAnalysisPdf } from "@/lib/plan/analysis-pdf";
-import type { PeerBrief } from "@/lib/plan/peers";
+import type { BriefColumnRow, PeerBrief } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { GuestOnly, RealSignedIn } from "@/lib/auth/gates";
 import { MACH_MONTHLY_USD, hasBalanceSheet } from "@/lib/billing/limits";
@@ -13,6 +13,110 @@ import { PrimaryButton } from "@/components/ui/field";
 
 function Disclaimer() {
   return <p className="text-xs italic leading-relaxed text-subtle">{OODA_DISCLAIMER}</p>;
+}
+
+function BriefTable({
+  intro,
+  note,
+  headers,
+  rows,
+  footer,
+}: {
+  intro: string;
+  note?: string;
+  headers: { label: string; align?: "left" | "right"; nowrap?: boolean }[];
+  rows: string[][];
+  footer?: string[];
+}) {
+  return (
+    <div className="mt-1">
+      <p>{intro}</p>
+      <div className="mt-2 overflow-x-auto">
+        <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
+          <thead>
+            <tr className="text-[11px] uppercase tracking-wide text-subtle">
+              {headers.map((h) => (
+                <th
+                  key={h.label}
+                  className={
+                    "pb-1.5 pr-4 font-medium last:pr-0 " +
+                    (h.align === "right" ? "text-right" : "")
+                  }
+                >
+                  {h.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row, i) => (
+              <tr key={row.join("|") + i} className="border-t border-border/70">
+                {row.map((cell, j) => {
+                  const h = headers[j];
+                  return (
+                    <td
+                      key={`${i}-${j}`}
+                      className={
+                        "py-1.5 pr-4 last:pr-0 " +
+                        (j === 0 ? "text-fg " : "text-muted ") +
+                        (h?.align === "right" ? "text-right tabular-nums " : "") +
+                        (h?.nowrap ? "whitespace-nowrap " : "")
+                      }
+                    >
+                      {cell}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+            {footer ? (
+              <tr className="border-t border-border">
+                {footer.map((cell, j) => {
+                  const h = headers[j];
+                  return (
+                    <td
+                      key={`f-${j}`}
+                      className={
+                        "py-1.5 pr-4 last:pr-0 font-medium text-fg " +
+                        (h?.align === "right" ? "text-right tabular-nums " : "") +
+                        (h?.nowrap ? "whitespace-nowrap " : "")
+                      }
+                    >
+                      {cell}
+                    </td>
+                  );
+                })}
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+      {note ? <p className="mt-2 text-xs leading-relaxed text-subtle">{note}</p> : null}
+    </div>
+  );
+}
+
+function PaycheckTable({
+  intro,
+  note,
+  rows,
+}: {
+  intro: string;
+  note: string;
+  rows: BriefColumnRow[];
+}) {
+  return (
+    <BriefTable
+      intro={intro}
+      note={note}
+      headers={[
+        { label: "Income" },
+        { label: "Monthly", align: "right", nowrap: true },
+        { label: "When", nowrap: true },
+      ]}
+      rows={rows.map((r) => [r.name, r.amount, r.window])}
+    />
+  );
 }
 
 export function PeerBriefCard({
@@ -92,7 +196,17 @@ export function PeerBriefCard({
             {s.title ? (
               <p className="font-semibold text-fg">{s.title}</p>
             ) : null}
-            <p className={s.title ? "mt-1 whitespace-pre-line" : "whitespace-pre-line"}>{s.body}</p>
+            {s.columns?.rows.length ? (
+              <PaycheckTable
+                intro={s.columns.intro}
+                note={s.columns.note}
+                rows={s.columns.rows}
+              />
+            ) : (
+              <p className={s.title ? "mt-1 whitespace-pre-line" : "whitespace-pre-line"}>
+                {s.body}
+              </p>
+            )}
           </div>
         ))}
         {faded ? (
@@ -102,7 +216,9 @@ export function PeerBriefCard({
                 {faded.title}
               </p>
             ) : null}
-            <p aria-hidden>{faded.body}</p>
+            <p aria-hidden className="whitespace-pre-line">
+              {faded.body}
+            </p>
             <div
               className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface from-[18%] via-surface/75 to-transparent"
               aria-hidden
@@ -117,7 +233,22 @@ export function PeerBriefCard({
           </summary>
           <div className="mt-3 space-y-2 text-sm leading-relaxed text-muted">
             <p className="font-semibold text-fg">{annuityCopy.title}</p>
-            <p className="whitespace-pre-line">{annuityCopy.body}</p>
+            <BriefTable
+              intro={annuityCopy.intro}
+              note={annuityCopy.note}
+              headers={[
+                { label: "Income" },
+                { label: "When", nowrap: true },
+                { label: "Lump sum today", align: "right", nowrap: true },
+                { label: "Running total", align: "right", nowrap: true },
+              ]}
+              rows={annuityCopy.rows.map((r) => [r.name, r.when, r.amount, r.running])}
+              footer={
+                annuityCopy.rows.length > 1
+                  ? ["All together", "", "", annuityCopy.total]
+                  : undefined
+              }
+            />
           </div>
         </details>
       ) : null}

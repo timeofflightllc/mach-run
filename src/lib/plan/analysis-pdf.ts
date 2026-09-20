@@ -104,7 +104,14 @@ type Block =
   | { kind: "muted"; text: string }
   | { kind: "italic"; text: string }
   | { kind: "metric"; label: string; value: string }
-  | { kind: "chart"; chart: ChartSpec };
+  | { kind: "chart"; chart: ChartSpec }
+  | {
+      kind: "table";
+      intro?: string;
+      note?: string;
+      headers: [string, string, string];
+      rows: { name: string; amount: string; window: string }[];
+    };
 
 const CHART_H = 168;
 const RED = "0.722 0.275 0.275";
@@ -353,7 +360,17 @@ function buildBlocks(
     : brief.paragraphs.map((body) => ({ title: "", body }));
   for (const s of sections) {
     if (s.title) blocks.push({ kind: "title", text: s.title });
-    blocks.push({ kind: "body", text: s.body });
+    if (s.columns?.rows.length) {
+      blocks.push({
+        kind: "table",
+        intro: s.columns.intro,
+        note: s.columns.note,
+        headers: ["Income", "Monthly", "When"],
+        rows: s.columns.rows,
+      });
+    } else {
+      blocks.push({ kind: "body", text: s.body });
+    }
     blocks.push({ kind: "space", h: 8 });
   }
   if (who) {
@@ -584,6 +601,46 @@ export async function downloadAnalysisPdf(
             textOps("/F2", 11, GREEN_DEEP, MARGIN_X + 130, y, b.value),
           ].join("\n"),
       });
+      continue;
+    }
+    if (b.kind === "table") {
+      if (b.intro) {
+        pushLines(wrapText(b.intro, bodyChars), "/F1", 10, BODY, 13, 4);
+      }
+      const nameX = MARGIN_X + 6;
+      const amtX = MARGIN_X + 248;
+      const winX = MARGIN_X + 360;
+      const clip = (s: string, n: number) =>
+        s.length <= n ? s : `${s.slice(0, Math.max(0, n - 1))}.`;
+      flow.push({
+        h: 15,
+        ops: (y) =>
+          [
+            `q ${SAGE_WASH} rg ${MARGIN_X} ${y - 4} ${contentWidth} 15 re f Q`,
+            textOps("/F1", 8, GOLD_INK, nameX, y, "INCOME"),
+            textOps("/F1", 8, GOLD_INK, amtX, y, "MONTHLY"),
+            textOps("/F1", 8, GOLD_INK, winX, y, "WHEN"),
+          ].join("\n"),
+      });
+      b.rows.forEach((row, i) => {
+        flow.push({
+          h: 14,
+          ops: (y) =>
+            [
+              i % 2 === 1
+                ? `q ${SAGE_WASH} rg ${MARGIN_X} ${y - 4} ${contentWidth} 14 re f Q`
+                : "",
+              textOps("/F1", 9, BODY, nameX, y, clip(row.name, 40)),
+              textOps("/F1", 9, BODY, amtX, y, clip(row.amount, 18)),
+              textOps("/F1", 9, MUTED, winX, y, clip(row.window, 24)),
+            ]
+              .filter(Boolean)
+              .join("\n"),
+        });
+      });
+      if (b.note) {
+        pushLines(wrapText(b.note, bodyChars), "/F1", 8, MUTED, 11, 2);
+      }
       continue;
     }
     if (b.kind === "chart") {

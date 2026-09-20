@@ -44,9 +44,20 @@ const INCOME_KNOTS = [
   { p: 95, v: 380_000 },
 ];
 
+export interface BriefColumnRow {
+  name: string;
+  amount: string;
+  window: string;
+}
+
 export interface BriefSection {
   title: string;
   body: string;
+  columns?: {
+    intro: string;
+    note: string;
+    rows: BriefColumnRow[];
+  };
 }
 
 export interface PeerBrief {
@@ -302,7 +313,11 @@ export function buildPeerBrief(
 
   const who = plan.primary.name.trim() || "This household";
   const sections: BriefSection[] = [];
-  const add = (title: string, body: string) => sections.push({ title, body });
+  const add = (
+    title: string,
+    body: string,
+    extra?: Pick<BriefSection, "columns">,
+  ) => sections.push({ title, body, ...extra });
   const runAt = new Date().toLocaleString("en-US", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -363,24 +378,31 @@ export function buildPeerBrief(
   }
 
   if (namedIncomes.length) {
-    const listed = [...namedIncomes]
-      .sort((a, b) => {
-        const as = streamWindow(plan, a).start;
-        const bs = streamWindow(plan, b).start;
-        if (as !== bs) return as < bs ? -1 : 1;
-        return (a.name || a.kind).localeCompare(b.name || b.kind);
-      })
-      .map((s) => {
-        const win = streamWindow(plan, s);
-        const amt = streamBenefitToday(plan, s, asOf);
-        const end = win.end ? formatMonthYear(win.end) : "open";
-        return `${s.name.trim() || s.kind}  ${usd(amt, true)}/mo  (${formatMonthYear(win.start)} → ${end})`;
-      })
+    const ordered = [...namedIncomes].sort((a, b) => {
+      const as = streamWindow(plan, a).start;
+      const bs = streamWindow(plan, b).start;
+      if (as !== bs) return as < bs ? -1 : 1;
+      return (a.name || a.kind).localeCompare(b.name || b.kind);
+    });
+    const rows: BriefColumnRow[] = ordered.map((s) => {
+      const win = streamWindow(plan, s);
+      const amt = streamBenefitToday(plan, s, asOf);
+      const end = win.end ? formatMonthYear(win.end) : "open";
+      return {
+        name: s.name.trim() || s.kind,
+        amount: `${usd(amt, true)}/mo`,
+        window: `${formatMonthYear(win.start)} → ${end}`,
+      };
+    });
+    const listed = rows
+      .map((r) => `${r.name}  ${r.amount}  (${r.window})`)
       .join("\n");
-    add(
-      "Paychecks",
-      `Income stages on this run:\n${listed}\nMACH RUN only scores what you typed, so every pension and side check you add makes this picture truer.`,
-    );
+    const intro = "Income stages on this run:";
+    const note =
+      "MACH RUN only scores what you typed, so every pension and side check you add makes this picture truer.";
+    add("Paychecks", `${intro}\n${listed}\n${note}`, {
+      columns: { intro, note, rows },
+    });
   }
 
   if (incomePercentile != null) {

@@ -122,31 +122,47 @@ export function guaranteedAnnuityEquivalent(plan: Plan): AnnuityEquivalent | nul
   };
 }
 
-export function annuityEquivalentCopy(eq: AnnuityEquivalent): { title: string; body: string } {
-  const rows = eq.lines.map((l) => {
-    const when = l.alreadyPaying
-      ? `already paying`
-      : `starts ${formatMonthYear(l.start)}`;
-    return `${l.label} (${when}): ${usd(l.pvToday)} equivalent lump sum today.`;
-  });
-  const stack: string[] = [];
+export type AnnuityCopyRow = {
+  name: string;
+  when: string;
+  amount: string;
+  running: string;
+};
+
+export type AnnuityCopy = {
+  title: string;
+  body: string;
+  intro: string;
+  note: string;
+  rows: AnnuityCopyRow[];
+  total: string;
+};
+
+export function annuityEquivalentCopy(eq: AnnuityEquivalent): AnnuityCopy {
+  const intro = `U.S. guaranteed paychecks (military retired pay, VA, Social Security, pension, other retirement) are not a nest egg you can sell — but they replace what a zero-risk annuity would have to pay. Discounted at ${eq.discountPct}% nominal with your COLA, through age ${eq.throughAge}.`;
+  const note =
+    "This is a measuring stick, not a product you can buy and not a guarantee. The Treasury and an insurer would price the same check differently.";
   let running = 0;
-  for (const l of eq.lines) {
+  const rows: AnnuityCopyRow[] = eq.lines.map((l) => {
     running += l.pvToday;
-    if (!l.alreadyPaying) {
-      stack.push(
-        `When ${l.label} starts ${formatMonthYear(l.start)}, guaranteed checks on this run are worth about ${usd(running)} as a lump sum today.`,
-      );
-    }
-  }
+    return {
+      name: l.label,
+      when: l.alreadyPaying ? "Already paying" : formatMonthYear(l.start),
+      amount: usd(l.pvToday),
+      running: usd(running),
+    };
+  });
+  const total = usd(eq.totalPvToday);
+  const listed = rows
+    .map((r) => `${r.name} (${r.when}): ${r.amount} equivalent lump sum today.`)
+    .join("\n");
   const body = [
-    `U.S. guaranteed paychecks (military retired pay, VA, Social Security, pension, other retirement) are not a nest egg you can sell — but they replace what a zero-risk annuity would have to pay. Discounted at ${eq.discountPct}% nominal with your COLA, through age ${eq.throughAge}:`,
-    ...rows,
-    eq.lines.length > 1 ? `All of them together: ${usd(eq.totalPvToday)}.` : "",
-    ...stack,
-    "This is a measuring stick, not a product you can buy and not a guarantee. The Treasury and an insurer would price the same check differently.",
+    intro,
+    listed,
+    eq.lines.length > 1 ? `All of them together: ${total}.` : "",
+    note,
   ]
     .filter(Boolean)
     .join("\n");
-  return { title: "Guaranteed-paycheck equivalent", body };
+  return { title: "Guaranteed-paycheck equivalent", body, intro, note, rows, total };
 }
