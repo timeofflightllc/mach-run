@@ -337,8 +337,7 @@ function Home() {
       <WelcomeEmailPreviewOverlay />
       <header
         id="mach-header"
-        className="sticky top-0 z-30 border-b border-border"
-        style={{ backgroundColor: "#0a1835" }}
+        className="canopy-bar sticky top-0 z-30 border-b border-border"
       >
         <div className="page-gutter relative z-50 mx-auto max-w-none py-2.5">
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1">
@@ -439,7 +438,7 @@ function Home() {
               borderColor: "var(--color-section-lift-border)",
             }}
           >
-            <p className="page-gutter mx-auto max-w-none text-sm font-bold leading-relaxed text-[#c5e0cc]">
+            <p className="page-gutter mx-auto max-w-none text-sm font-bold leading-relaxed text-fg">
               Get started — open Family, then Accounts. Continue down the
               inputs and complete your first OODA Loop with Calculate.
               <br />
@@ -555,19 +554,14 @@ function Home() {
                     boxShadow: "0 0 0 1px var(--color-section-border)",
                   }}
                 >
-                  <p className="text-sm leading-relaxed text-[#c5e0cc]">
+                  <p className="text-sm leading-relaxed text-fg">
                     This MACH Run is on Free. Upgrade to open more features
                     including accounts, incomes, the full OODA Analysis and
                     OODA AI.
                   </p>
                   <Link
                     to="/pricing"
-                    className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg px-4 text-sm font-medium"
-                    style={{
-                      background: "var(--color-section-lift)",
-                      color: "#d7f0de",
-                      boxShadow: "0 0 0 1px var(--color-section-lift-border)",
-                    }}
+                    className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
                   >
                     Upgrade to MACH Run Unlimited
                   </Link>

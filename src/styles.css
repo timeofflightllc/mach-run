@@ -2,29 +2,30 @@
 
 @theme {
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-display: "Newsreader", ui-serif, Georgia, "Times New Roman", serif;
+  --font-display: "Barlow Condensed", "Arial Narrow", ui-sans-serif, sans-serif;
 
-  --color-bg: #07111c;
-  --color-surface: #0d1a2a;
-  --color-elevated: #132436;
-  --color-fg: #eef2f6;
-  --color-muted: #c5d0dc;
-  --color-subtle: #8fa3b8;
-  --color-accent: #c5cdd6;
-  --color-accent-fg: #07111c;
-  --color-border: #1e354c;
-  --color-section: #1a3526;
-  --color-section-border: #3d6b4f;
-  --color-section-lift: #24563a;
-  --color-section-lift-border: #4a8860;
-  --color-positive: #9dba9a;
-  --color-negative: #d4a090;
-  --color-ring: #c5cdd6;
+  --color-bg: #f3f0e8;
+  --color-surface: #fffcf6;
+  --color-elevated: #ffffff;
+  --color-fg: #1e2a32;
+  --color-muted: #3d4a54;
+  --color-subtle: #5d6c78;
+  --color-accent: #c45e3a;
+  --color-accent-fg: #fff8f4;
+  --color-border: #d5d0c6;
+  --color-section: #fffcf6;
+  --color-section-border: #d5d0c6;
+  --color-section-lift: #ece7dc;
+  --color-section-lift-border: #cfc8bb;
+  --color-positive: #2f6b4a;
+  --color-negative: #a34b45;
+  --color-ring: #3e6b78;
+  --color-canopy: #1a2330;
 
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 10px;
 }
 
 @layer base {
@@ -32,7 +33,7 @@
     font-size: 18px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   html,
@@ -40,11 +41,6 @@
   #app {
     min-height: 100%;
     background-color: var(--color-bg);
-    background-image: radial-gradient(
-      900px 520px at 12% -8%,
-      #163a5c 0%,
-      #07111c 58%
-    );
     color: var(--color-fg);
   }
 
@@ -72,7 +68,7 @@
   input[type="date"],
   input[type="month"] {
     min-width: 13.75rem;
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   input[type="date"]::-webkit-datetime-edit,
@@ -109,6 +105,24 @@
     scrollbar-width: thin;
     scrollbar-color: var(--color-border) transparent;
   }
+}
+
+/* Dark canopy chrome: logo bar, sticky header. Descendants using text-fg inherit light ink. */
+.canopy-bar {
+  background-color: var(--color-canopy);
+  color: #d7dde4;
+  --color-fg: #e8edf1;
+  --color-muted: #b8c3cd;
+  --color-subtle: #9aa7b3;
+  --color-border: #3a4652;
+  --color-surface: #243040;
+  --color-elevated: #2c3a48;
+  --color-accent: #d7dde4;
+  --color-accent-fg: #1a2330;
+  --color-section: #243040;
+  --color-section-border: #3a4652;
+  --color-section-lift: #2c3a48;
+  --color-section-lift-border: #3a4652;
 }
 
 /* Side inset ≈ Calculate button width (8.5rem) on a wide screen. */

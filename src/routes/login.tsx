@@ -69,7 +69,7 @@ function Login() {
   }
 
   return (
-    <main className="relative grid min-h-screen place-items-center px-4 py-12 text-fg" style={{ backgroundColor: "#0a1835" }}>
+    <main className="relative grid min-h-screen place-items-center bg-bg px-4 py-12 text-fg">
       <Link
         to="/"
         className="absolute right-4 top-10 inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
@@ -79,7 +79,7 @@ function Login() {
       <div className="w-full max-w-lg space-y-8">
         <div className="flex flex-col items-center text-center">
           <Link to="/" className="inline-flex justify-center">
-            <BrandLockup size="lg" />
+            <BrandLockup size="lg" framed />
           </Link>
           <p className="mt-4 max-w-md text-center text-base leading-relaxed text-muted sm:text-lg">
             Free to use with limits. A cup of coffee a month for unlimited. Pay

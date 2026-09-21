@@ -70,7 +70,7 @@ function jpegSize(bytes: Uint8Array): { w: number; h: number } {
 
 async function loadLogo(): Promise<{ bytes: Uint8Array; w: number; h: number } | null> {
   try {
-    const res = await fetch("/brand/mach-run-logo.jpg?v=20");
+    const res = await fetch("/brand/mach-run-logo.jpg?v=21");
     if (!res.ok) return null;
     const bytes = new Uint8Array(await res.arrayBuffer());
     const { w, h } = jpegSize(bytes);

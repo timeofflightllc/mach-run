@@ -148,14 +148,11 @@ function VerifyEmail() {
   const inbox = waitingOnPending ? pendingEmail : (user?.primaryEmail ?? "your inbox");
 
   return (
-    <main
-      className="grid min-h-screen place-items-center px-4 py-12 text-fg"
-      style={{ backgroundColor: "#0a1835" }}
-    >
+    <main className="grid min-h-screen place-items-center bg-bg px-4 py-12 text-fg">
       <div className="w-full max-w-lg space-y-8">
         <div className="flex flex-col items-center text-center">
           <Link to="/" className="inline-flex justify-center">
-            <BrandLockup size="lg" />
+            <BrandLockup size="lg" framed />
           </Link>
         </div>
         <form

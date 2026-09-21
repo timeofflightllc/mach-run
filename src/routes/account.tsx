@@ -112,7 +112,7 @@ function Account() {
 
   if (isPending) {
     return (
-      <main className="grid min-h-screen place-items-center text-muted" style={{ backgroundColor: "#0a1835" }}>
+      <main className="grid min-h-screen place-items-center bg-bg text-muted">
         Loading account…
       </main>
     );
@@ -308,12 +308,12 @@ function Account() {
   }
 
   return (
-    <main className="min-h-screen px-4 py-10 text-fg" style={{ backgroundColor: "#0a1835" }}>
+    <main className="min-h-screen bg-bg px-4 py-10 text-fg">
       <div className="mx-auto w-full max-w-7xl space-y-8">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-1">
             <Link to="/" className="inline-block opacity-90 hover:opacity-100">
-              <BrandLockup />
+              <BrandLockup framed />
             </Link>
             <SiteMenu className="mt-1" />
           </div>

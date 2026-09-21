@@ -92,18 +92,18 @@ function wrapEmail(
   titleAlign: "left" | "center" = "left",
   signupWhy = false,
 ): string {
-  const logo = "https://machrun.com/brand/mach-run-logo.jpg";
+  const logo = "https://machrun.com/brand/mach-run-logo.jpg?v=21";
   const why = signupWhy
     ? `<tr>
             <td align="center" style="padding:16px 12px 0;">
               <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
                 <tr>
-                  <td style="padding:4px 16px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.55;color:#8fa3c4;text-align:left;">
+                  <td style="padding:4px 16px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.55;color:#5d6c78;text-align:left;">
                     You received this email only because you signed up for
-                    <a href="https://machrun.com" style="color:#8fa3c4;text-decoration:underline;">MACHRUN.com</a>.
+                    <a href="https://machrun.com" style="color:#5d6c78;text-decoration:underline;">MACHRUN.com</a>.
                     We do not buy, sell, or give away email addresses. We respect your privacy —
-                    <a href="https://machrun.com/privacy" style="color:#8fa3c4;text-decoration:underline;">Privacy policy</a>.
-                    <a href="https://machrun.com/account#email-preferences" style="color:#8fa3c4;text-decoration:underline;">Unsubscribe</a>
+                    <a href="https://machrun.com/privacy" style="color:#5d6c78;text-decoration:underline;">Privacy policy</a>.
+                    <a href="https://machrun.com/account#email-preferences" style="color:#5d6c78;text-decoration:underline;">Unsubscribe</a>
                     opens your account profile, where you can turn off optional mail or cancel the account.
                   </td>
                 </tr>
@@ -118,32 +118,22 @@ function wrapEmail(
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="light only" />
   <title>${escapeHtml(innerTitle)}</title>
-  <style type="text/css">
-    @media only screen and (max-width: 520px) {
-      .mach-tagline { display: none !important; font-size: 0 !important; line-height: 0 !important; max-height: 0 !important; overflow: hidden !important; padding: 0 !important; }
-    }
-  </style>
 </head>
-<body style="margin:0;padding:0;background-color:#07101f;">
+<body style="margin:0;padding:0;background-color:#F3F0E8;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
     ${escapeHtml(preheader)}
   </div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#07101f;margin:0;padding:0;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#F3F0E8;margin:0;padding:0;">
     <tr>
       <td align="center" style="padding:24px 12px;">
-        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#0a1835;border:1px solid #2a3d63;">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#FFFcf6;border:1px solid #D5D0C6;">
           <tr>
-            <td align="center" style="padding:28px 28px 12px;background-color:#0a1835;">
+            <td align="center" style="padding:28px 28px 20px;background-color:#FFFcf6;">
               <img src="${logo}" width="480" alt="MACH RUN" style="display:block;width:480px;max-width:100%;height:auto;border:0;outline:none;text-decoration:none;" />
             </td>
           </tr>
-          <tr class="mach-tagline">
-            <td class="mach-tagline" align="center" style="padding:0 28px 20px;font-family:Georgia,'Times New Roman',Times,serif;font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:#c9d4e8;">
-              THE SUPERSONIC RETIREMENT CALCULATOR
-            </td>
-          </tr>
           <tr>
-            <td align="${titleAlign}" style="padding:0 28px 8px;font-family:Georgia,'Times New Roman',Times,serif;font-size:26px;line-height:1.25;color:#f4f7fb;text-align:${titleAlign};">
+            <td align="${titleAlign}" style="padding:0 28px 8px;font-family:Arial,Helvetica,sans-serif;font-size:26px;line-height:1.25;color:#1E2A32;text-align:${titleAlign};">
               ${escapeHtml(innerTitle)}
             </td>
           </tr>
@@ -175,19 +165,19 @@ export function ownerSignupEmail(notice: SignupNotice): { subject: string; html:
   ].join("\n");
   const html = wrapEmail(
     "New account",
-    `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#c9d4e8;">
+    `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#3D4A54;">
           Someone verified their email and a MACH RUN account was created.
         </td></tr>
         <tr><td style="padding:0 28px 24px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#122448;">
-            <tr><td style="padding:14px 16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#e8eef8;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE7DC;">
+            <tr><td style="padding:14px 16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1E2A32;">
               Name<br /><strong>${escapeHtml(name)}</strong><br /><br />
               Email<br /><strong>${escapeHtml(email)}</strong><br /><br />
               When<br /><strong>${escapeHtml(when)} CT</strong>
             </td></tr>
           </table>
         </td></tr>
-        <tr><td style="padding:0 28px 24px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#8fa3c4;">
+        <tr><td style="padding:0 28px 24px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#5D6C78;">
           This is an owner alert. The new user was not copied.
         </td></tr>`,
   );
@@ -230,12 +220,12 @@ export function welcomeSignupEmail(notice: SignupNotice): { subject: string; htm
     "https://machrun.com",
   ].join("\n");
   const codeBlock = code
-    ? `<tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#c9d4e8;">
+    ? `<tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#3D4A54;">
           Click "Verify Email" below and enter this code when prompted. The code expires in 24 hours. If it expires, open that same page and request a new one.
         </td></tr>
         <tr><td align="center" style="padding:0 28px 16px;">
-          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color:#122448;">
-            <tr><td style="padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:32px;letter-spacing:0.28em;color:#f4f7fb;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color:#1A2330;">
+            <tr><td style="padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:32px;letter-spacing:0.28em;color:#E8EDF1;">
               ${escapeHtml(code)}
             </td></tr>
           </table>
@@ -243,8 +233,8 @@ export function welcomeSignupEmail(notice: SignupNotice): { subject: string; htm
         <tr><td align="center" style="padding:0 28px 24px;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0">
             <tr>
-              <td align="center" bgcolor="#d8dee8" style="background-color:#d8dee8;">
-                <a href="${verifyUrl}" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#0a1835;text-decoration:none;">Verify Email</a>
+              <td align="center" bgcolor="#C45E3A" style="background-color:#C45E3A;">
+                <a href="${verifyUrl}" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#FFF8F4;text-decoration:none;">Verify Email</a>
               </td>
             </tr>
           </table>
@@ -252,18 +242,18 @@ export function welcomeSignupEmail(notice: SignupNotice): { subject: string; htm
     : `<tr><td align="center" style="padding:4px 28px 24px;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0">
             <tr>
-              <td align="center" bgcolor="#d8dee8" style="background-color:#d8dee8;">
-                <a href="https://machrun.com" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#0a1835;text-decoration:none;">Open MACH RUN</a>
+              <td align="center" bgcolor="#C45E3A" style="background-color:#C45E3A;">
+                <a href="https://machrun.com" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#FFF8F4;text-decoration:none;">Open MACH RUN</a>
               </td>
             </tr>
           </table>
         </td></tr>`;
   const html = wrapEmail(
     code ? "Verify your email to go supersonic." : "Welcome aboard",
-    `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#c9d4e8;">
+    `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#3D4A54;">
           ${escapeHtml(hello)}
         </td></tr>
-        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#c9d4e8;">
+        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#3D4A54;">
           ${
             code
               ? "Your MACH RUN account is not created until you enter this code. That keeps junk registrations out."
@@ -271,15 +261,15 @@ export function welcomeSignupEmail(notice: SignupNotice): { subject: string; htm
           }
         </td></tr>
         ${codeBlock}
-        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#c9d4e8;">
+        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#3D4A54;">
           Then open Family, then Accounts. Hit Calculate. That is a MACH RUN.
         </td></tr>
-        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#c9d4e8;">
+        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#3D4A54;">
           Free saves your plan with limits. A cup of coffee a month removes them.
         </td></tr>
-        <tr><td style="padding:0 28px 28px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#8fa3c4;">
+        <tr><td style="padding:0 28px 28px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#5D6C78;">
           MACH RUN is for entertainment and education only. It is not financial advice.<br />
-          <a href="https://machrun.com" style="color:#8fa3c4;text-decoration:underline;">machrun.com</a>
+          <a href="https://machrun.com" style="color:#5D6C78;text-decoration:underline;">machrun.com</a>
         </td></tr>`,
     undefined,
     "left",
@@ -364,23 +354,23 @@ export function firstFlightEmail(notice: SignupNotice): { subject: string; html:
   ].join("\n");
   const rows = FIRST_FLIGHT_STEPS.map(
     (s) => `<tr>
-              <td valign="top" style="width:36px;padding:10px 10px 10px 0;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#f4f7fb;">${s.n}.</td>
-              <td style="padding:10px 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#c9d4e8;">
-                <strong style="color:#f4f7fb;">${escapeHtml(s.title)}</strong><br />
+              <td valign="top" style="width:36px;padding:10px 10px 10px 0;font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#1E2A32;">${s.n}.</td>
+              <td style="padding:10px 0;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#3D4A54;">
+                <strong style="color:#1E2A32;">${escapeHtml(s.title)}</strong><br />
                 ${escapeHtml(s.body)}
               </td>
             </tr>`,
   ).join("");
   const html = wrapEmail(
     "First Flight Checklist",
-    `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#c9d4e8;">
+    `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#3D4A54;">
           ${escapeHtml(hello)}
         </td></tr>
-        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#c9d4e8;">
+        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#3D4A54;">
           Email verified. Cleared for takeoff!
         </td></tr>
         <tr><td style="padding:0 28px 8px;">
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#122448;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE7DC;">
             <tr><td style="padding:8px 16px 12px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 ${rows}
@@ -388,24 +378,24 @@ export function firstFlightEmail(notice: SignupNotice): { subject: string; html:
             </td></tr>
           </table>
         </td></tr>
-        <tr><td style="padding:12px 28px 8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#c9d4e8;">
+        <tr><td style="padding:12px 28px 8px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#3D4A54;">
           Free saves your plan with limits. Pricing unlocks more.
         </td></tr>
-        <tr><td align="center" style="padding:8px 28px 8px;font-family:Georgia,'Times New Roman',Times,serif;font-size:17px;line-height:1.5;color:#f4f7fb;text-align:center;">
+        <tr><td align="center" style="padding:8px 28px 8px;font-family:Arial,Helvetica,sans-serif;font-size:17px;line-height:1.5;color:#1E2A32;text-align:center;">
           Kick the tires and light your financial fires.
         </td></tr>
         <tr><td align="center" style="padding:12px 28px 20px;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0">
             <tr>
-              <td align="center" bgcolor="#d8dee8" style="background-color:#d8dee8;">
-                <a href="https://machrun.com" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#0a1835;text-decoration:none;">Open MACH RUN</a>
+              <td align="center" bgcolor="#C45E3A" style="background-color:#C45E3A;">
+                <a href="https://machrun.com" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#FFF8F4;text-decoration:none;">Open MACH RUN</a>
               </td>
             </tr>
           </table>
         </td></tr>
-        <tr><td style="padding:0 28px 28px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#8fa3c4;">
+        <tr><td style="padding:0 28px 28px;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#5D6C78;">
           MACH RUN is for entertainment and education only. It is not financial advice.<br />
-          <a href="https://machrun.com" style="color:#8fa3c4;text-decoration:underline;">machrun.com</a>
+          <a href="https://machrun.com" style="color:#5D6C78;text-decoration:underline;">machrun.com</a>
         </td></tr>`,
     "Email verified. Open machrun.com.",
     "center",

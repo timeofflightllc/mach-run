@@ -2,83 +2,22 @@ import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { SiteNav } from "@/components/meridian/site-nav";
 
-/** F-15: a same-color wake flows into the tail; a shock-chart leaves the nose. Nothing drawn over the airframe. */
+/** Nested Mach-cone chevrons. currentColor = outer; inner is titanium. */
 export function MachGlyph({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="7 0 141 36"
-      width="168"
-      height="32"
-      className={cn("h-8 w-[10.5rem] shrink-0 text-fg", className)}
-      style={{ pointerEvents: "none", maxHeight: 32 }}
+      viewBox="0 0 48 48"
+      className={cn("h-8 w-8 shrink-0 text-fg", className)}
       aria-hidden
     >
-      {/* Wake / history — same color, meets the tail, does not cross the jet */}
       <path
-        d="M0 31.2 L3 29.4 L5.5 29.8 L9.2 26.9 L9.2 28.4 L5.2 31.2 Z"
         fill="currentColor"
-      />
-      {/* Eagle */}
-      <g transform="translate(8 5)">
-        <path
-          fill="currentColor"
-          d="M1.2 21.9 L3.6 21.5 L4.1 5.0 L7.7 5.0 L16.3 17.3 L17.9 19.0 L29.3 19.0 L29.7 19.4 L33.8 19.4 L34.2 19.0 L38.3 19.0 L38.7 18.5 L48.5 17.7 L48.9 17.3 L50.9 17.3 L53.3 16.4 L59.1 16.0 L59.5 15.6 L61.9 15.6 L62.3 15.2 L66.4 15.2 L66.8 14.7 L67.2 15.2 L69.6 15.2 L75.8 18.5 L81.5 19.8 L84.3 21.1 L85.5 21.1 L89.2 22.8 L89.2 23.2 L85.1 23.6 L84.7 24.0 L59.5 24.0 L59.1 24.5 L53.8 24.5 L53.3 25.3 L51.3 26.2 L46.4 26.6 L46.0 27.0 L30.1 27.0 L29.7 26.6 L25.2 26.2 L22.8 24.9 L10.6 24.5 L7.7 23.6 L5.7 24.0 L5.3 22.3 L1.2 21.9 Z"
-        />
-      </g>
-      {/* Local shocks wrapping aft around the jet, not over the fuselage */}
-      <path
-        d="M97 21 C 62 3 28 4 10 16"
-        fill="none"
-        stroke="currentColor"
-        strokeOpacity="0.32"
-        strokeWidth="0.9"
-        strokeLinecap="round"
+        fillRule="evenodd"
+        d="M2 6 L40 24 L2 42 L2 33.2 L26.5 24 L2 14.8 Z M8.5 16.2 L28 24 L8.5 31.8 L8.5 26.6 L18.5 24 L8.5 21.4 Z"
       />
       <path
-        d="M97 33 C 64 46 30 44 10 34"
-        fill="none"
-        stroke="currentColor"
-        strokeOpacity="0.32"
-        strokeWidth="0.9"
-        strokeLinecap="round"
-      />
-      <path
-        d="M94 23 C 66 8 36 9 16 18"
-        fill="none"
-        stroke="currentColor"
-        strokeOpacity="0.16"
-        strokeWidth="0.7"
-        strokeLinecap="round"
-      />
-      <path
-        d="M94 31.5 C 66 42 36 41 16 33"
-        fill="none"
-        stroke="currentColor"
-        strokeOpacity="0.16"
-        strokeWidth="0.7"
-        strokeLinecap="round"
-      />
-      {/* Shock-chart off the nose — same color */}
-      <path
-        d="M97.2 27.8 L106 24.2 L112 24.8 L120 18.4 L126 19 L136 11.2 L142 12 L147 6.5 L147 24 Q128 32 97.2 28.6 Z"
-        fill="currentColor"
-        fillOpacity="0.2"
-      />
-      <path
-        d="M97.2 27.8 L106 24.2 L112 24.8 L120 18.4 L126 19 L136 11.2 L142 12 L147 6.5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.35"
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      />
-      <path
-        d="M97.2 28.2 Q128 33 147 24"
-        fill="none"
-        stroke="currentColor"
-        strokeOpacity="0.35"
-        strokeWidth="1"
-        strokeLinecap="round"
+        fill="#A8B4C0"
+        d="M14 18.2 L31.5 24 L14 29.8 L14 26.4 L22.5 24 L14 21.6 Z"
       />
     </svg>
   );
@@ -97,15 +36,15 @@ export function MachWordmark({
   return (
     <span className={cn("inline-flex shrink-0 items-center", className)} aria-label="MACH RUN.com">
       <img
-        src="/brand/mach-run-logo.jpg?v=20"
+        src="/brand/mach-run-logo.jpg?v=21"
         alt="MACH RUN.com"
-        width={1522}
-        height={536}
+        width={1257}
+        height={428}
         className={cn(
           "block h-auto shrink-0 object-contain object-left",
           large
-            ? "w-[15.75rem] max-w-[15.75rem]"
-            : "w-[10.9rem] max-w-[10.9rem] sm:w-[12.6rem] sm:max-w-[12.6rem]",
+            ? "w-[16.75rem] max-w-[16.75rem]"
+            : "w-[12.5rem] max-w-[12.5rem] sm:w-[14.5rem] sm:max-w-[14.5rem]",
           framed && "shadow-[0_0_0_1px_#c5cdd6]",
         )}
       />
@@ -117,7 +56,7 @@ export function BrandLockup({
   className,
   size = "md",
   framed = false,
-  showTagline = true,
+  showTagline = false,
 }: {
   className?: string;
   size?: "md" | "lg";
@@ -147,7 +86,7 @@ export function MachFooter() {
     <footer className="mt-8 border-t border-border bg-bg">
       <div className="page-gutter mx-auto flex w-full flex-col gap-5 py-8">
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <BrandLockup size="lg" framed />
+          <BrandLockup size="lg" />
           <SiteNav className="text-base" />
         </div>
         <dl className="grid grid-cols-1 gap-4 text-sm text-muted md:grid-cols-4 md:gap-6">
