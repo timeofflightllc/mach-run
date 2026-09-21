@@ -16,10 +16,10 @@ function planWeight(p: Plan | null | undefined): number {
   return inc * 12 + assets;
 }
 
-function payloadToSave(plan: Plan) {
+function payloadToSave(plan: Plan, profileId?: string) {
   const lib = useProfileStore.getState();
   if (lib.profiles.length > 1) {
-    return lib.asLibrary(plan);
+    return lib.asLibraryFor(plan, profileId ?? lib.activeId);
   }
   return plan;
 }
@@ -75,9 +75,11 @@ export function useCloudPlan() {
 
   useEffect(() => {
     if (!userId || !cloudReady) return;
+    const profileId = useProfileStore.getState().activeId;
+    const snapshot = plan;
     setStatus("saving");
     const t = window.setTimeout(() => {
-      void saveMachPlan({ data: payloadToSave(plan) })
+      void saveMachPlan({ data: payloadToSave(snapshot, profileId) })
         .then(() => setStatus("saved"))
         .catch(() => setStatus("idle"));
     }, 700);

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { createDefaultPlan, ensurePlan } from "./defaults";
+import { clonePlan, createDefaultPlan, ensurePlan } from "./defaults";
 import { newId } from "./store";
 import type { Plan } from "./types";
 
@@ -26,6 +26,7 @@ interface ProfileState {
   remove: (id: string, currentPlan: Plan) => Plan | null;
   importProfile: (name: string, plan: Plan, currentPlan: Plan) => Plan;
   asLibrary: (currentPlan: Plan) => PlanLibrary;
+  asLibraryFor: (plan: Plan, profileId: string) => PlanLibrary;
   resetLibrary: () => void;
 }
 
@@ -33,7 +34,7 @@ function oneHousehold(plan: Plan): Pick<ProfileState, "profiles" | "activeId"> {
   const id = newId("prof");
   return {
     activeId: id,
-    profiles: [{ id, name: "Household", plan: ensurePlan(plan) }],
+    profiles: [{ id, name: "Household", plan: clonePlan(plan) }],
   };
 }
 
@@ -53,7 +54,7 @@ export const useProfileStore = create<ProfileState>()(
         if (s.profiles.length) {
           set({
             profiles: s.profiles.map((p) =>
-              p.id === s.activeId ? { ...p, plan: ensurePlan(plan) } : p,
+              p.id === s.activeId ? { ...p, plan: clonePlan(plan) } : p,
             ),
           });
           return;
@@ -63,7 +64,7 @@ export const useProfileStore = create<ProfileState>()(
       hydrateLibrary: (lib) => {
         const profiles = lib.profiles.map((p) => ({
           ...p,
-          plan: ensurePlan(p.plan),
+          plan: clonePlan(p.plan),
         }));
         const activeId =
           profiles.some((p) => p.id === lib.activeId) ? lib.activeId : profiles[0]?.id ?? "";
@@ -77,7 +78,7 @@ export const useProfileStore = create<ProfileState>()(
         }
         set({
           profiles: profiles.map((p) =>
-            p.id === activeId ? { ...p, plan: ensurePlan(plan) } : p,
+            p.id === activeId ? { ...p, plan: clonePlan(plan) } : p,
           ),
         });
       },
@@ -90,10 +91,10 @@ export const useProfileStore = create<ProfileState>()(
         const next = profiles.find((p) => p.id === id);
         if (!next) return null;
         const snapped = profiles.map((p) =>
-          p.id === activeId ? { ...p, plan: ensurePlan(currentPlan) } : p,
+          p.id === activeId ? { ...p, plan: clonePlan(currentPlan) } : p,
         );
         set({ profiles: snapped, activeId: id });
-        return ensurePlan(next.plan);
+        return clonePlan(next.plan);
       },
       addProfile: (currentPlan, name) => {
         get().snapshotCurrent(currentPlan);
@@ -101,10 +102,10 @@ export const useProfileStore = create<ProfileState>()(
         const plan = createDefaultPlan();
         const label = (name ?? "").trim() || `Client ${get().profiles.length + 1}`;
         set({
-          profiles: [...get().profiles, { id, name: label, plan }],
+          profiles: [...get().profiles, { id, name: label, plan: clonePlan(plan) }],
           activeId: id,
         });
-        return plan;
+        return clonePlan(plan);
       },
       rename: (id, name) => {
         const n = name.trim() || "Untitled";
@@ -120,12 +121,12 @@ export const useProfileStore = create<ProfileState>()(
         const nextActive = id === activeId ? nextList[0] : nextList.find((p) => p.id === get().activeId);
         if (!nextActive) return null;
         set({ profiles: nextList, activeId: nextActive.id });
-        return ensurePlan(nextActive.plan);
+        return clonePlan(nextActive.plan);
       },
       importProfile: (name, plan, currentPlan) => {
         get().snapshotCurrent(currentPlan);
         const id = newId("prof");
-        const next = ensurePlan(plan);
+        const next = clonePlan(plan);
         set({
           profiles: [
             ...get().profiles,
@@ -133,12 +134,17 @@ export const useProfileStore = create<ProfileState>()(
           ],
           activeId: id,
         });
-        return next;
+        return clonePlan(next);
       },
-      asLibrary: (currentPlan) => {
-        get().snapshotCurrent(currentPlan);
+      asLibrary: (currentPlan) => get().asLibraryFor(currentPlan, get().activeId),
+      asLibraryFor: (plan, profileId) => {
         const { profiles, activeId } = get();
-        return { kind: "library", activeId, profiles };
+        const id = profiles.some((p) => p.id === profileId) ? profileId : activeId;
+        const next = profiles.map((p) =>
+          p.id === id ? { ...p, plan: clonePlan(plan) } : p,
+        );
+        set({ profiles: next });
+        return { kind: "library", activeId, profiles: next };
       },
       resetLibrary: () => set({ profiles: [], activeId: "" }),
     }),

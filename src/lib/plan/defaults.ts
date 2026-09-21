@@ -115,3 +115,11 @@ export function ensurePlan(plan: Plan): Plan {
 export function ensureStages(plan: Plan): Plan {
   return ensurePlan(plan);
 }
+
+export function clonePlan(plan: Plan): Plan {
+  try {
+    return ensurePlan(structuredClone(plan));
+  } catch {
+    return ensurePlan(JSON.parse(JSON.stringify(plan)) as Plan);
+  }
+}

@@ -58,7 +58,10 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
 
   function onSwitch(id: string) {
     const next = useProfileStore.getState().switchTo(id, usePlanStore.getState().plan);
-    if (next) setPlan(next);
+    if (next) {
+      setPlan(next);
+      persistLibrary(next);
+    }
     setOpen(false);
   }
 
