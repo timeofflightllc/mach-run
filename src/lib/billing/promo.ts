@@ -39,6 +39,9 @@ export type PromoRecord = {
   builtin: boolean;
   note: string;
   stripeCouponId: string | null;
+  used: number;
+  activeUsers: number;
+  activeEmails: string[];
 };
 
 export type PromoFail = "unknown" | "inactive" | "not_started" | "expired" | "wrong_package";
@@ -82,6 +85,9 @@ export function builtinPromo(code: string): PromoRecord | null {
         ? `${TRIAL_PROMO_DAYS} days on any paid package.`
         : `${MARVIN_PROMO_DAYS} days of Individual Unlimited (${MARVIN_PROMO_CODE} / ${INVERTED_PROMO_CODE} / ${EAGLE_PROMO_CODE}).`,
     stripeCouponId: null,
+    used: 0,
+    activeUsers: 0,
+    activeEmails: [],
   };
 }
 

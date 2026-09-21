@@ -110,6 +110,8 @@ export function PromoCodesDesk() {
         Create a code, pick the window, pick the offer, pick the packages. Pricing
         checks this list at checkout. SUPER14 / EAGLE / MARVIN / INVERTED stay
         built in until you save a row with the same name, which overrides them.
+        Used = unique people who applied that code at checkout. Active = those
+        still trialing or paid.
       </p>
 
       <div className="rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)]">
@@ -232,6 +234,13 @@ export function PromoCodesDesk() {
                   ) : null}
                 </p>
                 <p className="mt-1 text-sm text-muted">{describePromo(row)}</p>
+                <p className="mt-1 text-sm text-fg">
+                  Used {row.used} · Active {row.activeUsers}
+                  {row.activeUsers === 0 ? " (none live)" : ""}
+                </p>
+                {row.activeEmails.length > 0 ? (
+                  <p className="mt-1 text-xs text-subtle">{row.activeEmails.join(" · ")}</p>
+                ) : null}
                 <p className="mt-1 text-xs text-subtle">
                   {row.startsAt || row.endsAt
                     ? `${row.startsAt ?? "open"} → ${row.endsAt ?? "open"}`

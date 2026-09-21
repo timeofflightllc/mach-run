@@ -327,6 +327,11 @@ export async function applyStripeEvent(event: StripeEvent): Promise<void> {
     const userId =
       (session.client_reference_id || session.metadata?.userId || "").trim();
     if (!userId) return;
+    const code = (session.metadata?.trialCode || "").trim();
+    if (code) {
+      const { recordPromoRedemption } = await import("./promo.server");
+      await recordPromoRedemption(userId, code);
+    }
     const subId =
       typeof session.subscription === "string"
         ? session.subscription
@@ -363,6 +368,11 @@ export async function applyStripeEvent(event: StripeEvent): Promise<void> {
     const userId =
       (sub.metadata?.userId || "").trim() || (await userIdForCustomer(customerId));
     if (!userId) return;
+    const code = (sub.metadata?.trialCode || "").trim();
+    if (code) {
+      const { recordPromoRedemption } = await import("./promo.server");
+      await recordPromoRedemption(userId, code);
+    }
     await upsertSubscription({
       userId,
       customerId,

@@ -20,6 +20,9 @@ const trial: PromoRecord = {
   builtin: false,
   note: "",
   stripeCouponId: null,
+  used: 0,
+  activeUsers: 0,
+  activeEmails: [],
 };
 
 describe("desk promo codes", () => {

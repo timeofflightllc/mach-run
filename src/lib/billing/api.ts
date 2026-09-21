@@ -341,6 +341,10 @@ export const startCheckout = createServerFn({ method: "POST" })
         : { allow_promotion_codes: true }),
     });
     if (!session.url) throw new Error("Stripe did not return a checkout URL.");
+    if (typedCode) {
+      const { recordPromoRedemption } = await import("./promo.server");
+      await recordPromoRedemption(context.userId, typedCode);
+    }
     return { url: session.url };
   });
 

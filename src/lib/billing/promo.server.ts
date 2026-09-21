@@ -85,6 +85,9 @@ function fromRow(row: PromoRow): PromoRecord {
     builtin: false,
     note: row.note ?? "",
     stripeCouponId: row.stripe_coupon_id,
+    used: 0,
+    activeUsers: 0,
+    activeEmails: [],
   };
 }
 
@@ -125,10 +128,90 @@ export async function resolvePromo(
   return evaluatePromo(promo, pkg, now);
 }
 
+export async function ensurePromoRedemptionsTable(): Promise<boolean> {
+  try {
+    const sql = await getSql();
+    await sql.query(`
+      create table if not exists mach_promo_redemptions (
+        code text not null,
+        user_id text not null,
+        redeemed_at timestamptz not null default now(),
+        primary key (code, user_id)
+      )
+    `);
+    await sql.query(`
+      create index if not exists mach_promo_redemptions_user_idx
+        on mach_promo_redemptions (user_id)
+    `);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function recordPromoRedemption(userId: string, code: string): Promise<void> {
+  const id = sanitizePromoCode(code);
+  const uid = userId.trim();
+  if (!id || !uid) return;
+  if (!(await ensurePromoRedemptionsTable())) return;
+  try {
+    const sql = await getSql();
+    await sql.query(
+      `insert into mach_promo_redemptions (code, user_id, redeemed_at)
+       values ($1, $2, now())
+       on conflict (code, user_id) do nothing`,
+      [id, uid],
+    );
+  } catch {
+    /* table missing — do not block checkout */
+  }
+}
+
+type Usage = { used: number; activeUsers: number; activeEmails: string[] };
+
+async function loadUsage(): Promise<Map<string, Usage>> {
+  const map = new Map<string, Usage>();
+  if (!(await ensurePromoRedemptionsTable())) return map;
+  try {
+    const sql = await getSql();
+    const rows = await sql.query<{
+      code: string;
+      email: string | null;
+      status: string | null;
+    }>(
+      `select r.code, u.email, s.status
+         from mach_promo_redemptions r
+         left join mach_subscriptions s on s.user_id = r.user_id
+         left join "user" u on u.id = r.user_id`,
+    );
+    for (const row of rows) {
+      const cur = map.get(row.code) ?? { used: 0, activeUsers: 0, activeEmails: [] };
+      cur.used += 1;
+      const live = row.status === "active" || row.status === "trialing";
+      if (live) {
+        cur.activeUsers += 1;
+        const email = (row.email ?? "").trim();
+        if (email && cur.activeEmails.length < 12) cur.activeEmails.push(email);
+      }
+      map.set(row.code, cur);
+    }
+  } catch {
+    return map;
+  }
+  return map;
+}
+
+function withUsage(row: PromoRecord, usage: Map<string, Usage>): PromoRecord {
+  const hit = usage.get(row.code);
+  if (!hit) return row;
+  return { ...row, used: hit.used, activeUsers: hit.activeUsers, activeEmails: hit.activeEmails };
+}
+
 export async function listPromos(): Promise<PromoRecord[]> {
   const builtins = builtinPromoList();
+  const usage = await loadUsage();
   const ok = await ensurePromoTable();
-  if (!ok) return builtins;
+  if (!ok) return builtins.map((row) => withUsage(row, usage));
   try {
     const sql = await getSql();
     const rows = await sql.query<PromoRow>(
@@ -140,9 +223,11 @@ export async function listPromos(): Promise<PromoRecord[]> {
     );
     const db = rows.map(fromRow);
     const used = new Set(db.map((r) => r.code));
-    return [...db, ...builtins.filter((b) => !used.has(b.code))];
+    return [...db, ...builtins.filter((b) => !used.has(b.code))].map((row) =>
+      withUsage(row, usage),
+    );
   } catch {
-    return builtins;
+    return builtins.map((row) => withUsage(row, usage));
   }
 }
 
