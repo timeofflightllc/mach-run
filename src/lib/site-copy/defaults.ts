@@ -70,7 +70,7 @@ If this policy changes in a material way, we will update this page and the date 
   {
     slug: "announcements",
     title: "Feature announcements",
-    kicker: "Last ships, newest first. Short notes only.",
+    kicker: "Ten newest ships on this page. Older notes sit behind a month.",
     body: "",
   },
 ];
