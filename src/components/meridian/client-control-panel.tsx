@@ -44,7 +44,7 @@ export function ClientControlPanel({
 
   return (
     <div
-      className="fixed inset-0 z-[120] grid place-items-center bg-black/60 px-4"
+      className="paper-dialog fixed inset-0 z-[120] grid place-items-center bg-black/60 px-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="client-panel-title"

@@ -125,6 +125,20 @@
   --color-section-lift-border: #3a4652;
 }
 
+/* Modals mounted in the header must not keep canopy ink (white-on-cream inputs). */
+.paper-dialog {
+  color: #1e2a32;
+  --color-bg: #f3f0e8;
+  --color-surface: #fffcf6;
+  --color-elevated: #ffffff;
+  --color-fg: #1e2a32;
+  --color-muted: #3d4a54;
+  --color-subtle: #5d6c78;
+  --color-accent: #c45e3a;
+  --color-accent-fg: #fff8f4;
+  --color-border: #d5d0c6;
+}
+
 /* Side inset ≈ Calculate button width (8.5rem) on a wide screen. */
 .page-gutter {
   padding-inline: clamp(1rem, 4vw, 4.25rem);
