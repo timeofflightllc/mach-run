@@ -160,7 +160,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
       : [];
 
   return (
-    <div className="overflow-hidden rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
+    <div className="rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <h2 className="font-display text-xl font-bold text-fg">Yearly Ledger</h2>
         <button
@@ -184,18 +184,29 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           marked.
         </p>
       )}
-      <div className="overflow-x-auto pb-2">
+      <div className="pb-2">
         <table className="w-max min-w-full text-left text-sm">
           <thead className="border-y border-border text-xs uppercase tracking-wider text-subtle">
             <tr>
-              <th className="px-4 py-2 font-medium">Year</th>
-              <th className="px-3 py-2 font-medium">Age</th>
-              <th className="px-3 py-2 font-medium">Income</th>
-              <th className="px-3 py-2 font-medium">Tax</th>
-              <th className="px-3 py-2 font-medium">Spend</th>
-              <th className="px-3 py-2 font-medium">Saved</th>
-              <th className="px-3 py-2 font-medium">Drawn</th>
-              <th className="px-3 py-2 pr-5 font-medium">Spendable</th>
+              {(
+                [
+                  ["Year", "px-4 py-2 font-medium"],
+                  ["Age", "px-3 py-2 font-medium"],
+                  ["Income", "px-3 py-2 font-medium"],
+                  ["Tax", "px-3 py-2 font-medium"],
+                  ["Spend", "px-3 py-2 font-medium"],
+                  ["Saved", "px-3 py-2 font-medium"],
+                  ["Drawn", "px-3 py-2 font-medium"],
+                  ["Spendable", "px-3 py-2 pr-5 font-medium"],
+                ] as const
+              ).map(([label, cls]) => (
+                <th
+                  key={label}
+                  className={`sticky top-[var(--mach-header-h,7rem)] z-20 bg-surface ${cls} shadow-[inset_0_-1px_0_var(--color-border)]`}
+                >
+                  {label}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody className="tabular-nums">
