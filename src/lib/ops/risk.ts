@@ -28,11 +28,11 @@ export type RiskResult = {
 };
 
 export const RISK_GRADE_CLASS: Record<RiskGrade, string> = {
-  A: "text-[#5ecf6a]",
-  B: "text-[#5aa8ee]",
-  C: "text-[#e6c86e]",
-  D: "text-[#e08a4a]",
-  F: "text-[#e07070]",
+  A: "text-[#2F6B4A]",
+  B: "text-[#3E6B78]",
+  C: "text-[#8A7018]",
+  D: "text-[#C45E3A]",
+  F: "text-[#A34B45]",
 };
 
 export const EMPTY_RISK: RiskResult = {

@@ -134,45 +134,47 @@ export function IdleLockGate() {
 
   return (
     <div
-      className="fixed inset-0 z-[300] grid place-items-center px-4"
-      style={{ backgroundColor: "#0a1835" }}
+      className="fixed inset-0 z-[300] grid place-items-center bg-bg px-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="idle-lock-title"
     >
-      <form onSubmit={(e) => void unlock(e)} className="w-full max-w-md">
-        <BrandLockup />
-        <p id="idle-lock-title" className="mt-8 font-display text-2xl text-fg">
+      <form
+        onSubmit={(e) => void unlock(e)}
+        className="w-full max-w-md space-y-5 rounded-2xl bg-surface p-6 shadow-[0_0_0_1px_var(--color-border)] sm:p-8"
+      >
+        <div className="flex justify-center">
+          <BrandLockup size="lg" framed />
+        </div>
+        <p id="idle-lock-title" className="font-display text-2xl text-fg">
           Idle lock
         </p>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
+        <p className="text-sm leading-relaxed text-muted">
           This PIN only uncovers the screen. It is not your machrun.com sign-in
           and not another account password.
         </p>
-        <div className="mt-5">
-          <Field label="Idle lock PIN">
-            <TextInput
-              type="password"
-              inputMode="numeric"
-              autoComplete="off"
-              maxLength={6}
-              value={pin}
-              onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-              autoFocus
-            />
-          </Field>
-        </div>
-        {error ? <p className="mt-3 text-sm text-negative">{error}</p> : null}
-        <PrimaryButton type="submit" disabled={busy || pin.length < 4} className="mt-5">
+        <Field label="Idle lock PIN">
+          <TextInput
+            type="password"
+            inputMode="numeric"
+            autoComplete="off"
+            maxLength={6}
+            value={pin}
+            onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+            autoFocus
+          />
+        </Field>
+        {error ? <p className="text-sm text-negative">{error}</p> : null}
+        <PrimaryButton type="submit" disabled={busy || pin.length < 4}>
           {busy ? "Checking…" : "Uncover"}
         </PrimaryButton>
-        <p className="mt-4 text-sm text-subtle">
+        <p className="text-sm text-subtle">
           Forgot the PIN? Sign out, sign back in, then change it on Account
           profile before the lock starts again.
         </p>
         <button
           type="button"
-          className="mt-3 text-sm text-muted underline underline-offset-4 hover:text-fg"
+          className="text-sm text-muted underline underline-offset-4 hover:text-fg"
           onClick={() => void signOut("/login")}
         >
           Sign out

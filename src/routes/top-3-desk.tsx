@@ -1,4 +1,5 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, Link } from '@tanstack/react-router'
+import { BrandLockup } from "@/components/meridian/mach-mark";
 import { SiteCopyDesk } from "@/components/ops/site-copy-desk";
 import { DeskUsers } from "@/components/ops/desk-users";
 import { OpsDeleteAccount } from "@/components/ops/ops-delete-account";
@@ -125,14 +126,20 @@ function Top3DeskDoor() {
   const to = Math.min(offset + OPS_ROSTER_PAGE, total);
 
   return (
-    <main className="min-h-screen bg-bg px-6 py-10 text-fg">
-      <div className="mx-auto w-full max-w-6xl space-y-6">
-        <header>
-          <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">
-            MACH RUN
+    <main className="min-h-screen bg-bg text-fg">
+      <header className="canopy-bar border-b border-border">
+        <div className="page-gutter mx-auto flex max-w-6xl items-center justify-between gap-4 py-2.5">
+          <Link to="/" className="inline-flex shrink-0">
+            <BrandLockup framed />
+          </Link>
+          <p className="font-display text-xl tracking-[0.08em] text-fg sm:text-2xl">
+            Top 3 Desk
           </p>
-          <h1 className="mt-2 font-display text-4xl text-fg">Top 3 Desk</h1>
-          <p className="mt-2 text-sm text-muted">
+        </div>
+      </header>
+      <div className="page-gutter mx-auto w-full max-w-6xl space-y-6 py-8">
+        <header>
+          <p className="text-sm text-muted">
             {tab === "users"
               ? "Users. Click a person for site use, then delete with your desk password."
               : tab === "copy"
@@ -605,7 +612,7 @@ function PersonPane({
           <button
             type="button"
             disabled={busy !== null}
-            className="rounded-lg border border-border px-3 py-2 text-fg disabled:opacity-40"
+            className="h-11 rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg disabled:opacity-40"
             onClick={() => {
               const label = packageLabel(pkg);
               const extra =
@@ -664,7 +671,7 @@ function PersonPane({
           <button
             type="button"
             disabled={busy !== null}
-            className="rounded-lg border border-border px-3 py-2 text-fg disabled:opacity-40"
+            className="h-11 rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg disabled:opacity-40"
             onClick={() =>
               void run(
                 "comp",
@@ -705,7 +712,7 @@ function PersonPane({
           <button
             type="button"
             disabled={busy !== null}
-            className="rounded-lg border border-border px-3 py-2 text-fg disabled:opacity-40"
+            className="h-11 rounded-lg border border-negative/50 px-4 text-sm font-medium text-negative disabled:opacity-40"
             onClick={() =>
               void run(
                 "cancel",
