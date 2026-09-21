@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BrandLockup, MachFooter } from "@/components/meridian/mach-mark";
 import { SiteMenu } from "@/components/meridian/site-nav";
 import { PrimaryButton, TextInput } from "@/components/ui/field";
-import { startBillingPortal, startCheckout } from "@/lib/billing/api";
+import { peekPromoCode, startBillingPortal, startCheckout } from "@/lib/billing/api";
 import {
   ADVISOR_MONTHLY_USD,
   ADVISOR_TRIAL_DAYS,
@@ -16,9 +16,9 @@ import {
   UNLIMITED_YEARLY_USD,
   isAdvisorPlan,
   packageLabel,
-  promoAppliesToPackage,
-  trialDaysForCode,
+  type CheckoutPackage,
 } from "@/lib/billing/limits";
+import { builtinPromo, describePromo, evaluatePromo, type PromoRecord } from "@/lib/billing/promo";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { cn } from "@/lib/utils";
@@ -60,14 +60,44 @@ function Pricing() {
     isAdvisorPlan(ent.plan) ? "advisor" : "individual",
   );
   const [trialCode, setTrialCode] = useState("");
-  const promoDays = trialDaysForCode(trialCode);
+  const [livePromo, setLivePromo] = useState<PromoRecord | null | undefined>(undefined);
   const typedCode = trialCode.trim().length > 0;
-  const codeInvalid = typedCode && promoDays == null;
+  useEffect(() => {
+    if (!typedCode) {
+      setLivePromo(undefined);
+      return;
+    }
+    let live = true;
+    const t = window.setTimeout(() => {
+      void peekPromoCode({ data: { code: trialCode } })
+        .then((r) => {
+          if (!live) return;
+          setLivePromo(r.ok ? r.promo : null);
+        })
+        .catch(() => {
+          if (live) setLivePromo(undefined);
+        });
+    }, 280);
+    return () => {
+      live = false;
+      window.clearTimeout(t);
+    };
+  }, [trialCode, typedCode]);
+  const promo: PromoRecord | null =
+    livePromo === undefined ? builtinPromo(trialCode) : livePromo;
+  const promoState = evaluatePromo(promo, null);
+  const promoDays = promoState.ok && promo?.kind === "trial_days" ? promo.trialDays : null;
+  const promoPct = promoState.ok && promo?.kind === "percent_off" ? promo.percentOff : null;
+  const checkingCode = typedCode && livePromo === undefined && !builtinPromo(trialCode);
+  const codeInvalid = typedCode && !checkingCode && !promoState.ok;
   const hasTrial = promoDays != null;
-  const trialOnIndividual = promoAppliesToPackage(trialCode, "individual");
-  const trialOnUnlimited = promoAppliesToPackage(trialCode, "unlimited");
-  const trialOnAdvisorLite = promoAppliesToPackage(trialCode, "advisor_lite");
-  const trialOnAdvisor = promoAppliesToPackage(trialCode, "advisor");
+  function codeOn(pkg: CheckoutPackage): boolean {
+    return evaluatePromo(promo, pkg).ok;
+  }
+  const trialOnIndividual = codeOn("individual");
+  const trialOnUnlimited = codeOn("unlimited");
+  const trialOnAdvisorLite = codeOn("advisor_lite");
+  const trialOnAdvisor = codeOn("advisor");
 
   const onFree = signedIn && !ent.paid;
   const onIndividual = signedIn && ent.paid && ent.plan === "individual";
@@ -117,55 +147,69 @@ function Pricing() {
   const advPrice = interval === "year" ? ADVISOR_YEARLY_USD : ADVISOR_MONTHLY_USD;
   const advUnlPrice = interval === "year" ? ADVISOR_UNLIMITED_YEARLY_USD : ADVISOR_UNLIMITED_MONTHLY_USD;
   const per = interval === "year" ? "/year" : "/month";
-  const codeHint = hasTrial
-    ? trialOnIndividual
-      ? `Valid code — ${promoDays} days free, then the package you pick.`
-      : `Valid code — ${promoDays} days of Individual Unlimited, then $${UNLIMITED_MONTHLY_USD}/mo or $${UNLIMITED_YEARLY_USD}/year.`
-    : codeInvalid
-      ? "That code isn't valid."
-      : "Type coupon code above.";
+  const codeHint = checkingCode
+    ? "Checking that code…"
+    : promoState.ok && promo
+      ? `Valid code — ${describePromo(promo)}.`
+      : codeInvalid
+        ? promoState.ok
+          ? "That code isn't valid."
+          : promoState.message
+        : "Type coupon code above.";
   const individualSignIn = trialOnIndividual
-    ? `Sign in, then start ${promoDays}-day trial`
+    ? promoDays
+      ? `Sign in, then start ${promoDays}-day trial`
+      : `Sign in, then choose Individual${promoPct ? ` · ${promoPct}% off` : ""}`
     : "Sign in, then choose Individual";
   const individualButton =
     busy === `individual-${interval}`
       ? "Redirecting…"
-      : trialOnIndividual
+      : trialOnIndividual && promoDays
         ? `Start ${promoDays}-day trial · $${indPrice}${per}`
-        : `Choose Individual · $${indPrice}${per}`;
+        : trialOnIndividual && promoPct
+          ? `Choose Individual · ${promoPct}% off`
+          : `Choose Individual · $${indPrice}${per}`;
   const unlimitedSignIn = trialOnUnlimited
-    ? `Sign in, then start ${promoDays}-day trial`
+    ? promoDays
+      ? `Sign in, then start ${promoDays}-day trial`
+      : `Sign in, then choose Individual Unlimited${promoPct ? ` · ${promoPct}% off` : ""}`
     : "Sign in, then choose Individual Unlimited";
   const unlimitedButton =
     busy === `unlimited-${interval}`
       ? "Redirecting…"
-      : trialOnUnlimited
+      : trialOnUnlimited && promoDays
         ? `Start ${promoDays}-day trial · $${unlPrice}${per}`
-        : `Choose Unlimited · $${unlPrice}${per}`;
-  const advisorTrialLabel = `${trialOnAdvisorLite ? promoDays : ADVISOR_TRIAL_DAYS}-day trial`;
-  const advisorSubtitle = trialOnAdvisorLite
+        : trialOnUnlimited && promoPct
+          ? `Choose Unlimited · ${promoPct}% off`
+          : `Choose Unlimited · $${unlPrice}${per}`;
+  const advisorTrialLabel = `${trialOnAdvisorLite && promoDays ? promoDays : ADVISOR_TRIAL_DAYS}-day trial`;
+  const advisorSubtitle = trialOnAdvisorLite && promoDays
     ? interval === "year"
       ? `${promoDays}-day trial, 2 months free`
       : `${promoDays}-day trial, then $${ADVISOR_MONTHLY_USD}/month`
+    : trialOnAdvisorLite && promoPct
+      ? `${promoPct}% off first invoice`
     : interval === "year"
       ? `${ADVISOR_TRIAL_DAYS}-day trial, 2 months free`
       : `${ADVISOR_TRIAL_DAYS}-day trial, then $${ADVISOR_MONTHLY_USD}/month`;
-  const advisorSignIn = trialOnAdvisorLite
+  const advisorSignIn = trialOnAdvisorLite && promoDays
     ? `Sign in, then start ${promoDays}-day trial`
     : "Sign in, then start Advisor Lite trial";
   const advisorLiteButton =
     busy === `advisor_lite-${interval}`
       ? "Redirecting…"
-      : `Start ${trialOnAdvisorLite ? promoDays : ADVISOR_TRIAL_DAYS}-day trial`;
-  const advisorUnlSignIn = trialOnAdvisor
+      : `Start ${trialOnAdvisorLite && promoDays ? promoDays : ADVISOR_TRIAL_DAYS}-day trial`;
+  const advisorUnlSignIn = trialOnAdvisor && promoDays
     ? `Sign in, then start ${promoDays}-day trial`
     : "Sign in, then choose Advisor Unlimited";
   const advisorUnlButton =
     busy === `advisor-${interval}`
       ? "Redirecting…"
-      : trialOnAdvisor
+      : trialOnAdvisor && promoDays
         ? `Start ${promoDays}-day trial · $${advUnlPrice}${per}`
-        : `Choose Unlimited · $${advUnlPrice}${per}`;
+        : trialOnAdvisor && promoPct
+          ? `Choose Unlimited · ${promoPct}% off`
+          : `Choose Unlimited · $${advUnlPrice}${per}`;
 
   const currentText = !ent.signedIn
     ? null

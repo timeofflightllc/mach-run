@@ -12,11 +12,10 @@ import {
   paidFromStatus,
   planChangePath,
   profileLimitFor,
-  trialDaysForCode,
   normalizePromoCode,
-  promoAppliesToPackage,
   type Entitlement,
   type MachPackage,
+  type CheckoutPackage,
 } from "./limits";
 import { ensurePlan } from "@/lib/plan/defaults";
 import { openPlanPayload } from "@/lib/plan/plan-at-rest";
@@ -305,13 +304,16 @@ export const startCheckout = createServerFn({ method: "POST" })
         returnUrl: `${origin}/?checkout=success`,
       });
     }
-    const promoTrialDays = promoAppliesToPackage(data.trialCode, pkg)
-      ? trialDaysForCode(data.trialCode)
-      : null;
-    if (normalizePromoCode(data.trialCode) && trialDaysForCode(data.trialCode) && !promoTrialDays) {
-      throw new Error(
-        "That code is for Individual Unlimited. Choose that package to use it.",
-      );
+    const { resolvePromo } = await import("./promo.server");
+    const typedCode = normalizePromoCode(data.trialCode);
+    const promo = typedCode ? await resolvePromo(typedCode, pkg) : null;
+    if (typedCode && promo && !promo.ok) {
+      throw new Error(promo.message);
+    }
+    const promoTrialDays = promo?.ok && promo.promo.kind === "trial_days" ? promo.promo.trialDays : null;
+    const promoPercent = promo?.ok && promo.promo.kind === "percent_off" ? promo.promo : null;
+    if (promoPercent && !promoPercent.stripeCouponId) {
+      throw new Error("That percent-off code is not connected to Stripe yet.");
     }
     const trialDays = promoTrialDays ?? (pkg === "advisor_lite" ? ADVISOR_TRIAL_DAYS : null);
     const session = await stripe.checkout.sessions.create({
@@ -323,21 +325,39 @@ export const startCheckout = createServerFn({ method: "POST" })
       metadata: {
         userId: context.userId,
         package: pkg,
-        ...(promoTrialDays ? { trialCode: normalizePromoCode(data.trialCode) } : {}),
+        ...(typedCode ? { trialCode: typedCode } : {}),
       },
       subscription_data: {
         metadata: {
           userId: context.userId,
           package: pkg,
-          ...(promoTrialDays ? { trialCode: normalizePromoCode(data.trialCode) } : {}),
+          ...(typedCode ? { trialCode: typedCode } : {}),
         },
         ...(trialDays ? { trial_period_days: trialDays } : {}),
       },
       customer: dropped ? undefined : existing?.stripe_customer_id || undefined,
-      allow_promotion_codes: true,
+      ...(promoPercent?.stripeCouponId
+        ? { discounts: [{ coupon: promoPercent.stripeCouponId }] }
+        : { allow_promotion_codes: true }),
     });
     if (!session.url) throw new Error("Stripe did not return a checkout URL.");
     return { url: session.url };
+  });
+
+export const peekPromoCode = createServerFn({ method: "POST" })
+  .validator((input: { code?: string; package?: CheckoutPackage }) => ({
+    code: typeof input?.code === "string" ? input.code : "",
+    package:
+      input?.package === "unlimited" ||
+      input?.package === "advisor" ||
+      input?.package === "advisor_lite" ||
+      input?.package === "individual"
+        ? input.package
+        : null,
+  }))
+  .handler(async ({ data }) => {
+    const { resolvePromo } = await import("./promo.server");
+    return resolvePromo(data.code, data.package);
   });
 
 export const startBillingPortal = createServerFn({ method: "POST" })

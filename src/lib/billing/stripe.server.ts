@@ -8,6 +8,7 @@ type StripeClient = {
   };
   checkout: { sessions: { create: (args: Record<string, unknown>) => Promise<{ url?: string | null; customer?: unknown; subscription?: unknown; metadata?: Record<string, string>; client_reference_id?: string | null }> } };
   billingPortal: { sessions: { create: (args: Record<string, unknown>) => Promise<{ url: string }> } };
+  coupons: { create: (args: Record<string, unknown>) => Promise<{ id?: string }> };
   subscriptions: {
     retrieve: (id: string) => Promise<StripeSubscription>;
     update: (id: string, args: Record<string, unknown>) => Promise<StripeSubscription>;

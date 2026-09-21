@@ -3,6 +3,7 @@ import { BrandLockup } from "@/components/meridian/mach-mark";
 import { SiteCopyDesk } from "@/components/ops/site-copy-desk";
 import { DeskUsers } from "@/components/ops/desk-users";
 import { OpsDeleteAccount } from "@/components/ops/ops-delete-account";
+import { PromoCodesDesk } from "@/components/ops/promo-codes-desk";
 import { useEffect, useMemo, useState } from "react";
 import { MissingPage } from "@/components/missing-page";
 import { Field, SelectInput, TextInput } from "@/components/ui/field";
@@ -53,7 +54,7 @@ function intervalLabel(value: OpsRosterRow["interval"]): string {
 
 function Top3DeskDoor() {
   const [gate, setGate] = useState<"wait" | "no" | "yes">("wait");
-  const [tab, setTab] = useState<"roster" | "users" | "copy">("roster");
+  const [tab, setTab] = useState<"roster" | "users" | "copy" | "codes">("roster");
   const [q, setQ] = useState("");
   const [plan, setPlan] = useState<OpsPlanFilter>("all");
   const [paid, setPaid] = useState<OpsPaidFilter>("all");
@@ -144,6 +145,8 @@ function Top3DeskDoor() {
               ? "Users. Click a person for site use, then delete with your desk password."
               : tab === "copy"
                 ? "Site copy. Pages and announcements."
+                : tab === "codes"
+                  ? "Referral codes. Create a code, set the window, set the offer, pick packages."
                 : "Roster. Packages only — no household numbers."}
           </p>
           <p className="mt-3 max-w-3xl text-xs text-subtle">
@@ -152,12 +155,13 @@ function Top3DeskDoor() {
           </p>
         </header>
 
-        <div className="flex max-w-md rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+        <div className="flex max-w-xl rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
           {(
             [
               ["roster", "Roster"],
               ["users", "Users"],
               ["copy", "Copy"],
+              ["codes", "Codes"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -176,6 +180,7 @@ function Top3DeskDoor() {
 
         {tab === "users" ? <DeskUsers /> : null}
         {tab === "copy" ? <SiteCopyDesk /> : null}
+        {tab === "codes" ? <PromoCodesDesk /> : null}
         {tab === "roster" ? (
           <>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">

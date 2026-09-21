@@ -1,5 +1,6 @@
 import { createMiddleware, createServerFn } from "@tanstack/react-start";
-import type { MachPackage } from "@/lib/billing/limits";
+import type { CheckoutPackage, MachPackage } from "@/lib/billing/limits";
+import type { PromoKind, PromoRecord } from "@/lib/billing/promo";
 import {
   EMPTY_OPS_COUNTS,
   type OpsRosterQuery,
@@ -229,5 +230,70 @@ export const getOpsUserUsageFn = createServerFn({ method: "POST" })
     if (!data.userId) return { allowed: true, ...EMPTY_USER_USAGE };
     const { loadOpsUserUsage } = await import("./user-usage.server");
     return { allowed: true, ...(await loadOpsUserUsage(data.userId)) };
+  });
+
+export const listOpsPromosFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((_input?: unknown) => ({}))
+  .handler(async ({ context }): Promise<{ allowed: boolean; rows: PromoRecord[] }> => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { allowed: false, rows: [] };
+    const { listPromos } = await import("@/lib/billing/promo.server");
+    return { allowed: true, rows: await listPromos() };
+  });
+
+export const saveOpsPromoFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((input: {
+    code?: string;
+    kind?: PromoKind;
+    trialDays?: number;
+    percentOff?: number;
+    packages?: CheckoutPackage[];
+    startsAt?: string;
+    endsAt?: string;
+    note?: string;
+  }) => {
+    const raw = asRecord(input);
+    const packages = Array.isArray(input?.packages)
+      ? input.packages
+      : Array.isArray(raw.packages)
+        ? (raw.packages as CheckoutPackage[])
+        : [];
+    return {
+      code: String(input?.code ?? raw.code ?? ""),
+      kind: (input?.kind ?? raw.kind) === "percent_off" ? ("percent_off" as const) : ("trial_days" as const),
+      trialDays: Number(input?.trialDays ?? raw.trialDays ?? 0) || 0,
+      percentOff: Number(input?.percentOff ?? raw.percentOff ?? 0) || 0,
+      packages,
+      startsAt: String(input?.startsAt ?? raw.startsAt ?? ""),
+      endsAt: String(input?.endsAt ?? raw.endsAt ?? ""),
+      note: String(input?.note ?? raw.note ?? ""),
+    };
+  })
+  .handler(async ({ context, data }) => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { ok: false as const, error: "Not found." };
+    const { savePromo } = await import("@/lib/billing/promo.server");
+    return savePromo(actor, data);
+  });
+
+export const setOpsPromoActiveFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((input: { code?: string; active?: boolean }) => {
+    const raw = asRecord(input);
+    return {
+      code: String(input?.code ?? raw.code ?? ""),
+      active: Boolean(input?.active ?? raw.active),
+    };
+  })
+  .handler(async ({ context, data }) => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { ok: false as const, error: "Not found." };
+    const { setPromoActive } = await import("@/lib/billing/promo.server");
+    return setPromoActive(actor, data.code, data.active);
   });
 
