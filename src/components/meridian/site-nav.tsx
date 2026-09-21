@@ -62,7 +62,7 @@ export function SiteMenu({ className }: { className?: string }) {
         aria-expanded={open}
         aria-haspopup="menu"
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex size-10 items-center justify-center rounded-lg text-fg hover:bg-surface"
+        className="inline-flex size-9 items-center justify-center rounded-lg text-fg hover:bg-surface sm:size-10"
       >
         <Menu className="size-6" strokeWidth={2} />
       </button>

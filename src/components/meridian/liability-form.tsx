@@ -104,10 +104,10 @@ export function LiabilityForm() {
                   boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 45%, transparent)",
                 }}
               >
-                <p className="text-xs font-medium tracking-wide text-[#e8c547]">
+                <p className="text-xs font-medium tracking-wide text-[#5c4a18]">
                   Loan terms
                 </p>
-                <p className="mt-1 text-xs leading-relaxed text-[#e8c547]">
+                <p className="mt-1 text-xs leading-relaxed text-[#5c4a18]">
                   Remaining principal is subtracted from net worth. Check the box
                   only if this P&I is not already in Spending.
                 </p>
@@ -145,7 +145,7 @@ export function LiabilityForm() {
                       />
                     </Field>
                     <Field label="In spending">
-                      <label className="flex min-h-11 items-center gap-2 text-xs text-[#e8c547]">
+                      <label className="flex min-h-11 items-center gap-2 text-xs text-[#5c4a18]">
                         <input
                           type="checkbox"
                           checked={Boolean(l.includeInSpending)}
@@ -161,13 +161,13 @@ export function LiabilityForm() {
                   </div>
                 </div>
                 {hasLoan ? (
-                  <p className="mt-3 text-xs leading-relaxed text-[#e8c547]">
+                  <p className="mt-3 text-xs leading-relaxed text-[#5c4a18]">
                     Original principal about {usd(original)}. Remaining now{" "}
                     {usd(remaining)}
                     {payoff ? ` · paid off ${payoff.slice(0, 7)}` : ""}.
                   </p>
                 ) : (
-                  <p className="mt-3 text-xs leading-relaxed text-[#e8c547]">
+                  <p className="mt-3 text-xs leading-relaxed text-[#5c4a18]">
                     Enter P&I, APR, origination, and term to model the loan.
                   </p>
                 )}

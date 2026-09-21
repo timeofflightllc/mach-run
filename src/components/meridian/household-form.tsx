@@ -75,7 +75,7 @@ export function HouseholdForm() {
             onValue={(n) => patchAssumptions({ defaultColaPct: n })}
           />
         </Field>
-        <p className="text-xs leading-relaxed text-[#e8c547]">
+        <p className="text-xs leading-relaxed text-[#5c4a18]">
           This is the default COLA for every income. You can set a different
           COLA on each income in Orient.
         </p>

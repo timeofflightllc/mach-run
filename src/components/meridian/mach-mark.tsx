@@ -44,7 +44,7 @@ export function MachWordmark({
           "block h-auto shrink-0 object-contain object-left",
           large
             ? "w-[16.75rem] max-w-[16.75rem]"
-            : "w-[8.75rem] max-w-[8.75rem] sm:w-[12.5rem] sm:max-w-[12.5rem] md:w-[14.5rem] md:max-w-[14.5rem]",
+            : "w-[7.5rem] max-w-[7.5rem] sm:w-[12.5rem] sm:max-w-[12.5rem] md:w-[14.5rem] md:max-w-[14.5rem]",
           framed && "shadow-[0_0_0_1px_#c5cdd6]",
         )}
       />

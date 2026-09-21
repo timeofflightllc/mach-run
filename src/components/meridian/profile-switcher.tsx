@@ -182,12 +182,12 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
   }
 
   return (
-    <div ref={root} className="relative z-[80]">
+    <div ref={root} className="relative z-[80] min-w-0">
       <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-11 max-w-[10rem] items-center gap-1 truncate rounded-lg px-2 text-sm font-medium text-fg hover:bg-surface sm:max-w-[14rem]"
+        className="inline-flex h-11 max-w-[5.5rem] items-center gap-0.5 truncate rounded-lg px-1 text-xs font-medium text-fg hover:bg-surface sm:max-w-[10rem] sm:gap-1 sm:px-2 sm:text-sm md:max-w-[14rem]"
       >
         <span className="truncate">{label}</span>
         <span className="text-subtle" aria-hidden>

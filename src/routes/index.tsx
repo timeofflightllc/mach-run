@@ -340,12 +340,12 @@ function Home() {
         className="canopy-bar sticky top-0 z-30 border-b border-border"
       >
         <div className="page-gutter relative z-50 mx-auto max-w-none py-2.5">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-1">
-            <div className="flex min-w-0 items-center gap-1">
+          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
+            <div className="flex min-w-0 items-center gap-0">
               <BrandLockup showTagline={false} />
               <SiteMenu />
             </div>
-            <div className="flex shrink-0 items-center justify-end gap-1.5">
+            <div className="flex min-w-0 items-center justify-end gap-0.5 sm:gap-1.5">
               <div className="hidden rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)] md:flex">
                 <button
                   type="button"

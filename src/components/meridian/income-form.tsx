@@ -248,7 +248,7 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
               </Field>
             ) : null}
             {s.kind === "ss" && ssOrdinal >= 3 ? (
-              <p className="text-xs leading-relaxed text-[#e8c547]">
+              <p className="text-xs leading-relaxed text-[#5c4a18]">
                 You already have two Social Security incomes. Are you sure you
                 want a third? That’s unusual unless another family member lives
                 with you and has their own benefit.
@@ -277,13 +277,13 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
               />
             </Field>
             {!ssWindow ? (
-              <p className="text-xs leading-relaxed text-[#e8c547]">
+              <p className="text-xs leading-relaxed text-[#5c4a18]">
                 {person === "other"
                   ? "Add a birth date for this other household member so MACH RUN can set the Social Security start and end dates."
                   : `Add a birth date for ${ownerLabel} in Family so MACH RUN can set the Social Security start and end dates.`}
               </p>
             ) : (
-              <p className="text-xs leading-relaxed text-[#e8c547]">
+              <p className="text-xs leading-relaxed text-[#5c4a18]">
                 Social Security for {ownerLabel} starts at claiming age {claimAge}{" "}
                 and is set to expire at age {endAge} (Family → Project through
                 primary age).

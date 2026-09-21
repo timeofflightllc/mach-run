@@ -6,7 +6,7 @@ export function AuthSlot({ saved }: { saved?: "idle" | "saving" | "saved" | "gue
   const signedIn = Boolean(user && !user.isDevFallback);
 
   return (
-    <div className="relative z-30 ml-auto flex items-center justify-end gap-2">
+    <div className="relative z-30 flex min-w-0 items-center justify-end gap-1">
       {saved === "saved" ? (
         <span className="hidden text-xs text-subtle sm:inline">Saved</span>
       ) : saved === "saving" ? (

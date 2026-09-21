@@ -203,7 +203,7 @@ export function ContributionForm() {
                   </label>
                 ) : null}
                 {overIrs ? (
-                  <p className="text-xs leading-relaxed text-[#e8c547]">
+                  <p className="text-xs leading-relaxed text-[#5c4a18]">
                     {overIrs}
                   </p>
                 ) : null}
@@ -284,7 +284,7 @@ export function ContributionForm() {
                     </Field>
                   </>
                 )}
-                <label className="flex items-start gap-2 text-xs leading-relaxed text-[#e8c547]">
+                <label className="flex items-start gap-2 text-xs leading-relaxed text-[#5c4a18]">
                   <input
                     type="checkbox"
                     className="mt-0.5"
@@ -302,7 +302,7 @@ export function ContributionForm() {
                   retirement date.
                 </label>
                 {c.endAtRetirement && !plan.assumptions.retirementGoalDate ? (
-                  <p className="text-xs leading-relaxed text-[#e8c547]">
+                  <p className="text-xs leading-relaxed text-[#5c4a18]">
                     Set a retirement goal date in Family first.
                   </p>
                 ) : null}
