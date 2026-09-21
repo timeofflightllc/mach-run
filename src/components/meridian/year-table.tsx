@@ -184,9 +184,9 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           marked.
         </p>
       )}
-      <div className="pb-2">
-        <table className="w-max min-w-full text-left text-sm">
-          <thead className="border-y border-border text-xs uppercase tracking-wider text-subtle">
+      <div className="max-h-[min(42rem,calc(100dvh-var(--mach-header-h,7rem)-4rem))] overflow-auto">
+        <table className="ledger-table w-max min-w-full text-left text-sm">
+          <thead>
             <tr>
               {(
                 [
@@ -200,10 +200,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                   ["Spendable", "px-3 py-2 pr-5 font-medium"],
                 ] as const
               ).map(([label, cls]) => (
-                <th
-                  key={label}
-                  className={`sticky top-[var(--mach-header-h,7rem)] z-20 bg-surface ${cls} shadow-[inset_0_-1px_0_var(--color-border)]`}
-                >
+                <th key={label} className={cls}>
                   {label}
                 </th>
               ))}

@@ -147,6 +147,24 @@
   animation: master-caution-flash 1.8s ease-in-out infinite;
 }
 
+/* Yearly Ledger: collapse kills sticky <th> in Chrome/Safari. */
+.ledger-table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.ledger-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--color-surface);
+  box-shadow: inset 0 -1px 0 var(--color-border);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-subtle);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
