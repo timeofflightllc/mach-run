@@ -112,7 +112,7 @@ function ActPhase() {
       className="scroll-mt-40 font-display text-lg font-semibold tracking-[0.18em] text-muted sm:text-xl"
     >
       <span className="uppercase">Act</span>
-      <span> - The MachRun</span>
+      {" — MachRun"}
     </p>
   );
 }
@@ -567,7 +567,7 @@ function Home() {
                   }}
                 >
                   <p className="text-sm leading-relaxed text-fg">
-                    This MACH Run is on Free. Upgrade to open more features
+                    This MachRun is on Free. Upgrade to open more features
                     including accounts, incomes, the full OODA Analysis and
                     OODA AI.
                   </p>
@@ -575,7 +575,7 @@ function Home() {
                     to="/pricing"
                     className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
                   >
-                    Upgrade to MACH Run Unlimited
+                    Upgrade to MACH RUN Unlimited
                   </Link>
                 </div>
               ) : null}

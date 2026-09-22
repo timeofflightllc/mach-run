@@ -444,7 +444,7 @@ function headerOps(
     "/F2 13 Tf",
     `${WHITE} rg`,
     `${textLeft} ${y0 + 62} Td`,
-    `(${pdfEscape(`MACH OODA Financial Analysis${continued}`)}) Tj`,
+    `(${pdfEscape(`MachRun Financial Analysis${continued}`)}) Tj`,
     "/F1 9 Tf",
     `${SAGE} rg`,
     `0 -14 Td`,

@@ -5,7 +5,7 @@ const COPY = {
   accounts: "accounts",
   contributions: "contribution rules",
   incomes: "income stages",
-  analysis: "the full MACH OODA Financial Analysis",
+  analysis: "the full MachRun Financial Analysis",
 } as const;
 
 export function UpgradeNudge({

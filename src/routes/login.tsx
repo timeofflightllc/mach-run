@@ -82,8 +82,8 @@ function Login() {
             <BrandLockup size="lg" framed />
           </Link>
           <p className="mt-4 max-w-md text-center text-base leading-relaxed text-muted sm:text-lg">
-            Free to use with limits. A cup of coffee a month for unlimited. Pay
-            for a year, get two months on us.
+            Free to use with limits. Unlimited is a monthly hop. Pay
+            for a year, we throw in two months.
           </p>
         </div>
 

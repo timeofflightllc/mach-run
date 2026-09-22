@@ -2,19 +2,19 @@ import type { PricingCardCopy, PricingCopy } from "./types";
 
 export const DEFAULT_PRICING_COPY: PricingCopy = {
   heroH1: "Pick a lane:\nPersonal or Professional.",
-  heroSub: "Monthly or yearly. Two months free on yearly.",
-  personalP1: "Individual is a cup of coffee a month for the full cash-flow MACH RUN.",
+  heroSub: "Monthly or yearly. Fly yearly and we throw in two months.",
+  personalP1: "Individual is a monthly hop for the full cash-flow MACH RUN.",
   personalP2: "Individual Unlimited adds Net Worth and Liabilities.",
   personalP3: "Professional financial advisors have even more capability built in.",
   advisorP1: "Advisor Lite is five named client profiles. Seven-day trial, then $69/month.",
   advisorP2: "Advisor Unlimited is the same engine with unlimited profiles.",
   couponLabel: "Do you have a coupon code?",
-  intervalNoteMonth: "Monthly or yearly — yearly is two months free.",
-  intervalNoteYear: "Yearly: two months on us.",
+  intervalNoteMonth: "Monthly or yearly — fly yearly and we throw in two months.",
+  intervalNoteYear: "Yearly: we throw in two months.",
   intervalNoteAdvisorMonth: "Advisor Lite includes a 7-day free trial (card on file).",
   freeAdvisorBullet: "Same free start. Paid advisor packages sit next to it.",
-  advisorLiteTagYear: "7-day trial, 2 months free",
-  advisorUnlimitedTagYear: "Two months free on yearly.",
+  advisorLiteTagYear: "7-day trial, we throw in two months",
+  advisorUnlimitedTagYear: "Fly yearly and we throw in two months.",
   free: {
     tag: "Register in 30 seconds",
     bullets: [
@@ -25,11 +25,11 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
     ],
   },
   individual: {
-    tag: "Less than that cup of bad coffee you hate",
+    tag: "A monthly hop — not a fuel bill.",
     bullets: [
       "One household, unlimited accounts",
       "Unlimited contributions and incomes",
-      "Full MACH OODA Financial Analysis",
+      "Full MachRun Financial Analysis",
       "OODA AI on this MACH RUN",
       "Net Worth stays locked — unlock on Unlimited",
     ],
@@ -41,7 +41,7 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
       "Live Net Worth radar — assets vs liabilities",
       "Liabilities (car, student, HELOC, other)",
       "Encrypted MACH RUN backup download",
-      "Pay yearly, two months on us",
+      "Pay yearly, we throw in two months",
     ],
   },
   advisorLite: {
