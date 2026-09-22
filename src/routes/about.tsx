@@ -30,10 +30,7 @@ function About() {
           </div>
         </div>
         <header>
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-subtle">
-            machrun.com
-          </p>
-          <h1 className="mt-2 font-display text-4xl text-fg sm:text-5xl">{page.title}</h1>
+          <h1 className="font-display text-4xl text-fg sm:text-5xl">{page.title}</h1>
           {page.kicker ? <p className="mt-2 text-lg text-muted">{page.kicker}</p> : null}
         </header>
         <SiteCopyBody body={page.body} />
