@@ -29,10 +29,11 @@ import {
 
 const PAGE_LABEL: Record<SitePageSlug, string> = {
   about: "About",
+  method: "The Method",
   faq: "FAQ",
   contact: "Contact",
   privacy: "Privacy",
-  legal: "Legal",
+  legal: "Legal / ToS",
   announcements: "Features (header)",
   pricing: "Pricing",
   footer: "Footer content",
@@ -366,7 +367,7 @@ export function SiteCopyDesk() {
             ? "Pricing cards, hero, and bullets. One line per bullet."
             : footerOpen
               ? "Public footer words. Layout and links stay in code."
-              : "About, FAQ, Contact intro, Privacy, Legal, and the Features header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
+              : "About, The Method, FAQ, Contact intro, Privacy, Legal, and the Features header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
         </p>
         <div className="mt-3 inline-flex flex-wrap rounded-lg bg-elevated p-1">
           {SITE_PAGE_SLUGS.map((id) => (

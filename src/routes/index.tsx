@@ -105,6 +105,20 @@ function PhaseLabel({
   );
 }
 
+function ActPhase() {
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+      <PhaseLabel id="ooda-act" label="Act" />
+      <Link
+        to="/method"
+        className="text-sm text-muted underline-offset-4 hover:text-fg hover:underline"
+      >
+        The Method
+      </Link>
+    </div>
+  );
+}
+
 function scrollParent(el: HTMLElement): HTMLElement | null {
   let n: HTMLElement | null = el.parentElement;
   while (n && n !== document.body) {
@@ -572,7 +586,7 @@ function Home() {
                   <div className="flex min-w-0 flex-col gap-4">
                     <div className="grid grid-cols-1 gap-4 @min-[36rem]:grid-cols-2">
                       <div className="flex min-w-0 flex-col gap-3">
-                        <PhaseLabel id="ooda-act" label="Act" />
+                        <ActPhase />
                         <Verdict
                           plan={displayPlan}
                           sim={sim}
@@ -613,7 +627,7 @@ function Home() {
           ) : (
             <div className="flex flex-col gap-4">
               <div className="relative flex min-h-11 items-center">
-                <PhaseLabel id="ooda-act" label="Act" />
+                <ActPhase />
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                   <div className="pointer-events-auto">
                     <CalculateButton

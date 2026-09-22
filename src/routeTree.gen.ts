@@ -20,6 +20,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as LogoDraftsRouteImport } from './routes/logo-drafts'
 import { Route as LookRouteImport } from './routes/look'
 import { Route as LookARouteImport } from './routes/look-a'
+import { Route as MethodRouteImport } from './routes/method'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as Top3DeskRouteImport } from './routes/top-3-desk'
@@ -83,6 +84,11 @@ const LookARoute = LookARouteImport.update({
   path: '/look-a',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MethodRoute = MethodRouteImport.update({
+  id: '/method',
+  path: '/method',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/logo-drafts': typeof LogoDraftsRoute
   '/look': typeof LookRoute
   '/look-a': typeof LookARoute
+  '/method': typeof MethodRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/top-3-desk': typeof Top3DeskRoute
@@ -151,6 +158,7 @@ export interface FileRoutesByTo {
   '/logo-drafts': typeof LogoDraftsRoute
   '/look': typeof LookRoute
   '/look-a': typeof LookARoute
+  '/method': typeof MethodRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/top-3-desk': typeof Top3DeskRoute
@@ -172,6 +180,7 @@ export interface FileRoutesById {
   '/logo-drafts': typeof LogoDraftsRoute
   '/look': typeof LookRoute
   '/look-a': typeof LookARoute
+  '/method': typeof MethodRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/top-3-desk': typeof Top3DeskRoute
@@ -194,6 +203,7 @@ export interface FileRouteTypes {
     | '/logo-drafts'
     | '/look'
     | '/look-a'
+    | '/method'
     | '/pricing'
     | '/privacy'
     | '/top-3-desk'
@@ -214,6 +224,7 @@ export interface FileRouteTypes {
     | '/logo-drafts'
     | '/look'
     | '/look-a'
+    | '/method'
     | '/pricing'
     | '/privacy'
     | '/top-3-desk'
@@ -234,6 +245,7 @@ export interface FileRouteTypes {
     | '/logo-drafts'
     | '/look'
     | '/look-a'
+    | '/method'
     | '/pricing'
     | '/privacy'
     | '/top-3-desk'
@@ -255,6 +267,7 @@ export interface RootRouteChildren {
   LogoDraftsRoute: typeof LogoDraftsRoute
   LookRoute: typeof LookRoute
   LookARoute: typeof LookARoute
+  MethodRoute: typeof MethodRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   Top3DeskRoute: typeof Top3DeskRoute
@@ -343,6 +356,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LookARouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/method': {
+      id: '/method'
+      path: '/method'
+      fullPath: '/method'
+      preLoaderRoute: typeof MethodRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pricing': {
       id: '/pricing'
       path: '/pricing'
@@ -407,6 +427,7 @@ const rootRouteChildren: RootRouteChildren = {
   LogoDraftsRoute: LogoDraftsRoute,
   LookRoute: LookRoute,
   LookARoute: LookARoute,
+  MethodRoute: MethodRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   Top3DeskRoute: Top3DeskRoute,

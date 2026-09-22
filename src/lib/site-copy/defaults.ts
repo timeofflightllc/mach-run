@@ -17,6 +17,41 @@ Free gets you in the cockpit with limits. Paid plans unlock the full ledger, Net
 Questions, a bug, or a feature you want on the jet — [Contact](/contact). What shipped recently lives on [Features](/announcements). Common how-to lives on [FAQ](/faq).`,
   },
   {
+    slug: "method",
+    title: "The Method",
+    kicker: "How the MACH RUN engine actually flies the numbers you type.",
+    body: `This is the briefing on the engine — not a second legal page. [Legal](/legal) holds the disclaimer. Here is what Calculate does with the numbers in Observe, Orient, and Decide.
+
+# How a MACH RUN works
+You fill the household as it stands. Observe is family and accounts. Orient is paychecks and spending. Decide is contributions into those accounts. Charts, the ledger, and the MACH OODA Financial Analysis stay frozen until you hit Calculate. That press is the MACH RUN. Change an input after that and Act holds the last run until you Calculate again.
+
+# Rates
+In Family you type a nominal return and a default COLA. Fresh plans start at 7% return and 2.5% COLA. Each account can override the return. Each paycheck can override the COLA. Inflation (also 2.5% on a fresh plan) is the Today $ / Future $ lens on the charts — it is not a second return stacked on the same box. Today $ shows buying power. Future $ shows the dollars the sim actually grew.
+
+# Compounding
+The engine is a monthly loop from your as-of month through the age you set in Family (project through primary age). Each month it converts an annual percent to an equivalent monthly rate — (1 + annual)^(1/12) − 1 — and applies that once. It does not compound daily. It does not use a bank APY. Leave the box at 7% and the account is grown twelve times a year at that monthly equivalent.
+
+# Paychecks
+Each income is a named block: amount, start, end, kind. Kind tells the engine whether it is earned (salary, bonus, other income) or guaranteed (pension, military retired pay, VA, Social Security, other retirement). Guaranteed paychecks show up in the cash-flow strip as the floor. Blank end date means it keeps paying through the projection. COLA, if you set it — or the Family default if you leave it — is applied the same monthly way as returns.
+
+# Military, VA, and Social Security
+Those figures are what you type, or what the built-in tables estimate from what you type. They are not SSA, DFAS, or VA determinations. Confirm the real check with the agency.
+
+Social Security can follow a family member and a claiming age. Start is that birthday plus the claiming age (clamped 62–70). End is the Family “project through” age. If you type a PIA, the engine applies SSA-style early / delayed factors around FRA 67.
+
+VA can use a percent rating, spouse, and children. Pay comes from the 2026 VA schedular tables (no SMCs). When a child turns 18, that add-on steps off until it is veteran and spouse only. COLA still applies on top, the same as other paychecks.
+
+# Contributions
+The engine invests leftover after a simple tax haircut and spending. Leftover = income − tax − spending. It will not invent cash. If leftover is short of what you asked to contribute, it funds what leftover allows, in the order of the rules. Employer match is extra — not from take-home — and only when the destination is a 401(k), Roth 401(k), or TSP and you marked the match. IRS yearly caps can warn in the form. Check “cap to the legal limit” and the sim stops that person’s own dollars at the cap, then still matches what actually went in.
+
+Required minimum distributions are modeled in the background when the account kind, owner’s age, and work status say so. Roth and Roth 401(k) have no lifetime RMD here. Traditional IRAs follow SECURE 2.0 ages (73 if born 1951–1959, 75 if born 1960+). A workplace 401(k) or TSP skips RMD while salary/wages is on and that account is still receiving contributions. The analysis notes when that happened.
+
+# OODA AI
+OODA AI reads this MACH RUN — the Act output you just calculated. It does not predict markets. It does not guarantee outcomes. It is entertainment and illustration on the numbers you typed.
+
+Fill Observe, Orient, and Decide. Hit Calculate. That is the method.`,
+  },
+  {
     slug: "faq",
     title: "FAQ",
     kicker: "Kick the tires. Then light the fires.",
