@@ -113,14 +113,17 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
 
   if (variant === "short") {
     return (
-      <footer className="mt-8 border-t border-border bg-bg">
+      <footer className="relative mt-8 w-screen max-w-[100vw] border-t border-border bg-bg [margin-left:calc(50%-50vw)]">
         <div className="short-footer-gutter mx-auto flex w-full flex-col gap-3 py-6">
           <div className="flex items-center justify-between gap-x-6">
-            <Link to="/" className="inline-flex items-center gap-2 font-logo text-2xl leading-none tracking-[0.08em] text-fg">
+            <Link
+              to="/"
+              className="inline-flex shrink-0 items-center gap-2 font-logo text-2xl leading-none tracking-[0.08em] text-fg"
+            >
               <img src="/brand/footer-mark.png" alt="" width={48} height={28} className="h-6 w-auto" />
               MACH RUN
             </Link>
-            <SiteNav tone="page" />
+            <SiteNav tone="page" className="min-w-0 max-w-[72%] justify-end" />
           </div>
           <CopyrightLine />
         </div>
