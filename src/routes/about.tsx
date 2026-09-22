@@ -39,7 +39,7 @@ function About() {
         <SiteCopyBody body={page.body} />
         <figure className="mt-4 max-w-sm">
           <img
-            src="/brand/cain-signature.png?v=3"
+            src="/brand/cain-signature.png?v=4"
             alt="Cain"
             className="h-20 w-auto sm:h-24"
           />
