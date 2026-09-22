@@ -163,6 +163,12 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
         </dl>
         <div className="w-full space-y-2 text-xs leading-relaxed text-subtle">
           <p>
+            <Link to="/method" className="text-muted underline-offset-4 hover:text-fg hover:underline">
+              The Method
+            </Link>
+            {" — how the engine flies the numbers you type."}
+          </p>
+          <p>
             <Link to="/faq" className="text-muted underline-offset-4 hover:text-fg hover:underline">
               FAQ
             </Link>

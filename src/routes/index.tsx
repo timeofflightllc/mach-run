@@ -107,15 +107,13 @@ function PhaseLabel({
 
 function ActPhase() {
   return (
-    <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-      <PhaseLabel id="ooda-act" label="Act" />
-      <Link
-        to="/method"
-        className="text-sm text-muted underline-offset-4 hover:text-fg hover:underline"
-      >
-        The Method
-      </Link>
-    </div>
+    <p
+      id="ooda-act"
+      className="scroll-mt-40 font-display text-lg font-semibold tracking-[0.18em] text-muted sm:text-xl"
+    >
+      <span className="uppercase">Act</span>
+      <span> - The MachRun</span>
+    </p>
   );
 }
 
