@@ -27,8 +27,8 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&" + "quot;");
 }
 
-function wrapDeskMail(subject: string, body: string): { html: string; text: string } {
-  const text = withMailFooter(body);
+function wrapDeskMail(subject: string, body: string, footer: string): { html: string; text: string } {
+  const text = withMailFooter(body, footer);
   const htmlBody = escapeHtml(text).replace(/\n/g, "<br />");
   const logo = "https://machrun.com/brand/mach-run-logo.jpg?v=21";
   const html = `<!doctype html>
@@ -106,6 +106,7 @@ export async function sendDeskMail(
     body: string;
     query: OpsRosterQuery;
     onlyUserId?: string;
+    footer?: string;
   },
 ): Promise<DeskMailResult> {
   if (input.confirm.trim() !== MAIL_CONFIRM) {
@@ -113,6 +114,7 @@ export async function sendDeskMail(
   }
   const subjectTpl = input.subject.trim();
   const bodyTpl = input.body.trim();
+  const footerTpl = input.footer ?? "";
   if (!subjectTpl || !bodyTpl) {
     return { ok: false, sent: 0, skipped: 0, failed: 0, error: "Subject and body are required." };
   }
@@ -121,6 +123,9 @@ export async function sendDeskMail(
   }
   if (bodyTpl.length > 20_000) {
     return { ok: false, sent: 0, skipped: 0, failed: 0, error: "Body is too long." };
+  }
+  if (footerTpl.length > 4_000) {
+    return { ok: false, sent: 0, skipped: 0, failed: 0, error: "Footer is too long." };
   }
   if (!env("RESEND_API_KEY")) {
     return { ok: false, sent: 0, skipped: 0, failed: 0, error: "RESEND_API_KEY is not set." };
@@ -147,7 +152,11 @@ export async function sendDeskMail(
   for (let i = 0; i < people.length; i += 1) {
     const person: MailMergePerson = people[i]!;
     const subject = mergeMail(subjectTpl, person);
-    const { html, text } = wrapDeskMail(subject, mergeMail(bodyTpl, person));
+    const { html, text } = wrapDeskMail(
+      subject,
+      mergeMail(bodyTpl, person),
+      mergeMail(footerTpl, person),
+    );
     const result = await sendResend(person.email, subject, html, text);
     if (result.ok) sent += 1;
     else failed += 1;

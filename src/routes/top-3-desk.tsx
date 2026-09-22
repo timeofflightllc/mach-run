@@ -196,6 +196,7 @@ function Top3DeskDoor() {
             total={total}
             only={mailTarget}
             onClearOnly={() => setMailTarget(null)}
+            onPickOnly={(row) => setMailTarget(row)}
             onQuery={(patch) => {
               setOffset(0);
               if (patch.q !== undefined) setQ(patch.q);

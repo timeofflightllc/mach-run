@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   audienceLabel,
   firstNameFrom,
+  mailPersonMatch,
   mergeMail,
   peopleFromRoster,
   withMailFooter,
@@ -34,9 +35,11 @@ test("first_name falls back to email local part", () => {
   );
 });
 
-test("footer is appended; roster skips blank mail", () => {
+test("footer is appended; empty footer is body only; roster skips blank mail", () => {
   const body = withMailFooter("Hello");
   assert.match(body, /machrun\.com\/contact/);
+  assert.equal(withMailFooter("Hello", "  "), "Hello");
+  assert.equal(withMailFooter("Hello", "Custom"), "Hello\n\n—\nCustom");
   assert.equal(
     peopleFromRoster([
       { id: "a", email: null, name: "A", packageLabel: "Free" },
@@ -44,6 +47,17 @@ test("footer is appended; roster skips blank mail", () => {
     ]).map((p) => p.email).join(","),
     "b@x.com",
   );
+});
+
+test("typeahead matches name word or email local prefix", () => {
+  const matt = { name: "Matthew Olde", email: "cain@example.com" };
+  assert.equal(mailPersonMatch(matt, "m"), true);
+  assert.equal(mailPersonMatch(matt, "ma"), true);
+  assert.equal(mailPersonMatch(matt, "matt"), true);
+  assert.equal(mailPersonMatch(matt, "ol"), true);
+  assert.equal(mailPersonMatch(matt, "cai"), true);
+  assert.equal(mailPersonMatch(matt, "x"), false);
+  assert.equal(mailPersonMatch(matt, ""), false);
 });
 
 test("audience label", () => {

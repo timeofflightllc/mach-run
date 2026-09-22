@@ -33,9 +33,26 @@ export function mergeMail(template: string, person: MailMergePerson): string {
   });
 }
 
-export function withMailFooter(body: string): string {
+export function withMailFooter(body: string, footer: string | undefined = MAIL_FOOTER_TEXT): string {
   const core = body.replace(/\s+$/, "");
-  return `${core}\n\n—\n${MAIL_FOOTER_TEXT}`;
+  const foot = (footer ?? "").replace(/^\s+|\s+$/g, "");
+  if (!foot) return core;
+  return `${core}\n\n—\n${foot}`;
+}
+
+/** Prefix on a name word or the email local part. Empty needle matches nothing. */
+export function mailPersonMatch(
+  row: { name: string | null; email: string | null },
+  needle: string,
+): boolean {
+  const n = needle.trim().toLowerCase();
+  if (!n) return false;
+  const name = (row.name ?? "").trim();
+  if (name.split(/\s+/).some((w) => w.toLowerCase().startsWith(n))) return true;
+  const email = (row.email ?? "").trim().toLowerCase();
+  if (!email) return false;
+  const local = email.split("@")[0] ?? "";
+  return local.startsWith(n) || email.startsWith(n);
 }
 
 export function audienceLabel(query: OpsRosterQuery, count: number): string {

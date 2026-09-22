@@ -238,6 +238,7 @@ export const sendOpsDeskMailFn = createServerFn({ method: "POST" })
     confirm?: string;
     subject?: string;
     body?: string;
+    footer?: string;
     q?: string;
     plan?: string;
     paid?: string;
@@ -252,6 +253,7 @@ export const sendOpsDeskMailFn = createServerFn({ method: "POST" })
       confirm: String(input?.confirm ?? raw.confirm ?? ""),
       subject: String(input?.subject ?? raw.subject ?? ""),
       body: String(input?.body ?? raw.body ?? ""),
+      footer: String(input?.footer ?? raw.footer ?? ""),
       q: String(input?.q ?? raw.q ?? ""),
       plan: (["all", "free", "individual", "unlimited", "advisor_lite", "advisor"].includes(plan)
         ? plan
@@ -274,6 +276,7 @@ export const sendOpsDeskMailFn = createServerFn({ method: "POST" })
       confirm: data.confirm,
       subject: data.subject,
       body: data.body,
+      footer: data.footer,
       query: { q: data.q, plan: data.plan, paid: data.paid, status: data.status, offset: 0 },
       onlyUserId: data.onlyUserId || undefined,
     });

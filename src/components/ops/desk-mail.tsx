@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Field, PrimaryButton, SelectInput, TextInput } from "@/components/ui/field";
-import { sendOpsDeskMailFn } from "@/lib/ops/api";
+import { listOpsRoster, sendOpsDeskMailFn } from "@/lib/ops/api";
 import {
   audienceLabel,
+  MAIL_FOOTER_TEXT,
+  mailPersonMatch,
   mergeMail,
   peopleFromRoster,
   withMailFooter,
@@ -18,6 +20,7 @@ export function DeskMail({
   total,
   only,
   onClearOnly,
+  onPickOnly,
   onQuery,
 }: {
   q: string;
@@ -28,6 +31,7 @@ export function DeskMail({
   total: number;
   only: OpsRosterRow | null;
   onClearOnly: () => void;
+  onPickOnly: (row: OpsRosterRow) => void;
   onQuery: (patch: {
     q?: string;
     plan?: OpsPlanFilter;
@@ -39,9 +43,14 @@ export function DeskMail({
   const [body, setBody] = useState(
     "Hi {{first_name}},\n\nA short note about your MACH RUN ({{package}}) account.\n\n— MACH RUN",
   );
+  const [footer, setFooter] = useState(MAIL_FOOTER_TEXT);
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
   const [statusLine, setStatusLine] = useState<string | null>(null);
+  const [findQ, setFindQ] = useState("");
+  const [findHits, setFindHits] = useState<OpsRosterRow[]>([]);
+  const [highlight, setHighlight] = useState(0);
+  const [listOpen, setListOpen] = useState(false);
 
   const people = useMemo(() => {
     if (only) return peopleFromRoster([only]);
@@ -54,7 +63,55 @@ export function DeskMail({
     : audienceLabel(query, people.length);
   const sample = people[0] ?? null;
   const previewSubject = sample ? mergeMail(subject, sample) : subject;
-  const previewBody = sample ? withMailFooter(mergeMail(body, sample)) : withMailFooter(body);
+  const previewBody = sample
+    ? withMailFooter(mergeMail(body, sample), mergeMail(footer, sample))
+    : withMailFooter(body, footer);
+
+  const localHits = useMemo(() => {
+    if (!findQ.trim()) return [];
+    return rows.filter((row) => mailPersonMatch(row, findQ)).slice(0, 12);
+  }, [findQ, rows]);
+
+  useEffect(() => {
+    const needle = findQ.trim();
+    if (needle.length < 2) {
+      setFindHits(localHits);
+      setHighlight(0);
+      return;
+    }
+    let live = true;
+    const t = window.setTimeout(() => {
+      void listOpsRoster({ data: { q: needle, plan: "all", paid: "all", status: "all", offset: 0 } })
+        .then((r) => {
+          if (!live) return;
+          const extra = r.allowed ? r.rows.filter((row) => mailPersonMatch(row, needle)) : [];
+          const seen = new Set<string>();
+          const merged: OpsRosterRow[] = [];
+          for (const row of [...localHits, ...extra]) {
+            if (seen.has(row.id)) continue;
+            seen.add(row.id);
+            merged.push(row);
+            if (merged.length >= 12) break;
+          }
+          setFindHits(merged);
+          setHighlight(0);
+        })
+        .catch(() => {
+          if (live) setFindHits(localHits);
+        });
+    }, 180);
+    return () => {
+      live = false;
+      window.clearTimeout(t);
+    };
+  }, [findQ, localHits]);
+
+  function pick(row: OpsRosterRow) {
+    onPickOnly(row);
+    setFindQ("");
+    setListOpen(false);
+    setFindHits([]);
+  }
 
   async function send() {
     setBusy(true);
@@ -65,6 +122,7 @@ export function DeskMail({
           confirm,
           subject,
           body,
+          footer,
           q: only?.email ?? q,
           plan: only ? "all" : plan,
           paid: only ? "all" : paid,
@@ -86,6 +144,8 @@ export function DeskMail({
     }
   }
 
+  const showList = listOpen && findQ.trim().length > 0 && findHits.length > 0;
+
   return (
     <section className="space-y-4 rounded-xl bg-surface p-4 text-sm shadow-[0_0_0_1px_var(--color-border)]">
       <div>
@@ -96,13 +156,19 @@ export function DeskMail({
         </p>
         <p className="mt-2 text-fg">{toLine}</p>
         {only ? (
-          <button
-            type="button"
-            className="mt-1 text-sm text-fg underline underline-offset-4"
-            onClick={onClearOnly}
-          >
-            Use the roster filter instead
-          </button>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-elevated px-3 py-1 text-sm text-fg">
+              {only.name ? `${only.name} · ` : ""}
+              {only.email ?? only.id}
+            </span>
+            <button
+              type="button"
+              className="text-sm text-fg underline underline-offset-4"
+              onClick={onClearOnly}
+            >
+              Use the roster filter instead
+            </button>
+          </div>
         ) : (
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <Field label="Search">
@@ -157,6 +223,63 @@ export function DeskMail({
         ) : null}
       </div>
 
+      <div className="relative">
+        <Field label="Find a person" hint="Type a name. Click the one you want.">
+          <TextInput
+            value={findQ}
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="Matt…"
+            onFocus={() => setListOpen(true)}
+            onChange={(e) => {
+              setFindQ(e.target.value);
+              setListOpen(true);
+            }}
+            onKeyDown={(e) => {
+              if (!showList) return;
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setHighlight((i) => Math.min(findHits.length - 1, i + 1));
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setHighlight((i) => Math.max(0, i - 1));
+              } else if (e.key === "Enter") {
+                const row = findHits[highlight];
+                if (row) {
+                  e.preventDefault();
+                  pick(row);
+                }
+              } else if (e.key === "Escape") {
+                setListOpen(false);
+              }
+            }}
+          />
+        </Field>
+        {showList ? (
+          <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-border bg-surface py-1 shadow-lg">
+            {findHits.map((row, i) => (
+              <li key={row.id}>
+                <button
+                  type="button"
+                  className={
+                    "flex w-full flex-col items-start px-3 py-2 text-left " +
+                    (i === highlight ? "bg-elevated" : "")
+                  }
+                  onMouseEnter={() => setHighlight(i)}
+                  onClick={() => pick(row)}
+                >
+                  <span className="text-sm text-fg">{row.name || "No display name"}</span>
+                  <span className="text-xs text-muted">
+                    {row.email ?? row.id}
+                    {row.packageLabel ? ` · ${row.packageLabel}` : ""}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+
       <Field label="Subject">
         <TextInput value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={200} />
       </Field>
@@ -165,6 +288,17 @@ export function DeskMail({
           rows={10}
           value={body}
           onChange={(e) => setBody(e.target.value)}
+          className="w-full min-w-0 rounded-lg border border-border bg-elevated px-3 py-2 text-sm text-fg outline-none"
+        />
+      </Field>
+      <Field
+        label="Footer"
+        hint="Shown under the body. Clear it to send with no footer."
+      >
+        <textarea
+          rows={5}
+          value={footer}
+          onChange={(e) => setFooter(e.target.value)}
           className="w-full min-w-0 rounded-lg border border-border bg-elevated px-3 py-2 text-sm text-fg outline-none"
         />
       </Field>
@@ -181,7 +315,7 @@ export function DeskMail({
       </div>
 
       <Field
-        label='Type SEND to send'
+        label="Type SEND to send"
         hint="This sends N separate emails. There is no undo."
       >
         <TextInput
