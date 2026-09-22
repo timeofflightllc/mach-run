@@ -13,11 +13,11 @@ function Faq() {
   const copy = Route.useLoaderData();
   const page = pageBySlug(copy, "faq");
   return (
-    <main className="mark-page min-h-screen bg-bg px-4 py-10 text-fg">
+    <main className="min-h-screen bg-bg px-4 py-10 text-fg">
       <div className="mx-auto w-full max-w-7xl space-y-8">
         <div className="flex items-start justify-between gap-4">
           <Link to="/" className="inline-block opacity-90 hover:opacity-100">
-            <BrandLockup framed asText />
+            <BrandLockup framed />
           </Link>
           <div className="mt-1 flex shrink-0 items-center gap-1">
             <SiteMenu align="right" />
