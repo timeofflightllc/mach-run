@@ -4,6 +4,7 @@ import { SiteCopyDesk } from "@/components/ops/site-copy-desk";
 import { DeskUsers } from "@/components/ops/desk-users";
 import { OpsDeleteAccount } from "@/components/ops/ops-delete-account";
 import { PromoCodesDesk } from "@/components/ops/promo-codes-desk";
+import { DeskMail } from "@/components/ops/desk-mail";
 import { useEffect, useMemo, useState } from "react";
 import { MissingPage } from "@/components/missing-page";
 import { Field, SelectInput, TextInput } from "@/components/ui/field";
@@ -54,7 +55,7 @@ function intervalLabel(value: OpsRosterRow["interval"]): string {
 
 function Top3DeskDoor() {
   const [gate, setGate] = useState<"wait" | "no" | "yes">("wait");
-  const [tab, setTab] = useState<"roster" | "users" | "copy" | "codes">("roster");
+  const [tab, setTab] = useState<"roster" | "users" | "copy" | "codes" | "mail">("roster");
   const [q, setQ] = useState("");
   const [plan, setPlan] = useState<OpsPlanFilter>("all");
   const [paid, setPaid] = useState<OpsPaidFilter>("all");
@@ -65,6 +66,7 @@ function Top3DeskDoor() {
   const [counts, setCounts] = useState(EMPTY_OPS_COUNTS);
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [mailTarget, setMailTarget] = useState<OpsRosterRow | null>(null);
   const [tick, setTick] = useState(0);
   const [feed, setFeed] = useState<OpsAdminEvent[]>([]);
 
@@ -147,7 +149,9 @@ function Top3DeskDoor() {
                 ? "Site copy. Pages and announcements."
                 : tab === "codes"
                   ? "Referral codes. Create a code, set the window, set the offer, pick packages."
-                : "Roster. Packages only — no household numbers."}
+                  : tab === "mail"
+                    ? "Desk mail. One template, merged per person. Roster filters choose who."
+                    : "Roster. Packages only — no household numbers."}
           </p>
           <p className="mt-3 max-w-3xl text-xs text-subtle">
             Vercel Deployment Protection password: Preview deployments only. Never on
@@ -155,13 +159,14 @@ function Top3DeskDoor() {
           </p>
         </header>
 
-        <div className="flex max-w-xl rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+        <div className="flex max-w-2xl rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
           {(
             [
               ["roster", "Roster"],
               ["users", "Users"],
               ["copy", "Copy"],
               ["codes", "Codes"],
+              ["mail", "Mail"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -181,6 +186,25 @@ function Top3DeskDoor() {
         {tab === "users" ? <DeskUsers /> : null}
         {tab === "copy" ? <SiteCopyDesk /> : null}
         {tab === "codes" ? <PromoCodesDesk /> : null}
+        {tab === "mail" ? (
+          <DeskMail
+            q={q}
+            plan={plan}
+            paid={paid}
+            status={status}
+            rows={rows}
+            total={total}
+            only={mailTarget}
+            onClearOnly={() => setMailTarget(null)}
+            onQuery={(patch) => {
+              setOffset(0);
+              if (patch.q !== undefined) setQ(patch.q);
+              if (patch.plan !== undefined) setPlan(patch.plan);
+              if (patch.paid !== undefined) setPaid(patch.paid);
+              if (patch.status !== undefined) setStatus(patch.status);
+            }}
+          />
+        ) : null}
         {tab === "roster" ? (
           <>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-7">
@@ -347,6 +371,10 @@ function Top3DeskDoor() {
               setOpenId(null);
               setTick((n) => n + 1);
             }}
+            onMail={() => {
+              setMailTarget(selected);
+              setTab("mail");
+            }}
           />
         ) : null}
 
@@ -409,10 +437,12 @@ function PersonPane({
   row,
   onDone,
   onDeleted,
+  onMail,
 }: {
   row: OpsRosterRow;
   onDone: () => void;
   onDeleted: () => void;
+  onMail: () => void;
 }) {
   const who = row.email ?? row.id;
   const [pkg, setPkg] = useState<MachPackage>(row.plan);
@@ -554,6 +584,13 @@ function PersonPane({
         )}
       </div>
       <div className="mt-4 flex flex-wrap gap-3">
+        <button
+          type="button"
+          className="h-10 rounded-lg bg-accent px-3 text-sm font-medium text-accent-fg"
+          onClick={onMail}
+        >
+          Mail this person
+        </button>
         {row.stripeCustomerUrl ? (
           <a
             className="text-fg underline underline-offset-4"

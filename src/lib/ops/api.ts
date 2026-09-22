@@ -232,6 +232,53 @@ export const getOpsUserUsageFn = createServerFn({ method: "POST" })
     return { allowed: true, ...(await loadOpsUserUsage(data.userId)) };
   });
 
+export const sendOpsDeskMailFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((input: {
+    confirm?: string;
+    subject?: string;
+    body?: string;
+    q?: string;
+    plan?: string;
+    paid?: string;
+    status?: string;
+    onlyUserId?: string;
+  }) => {
+    const raw = asRecord(input);
+    const plan = String(input?.plan ?? raw.plan ?? "all");
+    const paid = String(input?.paid ?? raw.paid ?? "all");
+    const status = String(input?.status ?? raw.status ?? "all");
+    return {
+      confirm: String(input?.confirm ?? raw.confirm ?? ""),
+      subject: String(input?.subject ?? raw.subject ?? ""),
+      body: String(input?.body ?? raw.body ?? ""),
+      q: String(input?.q ?? raw.q ?? ""),
+      plan: (["all", "free", "individual", "unlimited", "advisor_lite", "advisor"].includes(plan)
+        ? plan
+        : "all") as OpsRosterQuery["plan"],
+      paid: (["all", "paid", "free"].includes(paid) ? paid : "all") as OpsRosterQuery["paid"],
+      status: (["all", "active", "trialing", "past_due", "canceled", "none"].includes(status)
+        ? status
+        : "all") as OpsRosterQuery["status"],
+      onlyUserId: String(input?.onlyUserId ?? raw.onlyUserId ?? ""),
+    };
+  })
+  .handler(async ({ context, data }) => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) {
+      return { ok: false as const, sent: 0, skipped: 0, failed: 0, error: "Not found." };
+    }
+    const { sendDeskMail } = await import("./mail.server");
+    return sendDeskMail(actor, {
+      confirm: data.confirm,
+      subject: data.subject,
+      body: data.body,
+      query: { q: data.q, plan: data.plan, paid: data.paid, status: data.status, offset: 0 },
+      onlyUserId: data.onlyUserId || undefined,
+    });
+  });
+
 export const listOpsPromosFn = createServerFn({ method: "POST" })
   .middleware([opsSessionMiddleware])
   .validator((_input?: unknown) => ({}))
