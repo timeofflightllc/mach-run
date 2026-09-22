@@ -22,8 +22,13 @@ import { builtinPromo, describePromo, evaluatePromo, type PromoRecord } from "@/
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { cn } from "@/lib/utils";
+import { loadPublicSiteCopy, pageBySlug } from "@/lib/site-copy/api";
+import { parsePricingCopy } from "@/lib/site-copy/pricing-copy";
 
-export const Route = createFileRoute("/pricing")({ component: Pricing });
+export const Route = createFileRoute("/pricing")({
+  loader: () => loadPublicSiteCopy(),
+  component: Pricing,
+});
 
 function billingSelectedLabel(interval: "month" | "year" | null): string | null {
   if (interval === "year") return "(Annual billing selected)";
@@ -48,6 +53,8 @@ function YourPlanMark({ interval }: { interval: "month" | "year" | null }) {
 }
 
 function Pricing() {
+  const site = Route.useLoaderData();
+  const copy = parsePricingCopy(pageBySlug(site, "pricing").body);
   const ent = useEntitlement();
   const { user } = useCurrentUserState();
   const signedIn = Boolean(user && !user.isDevFallback);
@@ -267,33 +274,35 @@ function Pricing() {
 
         <header className="mt-10 max-w-[50.5rem]">
           <h1 className="font-display text-4xl leading-tight text-fg sm:text-5xl">
-            Pick a package.
-            <br />
-            Personal or Professional.
+            {copy.heroH1.split("\n").map((line, i) => (
+              <span key={`${line}-${i}`}>
+                {i > 0 ? <br /> : null}
+                {line}
+              </span>
+            ))}
           </h1>
           <p className="mt-5 font-display text-2xl leading-snug text-fg sm:text-3xl">
-            Monthly or yearly. Two months free on yearly.
+            {copy.heroSub}
           </p>
           {audience === "advisor" ? (
             <>
               <p className="mt-6 text-base leading-relaxed text-muted">
-                Advisor Lite is five named client profiles. Seven-day trial, then $
-                {ADVISOR_MONTHLY_USD}/month.
+                {copy.advisorP1}
               </p>
               <p className="mt-3 text-base leading-relaxed text-muted">
-                Advisor Unlimited is the same engine with unlimited profiles.
+                {copy.advisorP2}
               </p>
             </>
           ) : (
             <>
               <p className="mt-6 text-base leading-relaxed text-muted">
-                Individual is a cup of coffee a month for the full cash-flow MACH RUN.
+                {copy.personalP1}
               </p>
               <p className="mt-3 text-base leading-relaxed text-muted">
-                Individual Unlimited adds Net Worth and Liabilities.
+                {copy.personalP2}
               </p>
               <p className="mt-3 text-base leading-relaxed text-muted">
-                Professional financial advisors have even more capability built in.
+                {copy.personalP3}
               </p>
             </>
           )}
@@ -344,7 +353,7 @@ function Pricing() {
         <div className="mx-auto mt-6 max-w-md">
           <label className="flex min-w-0 flex-col gap-1.5">
             <span className="text-xs font-medium tracking-wide text-muted">
-              Do you have a coupon code?
+              {copy.couponLabel}
             </span>
             <TextInput
               value={trialCode}
@@ -396,10 +405,10 @@ function Pricing() {
         </div>
         <p className="mt-2 text-center text-xs text-subtle">
           {interval === "year"
-            ? "Yearly: two months on us."
+            ? copy.intervalNoteYear
             : audience === "advisor"
-              ? `Advisor Lite includes a ${ADVISOR_TRIAL_DAYS}-day free trial (card on file).`
-              : "Monthly or yearly — yearly is two months free."}
+              ? copy.intervalNoteAdvisorMonth
+              : copy.intervalNoteMonth}
         </p>
 
         <div className="mt-8 grid gap-4 md:grid-cols-3">
@@ -420,16 +429,15 @@ function Pricing() {
               ) : null}
             </div>
             <p className="mt-3 font-display text-4xl tabular-nums">$0</p>
-            <p className="mt-1 text-sm text-muted">Register in 30 seconds</p>
+            <p className="mt-1 text-sm text-muted">{copy.free.tag}</p>
             <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
-              <li>One household.</li>
-              <li>Limit 2 accounts · 2 contributions · 2 incomes</li>
-              <li>Limited OODA analysis, a paragraph or two</li>
-              <li>
-                {audience === "advisor"
-                  ? "Same free start. Paid advisor packages sit next to it."
-                  : "Net Worth stays locked until Individual Unlimited"}
-              </li>
+              {copy.free.bullets.map((line, i) => (
+                <li key={`free-${i}`}>
+                  {audience === "advisor" && i === copy.free.bullets.length - 1
+                    ? copy.freeAdvisorBullet
+                    : line}
+                </li>
+              ))}
             </ul>
             {!signedIn ? (
               <a
@@ -472,14 +480,12 @@ function Pricing() {
               <span className="text-xl text-muted">{per}</span>
             </p>
             <p className="mt-1 text-sm text-muted">
-              Less than that cup of bad coffee you hate
+              {copy.individual.tag}
             </p>
             <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
-              <li>One household, unlimited accounts</li>
-              <li>Unlimited contributions and incomes</li>
-              <li>Full MACH OODA Financial Analysis</li>
-              <li>OODA AI on this MACH RUN</li>
-              <li>Net Worth stays locked — unlock on Unlimited</li>
+              {copy.individual.bullets.map((line, i) => (
+                <li key={`ind-${i}`}>{line}</li>
+              ))}
             </ul>
             {!signedIn ? (
               <a
@@ -526,14 +532,12 @@ function Pricing() {
               <span className="text-xl text-muted">{per}</span>
             </p>
             <p className="mt-1 text-sm text-muted">
-              The household balance sheet on top of Individual
+              {copy.unlimited.tag}
             </p>
             <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
-              <li>Everything in Individual, plus:</li>
-              <li>Live Net Worth radar — assets vs liabilities</li>
-              <li>Liabilities (car, student, HELOC, other)</li>
-              <li>Encrypted MACH RUN backup download</li>
-              <li>Pay yearly, two months on us</li>
+              {copy.unlimited.bullets.map((line, i) => (
+                <li key={`unl-${i}`}>{line}</li>
+              ))}
             </ul>
             {!signedIn ? (
               <a
@@ -582,14 +586,16 @@ function Pricing() {
               <span className="text-xl text-muted">{per}</span>
             </p>
             <p className="mt-1 text-sm text-muted">
-              {advisorSubtitle}
+              {trialOnAdvisorLite && (promoDays || promoPct)
+                ? advisorSubtitle
+                : interval === "year"
+                  ? copy.advisorLiteTagYear
+                  : copy.advisorLite.tag}
             </p>
             <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
-              <li>Everything in Individual Unlimited, plus:</li>
-              <li>5 named profiles (client IDs)</li>
-              <li>Dropdown to switch Client profiles</li>
-              <li>Export / import a MACH RUN file</li>
-              <li>For financial professionals, or nerds</li>
+              {copy.advisorLite.bullets.map((line, i) => (
+                <li key={`advl-${i}`}>{line}</li>
+              ))}
             </ul>
             {!signedIn ? (
               <a
@@ -637,14 +643,13 @@ function Pricing() {
             </p>
             <p className="mt-1 text-sm text-muted">
               {interval === "year"
-                ? "Two months free on yearly."
-                : `$${ADVISOR_UNLIMITED_MONTHLY_USD}/month for an unlimited book.`}
+                ? copy.advisorUnlimitedTagYear
+                : copy.advisorUnlimited.tag}
             </p>
             <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
-              <li>Everything in Advisor Lite, plus:</li>
-              <li>Unlimited named profiles</li>
-              <li>Same export / import</li>
-              <li>For a full book of clients</li>
+              {copy.advisorUnlimited.bullets.map((line, i) => (
+                <li key={`advu-${i}`}>{line}</li>
+              ))}
             </ul>
             {!signedIn ? (
               <a

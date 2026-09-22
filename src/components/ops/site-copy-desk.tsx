@@ -6,20 +6,172 @@ import {
   saveOpsAnnouncementFn,
   saveOpsSitePageFn,
 } from "@/lib/site-copy/api";
-import { SITE_PAGE_SLUGS, type SiteAnnouncement, type SitePage, type SitePageSlug } from "@/lib/site-copy/types";
+import {
+  SITE_PAGE_SLUGS,
+  type PricingCopy,
+  type SiteAnnouncement,
+  type SitePage,
+  type SitePageSlug,
+} from "@/lib/site-copy/types";
+import {
+  bulletsFromText,
+  bulletsToText,
+  DEFAULT_PRICING_COPY,
+  parsePricingCopy,
+  serializePricingCopy,
+} from "@/lib/site-copy/pricing-copy";
 
 const PAGE_LABEL: Record<SitePageSlug, string> = {
   about: "About",
   contact: "Contact",
   privacy: "Privacy",
   announcements: "Features (header)",
+  pricing: "Pricing",
 };
+
+function Area({
+  value,
+  onChange,
+  rows = 3,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  rows?: number;
+}) {
+  return (
+    <textarea
+      rows={rows}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full min-w-0 rounded-lg border border-border bg-elevated px-3 py-2 text-sm text-fg outline-none"
+    />
+  );
+}
+
+function PricingFields({
+  value,
+  onChange,
+}: {
+  value: PricingCopy;
+  onChange: (next: PricingCopy) => void;
+}) {
+  const set = (patch: Partial<PricingCopy>) => onChange({ ...value, ...patch });
+  const setCard = (
+    key: "free" | "individual" | "unlimited" | "advisorLite" | "advisorUnlimited",
+    patch: Partial<PricingCopy["free"]>,
+  ) => onChange({ ...value, [key]: { ...value[key], ...patch } });
+
+  return (
+    <div className="mt-4 space-y-5">
+      <p className="text-sm text-muted">
+        Prices and package names are not edited here.
+      </p>
+      <Field label="Hero (two lines)">
+        <Area rows={2} value={value.heroH1} onChange={(heroH1) => set({ heroH1 })} />
+      </Field>
+      <Field label="Hero sub">
+        <TextInput value={value.heroSub} onChange={(e) => set({ heroSub: e.target.value })} />
+      </Field>
+      <Field label="Personal paragraph 1">
+        <Area rows={2} value={value.personalP1} onChange={(personalP1) => set({ personalP1 })} />
+      </Field>
+      <Field label="Personal paragraph 2">
+        <Area rows={2} value={value.personalP2} onChange={(personalP2) => set({ personalP2 })} />
+      </Field>
+      <Field label="Personal paragraph 3">
+        <Area rows={2} value={value.personalP3} onChange={(personalP3) => set({ personalP3 })} />
+      </Field>
+      <Field label="Professional paragraph 1">
+        <Area rows={2} value={value.advisorP1} onChange={(advisorP1) => set({ advisorP1 })} />
+      </Field>
+      <Field label="Professional paragraph 2">
+        <Area rows={2} value={value.advisorP2} onChange={(advisorP2) => set({ advisorP2 })} />
+      </Field>
+      <Field label="Coupon label">
+        <TextInput
+          value={value.couponLabel}
+          onChange={(e) => set({ couponLabel: e.target.value })}
+        />
+      </Field>
+      <Field label="Note under Monthly (Personal)">
+        <TextInput
+          value={value.intervalNoteMonth}
+          onChange={(e) => set({ intervalNoteMonth: e.target.value })}
+        />
+      </Field>
+      <Field label="Note under Monthly (Professional)">
+        <TextInput
+          value={value.intervalNoteAdvisorMonth}
+          onChange={(e) => set({ intervalNoteAdvisorMonth: e.target.value })}
+        />
+      </Field>
+      <Field label="Note under Yearly">
+        <TextInput
+          value={value.intervalNoteYear}
+          onChange={(e) => set({ intervalNoteYear: e.target.value })}
+        />
+      </Field>
+
+      {(
+        [
+          ["free", "Free — tag + bullets"],
+          ["individual", "Individual — tag + bullets"],
+          ["unlimited", "Individual Unlimited — tag + bullets"],
+          ["advisorLite", "Advisor Lite — tag + bullets"],
+          ["advisorUnlimited", "Advisor Unlimited — tag + bullets"],
+        ] as const
+      ).map(([key, label]) => (
+        <div key={key} className="space-y-2 border-t border-border pt-4">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-subtle">{label}</p>
+          <Field label="Tag (line under the price)">
+            <TextInput
+              value={value[key].tag}
+              onChange={(e) => setCard(key, { tag: e.target.value })}
+            />
+          </Field>
+          {key === "advisorLite" ? (
+            <Field label="Tag when Yearly is selected">
+              <TextInput
+                value={value.advisorLiteTagYear}
+                onChange={(e) => set({ advisorLiteTagYear: e.target.value })}
+              />
+            </Field>
+          ) : null}
+          {key === "advisorUnlimited" ? (
+            <Field label="Tag when Yearly is selected">
+              <TextInput
+                value={value.advisorUnlimitedTagYear}
+                onChange={(e) => set({ advisorUnlimitedTagYear: e.target.value })}
+              />
+            </Field>
+          ) : null}
+          {key === "free" ? (
+            <Field label="Free 4th bullet on Professional">
+              <TextInput
+                value={value.freeAdvisorBullet}
+                onChange={(e) => set({ freeAdvisorBullet: e.target.value })}
+              />
+            </Field>
+          ) : null}
+          <Field label="Bullets (one per line; blank line omitted)">
+            <Area
+              rows={6}
+              value={bulletsToText(value[key].bullets)}
+              onChange={(text) => setCard(key, { bullets: bulletsFromText(text) })}
+            />
+          </Field>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function SiteCopyDesk() {
   const [pages, setPages] = useState<SitePage[]>([]);
   const [notes, setNotes] = useState<SiteAnnouncement[]>([]);
   const [slug, setSlug] = useState<SitePageSlug>("about");
   const [draft, setDraft] = useState<SitePage | null>(null);
+  const [pricing, setPricing] = useState<PricingCopy>(DEFAULT_PRICING_COPY);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [fresh, setFresh] = useState({
@@ -50,12 +202,27 @@ export function SiteCopyDesk() {
     if (next) setDraft(next);
   }, [slug, pages]);
 
+  useEffect(() => {
+    if (draft?.slug === "pricing") setPricing(parsePricingCopy(draft.body));
+  }, [draft]);
+
+  function onPricingChange(next: PricingCopy) {
+    setPricing(next);
+    setDraft((d) =>
+      d ? { ...d, title: "Pricing", kicker: "", body: serializePricingCopy(next) } : d,
+    );
+  }
+
   async function savePage() {
     if (!draft) return;
     setBusy(true);
     setStatus(null);
     try {
-      const r = await saveOpsSitePageFn({ data: draft });
+      const payload =
+        draft.slug === "pricing"
+          ? { ...draft, title: "Pricing", kicker: "", body: serializePricingCopy(pricing) }
+          : draft;
+      const r = await saveOpsSitePageFn({ data: payload });
       setStatus(r.ok ? `${PAGE_LABEL[draft.slug]} saved.` : r.error ?? "Save failed.");
       if (r.ok) await reload();
     } finally {
@@ -103,13 +270,16 @@ export function SiteCopyDesk() {
     }
   }
 
+  const pricingOpen = slug === "pricing";
+
   return (
     <div className="space-y-6">
       <section className="rounded-xl bg-surface p-4 text-sm shadow-[0_0_0_1px_var(--color-border)]">
         <h2 className="font-display text-xl font-bold text-fg">Site pages</h2>
         <p className="mt-1 text-muted">
-          About, Contact intro, Privacy, and the Features header. Lines that start
-          with # become headings. Use [Contact](/contact) for a link.
+          {pricingOpen
+            ? "Pricing cards, hero, and bullets. One line per bullet."
+            : "About, Contact intro, Privacy, and the Features header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
         </p>
         <div className="mt-3 inline-flex flex-wrap rounded-lg bg-elevated p-1">
           {SITE_PAGE_SLUGS.map((id) => (
@@ -126,7 +296,16 @@ export function SiteCopyDesk() {
             </button>
           ))}
         </div>
-        {draft ? (
+        {draft && pricingOpen ? (
+          <>
+            <PricingFields value={pricing} onChange={onPricingChange} />
+            <div className="mt-4">
+              <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
+                Save Pricing
+              </PrimaryButton>
+            </div>
+          </>
+        ) : draft ? (
           <div className="mt-4 space-y-3">
             <Field label="Title">
               <TextInput

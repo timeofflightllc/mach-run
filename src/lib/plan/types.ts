@@ -10,6 +10,7 @@ export type AccountKind =
   | "cash"
   | "529"
   | "ugma"
+  | "trump"
   | "education"
   | "real_estate"
   | "annuity"
@@ -315,6 +316,16 @@ export interface SimResult {
   rmd: RmdReport;
 }
 
+export interface RmdAccountRow {
+  name: string;
+  owner: string;
+  status: "none" | "deferred" | "forced" | "future";
+  startAge: number | null;
+  startYear: number | null;
+  firstYear: number | null;
+  firstYearAnnual: number;
+}
+
 export interface RmdReport {
   startAge: number | null;
   lifetimeRothExempt: string[];
@@ -322,4 +333,5 @@ export interface RmdReport {
   forced: string[];
   firstYearAnnual: number;
   total: number;
+  accounts: RmdAccountRow[];
 }

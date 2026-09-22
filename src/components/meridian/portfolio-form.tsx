@@ -41,6 +41,7 @@ const KIND_LABELS: { value: AccountKind; label: string; bucket: TaxBucket }[] = 
   { value: "cash", label: "Cash", bucket: "taxable" },
   { value: "529", label: "529", bucket: "none" },
   { value: "ugma", label: "UGMA / UTMA", bucket: "none" },
+  { value: "trump", label: "Trump Account", bucket: "pre_tax" },
   { value: "education", label: "Education", bucket: "none" },
   { value: "real_estate", label: "Real estate", bucket: "none" },
   { value: "other", label: "Other", bucket: "none" },
@@ -89,7 +90,7 @@ export function PortfolioForm() {
               </DangerButton>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <Field label="Kind">
+              <Field label="Account Type">
                 <SelectInput
                   value={p.kind}
                   onChange={(e) => {

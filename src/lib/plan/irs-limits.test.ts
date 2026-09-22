@@ -56,3 +56,15 @@ test("catch-up: 50+ 401k is $32,500; 60–63 is $35,750; IRA 50+ is $8,600", () 
   assert.equal(irsAnnualCap("roth_ira", 49), 7500);
   assert.equal(irsAnnualCap("roth_ira", 50), 8600);
 });
+
+test("Trump Account cap is $5,000 for 2026 — no 50+ catch-up", () => {
+  assert.equal(irsEmployeeAnnualLimit("trump"), 5000);
+  assert.equal(irsAnnualCap("trump", 8), 5000);
+  assert.equal(irsAnnualCap("trump", 50), 5000);
+  assert.equal(irsOverLimitWarning("trump", 400), null);
+  const w = irsOverLimitWarning("trump", 500);
+  assert.ok(w);
+  assert.match(w!, /5,000/);
+  assert.match(w!, /6,000/);
+  assert.match(w!, /growth period/);
+});

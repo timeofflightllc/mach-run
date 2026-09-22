@@ -17,7 +17,8 @@ export function isTaxQualified(kind: AccountKind): boolean {
     kind === "roth_ira" ||
     kind === "roth" ||
     kind === "traditional" ||
-    kind === "tsp"
+    kind === "tsp" ||
+    kind === "trump"
   );
 }
 

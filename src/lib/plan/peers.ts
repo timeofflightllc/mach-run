@@ -12,7 +12,6 @@ import { guaranteedAnnuityEquivalent, type AnnuityEquivalent } from "./annuity-e
 import { usd, usdCompact } from "./format.ts";
 import { remainingLiability, liabilityPayoffDate } from "./liability.ts";
 import { mortgageAssociated, mortgagePayoffDate, remainingMortgage } from "./mortgage.ts";
-import { rmdStartAge } from "./rmd.ts";
 import type { Plan, SimResult } from "./types.ts";
 
 /** SCF 2022 net worth knots, inflated ~12% into 2026 dollars. Approximate. */
@@ -50,6 +49,14 @@ export interface BriefColumnRow {
   window: string;
 }
 
+export interface BriefTableSpec {
+  intro: string;
+  note?: string;
+  headers: { label: string; align?: "left" | "right"; nowrap?: boolean }[];
+  rows: string[][];
+  footer?: string[];
+}
+
 export interface BriefSection {
   title: string;
   body: string;
@@ -58,6 +65,7 @@ export interface BriefSection {
     note: string;
     rows: BriefColumnRow[];
   };
+  table?: BriefTableSpec;
 }
 
 export interface PeerBrief {
@@ -316,7 +324,7 @@ export function buildPeerBrief(
   const add = (
     title: string,
     body: string,
-    extra?: Pick<BriefSection, "columns">,
+    extra?: Pick<BriefSection, "columns" | "table">,
   ) => sections.push({ title, body, ...extra });
   const runAt = new Date().toLocaleString("en-US", {
     dateStyle: "medium",
@@ -450,7 +458,7 @@ export function buildPeerBrief(
     `Spending starts at ${usd(spendingNow, true)}/mo and inflates at ${plan.assumptions.inflationPct}% a year. Accounts compound at ${plan.assumptions.defaultReturnPct}% nominal unless an account has its own rate. Spendable goes from ${usd(spendable)} now to ${usd(horizon)} at age ${plan.assumptions.projectionEndAge} in today's dollars. Time is on your side if you leave the machine running.`,
   );
 
-  add("RMDs", rmdAdvice(plan, sim));
+  add("RMDs", rmdIntro(plan, sim), { table: rmdTable(sim) });
 
   const ret = sim.retirement;
   if (ret) {
@@ -540,37 +548,81 @@ export function debtSentence(plan: Plan, remainingNow?: number): string | null {
   return `Remaining debt now is ${usd(now)}. Last modeled loan pays off ${when}.`;
 }
 
-function rmdAdvice(plan: Plan, sim: SimResult): string {
-  const start = sim.rmd?.startAge ?? rmdStartAge(plan.primary.birthDate);
-  const bits: string[] = [];
-  bits.push(
-    `RMD engine is running in the background (you don't set this). SECURE 2.0: required minimum distributions start at age ${start ?? 75} on pre-tax accounts. IRS Uniform Lifetime Table. Forced withdrawals are booked as ordinary income.`,
-  );
-  const roth = sim.rmd?.lifetimeRothExempt ?? [];
-  if (roth.length) {
-    bits.push(
-      `No lifetime RMD on Roth IRA / Roth 401(k): ${roth.join(", ")}. Congress actually did something useful in 2024.`,
-    );
-  } else {
-    bits.push(
-      "Roth IRA and Roth 401(k) have no lifetime RMD. Traditional IRA does, whether you're working or not.",
-    );
+function rmdIntro(plan: Plan, sim: SimResult): string {
+  const rows = sim.rmd?.accounts ?? [];
+  if (!rows.length) {
+    return "No retirement accounts on this run that the IRS would force a required minimum distribution from.";
   }
-  const deferred = sim.rmd?.stillWorkingDeferred ?? [];
-  if (deferred.length) {
-    bits.push(
-      `Still-working exception is ON for ${deferred.join(", ")} — salary/wages is flowing and you're still contributing, so MACH RUN is not forcing 401(k)/TSP RMDs from those accounts. Traditional IRA does not get that courtesy.`,
+  const forced = rows.filter((r) => r.status === "forced");
+  const future = rows.filter((r) => r.status === "future");
+  const deferred = rows.filter((r) => r.status === "deferred");
+  if (forced.length) {
+    const first = forced.reduce(
+      (m, r) =>
+        r.firstYear != null && (m == null || r.firstYear < m) ? r.firstYear : m,
+      null as number | null,
     );
-  } else {
-    bits.push(
-      "Still-working exception (401(k)/TSP only): if a W-2 is on AND you're depositing into that workplace account, MACH RUN skips the RMD there. Stop depositing or stop the salary, and the IRS tap turns on.",
-    );
+    const haul = forced.reduce((s, r) => s + r.firstYearAnnual, 0);
+    return `Required minimum distributions are on this MACH Run. First forced year is ${first ?? "this horizon"}. First-year haul across those accounts is about ${usd(haul)} — booked as ordinary income.`;
   }
-  const forced = sim.rmd?.forced ?? [];
-  if (forced.length && (sim.rmd?.firstYearAnnual ?? 0) > 0) {
-    bits.push(
-      `Forced RMDs on this run: ${forced.join(", ")}. First-year annual haul about ${usd(sim.rmd.firstYearAnnual)} — that's income now, whether you wanted it or not.`,
-    );
+  if (deferred.length && !future.length) {
+    return "Workplace RMDs are skipped on this run while W-2 pay is on and you are still contributing to those accounts. Traditional IRAs do not get that exception.";
   }
-  return bits.join(" ");
+  const next = rows
+    .filter((r) => r.status !== "none" && r.startAge != null)
+    .sort((a, b) => (a.startYear ?? 9999) - (b.startYear ?? 9999))[0];
+  if (next?.startAge != null) {
+    const who = next.owner;
+    return `No RMDs yet. First one on this plan is ${who}'s ${next.name} at age ${next.startAge}${next.startYear != null ? ` (${next.startYear})` : ""}.`;
+  }
+  return "Roth accounts on this run have no lifetime RMD. Nothing else here is pre-tax.";
+}
+
+function rmdTable(sim: SimResult): BriefTableSpec {
+  const rows = sim.rmd?.accounts ?? [];
+  const tableRows = rows.map((r) => {
+    const status =
+      r.status === "none"
+        ? "No lifetime RMD"
+        : r.status === "deferred"
+          ? "Still working — skipped"
+          : r.status === "forced"
+            ? "Required on this run"
+            : r.startAge != null
+              ? `Waiting until age ${r.startAge}`
+              : "Waiting";
+    const starts =
+      r.status === "none"
+        ? "—"
+        : r.startAge != null
+          ? `Age ${r.startAge}${r.startYear != null ? ` · ${r.startYear}` : ""}`
+          : "—";
+    const first =
+      r.firstYearAnnual > 0.5
+        ? `${usd(r.firstYearAnnual)}${r.firstYear != null ? ` (${r.firstYear})` : ""}`
+        : "—";
+    return [r.name, r.owner, status, starts, first];
+  });
+  const forcedSum = rows
+    .filter((r) => r.firstYearAnnual > 0.5)
+    .reduce((s, r) => s + r.firstYearAnnual, 0);
+  const footer =
+    forcedSum > 0.5
+      ? ["First-year total", "", "", "", usd(forcedSum)]
+      : undefined;
+  return {
+    intro: rows.length
+      ? "Your accounts, not a lecture:"
+      : "Add a pre-tax IRA, 401(k), or TSP in Observe to see RMDs here.",
+    note: "RMD = IRS required minimum distribution. Roth IRA and Roth 401(k) have no lifetime RMD. 401(k)/TSP can skip while W-2 pay is on and you are still contributing to that account. Traditional IRA cannot. Forced withdrawals are ordinary income. This is not tax advice.",
+    headers: [
+      { label: "Account" },
+      { label: "Owner" },
+      { label: "Status" },
+      { label: "Starts", nowrap: true },
+      { label: "First-year RMD", align: "right", nowrap: true },
+    ],
+    rows: tableRows,
+    footer,
+  };
 }

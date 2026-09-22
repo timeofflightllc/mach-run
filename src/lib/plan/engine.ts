@@ -29,6 +29,7 @@ import type {
   IncomeStream,
   MonthSnapshot,
   Plan,
+  RmdAccountRow,
   SimResult,
   StageMark,
   TaxBucket,
@@ -302,6 +303,7 @@ export function simulate(raw: Plan): SimResult {
     firstYearAnnual: 0,
     total: 0,
   };
+  const rmdYearTotals = new Map<string, Map<number, number>>();
   for (const p of plan.portfolios) {
     const klass = rmdClass(p);
     const label = p.name.trim() || p.kind;
@@ -377,7 +379,11 @@ export function simulate(raw: Plan): SimResult {
       const cls = dest ? irsLimitClass(dest.kind) : null;
       const person =
         dest && normalizeOwner(dest.owner) === "spouse" ? "spouse" : "primary";
-      const ytdKey = cls ? `${cursor.getFullYear()}|${person}|${cls}` : null;
+      const ytdKey = cls
+        ? cls === "trump"
+          ? `${cursor.getFullYear()}|${rule.portfolioId}|trump`
+          : `${cursor.getFullYear()}|${person}|${cls}`
+        : null;
       const asked = amount;
       if (rule.capToIrsLimit && dest && cls && ytdKey) {
         const birth =
@@ -424,6 +430,13 @@ export function simulate(raw: Plan): SimResult {
       rmd += take;
       rmdTakes.push({ id: p.id, amount: take });
       if (!rmdNote.forced.includes(label)) rmdNote.forced.push(label);
+      const y = cursor.getFullYear();
+      let byYear = rmdYearTotals.get(p.id);
+      if (!byYear) {
+        byYear = new Map();
+        rmdYearTotals.set(p.id, byYear);
+      }
+      byYear.set(y, (byYear.get(y) ?? 0) + take);
     }
     if (rmd > 0.5) {
       income += rmd;
@@ -729,8 +742,59 @@ export function simulate(raw: Plan): SimResult {
       forced: rmdNote.forced,
       firstYearAnnual: rmdNote.firstYearAnnual,
       total: rmdNote.total,
+      accounts: buildRmdAccountRows(plan, rmdNote, rmdYearTotals),
     },
   };
+}
+
+function buildRmdAccountRows(
+  plan: Plan,
+  rmdNote: {
+    lifetimeRothExempt: string[];
+    stillWorkingDeferred: string[];
+    forced: string[];
+  },
+  rmdYearTotals: Map<string, Map<number, number>>,
+): RmdAccountRow[] {
+  const you = plan.primary.name.trim() || "You";
+  const spouse = plan.spouse.name.trim() || "Spouse";
+  const rows: RmdAccountRow[] = [];
+  for (const p of plan.portfolios) {
+    const klass = rmdClass(p);
+    const roth =
+      klass === "none" &&
+      (p.taxBucket === "roth" || p.kind.includes("roth"));
+    if (klass === "none" && !roth) continue;
+    const label = p.name.trim() || p.kind;
+    const birth = ownerBirth(plan, p);
+    const startAge = rmdStartAge(birth);
+    const startYear =
+      validIso(birth) && startAge != null
+        ? Number(birth.slice(0, 4)) + startAge
+        : null;
+    const years = rmdYearTotals.get(p.id);
+    let firstYear: number | null = null;
+    let firstYearAnnual = 0;
+    if (years && years.size) {
+      firstYear = [...years.keys()].sort((a, b) => a - b)[0] ?? null;
+      firstYearAnnual = firstYear != null ? (years.get(firstYear) ?? 0) : 0;
+    }
+    let status: RmdAccountRow["status"];
+    if (klass === "none") status = "none";
+    else if (firstYearAnnual > 0.5) status = "forced";
+    else if (rmdNote.stillWorkingDeferred.includes(label)) status = "deferred";
+    else status = "future";
+    rows.push({
+      name: label,
+      owner: /spouse/i.test(p.owner) ? spouse : you,
+      status,
+      startAge,
+      startYear,
+      firstYear,
+      firstYearAnnual,
+    });
+  }
+  return rows;
 }
 
 export function startingSpendable(plan: Plan): number {

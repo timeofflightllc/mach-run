@@ -132,7 +132,7 @@ export function ClientControlPanel({
                 </button>
                 <button
                   type="button"
-                  className="text-xs text-[#e8c547] hover:text-fg disabled:text-subtle"
+                  className="text-xs font-medium text-fg hover:text-fg disabled:text-subtle"
                   disabled={last}
                   onClick={() => {
                     setPendingId(p.id);

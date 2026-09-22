@@ -1,4 +1,5 @@
 import { ANNOUNCEMENTS } from "@/lib/announcements";
+import { DEFAULT_PRICING_COPY, serializePricingCopy } from "./pricing-copy";
 import type { SiteAnnouncement, SitePage } from "./types";
 
 export const DEFAULT_PAGES: SitePage[] = [
@@ -72,6 +73,12 @@ If this policy changes in a material way, we will update this page and the date 
     title: "Feature announcements",
     kicker: "Ten newest ships on this page. Older notes sit behind a month.",
     body: "",
+  },
+  {
+    slug: "pricing",
+    title: "Pricing",
+    kicker: "",
+    body: serializePricingCopy(DEFAULT_PRICING_COPY),
   },
 ];
 

@@ -196,7 +196,15 @@ export function PeerBriefCard({
             {s.title ? (
               <p className="font-semibold text-fg">{s.title}</p>
             ) : null}
-            {s.columns?.rows.length ? (
+            {s.table?.rows.length ? (
+              <BriefTable
+                intro={s.table.intro}
+                note={s.table.note}
+                headers={s.table.headers}
+                rows={s.table.rows}
+                footer={s.table.footer}
+              />
+            ) : s.columns?.rows.length ? (
               <PaycheckTable
                 intro={s.columns.intro}
                 note={s.columns.note}
