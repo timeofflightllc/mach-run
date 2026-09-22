@@ -23,6 +23,7 @@ import {
 
 const PAGE_LABEL: Record<SitePageSlug, string> = {
   about: "About",
+  faq: "FAQ",
   contact: "Contact",
   privacy: "Privacy",
   announcements: "Features (header)",

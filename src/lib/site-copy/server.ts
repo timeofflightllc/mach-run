@@ -46,16 +46,13 @@ export async function ensureSiteCopyTables(): Promise<boolean> {
 
 async function seedIfEmpty(): Promise<void> {
   const sql = await getSql();
-  const pages = await sql.query<{ n: number }>("select count(*)::int as n from mach_site_pages");
-  if ((pages[0]?.n ?? 0) === 0) {
-    for (const page of DEFAULT_PAGES) {
-      await sql.query(
-        `insert into mach_site_pages (slug, title, kicker, body, updated_at)
-         values ($1, $2, $3, $4, now())
-         on conflict (slug) do nothing`,
-        [page.slug, page.title, page.kicker || null, page.body],
-      );
-    }
+  for (const page of DEFAULT_PAGES) {
+    await sql.query(
+      `insert into mach_site_pages (slug, title, kicker, body, updated_at)
+       values ($1, $2, $3, $4, now())
+       on conflict (slug) do nothing`,
+      [page.slug, page.title, page.kicker || null, page.body],
+    );
   }
   const notes = await sql.query<{ n: number }>("select count(*)::int as n from mach_announcements");
   if ((notes[0]?.n ?? 0) === 0) {

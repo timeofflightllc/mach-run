@@ -14,7 +14,11 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as FaqRouteImport } from './routes/faq'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LogoDraftsRouteImport } from './routes/logo-drafts'
+import { Route as LookRouteImport } from './routes/look'
+import { Route as LookARouteImport } from './routes/look-a'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as Top3DeskRouteImport } from './routes/top-3-desk'
@@ -48,9 +52,29 @@ const ContactRoute = ContactRouteImport.update({
   path: '/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FaqRoute = FaqRouteImport.update({
+  id: '/faq',
+  path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LogoDraftsRoute = LogoDraftsRouteImport.update({
+  id: '/logo-drafts',
+  path: '/logo-drafts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LookRoute = LookRouteImport.update({
+  id: '/look',
+  path: '/look',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LookARoute = LookARouteImport.update({
+  id: '/look-a',
+  path: '/look-a',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PricingRoute = PricingRouteImport.update({
@@ -95,7 +119,11 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/announcements': typeof AnnouncementsRoute
   '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
+  '/logo-drafts': typeof LogoDraftsRoute
+  '/look': typeof LookRoute
+  '/look-a': typeof LookARoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/top-3-desk': typeof Top3DeskRoute
@@ -110,7 +138,11 @@ export interface FileRoutesByTo {
   '/account': typeof AccountRoute
   '/announcements': typeof AnnouncementsRoute
   '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
+  '/logo-drafts': typeof LogoDraftsRoute
+  '/look': typeof LookRoute
+  '/look-a': typeof LookARoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/top-3-desk': typeof Top3DeskRoute
@@ -126,7 +158,11 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/announcements': typeof AnnouncementsRoute
   '/contact': typeof ContactRoute
+  '/faq': typeof FaqRoute
   '/login': typeof LoginRoute
+  '/logo-drafts': typeof LogoDraftsRoute
+  '/look': typeof LookRoute
+  '/look-a': typeof LookARoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/top-3-desk': typeof Top3DeskRoute
@@ -143,7 +179,11 @@ export interface FileRouteTypes {
     | '/account'
     | '/announcements'
     | '/contact'
+    | '/faq'
     | '/login'
+    | '/logo-drafts'
+    | '/look'
+    | '/look-a'
     | '/pricing'
     | '/privacy'
     | '/top-3-desk'
@@ -158,7 +198,11 @@ export interface FileRouteTypes {
     | '/account'
     | '/announcements'
     | '/contact'
+    | '/faq'
     | '/login'
+    | '/logo-drafts'
+    | '/look'
+    | '/look-a'
     | '/pricing'
     | '/privacy'
     | '/top-3-desk'
@@ -173,7 +217,11 @@ export interface FileRouteTypes {
     | '/account'
     | '/announcements'
     | '/contact'
+    | '/faq'
     | '/login'
+    | '/logo-drafts'
+    | '/look'
+    | '/look-a'
     | '/pricing'
     | '/privacy'
     | '/top-3-desk'
@@ -189,7 +237,11 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   AnnouncementsRoute: typeof AnnouncementsRoute
   ContactRoute: typeof ContactRoute
+  FaqRoute: typeof FaqRoute
   LoginRoute: typeof LoginRoute
+  LogoDraftsRoute: typeof LogoDraftsRoute
+  LookRoute: typeof LookRoute
+  LookARoute: typeof LookARoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   Top3DeskRoute: typeof Top3DeskRoute
@@ -236,11 +288,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/faq': {
+      id: '/faq'
+      path: '/faq'
+      fullPath: '/faq'
+      preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/logo-drafts': {
+      id: '/logo-drafts'
+      path: '/logo-drafts'
+      fullPath: '/logo-drafts'
+      preLoaderRoute: typeof LogoDraftsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/look': {
+      id: '/look'
+      path: '/look'
+      fullPath: '/look'
+      preLoaderRoute: typeof LookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/look-a': {
+      id: '/look-a'
+      path: '/look-a'
+      fullPath: '/look-a'
+      preLoaderRoute: typeof LookARouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -301,7 +381,11 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   AnnouncementsRoute: AnnouncementsRoute,
   ContactRoute: ContactRoute,
+  FaqRoute: FaqRoute,
   LoginRoute: LoginRoute,
+  LogoDraftsRoute: LogoDraftsRoute,
+  LookRoute: LookRoute,
+  LookARoute: LookARoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   Top3DeskRoute: Top3DeskRoute,

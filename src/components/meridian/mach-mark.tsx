@@ -109,6 +109,13 @@ export function MachFooter() {
         </dl>
         <div className="w-full space-y-2 text-xs leading-relaxed text-subtle">
           <p>
+            <Link to="/faq" className="text-muted underline-offset-4 hover:text-fg hover:underline">
+              FAQ
+            </Link>
+            {" — "}
+            How a MACH RUN works, free vs paid, dollars, and what is not advice.
+          </p>
+          <p>
             <Link to="/pricing" className="text-muted underline-offset-4 hover:text-fg hover:underline">
               Free vs MACH RUN paid
             </Link>

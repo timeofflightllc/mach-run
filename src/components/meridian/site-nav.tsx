@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 const LINKS = [
   { to: "/" as const, label: "Home" },
   { to: "/about" as const, label: "About" },
+  { to: "/faq" as const, label: "FAQ" },
   { to: "/contact" as const, label: "Contact" },
   { to: "/privacy" as const, label: "Privacy" },
   { to: "/announcements" as const, label: "Features" },
