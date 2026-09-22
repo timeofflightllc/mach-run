@@ -1,4 +1,5 @@
 import { ANNOUNCEMENTS } from "@/lib/announcements";
+import { DEFAULT_FOOTER_COPY, serializeFooterCopy } from "./footer-copy";
 import { DEFAULT_PRICING_COPY, serializePricingCopy } from "./pricing-copy";
 import type { SiteAnnouncement, SitePage } from "./types";
 
@@ -136,6 +137,12 @@ If this policy changes in a material way, we will update this page and the date 
     title: "Pricing",
     kicker: "",
     body: serializePricingCopy(DEFAULT_PRICING_COPY),
+  },
+  {
+    slug: "footer",
+    title: "Footer content",
+    kicker: "",
+    body: serializeFooterCopy(DEFAULT_FOOTER_COPY),
   },
 ];
 

@@ -8,11 +8,17 @@ import {
 } from "@/lib/site-copy/api";
 import {
   SITE_PAGE_SLUGS,
+  type FooterCopy,
   type PricingCopy,
   type SiteAnnouncement,
   type SitePage,
   type SitePageSlug,
 } from "@/lib/site-copy/types";
+import {
+  DEFAULT_FOOTER_COPY,
+  parseFooterCopy,
+  serializeFooterCopy,
+} from "@/lib/site-copy/footer-copy";
 import {
   bulletsFromText,
   bulletsToText,
@@ -28,6 +34,7 @@ const PAGE_LABEL: Record<SitePageSlug, string> = {
   privacy: "Privacy",
   announcements: "Features (header)",
   pricing: "Pricing",
+  footer: "Footer content",
 };
 
 function Area({
@@ -167,12 +174,77 @@ function PricingFields({
   );
 }
 
+function FooterFields({
+  value,
+  onChange,
+}: {
+  value: FooterCopy;
+  onChange: (next: FooterCopy) => void;
+}) {
+  const set = (patch: Partial<FooterCopy>) => onChange({ ...value, ...patch });
+  return (
+    <div className="mt-4 space-y-5">
+      <p className="text-sm text-muted">
+        Public footer. Links stay FAQ, Pricing, and Privacy. You edit the words.
+      </p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Measure (title)">
+          <TextInput value={value.measureTitle} onChange={(e) => set({ measureTitle: e.target.value })} />
+        </Field>
+        <Field label="Measure (line)">
+          <TextInput value={value.measureBody} onChange={(e) => set({ measureBody: e.target.value })} />
+        </Field>
+        <Field label="Allocate (title)">
+          <TextInput value={value.allocateTitle} onChange={(e) => set({ allocateTitle: e.target.value })} />
+        </Field>
+        <Field label="Allocate (line)">
+          <TextInput value={value.allocateBody} onChange={(e) => set({ allocateBody: e.target.value })} />
+        </Field>
+        <Field label="Compound (title)">
+          <TextInput value={value.compoundTitle} onChange={(e) => set({ compoundTitle: e.target.value })} />
+        </Field>
+        <Field label="Compound (line)">
+          <TextInput value={value.compoundBody} onChange={(e) => set({ compoundBody: e.target.value })} />
+        </Field>
+        <Field label="Harvest (title)">
+          <TextInput value={value.harvestTitle} onChange={(e) => set({ harvestTitle: e.target.value })} />
+        </Field>
+        <Field label="Harvest (line)">
+          <TextInput value={value.harvestBody} onChange={(e) => set({ harvestBody: e.target.value })} />
+        </Field>
+      </div>
+      <Field label="FAQ — line after the dash">
+        <Area rows={2} value={value.faqBlurb} onChange={(faqBlurb) => set({ faqBlurb })} />
+      </Field>
+      <Field label="Free vs MACH RUN paid — line after the dash">
+        <Area rows={3} value={value.paidBlurb} onChange={(paidBlurb) => set({ paidBlurb })} />
+      </Field>
+      <Field label="Privacy policy — line after the dash">
+        <Area rows={2} value={value.privacyBlurb} onChange={(privacyBlurb) => set({ privacyBlurb })} />
+      </Field>
+      <Field label="OODA AI asterisk">
+        <Area rows={3} value={value.oodaAiLine} onChange={(oodaAiLine) => set({ oodaAiLine })} />
+      </Field>
+      <Field label="Projections">
+        <Area rows={4} value={value.projections} onChange={(projections) => set({ projections })} />
+      </Field>
+      <Field label="SSA / DFAS / VA">
+        <Area rows={4} value={value.benefits} onChange={(benefits) => set({ benefits })} />
+      </Field>
+      <Field label="Boyd / OODA">
+        <Area rows={4} value={value.boyd} onChange={(boyd) => set({ boyd })} />
+      </Field>
+    </div>
+  );
+}
+
 export function SiteCopyDesk() {
   const [pages, setPages] = useState<SitePage[]>([]);
   const [notes, setNotes] = useState<SiteAnnouncement[]>([]);
   const [slug, setSlug] = useState<SitePageSlug>("about");
   const [draft, setDraft] = useState<SitePage | null>(null);
   const [pricing, setPricing] = useState<PricingCopy>(DEFAULT_PRICING_COPY);
+  const [footer, setFooter] = useState<FooterCopy>(DEFAULT_FOOTER_COPY);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [fresh, setFresh] = useState({
@@ -205,12 +277,20 @@ export function SiteCopyDesk() {
 
   useEffect(() => {
     if (draft?.slug === "pricing") setPricing(parsePricingCopy(draft.body));
+    if (draft?.slug === "footer") setFooter(parseFooterCopy(draft.body));
   }, [draft]);
 
   function onPricingChange(next: PricingCopy) {
     setPricing(next);
     setDraft((d) =>
       d ? { ...d, title: "Pricing", kicker: "", body: serializePricingCopy(next) } : d,
+    );
+  }
+
+  function onFooterChange(next: FooterCopy) {
+    setFooter(next);
+    setDraft((d) =>
+      d ? { ...d, title: "Footer content", kicker: "", body: serializeFooterCopy(next) } : d,
     );
   }
 
@@ -222,7 +302,9 @@ export function SiteCopyDesk() {
       const payload =
         draft.slug === "pricing"
           ? { ...draft, title: "Pricing", kicker: "", body: serializePricingCopy(pricing) }
-          : draft;
+          : draft.slug === "footer"
+            ? { ...draft, title: "Footer content", kicker: "", body: serializeFooterCopy(footer) }
+            : draft;
       const r = await saveOpsSitePageFn({ data: payload });
       setStatus(r.ok ? `${PAGE_LABEL[draft.slug]} saved.` : r.error ?? "Save failed.");
       if (r.ok) await reload();
@@ -272,6 +354,7 @@ export function SiteCopyDesk() {
   }
 
   const pricingOpen = slug === "pricing";
+  const footerOpen = slug === "footer";
 
   return (
     <div className="space-y-6">
@@ -280,7 +363,9 @@ export function SiteCopyDesk() {
         <p className="mt-1 text-muted">
           {pricingOpen
             ? "Pricing cards, hero, and bullets. One line per bullet."
-            : "About, Contact intro, Privacy, and the Features header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
+            : footerOpen
+              ? "Public footer words. Layout and links stay in code."
+              : "About, FAQ, Contact intro, Privacy, and the Features header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
         </p>
         <div className="mt-3 inline-flex flex-wrap rounded-lg bg-elevated p-1">
           {SITE_PAGE_SLUGS.map((id) => (
@@ -303,6 +388,15 @@ export function SiteCopyDesk() {
             <div className="mt-4">
               <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
                 Save Pricing
+              </PrimaryButton>
+            </div>
+          </>
+        ) : draft && footerOpen ? (
+          <>
+            <FooterFields value={footer} onChange={onFooterChange} />
+            <div className="mt-4">
+              <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
+                Save Footer content
               </PrimaryButton>
             </div>
           </>

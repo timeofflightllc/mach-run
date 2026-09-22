@@ -5,6 +5,7 @@ export const SITE_PAGE_SLUGS = [
   "privacy",
   "announcements",
   "pricing",
+  "footer",
 ] as const;
 export type SitePageSlug = (typeof SITE_PAGE_SLUGS)[number];
 
@@ -49,6 +50,25 @@ export type PricingCopy = {
   unlimited: PricingCardCopy;
   advisorLite: PricingCardCopy;
   advisorUnlimited: PricingCardCopy;
+};
+
+/** Desk-editable public footer strings. Links stay in MachFooter. */
+export type FooterCopy = {
+  measureTitle: string;
+  measureBody: string;
+  allocateTitle: string;
+  allocateBody: string;
+  compoundTitle: string;
+  compoundBody: string;
+  harvestTitle: string;
+  harvestBody: string;
+  faqBlurb: string;
+  paidBlurb: string;
+  privacyBlurb: string;
+  oodaAiLine: string;
+  projections: string;
+  benefits: string;
+  boyd: string;
 };
 
 export type SiteCopy = {

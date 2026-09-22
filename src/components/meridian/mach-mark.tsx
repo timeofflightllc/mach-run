@@ -1,6 +1,13 @@
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { SiteNav } from "@/components/meridian/site-nav";
+import { loadPublicSiteCopy } from "@/lib/site-copy/api";
+import {
+  DEFAULT_FOOTER_COPY,
+  footerFromSiteCopy,
+} from "@/lib/site-copy/footer-copy";
+import type { FooterCopy } from "@/lib/site-copy/types";
 
 /** Nested Mach-cone chevrons. currentColor = outer; inner is titanium. */
 export function MachGlyph({ className }: { className?: string }) {
@@ -82,6 +89,21 @@ export function BrandLockup({
 }
 
 export function MachFooter() {
+  const [copy, setCopy] = useState<FooterCopy>(DEFAULT_FOOTER_COPY);
+  useEffect(() => {
+    let live = true;
+    void loadPublicSiteCopy()
+      .then((site) => {
+        if (live) setCopy(footerFromSiteCopy(site));
+      })
+      .catch(() => {
+        /* keep defaults */
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
+
   return (
     <footer className="mt-8 border-t border-border bg-bg">
       <div className="page-gutter mx-auto flex w-full flex-col gap-5 py-8">
@@ -91,20 +113,20 @@ export function MachFooter() {
         </div>
         <dl className="grid grid-cols-1 gap-4 text-sm text-muted md:grid-cols-4 md:gap-6">
           <div>
-            <dt className="font-medium text-fg">Measure</dt>
-            <dd className="mt-0.5">Observe your financial starting point…</dd>
+            <dt className="font-medium text-fg">{copy.measureTitle}</dt>
+            <dd className="mt-0.5">{copy.measureBody}</dd>
           </div>
           <div>
-            <dt className="font-medium text-fg">Allocate</dt>
-            <dd className="mt-0.5">Orient where your dollars go…</dd>
+            <dt className="font-medium text-fg">{copy.allocateTitle}</dt>
+            <dd className="mt-0.5">{copy.allocateBody}</dd>
           </div>
           <div>
-            <dt className="font-medium text-fg">Compound</dt>
-            <dd className="mt-0.5">Decide to let time do the heavy lifting…</dd>
+            <dt className="font-medium text-fg">{copy.compoundTitle}</dt>
+            <dd className="mt-0.5">{copy.compoundBody}</dd>
           </div>
           <div>
-            <dt className="font-medium text-fg">Harvest</dt>
-            <dd className="mt-0.5">Act on your efforts — enjoy the fruit of your labor.</dd>
+            <dt className="font-medium text-fg">{copy.harvestTitle}</dt>
+            <dd className="mt-0.5">{copy.harvestBody}</dd>
           </div>
         </dl>
         <div className="w-full space-y-2 text-xs leading-relaxed text-subtle">
@@ -113,50 +135,26 @@ export function MachFooter() {
               FAQ
             </Link>
             {" — "}
-            How a MACH RUN works, free vs paid, dollars, and what is not advice.
+            {copy.faqBlurb}
           </p>
           <p>
             <Link to="/pricing" className="text-muted underline-offset-4 hover:text-fg hover:underline">
               Free vs MACH RUN paid
             </Link>
-            {" — "}$4/month or $40/year unlocks unlimited accounts, contribution
-            rules, income stages, Net Worth, and the full OODA.
+            {" — "}
+            {copy.paidBlurb}
           </p>
           <p>
             <Link to="/privacy" className="text-fg font-medium underline underline-offset-4 hover:text-accent">
               Privacy policy
             </Link>
             {" — "}
-            Your MACH Run data is encrypted in transit (HTTPS) and encrypted at
-            rest on the server. We do not sell it.
+            {copy.privacyBlurb}
           </p>
-          <p>
-            * MACH OODA AI analysis and OODA AI questions are for
-            entertainment purposes only. They are not financial, tax, legal, or
-            investment advice.
-          </p>
-          <p>
-            Projections are hypothetical illustrations based on the numbers and
-            rates you type in. They are not guarantees of future results. Past
-            performance does not guarantee future returns. Markets, inflation,
-            taxes, longevity, health costs, and policy can all go differently
-            than modeled. Account rules, contribution limits, and benefit
-            formulas change.
-          </p>
-          <p>
-            Social Security, military retirement, VA compensation, and similar
-            figures are estimates, not official determinations. Confirm amounts
-            with the Social Security Administration, DFAS, VA, your plan
-            administrator, and a qualified advisor before you act. You are
-            solely responsible for your financial decisions.
-          </p>
-          <p>
-            Observe, Orient, Decide, Act (OODA) comes from the late, great
-            U.S. Air Force Col. John Boyd (Ret.). His Energy-Maneuverability theory and the OODA Loop changed
-            the world. Any mention of OODA or the OODA Loop on this site refers
-            to Boyd’s publicly circulated work — not to any private organization
-            that later trademarked, copyrighted, or packaged his ideas.
-          </p>
+          <p>{copy.oodaAiLine}</p>
+          <p>{copy.projections}</p>
+          <p>{copy.benefits}</p>
+          <p>{copy.boyd}</p>
         </div>
       </div>
     </footer>
