@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { GROK_PROVIDERS, appleSignInEnabled, authClient, authEnabled, signIn, signInWithApple } from "@/lib/auth/client";
-import { BrandLockup } from "@/components/meridian/mach-mark";
+import { BrandLockup, MachFooter } from "@/components/meridian/mach-mark";
 import { SiteMenu } from "@/components/meridian/site-nav";
 import { TurnstileBox, turnstileEnabled } from "@/components/auth/turnstile-box";
 import { startPendingSignup } from "@/lib/auth/pending-signup-api";
@@ -70,7 +70,7 @@ function Login() {
   }
 
   return (
-    <main className="relative grid min-h-screen place-items-center bg-bg px-4 py-12 text-fg">
+    <main className="relative flex min-h-screen flex-col bg-bg px-4 py-12 text-fg">
       <div className="absolute right-4 top-10 flex items-center gap-1">
         <SiteMenu align="right" />
         <Link
@@ -80,6 +80,7 @@ function Login() {
           Home
         </Link>
       </div>
+      <div className="flex flex-1 items-center justify-center">
       <div className="w-full max-w-lg space-y-8">
         <div className="flex flex-col items-center text-center">
           <Link to="/" className="inline-flex justify-center">
@@ -233,6 +234,8 @@ function Login() {
           <span className="block mt-1">this browser only, until you sign in</span>
         </p>
       </div>
+      </div>
+      <MachFooter />
     </main>
   );
 }

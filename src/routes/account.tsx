@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { BackupPasswordModal } from "@/components/meridian/backup-modal";
 import { DeleteAccountModal } from "@/components/meridian/delete-account-modal";
-import { BrandLockup } from "@/components/meridian/mach-mark";
+import { BrandLockup, MachFooter } from "@/components/meridian/mach-mark";
 import { SiteMenu } from "@/components/meridian/site-nav";
 import { IdleLockSettings } from "@/components/meridian/idle-lock-settings";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
@@ -578,6 +578,7 @@ function Account() {
           onConfirm={(password) => void confirmDeleteAccount(password)}
         />
       ) : null}
+      <MachFooter />
     </main>
   );
 }

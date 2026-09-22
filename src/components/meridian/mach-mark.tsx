@@ -88,6 +88,12 @@ export function BrandLockup({
   );
 }
 
+function CopyrightLine() {
+  return (
+    <p className="text-sm text-muted">Copyright © Time of Flight LLC dba Mach Run.com</p>
+  );
+}
+
 export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }) {
   const [copy, setCopy] = useState<FooterCopy>(DEFAULT_FOOTER_COPY);
   useEffect(() => {
@@ -105,33 +111,18 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
     };
   }, [variant]);
 
-  const links = (
-    <nav aria-label="Legal" className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-      <Link to="/privacy" className="text-muted underline-offset-4 hover:text-fg hover:underline">
-        Privacy
-      </Link>
-      <Link
-        to="/legal"
-        hash="terms"
-        className="text-muted underline-offset-4 hover:text-fg hover:underline"
-      >
-        Terms
-      </Link>
-      <Link to="/contact" className="text-muted underline-offset-4 hover:text-fg hover:underline">
-        Contact
-      </Link>
-    </nav>
-  );
-
   if (variant === "short") {
     return (
       <footer className="mt-8 border-t border-border bg-bg">
-        <div className="short-footer-gutter mx-auto flex w-full flex-col gap-3 py-6 sm:flex-row sm:items-center sm:justify-between">
-          <Link to="/" className="inline-flex items-center gap-2 font-logo text-2xl leading-none tracking-[0.08em] text-fg">
-            <img src="/brand/footer-mark.png" alt="" width={48} height={28} className="h-6 w-auto" />
-            MACH RUN
-          </Link>
-          {links}
+        <div className="short-footer-gutter mx-auto flex w-full flex-col gap-3 py-6">
+          <div className="flex items-center justify-between gap-x-6">
+            <Link to="/" className="inline-flex items-center gap-2 font-logo text-2xl leading-none tracking-[0.08em] text-fg">
+              <img src="/brand/footer-mark.png" alt="" width={48} height={28} className="h-6 w-auto" />
+              MACH RUN
+            </Link>
+            <SiteNav tone="page" />
+          </div>
+          <CopyrightLine />
         </div>
       </footer>
     );
@@ -182,6 +173,7 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
           <p>{copy.projections}</p>
           <p>{copy.benefits}</p>
           <p>{copy.boyd}</p>
+          <CopyrightLine />
         </div>
       </div>
     </footer>

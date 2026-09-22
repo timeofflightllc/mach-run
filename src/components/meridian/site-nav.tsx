@@ -15,12 +15,20 @@ const LINKS = [
   { to: "/legal" as const, label: "Legal" },
 ];
 
-export function SiteNav({ className }: { className?: string }) {
+export function SiteNav({
+  className,
+  tone = "strong",
+}: {
+  className?: string;
+  tone?: "strong" | "page";
+}) {
+  const page = tone === "page";
   return (
     <nav
       aria-label="Site"
       className={cn(
-        "flex flex-wrap items-center gap-x-5 gap-y-2 text-sm font-medium",
+        "flex flex-wrap items-center gap-x-5 gap-y-2",
+        page ? "justify-end text-lg font-normal" : "text-sm font-medium",
         className,
       )}
     >
@@ -28,7 +36,11 @@ export function SiteNav({ className }: { className?: string }) {
         <Link
           key={link.to}
           to={link.to}
-          className="text-fg underline-offset-4 hover:underline"
+          className={
+            page
+              ? "text-muted underline-offset-4 hover:text-fg hover:underline"
+              : "text-fg underline-offset-4 hover:underline"
+          }
         >
           {link.label}
         </Link>
