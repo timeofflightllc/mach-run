@@ -1,20 +1,11 @@
 import { useEffect, useState } from "react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { pickDisplayedPlan } from "./cloud-hydrate";
 import { clearLocalMachRunWorkspace } from "./clear-local";
 import { loadMachPlan, saveMachPlan } from "./plan-api";
 import { usePlanStore } from "./store";
 import { useProfileStore } from "./profile-store";
 import type { Plan } from "./types";
-
-function planWeight(p: Plan | null | undefined): number {
-  if (!p) return 0;
-  const inc = (p.incomes ?? []).reduce(
-    (s, i) => s + (i.monthlyAmount || i.ssPia || 0),
-    0,
-  );
-  const assets = (p.portfolios ?? []).reduce((s, x) => s + (x.currentValue || 0), 0);
-  return inc * 12 + assets;
-}
 
 function payloadToSave(plan: Plan, profileId?: string) {
   const lib = useProfileStore.getState();
@@ -22,6 +13,13 @@ function payloadToSave(plan: Plan, profileId?: string) {
     return lib.asLibraryFor(plan, profileId ?? lib.activeId);
   }
   return plan;
+}
+
+/** Always pair the live household with the profile on screen. Never mix. */
+function payloadFromLiveStores() {
+  const live = usePlanStore.getState().plan;
+  const { activeId } = useProfileStore.getState();
+  return payloadToSave(live, activeId);
 }
 
 export function useCloudPlan() {
@@ -50,16 +48,21 @@ export function useCloudPlan() {
       .then((saved) => {
         if (cancelled) return;
         const local = usePlanStore.getState().plan;
-        const cloudPlan = saved && typeof saved === "object" && "plan" in saved ? saved.plan : saved;
+        const cloudPlan =
+          saved && typeof saved === "object" && "plan" in saved ? saved.plan : saved;
         const library =
           saved && typeof saved === "object" && "library" in saved ? saved.library : null;
         if (library) useProfileStore.getState().hydrateLibrary(library);
         else if (!useProfileStore.getState().profiles.length) {
           useProfileStore.getState().hydrateFromPlan(local);
         }
-        if (cloudPlan && planWeight(cloudPlan) >= planWeight(local)) {
-          setPlan(cloudPlan);
-        }
+        setPlan(
+          pickDisplayedPlan({
+            local,
+            cloudPlan: cloudPlan ?? null,
+            library,
+          }),
+        );
         setCloudReady(true);
         setStatus("saved");
       })
@@ -75,11 +78,9 @@ export function useCloudPlan() {
 
   useEffect(() => {
     if (!userId || !cloudReady) return;
-    const profileId = useProfileStore.getState().activeId;
-    const snapshot = plan;
     setStatus("saving");
     const t = window.setTimeout(() => {
-      void saveMachPlan({ data: payloadToSave(snapshot, profileId) })
+      void saveMachPlan({ data: payloadFromLiveStores() })
         .then(() => setStatus("saved"))
         .catch(() => setStatus("idle"));
     }, 700);

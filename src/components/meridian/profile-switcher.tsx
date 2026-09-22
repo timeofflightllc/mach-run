@@ -39,6 +39,7 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    if (useProfileStore.getState().profiles.length) return;
     void Promise.resolve(useProfileStore.persist.rehydrate());
   }, []);
 

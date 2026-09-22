@@ -84,6 +84,58 @@ describe("advisor profile isolation", () => {
     );
   });
 
+  it("switchTo does not copy Client 2 accounts into a thin test client", () => {
+    const c2 = createDefaultPlan();
+    c2.primary.name = "Client 2";
+    c2.portfolios = [
+      {
+        id: "a1",
+        name: "TSP",
+        kind: "tsp",
+        owner: "primary",
+        taxBucket: "pre_tax",
+        currentValue: 400_000,
+        returnPct: 7,
+        spendable: true,
+        includeInNetWorth: true,
+      },
+    ];
+    const test = createDefaultPlan();
+    test.primary.name = "Test";
+    test.portfolios = [
+      {
+        id: "t1",
+        name: "One account",
+        kind: "taxable",
+        owner: "primary",
+        taxBucket: "taxable",
+        currentValue: 100,
+        returnPct: 7,
+        spendable: true,
+        includeInNetWorth: true,
+      },
+    ];
+    useProfileStore.setState({
+      profiles: [
+        { id: "c2", name: "Client 2", plan: c2 },
+        { id: "test", name: "test client", plan: test },
+      ],
+      activeId: "c2",
+    });
+    const loaded = useProfileStore.getState().switchTo("test", c2);
+    expect(loaded?.portfolios).toHaveLength(1);
+    expect(loaded?.portfolios[0].name).toBe("One account");
+    expect(useProfileStore.getState().profiles.find((p) => p.id === "c2")?.plan.portfolios).toHaveLength(
+      1,
+    );
+    const back = useProfileStore.getState().switchTo("c2", loaded!);
+    expect(back?.primary.name).toBe("Client 2");
+    expect(back?.portfolios[0].name).toBe("TSP");
+    expect(
+      useProfileStore.getState().profiles.find((p) => p.id === "test")?.plan.portfolios[0].name,
+    ).toBe("One account");
+  });
+
   it("asLibraryFor writes onto the given id even if activeId already moved", () => {
     twoClients();
     useProfileStore.setState({ activeId: "p2" });
