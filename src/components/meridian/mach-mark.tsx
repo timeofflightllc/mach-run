@@ -34,12 +34,29 @@ export function MachWordmark({
   className,
   size = "md",
   framed = false,
+  asText = false,
 }: {
   className?: string;
   size?: "md" | "lg";
   framed?: boolean;
+  asText?: boolean;
 }) {
   const large = size === "lg";
+  if (asText) {
+    return (
+      <span
+        className={cn(
+          "font-logo inline-flex items-center leading-none tracking-[0.08em] text-fg",
+          large ? "text-5xl sm:text-6xl" : "text-4xl sm:text-5xl",
+          framed && "px-2 py-1 shadow-[0_0_0_1px_#c5cdd6]",
+          className,
+        )}
+        aria-label="MACH RUN"
+      >
+        MACH RUN
+      </span>
+    );
+  }
   return (
     <span className={cn("inline-flex shrink-0 items-center", className)} aria-label="MACH RUN.com">
       <img
@@ -64,16 +81,18 @@ export function BrandLockup({
   size = "md",
   framed = false,
   showTagline = false,
+  asText = false,
 }: {
   className?: string;
   size?: "md" | "lg";
   framed?: boolean;
   showTagline?: boolean;
+  asText?: boolean;
 }) {
   const large = size === "lg";
   return (
     <span className={cn("inline-flex shrink-0 flex-col items-stretch", className)}>
-      <MachWordmark size={size} framed={framed} />
+      <MachWordmark size={size} framed={framed} asText={asText} />
       {showTagline ? (
         <span
           className={cn(
@@ -127,7 +146,7 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
     return (
       <footer className="mt-8 border-t border-border bg-bg">
         <div className="page-gutter mx-auto flex w-full flex-col gap-3 py-6 sm:flex-row sm:items-center sm:justify-between">
-          <Link to="/" className="text-sm font-medium text-fg">
+          <Link to="/" className="font-logo text-3xl leading-none tracking-[0.08em] text-fg">
             MACH RUN
           </Link>
           {links}
@@ -162,26 +181,6 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
           </div>
         </dl>
         <div className="w-full space-y-2 text-xs leading-relaxed text-subtle">
-          <p>
-            <Link to="/method" className="text-muted underline-offset-4 hover:text-fg hover:underline">
-              The Method
-            </Link>
-            {" — how the engine flies the numbers you type."}
-          </p>
-          <p>
-            <Link to="/faq" className="text-muted underline-offset-4 hover:text-fg hover:underline">
-              FAQ
-            </Link>
-            {" — "}
-            {copy.faqBlurb}
-          </p>
-          <p>
-            <Link to="/pricing" className="text-muted underline-offset-4 hover:text-fg hover:underline">
-              Free vs MACH RUN paid
-            </Link>
-            {" — "}
-            {copy.paidBlurb}
-          </p>
           <p>
             <Link to="/privacy" className="text-fg font-medium underline underline-offset-4 hover:text-accent">
               Privacy policy

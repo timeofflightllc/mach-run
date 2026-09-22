@@ -9,9 +9,6 @@ export const DEFAULT_FOOTER_COPY: FooterCopy = {
   compoundBody: "Decide to let time do the heavy lifting…",
   harvestTitle: "Harvest",
   harvestBody: "Act on your efforts — enjoy the fruit of your labor.",
-  faqBlurb: "How a MACH RUN works, free vs paid, dollars, and what is not advice.",
-  paidBlurb:
-    "$4/month or $40/year unlocks unlimited accounts, contribution rules, income stages, Net Worth, and the full OODA.",
   privacyBlurb:
     "Your MACH Run data is encrypted in transit (HTTPS) and encrypted at rest on the server. We do not sell it.",
   oodaAiLine:
@@ -40,8 +37,6 @@ export function mergeFooterCopy(raw: unknown): FooterCopy {
     compoundBody: str(src.compoundBody, d.compoundBody),
     harvestTitle: str(src.harvestTitle, d.harvestTitle),
     harvestBody: str(src.harvestBody, d.harvestBody),
-    faqBlurb: str(src.faqBlurb, d.faqBlurb),
-    paidBlurb: str(src.paidBlurb, d.paidBlurb),
     privacyBlurb: str(src.privacyBlurb, d.privacyBlurb),
     oodaAiLine: str(src.oodaAiLine, d.oodaAiLine),
     projections: str(src.projections, d.projections),

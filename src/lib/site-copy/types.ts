@@ -64,8 +64,6 @@ export type FooterCopy = {
   compoundBody: string;
   harvestTitle: string;
   harvestBody: string;
-  faqBlurb: string;
-  paidBlurb: string;
   privacyBlurb: string;
   oodaAiLine: string;
   projections: string;

@@ -70,7 +70,7 @@ function Login() {
   }
 
   return (
-    <main className="relative grid min-h-screen place-items-center bg-bg px-4 py-12 text-fg">
+    <main className="mark-page relative grid min-h-screen place-items-center bg-bg px-4 py-12 text-fg">
       <div className="absolute right-4 top-10 flex items-center gap-1">
         <SiteMenu align="right" />
         <Link
@@ -83,7 +83,7 @@ function Login() {
       <div className="w-full max-w-lg space-y-8">
         <div className="flex flex-col items-center text-center">
           <Link to="/" className="inline-flex justify-center">
-            <BrandLockup size="lg" framed />
+            <BrandLockup size="lg" framed asText />
           </Link>
           <p className="mt-4 max-w-md text-center text-base leading-relaxed text-muted sm:text-lg">
             Free to use with limits. Unlimited is a monthly hop. Pay

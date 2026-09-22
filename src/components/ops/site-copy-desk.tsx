@@ -187,7 +187,7 @@ function FooterFields({
   return (
     <div className="mt-4 space-y-5">
       <p className="text-sm text-muted">
-        Calculator footer only. Other pages stay short. Links stay FAQ, Pricing, Privacy, and Terms.
+        Calculator footer only. Other pages stay short. Links stay Privacy and Terms.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Measure (title)">
@@ -215,12 +215,6 @@ function FooterFields({
           <TextInput value={value.harvestBody} onChange={(e) => set({ harvestBody: e.target.value })} />
         </Field>
       </div>
-      <Field label="FAQ — line after the dash">
-        <Area rows={2} value={value.faqBlurb} onChange={(faqBlurb) => set({ faqBlurb })} />
-      </Field>
-      <Field label="Free vs MACH RUN paid — line after the dash">
-        <Area rows={3} value={value.paidBlurb} onChange={(paidBlurb) => set({ paidBlurb })} />
-      </Field>
       <Field label="Privacy policy — line after the dash">
         <Area rows={2} value={value.privacyBlurb} onChange={(privacyBlurb) => set({ privacyBlurb })} />
       </Field>

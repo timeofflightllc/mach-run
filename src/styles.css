@@ -3,6 +3,7 @@
 @theme {
   --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
   --font-display: "Barlow Condensed", "Arial Narrow", ui-sans-serif, sans-serif;
+  --font-logo: "Bebas Neue", "Arial Narrow", ui-sans-serif, sans-serif;
 
   --color-bg: #f3f0e8;
   --color-surface: #fffcf6;
@@ -54,6 +55,12 @@
   h3 {
     text-wrap: balance;
     font-family: var(--font-display);
+  }
+
+  .mark-page h1 {
+    font-family: var(--font-logo) !important;
+    font-weight: 400;
+    letter-spacing: 0.06em;
   }
 
   p {

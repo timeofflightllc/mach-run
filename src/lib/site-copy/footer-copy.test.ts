@@ -9,13 +9,13 @@ import {
 
 test("missing or junk body uses live footer defaults", () => {
   assert.equal(parseFooterCopy("").measureTitle, "Measure");
-  assert.equal(parseFooterCopy("not json").faqBlurb, DEFAULT_FOOTER_COPY.faqBlurb);
+  assert.equal(parseFooterCopy("not json").privacyBlurb, DEFAULT_FOOTER_COPY.privacyBlurb);
   assert.equal(parseFooterCopy("{}").boyd, DEFAULT_FOOTER_COPY.boyd);
 });
 
 test("partial save merges", () => {
-  const next = mergeFooterCopy({ paidBlurb: "Edited paid line." });
-  assert.equal(next.paidBlurb, "Edited paid line.");
+  const next = mergeFooterCopy({ privacyBlurb: "Edited privacy line." });
+  assert.equal(next.privacyBlurb, "Edited privacy line.");
   assert.equal(next.measureBody, DEFAULT_FOOTER_COPY.measureBody);
 });
 
