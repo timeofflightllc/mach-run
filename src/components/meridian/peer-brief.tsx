@@ -184,9 +184,6 @@ export function PeerBriefCard({
           </PrimaryButton>
         ) : null}
       </div>
-      <div className="mt-3">
-        <Disclaimer />
-      </div>
       <p className="mt-3 font-display text-xl font-medium leading-snug text-fg">
         {egg ? <NestEggHeadline egg={egg} /> : brief.headline}
       </p>
