@@ -352,9 +352,6 @@ function Home() {
         className="canopy-bar sticky top-0 z-30 border-b border-border"
       >
         <div className="page-gutter relative z-50 mx-auto max-w-none py-2.5">
-          <div className="pointer-events-none absolute left-1/2 top-2.5 z-[80] -translate-x-1/2">
-            <SiteMenu className="pointer-events-auto" />
-          </div>
           <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
             <div className="flex min-w-0 items-center gap-0">
               <BrandLockup showTagline={false} />
@@ -384,13 +381,14 @@ function Home() {
                   Future $
                 </button>
               </div>
+              <SiteMenu align="right" className="hidden md:block" />
               <ProfileSwitcher ent={ent} />
               <AuthSlot saved={saveStatus} />
             </div>
             <p className="min-w-0 text-left text-[11px] font-bold leading-snug tracking-[0.12em] text-muted sm:text-xs md:text-[13px]">
               The Supersonic Retirement Calculator
             </p>
-            <div className="flex justify-end md:hidden">
+            <div className="flex items-center justify-end gap-1 md:hidden">
               <div className="inline-flex rounded-md bg-surface p-0.5 shadow-[0_0_0_1px_var(--color-border)]">
                 <button
                   type="button"
@@ -415,6 +413,7 @@ function Home() {
                   Future $
                 </button>
               </div>
+              <SiteMenu align="right" />
             </div>
           </div>
         </div>
