@@ -128,7 +128,7 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
       <footer className="mt-8 border-t border-border bg-bg">
         <div className="page-gutter mx-auto flex w-full flex-col gap-3 py-6 sm:flex-row sm:items-center sm:justify-between">
           <Link to="/" className="inline-flex items-center gap-2 font-logo text-2xl leading-none tracking-[0.08em] text-fg">
-            <MachGlyph className="h-5 w-5" />
+            <img src="/brand/footer-mark.png" alt="" width={48} height={28} className="h-6 w-auto" />
             MACH RUN
           </Link>
           {links}
