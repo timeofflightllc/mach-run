@@ -186,7 +186,7 @@ function FooterFields({
   return (
     <div className="mt-4 space-y-5">
       <p className="text-sm text-muted">
-        Calculator footer: Measure / Allocate / Compound / Harvest. Legal wall lives on Legal.
+        Calculator footer only. Other pages stay short. Links stay FAQ, Pricing, Privacy, and Terms.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Measure (title)">
@@ -214,6 +214,27 @@ function FooterFields({
           <TextInput value={value.harvestBody} onChange={(e) => set({ harvestBody: e.target.value })} />
         </Field>
       </div>
+      <Field label="FAQ — line after the dash">
+        <Area rows={2} value={value.faqBlurb} onChange={(faqBlurb) => set({ faqBlurb })} />
+      </Field>
+      <Field label="Free vs MACH RUN paid — line after the dash">
+        <Area rows={3} value={value.paidBlurb} onChange={(paidBlurb) => set({ paidBlurb })} />
+      </Field>
+      <Field label="Privacy policy — line after the dash">
+        <Area rows={2} value={value.privacyBlurb} onChange={(privacyBlurb) => set({ privacyBlurb })} />
+      </Field>
+      <Field label="OODA AI asterisk">
+        <Area rows={3} value={value.oodaAiLine} onChange={(oodaAiLine) => set({ oodaAiLine })} />
+      </Field>
+      <Field label="Projections">
+        <Area rows={4} value={value.projections} onChange={(projections) => set({ projections })} />
+      </Field>
+      <Field label="SSA / DFAS / VA">
+        <Area rows={4} value={value.benefits} onChange={(benefits) => set({ benefits })} />
+      </Field>
+      <Field label="Boyd / OODA">
+        <Area rows={4} value={value.boyd} onChange={(boyd) => set({ boyd })} />
+      </Field>
     </div>
   );
 }

@@ -161,11 +161,42 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
             <dd className="mt-0.5">{copy.harvestBody}</dd>
           </div>
         </dl>
-        <p className="text-xs leading-relaxed text-subtle">
-          <Link to="/legal" className="text-muted underline-offset-4 hover:text-fg hover:underline">
-            Hypothetical planning tool. Not financial, tax, or legal advice.
-          </Link>
-        </p>
+        <div className="w-full space-y-2 text-xs leading-relaxed text-subtle">
+          <p>
+            <Link to="/faq" className="text-muted underline-offset-4 hover:text-fg hover:underline">
+              FAQ
+            </Link>
+            {" — "}
+            {copy.faqBlurb}
+          </p>
+          <p>
+            <Link to="/pricing" className="text-muted underline-offset-4 hover:text-fg hover:underline">
+              Free vs MACH RUN paid
+            </Link>
+            {" — "}
+            {copy.paidBlurb}
+          </p>
+          <p>
+            <Link to="/privacy" className="text-fg font-medium underline underline-offset-4 hover:text-accent">
+              Privacy policy
+            </Link>
+            {" — "}
+            {copy.privacyBlurb}
+          </p>
+          <p>{copy.oodaAiLine}</p>
+          <p>{copy.projections}</p>
+          <p>{copy.benefits}</p>
+          <p>{copy.boyd}</p>
+          <p>
+            <Link
+              to="/legal"
+              hash="terms"
+              className="text-muted underline-offset-4 hover:text-fg hover:underline"
+            >
+              Terms of Service
+            </Link>
+          </p>
+        </div>
       </div>
     </footer>
   );
