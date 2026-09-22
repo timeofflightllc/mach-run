@@ -145,6 +145,14 @@
   padding-inline: clamp(1rem, 4vw, 4.25rem);
 }
 
+/* About, Method, Features, Pricing, FAQ, Contact, Privacy, Legal.
+   Halfway between the screen-edge gutter and the header column. Not flush. */
+.short-footer-gutter {
+  padding-inline: calc(
+    (max(1rem, (100vw - 80rem) / 2) + clamp(1rem, 4vw, 4.25rem)) / 2
+  );
+}
+
 @keyframes master-caution-flash {
   0%,
   42% {
