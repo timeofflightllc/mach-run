@@ -285,10 +285,11 @@ export function PeerBriefCard({
         </div>
       ) : (
         <p className="mt-4 text-xs leading-relaxed text-subtle">
-          Net worth bands: Federal Reserve Survey of Consumer Finances (2022),
-          shown in 2026 dollars. Income bands: U.S. Census household money
-          income, stepped forward. This is a sketch against national peers, not
-          a neighborhood, not a credit score, not advice.
+          Net worth comparison uses Federal Reserve Survey of Consumer Finances
+          (2022) percentiles by age, expressed in 2026 dollars. Income comparison
+          uses U.S. Census household money-income percentiles, adjusted to 2026.
+          Rank is a national household comparison. It is not a local ranking, a
+          credit score, or financial advice.
         </p>
       )}
       <div className="mt-4 border-t border-border pt-4">
