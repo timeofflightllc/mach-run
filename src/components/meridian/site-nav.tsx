@@ -7,12 +7,12 @@ const LINKS = [
   { to: "/" as const, label: "Home" },
   { to: "/about" as const, label: "About" },
   { to: "/method" as const, label: "Method" },
+  { to: "/announcements" as const, label: "Features" },
+  { to: "/pricing" as const, label: "Pricing" },
   { to: "/faq" as const, label: "FAQ" },
   { to: "/contact" as const, label: "Contact" },
   { to: "/privacy" as const, label: "Privacy" },
   { to: "/legal" as const, label: "Legal" },
-  { to: "/announcements" as const, label: "Features" },
-  { to: "/pricing" as const, label: "Pricing" },
 ];
 
 export function SiteNav({ className }: { className?: string }) {
@@ -37,7 +37,13 @@ export function SiteNav({ className }: { className?: string }) {
   );
 }
 
-export function SiteMenu({ className }: { className?: string }) {
+export function SiteMenu({
+  className,
+  align = "left",
+}: {
+  className?: string;
+  align?: "left" | "right";
+}) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
 
@@ -72,7 +78,10 @@ export function SiteMenu({ className }: { className?: string }) {
       {open ? (
         <div
           role="menu"
-          className="absolute left-0 z-[80] mt-1 min-w-[11rem] rounded-lg bg-elevated py-1 shadow-[0_0_0_1px_var(--color-border)]"
+          className={cn(
+            "absolute z-[80] mt-1 min-w-[11rem] rounded-lg bg-elevated py-1 shadow-[0_0_0_1px_var(--color-border)]",
+            align === "right" ? "right-0" : "left-0",
+          )}
         >
           {LINKS.map((link) => (
             <Link

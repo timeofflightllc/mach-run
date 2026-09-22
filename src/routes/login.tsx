@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { GROK_PROVIDERS, appleSignInEnabled, authClient, authEnabled, signIn, signInWithApple } from "@/lib/auth/client";
 import { BrandLockup } from "@/components/meridian/mach-mark";
+import { SiteMenu } from "@/components/meridian/site-nav";
 import { TurnstileBox, turnstileEnabled } from "@/components/auth/turnstile-box";
 import { startPendingSignup } from "@/lib/auth/pending-signup-api";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
@@ -70,12 +71,15 @@ function Login() {
 
   return (
     <main className="relative grid min-h-screen place-items-center bg-bg px-4 py-12 text-fg">
-      <Link
-        to="/"
-        className="absolute right-4 top-10 inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
-      >
-        Home
-      </Link>
+      <div className="absolute right-4 top-10 flex items-center gap-1">
+        <SiteMenu align="right" />
+        <Link
+          to="/"
+          className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+        >
+          Home
+        </Link>
+      </div>
       <div className="w-full max-w-lg space-y-8">
         <div className="flex flex-col items-center text-center">
           <Link to="/" className="inline-flex justify-center">
