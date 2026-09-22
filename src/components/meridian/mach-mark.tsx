@@ -164,8 +164,16 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
         </dl>
         <div className="w-full space-y-2 text-xs leading-relaxed text-subtle">
           <p>
+            <Link
+              to="/legal"
+              hash="terms"
+              className="text-fg font-medium underline underline-offset-4 hover:text-accent"
+            >
+              Terms of Service
+            </Link>
+            {" | "}
             <Link to="/privacy" className="text-fg font-medium underline underline-offset-4 hover:text-accent">
-              Privacy policy
+              Privacy Policy
             </Link>
             {" — "}
             {copy.privacyBlurb}
@@ -174,15 +182,6 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
           <p>{copy.projections}</p>
           <p>{copy.benefits}</p>
           <p>{copy.boyd}</p>
-          <p>
-            <Link
-              to="/legal"
-              hash="terms"
-              className="text-muted underline-offset-4 hover:text-fg hover:underline"
-            >
-              Terms of Service
-            </Link>
-          </p>
         </div>
       </div>
     </footer>

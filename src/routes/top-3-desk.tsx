@@ -6,7 +6,6 @@ import { OpsDeleteAccount } from "@/components/ops/ops-delete-account";
 import { PromoCodesDesk } from "@/components/ops/promo-codes-desk";
 import { DeskMail } from "@/components/ops/desk-mail";
 import { useEffect, useMemo, useState } from "react";
-import { MissingPage } from "@/components/missing-page";
 import { Field, SelectInput, TextInput } from "@/components/ui/field";
 import {
   cancelOpsSubscriptionFn,
@@ -85,6 +84,11 @@ function Top3DeskDoor() {
   }, []);
 
   useEffect(() => {
+    if (gate !== "no") return;
+    window.location.replace("https://www.machrun.com");
+  }, [gate]);
+
+  useEffect(() => {
     if (gate !== "yes") return;
     let live = true;
     void listOpsRoster({ data: { q, plan, paid, status, offset } })
@@ -123,7 +127,7 @@ function Top3DeskDoor() {
     [rows, openId],
   );
 
-  if (gate !== "yes") return <MissingPage />;
+  if (gate !== "yes") return null;
 
   const from = total === 0 ? 0 : offset + 1;
   const to = Math.min(offset + OPS_ROSTER_PAGE, total);
