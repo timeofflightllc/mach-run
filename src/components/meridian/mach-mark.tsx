@@ -108,7 +108,7 @@ export function MachFooter() {
     <footer className="mt-8 border-t border-border bg-bg">
       <div className="page-gutter mx-auto flex w-full flex-col gap-5 py-8">
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-          <BrandLockup size="lg" />
+          <BrandLockup size="lg" framed />
           <SiteNav className="text-base" />
         </div>
         <dl className="grid grid-cols-1 gap-4 text-sm text-muted md:grid-cols-4 md:gap-6">
