@@ -88,9 +88,10 @@ export function BrandLockup({
   );
 }
 
-export function MachFooter() {
+export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }) {
   const [copy, setCopy] = useState<FooterCopy>(DEFAULT_FOOTER_COPY);
   useEffect(() => {
+    if (variant !== "full") return;
     let live = true;
     void loadPublicSiteCopy()
       .then((site) => {
@@ -102,7 +103,38 @@ export function MachFooter() {
     return () => {
       live = false;
     };
-  }, []);
+  }, [variant]);
+
+  const links = (
+    <nav aria-label="Legal" className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+      <Link to="/privacy" className="text-muted underline-offset-4 hover:text-fg hover:underline">
+        Privacy
+      </Link>
+      <Link
+        to="/legal"
+        hash="terms"
+        className="text-muted underline-offset-4 hover:text-fg hover:underline"
+      >
+        Terms
+      </Link>
+      <Link to="/contact" className="text-muted underline-offset-4 hover:text-fg hover:underline">
+        Contact
+      </Link>
+    </nav>
+  );
+
+  if (variant === "short") {
+    return (
+      <footer className="mt-8 border-t border-border bg-bg">
+        <div className="page-gutter mx-auto flex w-full flex-col gap-3 py-6 sm:flex-row sm:items-center sm:justify-between">
+          <Link to="/" className="text-sm font-medium text-fg">
+            MACH RUN
+          </Link>
+          {links}
+        </div>
+      </footer>
+    );
+  }
 
   return (
     <footer className="mt-8 border-t border-border bg-bg">
@@ -129,33 +161,11 @@ export function MachFooter() {
             <dd className="mt-0.5">{copy.harvestBody}</dd>
           </div>
         </dl>
-        <div className="w-full space-y-2 text-xs leading-relaxed text-subtle">
-          <p>
-            <Link to="/faq" className="text-muted underline-offset-4 hover:text-fg hover:underline">
-              FAQ
-            </Link>
-            {" — "}
-            {copy.faqBlurb}
-          </p>
-          <p>
-            <Link to="/pricing" className="text-muted underline-offset-4 hover:text-fg hover:underline">
-              Free vs MACH RUN paid
-            </Link>
-            {" — "}
-            {copy.paidBlurb}
-          </p>
-          <p>
-            <Link to="/privacy" className="text-fg font-medium underline underline-offset-4 hover:text-accent">
-              Privacy policy
-            </Link>
-            {" — "}
-            {copy.privacyBlurb}
-          </p>
-          <p>{copy.oodaAiLine}</p>
-          <p>{copy.projections}</p>
-          <p>{copy.benefits}</p>
-          <p>{copy.boyd}</p>
-        </div>
+        <p className="text-xs leading-relaxed text-subtle">
+          <Link to="/legal" className="text-muted underline-offset-4 hover:text-fg hover:underline">
+            Hypothetical planning tool. Not financial, tax, or legal advice.
+          </Link>
+        </p>
       </div>
     </footer>
   );

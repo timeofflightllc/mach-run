@@ -3,6 +3,7 @@ export const SITE_PAGE_SLUGS = [
   "faq",
   "contact",
   "privacy",
+  "legal",
   "announcements",
   "pricing",
   "footer",

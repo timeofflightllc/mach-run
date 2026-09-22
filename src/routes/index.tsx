@@ -639,7 +639,7 @@ function Home() {
           <CalculateButton onCalculate={() => calculate({ stay: true })} />
         </div>
       </main>
-      <MachFooter />
+      <MachFooter variant="full" />
     </div>
   );
 }

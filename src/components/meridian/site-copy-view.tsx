@@ -31,11 +31,16 @@ export function SiteCopyBody({ body }: { body: string }) {
       {blocks.map((block, i) => {
         const lines = block.split("\n");
         if (lines[0]?.startsWith("# ")) {
-          const heading = lines[0].slice(2).trim();
+          const raw = lines[0].slice(2).trim();
+          const idMatch = raw.match(/^(.*?)\s*\{#([a-z0-9\-]+)\}$/i);
+          const heading = (idMatch ? idMatch[1] : raw).trim();
+          const headingId = idMatch ? idMatch[2] : undefined;
           const rest = lines.slice(1).join(" ").trim();
           return (
             <section key={i} className="space-y-2">
-              <h2 className="text-xl font-medium text-fg">{heading}</h2>
+              <h2 id={headingId} className="scroll-mt-24 text-xl font-medium text-fg">
+                {heading}
+              </h2>
               {rest ? <p>{inline(rest)}</p> : null}
             </section>
           );

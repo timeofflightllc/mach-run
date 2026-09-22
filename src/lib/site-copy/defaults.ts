@@ -32,7 +32,7 @@ Open Family, then Accounts. Add at least one income and your spending if you hav
 Observe, Orient, Decide, Act. It comes from U.S. Air Force Col. John Boyd (Ret.). On this site it is a way to look at money — not a trademarked product from anyone else. Observe is the household as it stands. Orient is where dollars go (income and spending). Decide is contributions. Act is the ledger, charts, and analysis after Calculate.
 
 # Is this financial advice?
-No. MACH RUN, the MACH OODA Financial Analysis, and OODA AI are for entertainment and illustration. Projections are hypothetical. Past performance does not guarantee future returns. Confirm Social Security, military retired pay, VA, and tax rules with the agency or a qualified advisor before you act. You own the decisions.
+No. MACH RUN is a hypothetical planning tool. It is not financial, tax, or legal advice. The full disclaimer and Terms of Service live on [Legal](/legal).
 
 # What is free, and what do I pay for?
 Free: register in about 30 seconds, save one household, with a limit of 2 accounts, 2 contributions, and 2 incomes. The OODA analysis is shortened.
@@ -78,6 +78,48 @@ A retired U.S. Air Force fighter pilot who wanted one strip for income, contribu
     title: "Contact",
     kicker: "Pick a lane. It goes to the MACH RUN inbox. Reply-to is the email you type below.",
     body: "",
+  },
+  {
+    slug: "legal",
+    title: "Legal",
+    kicker: "",
+    body: `[FAQ](/faq) — How a MACH RUN works, free vs paid, dollars, and what is not advice.
+
+[Free vs MACH RUN paid](/pricing) — $4/month or $40/year unlocks unlimited accounts, contribution rules, income stages, Net Worth, and the full OODA.
+
+[Privacy policy](/privacy) — Your MACH Run data is encrypted in transit (HTTPS) and encrypted at rest on the server. We do not sell it.
+
+* MACH OODA AI analysis and OODA AI questions are for entertainment purposes only. They are not financial, tax, legal, or investment advice.
+
+Projections are hypothetical illustrations based on the numbers and rates you type in. They are not guarantees of future results. Past performance does not guarantee future returns. Markets, inflation, taxes, longevity, health costs, and policy can all go differently than modeled. Account rules, contribution limits, and benefit formulas change.
+
+Social Security, military retirement, VA compensation, and similar figures are estimates, not official determinations. Confirm amounts with the Social Security Administration, DFAS, VA, your plan administrator, and a qualified advisor before you act. You are solely responsible for your financial decisions.
+
+Observe, Orient, Decide, Act (OODA) comes from the late, great U.S. Air Force Col. John Boyd (Ret.). His Energy-Maneuverability theory and the OODA Loop changed the world. Any mention of OODA or the OODA Loop on this site refers to Boyd’s publicly circulated work — not to any private organization that later trademarked, copyrighted, or packaged his ideas.
+
+# Terms of Service {#terms}
+Last updated: September 22, 2026. MACH RUN is a hypothetical household planning calculator. It is not a broker, bank, fiduciary, or advisor.
+
+# Accounts
+You may register with email or a sign-in provider. You are responsible for the account and for the numbers you type. Do not share your password.
+
+# Subscriptions
+Paid plans are billed by Stripe. You can cancel anytime from Manage billing. Access lasts through the paid period unless the account is closed for abuse.
+
+# Not advice
+MACH RUN does not provide financial, tax, legal, or investment advice. Projections are illustrations from the numbers you enter. See the disclaimer above.
+
+# Acceptable use
+Do not break the law, attack the service, scrape other people’s data, or overload the site. We may suspend or close accounts that abuse the service.
+
+# Your data
+See the [Privacy policy](/privacy).
+
+# Limitation
+MACH RUN is provided as-is. We are not liable for decisions you make from a calculated run or from OODA AI.
+
+# Contact
+Questions go to [Contact](/contact).`,
   },
   {
     slug: "privacy",

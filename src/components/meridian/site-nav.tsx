@@ -9,6 +9,7 @@ const LINKS = [
   { to: "/faq" as const, label: "FAQ" },
   { to: "/contact" as const, label: "Contact" },
   { to: "/privacy" as const, label: "Privacy" },
+  { to: "/legal" as const, label: "Legal" },
   { to: "/announcements" as const, label: "Features" },
   { to: "/pricing" as const, label: "Pricing" },
 ];

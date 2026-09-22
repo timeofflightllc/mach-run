@@ -15,6 +15,7 @@ import { Route as AccountRouteImport } from './routes/account'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FaqRouteImport } from './routes/faq'
+import { Route as LegalRouteImport } from './routes/legal'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as LogoDraftsRouteImport } from './routes/logo-drafts'
 import { Route as LookRouteImport } from './routes/look'
@@ -55,6 +56,11 @@ const ContactRoute = ContactRouteImport.update({
 const FaqRoute = FaqRouteImport.update({
   id: '/faq',
   path: '/faq',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalRoute = LegalRouteImport.update({
+  id: '/legal',
+  path: '/legal',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -120,6 +126,7 @@ export interface FileRoutesByFullPath {
   '/announcements': typeof AnnouncementsRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
+  '/legal': typeof LegalRoute
   '/login': typeof LoginRoute
   '/logo-drafts': typeof LogoDraftsRoute
   '/look': typeof LookRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/announcements': typeof AnnouncementsRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
+  '/legal': typeof LegalRoute
   '/login': typeof LoginRoute
   '/logo-drafts': typeof LogoDraftsRoute
   '/look': typeof LookRoute
@@ -159,6 +167,7 @@ export interface FileRoutesById {
   '/announcements': typeof AnnouncementsRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
+  '/legal': typeof LegalRoute
   '/login': typeof LoginRoute
   '/logo-drafts': typeof LogoDraftsRoute
   '/look': typeof LookRoute
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/announcements'
     | '/contact'
     | '/faq'
+    | '/legal'
     | '/login'
     | '/logo-drafts'
     | '/look'
@@ -199,6 +209,7 @@ export interface FileRouteTypes {
     | '/announcements'
     | '/contact'
     | '/faq'
+    | '/legal'
     | '/login'
     | '/logo-drafts'
     | '/look'
@@ -218,6 +229,7 @@ export interface FileRouteTypes {
     | '/announcements'
     | '/contact'
     | '/faq'
+    | '/legal'
     | '/login'
     | '/logo-drafts'
     | '/look'
@@ -238,6 +250,7 @@ export interface RootRouteChildren {
   AnnouncementsRoute: typeof AnnouncementsRoute
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
+  LegalRoute: typeof LegalRoute
   LoginRoute: typeof LoginRoute
   LogoDraftsRoute: typeof LogoDraftsRoute
   LookRoute: typeof LookRoute
@@ -293,6 +306,13 @@ declare module '@tanstack/react-router' {
       path: '/faq'
       fullPath: '/faq'
       preLoaderRoute: typeof FaqRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal': {
+      id: '/legal'
+      path: '/legal'
+      fullPath: '/legal'
+      preLoaderRoute: typeof LegalRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -382,6 +402,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnnouncementsRoute: AnnouncementsRoute,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
+  LegalRoute: LegalRoute,
   LoginRoute: LoginRoute,
   LogoDraftsRoute: LogoDraftsRoute,
   LookRoute: LookRoute,

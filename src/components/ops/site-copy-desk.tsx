@@ -32,6 +32,7 @@ const PAGE_LABEL: Record<SitePageSlug, string> = {
   faq: "FAQ",
   contact: "Contact",
   privacy: "Privacy",
+  legal: "Legal",
   announcements: "Features (header)",
   pricing: "Pricing",
   footer: "Footer content",
@@ -185,7 +186,7 @@ function FooterFields({
   return (
     <div className="mt-4 space-y-5">
       <p className="text-sm text-muted">
-        Public footer. Links stay FAQ, Pricing, and Privacy. You edit the words.
+        Calculator footer: Measure / Allocate / Compound / Harvest. Legal wall lives on Legal.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Measure (title)">
@@ -213,27 +214,6 @@ function FooterFields({
           <TextInput value={value.harvestBody} onChange={(e) => set({ harvestBody: e.target.value })} />
         </Field>
       </div>
-      <Field label="FAQ — line after the dash">
-        <Area rows={2} value={value.faqBlurb} onChange={(faqBlurb) => set({ faqBlurb })} />
-      </Field>
-      <Field label="Free vs MACH RUN paid — line after the dash">
-        <Area rows={3} value={value.paidBlurb} onChange={(paidBlurb) => set({ paidBlurb })} />
-      </Field>
-      <Field label="Privacy policy — line after the dash">
-        <Area rows={2} value={value.privacyBlurb} onChange={(privacyBlurb) => set({ privacyBlurb })} />
-      </Field>
-      <Field label="OODA AI asterisk">
-        <Area rows={3} value={value.oodaAiLine} onChange={(oodaAiLine) => set({ oodaAiLine })} />
-      </Field>
-      <Field label="Projections">
-        <Area rows={4} value={value.projections} onChange={(projections) => set({ projections })} />
-      </Field>
-      <Field label="SSA / DFAS / VA">
-        <Area rows={4} value={value.benefits} onChange={(benefits) => set({ benefits })} />
-      </Field>
-      <Field label="Boyd / OODA">
-        <Area rows={4} value={value.boyd} onChange={(boyd) => set({ boyd })} />
-      </Field>
     </div>
   );
 }
@@ -365,7 +345,7 @@ export function SiteCopyDesk() {
             ? "Pricing cards, hero, and bullets. One line per bullet."
             : footerOpen
               ? "Public footer words. Layout and links stay in code."
-              : "About, FAQ, Contact intro, Privacy, and the Features header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
+              : "About, FAQ, Contact intro, Privacy, Legal, and the Features header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
         </p>
         <div className="mt-3 inline-flex flex-wrap rounded-lg bg-elevated p-1">
           {SITE_PAGE_SLUGS.map((id) => (
