@@ -139,6 +139,9 @@ function Top3DeskDoor() {
           <Link to="/" className="inline-flex shrink-0">
             <BrandLockup framed />
           </Link>
+          <p className="min-w-0 flex-1 px-2 text-center text-[11px] font-bold leading-snug tracking-[0.12em] text-muted sm:text-xs md:text-[13px]">
+            The Supersonic Retirement Calculator
+          </p>
           <p className="font-display text-xl tracking-[0.08em] text-fg sm:text-2xl">
             Top 3 Desk
           </p>

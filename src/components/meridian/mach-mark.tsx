@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
-import { SiteNav } from "@/components/meridian/site-nav";
+import { SiteMenu, SiteNav } from "@/components/meridian/site-nav";
 import { loadPublicSiteCopy } from "@/lib/site-copy/api";
 import {
   DEFAULT_FOOTER_COPY,
@@ -85,6 +85,29 @@ export function BrandLockup({
         </span>
       ) : null}
     </span>
+  );
+}
+
+/** Top bar on every page except the calculator. */
+export function PageMast() {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <Link to="/" className="inline-block shrink-0 opacity-90 hover:opacity-100">
+        <BrandLockup framed />
+      </Link>
+      <p className="min-w-0 flex-1 px-2 text-center text-[11px] font-bold leading-snug tracking-[0.12em] text-muted sm:text-xs md:text-[13px]">
+        The Supersonic Retirement Calculator
+      </p>
+      <div className="flex shrink-0 items-center gap-1">
+        <SiteMenu align="right" />
+        <Link
+          to="/"
+          className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+        >
+          Home
+        </Link>
+      </div>
+    </div>
   );
 }
 

@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { BrandLockup, MachFooter } from "@/components/meridian/mach-mark";
-import { SiteMenu } from "@/components/meridian/site-nav";
+import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { PrimaryButton, TextInput } from "@/components/ui/field";
 import { peekPromoCode, startBillingPortal, startCheckout } from "@/lib/billing/api";
 import {
@@ -257,20 +256,7 @@ function Pricing() {
   return (
     <main className="min-h-screen bg-bg px-4 py-10 text-fg">
       <div className="mx-auto w-full max-w-7xl">
-        <div className="flex items-start justify-between gap-4">
-          <Link to="/" className="inline-block opacity-90 hover:opacity-100">
-            <BrandLockup framed />
-          </Link>
-          <div className="mt-1 flex shrink-0 items-center gap-1">
-            <SiteMenu align="right" />
-            <Link
-              to="/"
-              className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
-            >
-              Home
-            </Link>
-          </div>
-        </div>
+        <PageMast />
 
         <header className="mt-10 max-w-[50.5rem]">
           <h1 className="font-display text-4xl leading-tight text-fg sm:text-5xl">

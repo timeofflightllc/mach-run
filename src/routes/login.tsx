@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { GROK_PROVIDERS, appleSignInEnabled, authClient, authEnabled, signIn, signInWithApple } from "@/lib/auth/client";
-import { BrandLockup, MachFooter } from "@/components/meridian/mach-mark";
-import { SiteMenu } from "@/components/meridian/site-nav";
+import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { TurnstileBox, turnstileEnabled } from "@/components/auth/turnstile-box";
 import { startPendingSignup } from "@/lib/auth/pending-signup-api";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
@@ -70,27 +69,16 @@ function Login() {
   }
 
   return (
-    <main className="relative flex min-h-screen flex-col bg-bg px-4 py-12 text-fg">
-      <div className="absolute right-4 top-10 flex items-center gap-1">
-        <SiteMenu align="right" />
-        <Link
-          to="/"
-          className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
-        >
-          Home
-        </Link>
+    <main className="relative flex min-h-screen flex-col bg-bg px-4 py-10 text-fg">
+      <div className="mx-auto w-full max-w-7xl">
+        <PageMast />
       </div>
       <div className="flex flex-1 items-center justify-center">
       <div className="w-full max-w-lg space-y-8">
-        <div className="flex flex-col items-center text-center">
-          <Link to="/" className="inline-flex justify-center">
-            <BrandLockup size="lg" framed />
-          </Link>
-          <p className="mt-4 max-w-md text-center text-base leading-relaxed text-muted sm:text-lg">
-            Free to use with limits. Unlimited is a monthly hop. Pay
-            for a year, we throw in two months.
-          </p>
-        </div>
+        <p className="text-center text-base leading-relaxed text-muted sm:text-lg">
+          Free to use with limits. Unlimited is a monthly hop. Pay
+          for a year, we throw in two months.
+        </p>
 
         <div className="space-y-6 rounded-2xl bg-surface p-6 shadow-[0_0_0_1px_var(--color-border)] sm:p-8">
           <div className="flex rounded-lg bg-bg p-1 shadow-[0_0_0_1px_var(--color-border)]">

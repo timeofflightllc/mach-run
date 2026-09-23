@@ -1,6 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { BrandLockup, MachFooter } from "@/components/meridian/mach-mark";
+import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import { authClient } from "@/lib/auth/client";
 import {
@@ -148,14 +148,12 @@ function VerifyEmail() {
   const inbox = waitingOnPending ? pendingEmail : (user?.primaryEmail ?? "your inbox");
 
   return (
-    <main className="flex min-h-screen flex-col bg-bg px-4 py-12 text-fg">
+    <main className="flex min-h-screen flex-col bg-bg px-4 py-10 text-fg">
+      <div className="mx-auto w-full max-w-7xl">
+        <PageMast />
+      </div>
       <div className="flex flex-1 items-center justify-center">
       <div className="w-full max-w-lg space-y-8">
-        <div className="flex flex-col items-center text-center">
-          <Link to="/" className="inline-flex justify-center">
-            <BrandLockup size="lg" framed />
-          </Link>
-        </div>
         <form
           onSubmit={(e) => void onSubmit(e)}
           className="space-y-5 rounded-2xl bg-surface p-6 shadow-[0_0_0_1px_var(--color-border)] sm:p-8"
