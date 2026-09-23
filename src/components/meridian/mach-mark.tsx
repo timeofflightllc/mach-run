@@ -113,14 +113,34 @@ export function PageMast() {
 
 function CopyrightLine() {
   return (
-    <p className="text-sm text-muted">Copyright © Time of Flight LLC dba Mach Run.com</p>
+    <p className="mt-1 border-t border-border pt-4 text-center text-[11px] leading-snug text-muted">
+      Copyright © Time of Flight LLC dba Mach Run.com
+    </p>
+  );
+}
+
+function MachSteps({ copy }: { copy: FooterCopy }) {
+  const steps = [
+    [copy.measureTitle, copy.measureBody],
+    [copy.allocateTitle, copy.allocateBody],
+    [copy.compoundTitle, copy.compoundBody],
+    [copy.harvestTitle, copy.harvestBody],
+  ] as const;
+  return (
+    <dl className="grid grid-cols-1 gap-4 text-sm text-muted sm:grid-cols-2 md:grid-cols-4 md:gap-6">
+      {steps.map(([title, body]) => (
+        <div key={title}>
+          <dt className="font-medium text-fg">{title}</dt>
+          <dd className="mt-0.5">{body}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
 export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }) {
   const [copy, setCopy] = useState<FooterCopy>(DEFAULT_FOOTER_COPY);
   useEffect(() => {
-    if (variant !== "full") return;
     let live = true;
     void loadPublicSiteCopy()
       .then((site) => {
@@ -132,7 +152,7 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
     return () => {
       live = false;
     };
-  }, [variant]);
+  }, []);
 
   if (variant === "short") {
     return (
@@ -148,6 +168,7 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
             </Link>
             <SiteNav tone="page" className="min-w-0 max-w-[72%] justify-end" />
           </div>
+          <MachSteps copy={copy} />
           <CopyrightLine />
         </div>
       </footer>
@@ -161,24 +182,7 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
           <BrandLockup size="lg" framed />
           <SiteNav className="text-base" />
         </div>
-        <dl className="grid grid-cols-1 gap-4 text-sm text-muted md:grid-cols-4 md:gap-6">
-          <div>
-            <dt className="font-medium text-fg">{copy.measureTitle}</dt>
-            <dd className="mt-0.5">{copy.measureBody}</dd>
-          </div>
-          <div>
-            <dt className="font-medium text-fg">{copy.allocateTitle}</dt>
-            <dd className="mt-0.5">{copy.allocateBody}</dd>
-          </div>
-          <div>
-            <dt className="font-medium text-fg">{copy.compoundTitle}</dt>
-            <dd className="mt-0.5">{copy.compoundBody}</dd>
-          </div>
-          <div>
-            <dt className="font-medium text-fg">{copy.harvestTitle}</dt>
-            <dd className="mt-0.5">{copy.harvestBody}</dd>
-          </div>
-        </dl>
+        <MachSteps copy={copy} />
         <div className="w-full space-y-2 text-xs leading-relaxed text-subtle">
           <p>
             <Link

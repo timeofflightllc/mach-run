@@ -2,11 +2,11 @@ import type { FooterCopy, SiteCopy } from "./types";
 
 export const DEFAULT_FOOTER_COPY: FooterCopy = {
   measureTitle: "Measure",
-  measureBody: "Observe your financial starting point…",
+  measureBody: "Observe your financial starting point...",
   allocateTitle: "Allocate",
-  allocateBody: "Orient where your dollars go…",
+  allocateBody: "Orient your income and spending...",
   compoundTitle: "Compound",
-  compoundBody: "Decide to let time do the heavy lifting…",
+  compoundBody: "Decide on your contributions and compound interest...",
   harvestTitle: "Harvest",
   harvestBody: "Act on your efforts — enjoy the fruit of your labor.",
   privacyBlurb:
