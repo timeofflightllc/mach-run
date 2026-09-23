@@ -14,7 +14,7 @@ export type EmailTokens = {
   when: string;
 };
 
-export type EmailDraft = { subject: string; body: string };
+export type EmailDraft = { subject: string; body: string; footer?: string | null };
 
 type EmailDef = {
   kind: EmailKind;
@@ -23,7 +23,14 @@ type EmailDef = {
   tokens: (keyof EmailTokens)[];
   subject: string;
   body: string;
+  footer: string;
 };
+
+/** Plain-text form of the small print under Verify and First Flight today. */
+export const SIGNUP_FOOTER = [
+  "You received this email only because you signed up for MACHRUN.com. We do not buy, sell, or give away email addresses. We respect your privacy — Privacy policy: https://machrun.com/privacy",
+  "Unsubscribe opens your account profile, where you can turn off optional mail or cancel the account: https://machrun.com/account#email-preferences",
+].join("\n");
 
 const VERIFY_BODY = [
   "Hi {{first_name}},",
@@ -80,6 +87,7 @@ const DEFS: Record<EmailKind, EmailDef> = {
     tokens: ["first_name", "code", "verify_url"],
     subject: "Verify your MACH RUN email",
     body: VERIFY_BODY,
+    footer: SIGNUP_FOOTER,
   },
   first_flight: {
     kind: "first_flight",
@@ -88,6 +96,7 @@ const DEFS: Record<EmailKind, EmailDef> = {
     tokens: ["first_name"],
     subject: "MACH RUN — First Flight Checklist",
     body: FIRST_FLIGHT_BODY,
+    footer: SIGNUP_FOOTER,
   },
   owner_alert: {
     kind: "owner_alert",
@@ -96,6 +105,7 @@ const DEFS: Record<EmailKind, EmailDef> = {
     tokens: ["name", "email", "when"],
     subject: "New MACH RUN account — {{email}}",
     body: OWNER_BODY,
+    footer: "",
   },
 };
 
@@ -109,10 +119,19 @@ export function emailDef(kind: EmailKind): EmailDef {
 
 export function defaultDraft(kind: EmailKind): EmailDraft {
   const def = DEFS[kind];
-  return { subject: def.subject, body: def.body };
+  return { subject: def.subject, body: def.body, footer: def.footer };
 }
 
-export function validateEmailDraft(kind: EmailKind, subject: string, body: string): string | null {
+export function defaultFooter(kind: EmailKind): string {
+  return DEFS[kind].footer;
+}
+
+export function validateEmailDraft(
+  kind: EmailKind,
+  subject: string,
+  body: string,
+  footer = "",
+): string | null {
   const s = subject.trim();
   const b = body.trim();
   if (!s && !b) return null;
@@ -121,6 +140,7 @@ export function validateEmailDraft(kind: EmailKind, subject: string, body: strin
   }
   if (s.length > 200) return "Subject is too long.";
   if (b.length > 8000) return "Body is too long.";
+  if (footer.length > 2000) return "Footer is too long.";
   if (kind === "verify" && !/\{\{\s*code\s*\}\}/i.test(b)) {
     return "The verify email must include {{code}}.";
   }

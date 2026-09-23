@@ -91,9 +91,27 @@ export function wrapEmail(
   preheader = "Your MACH RUN account is ready. Open Family, then Accounts. Hit Calculate.",
   titleAlign: "left" | "center" = "left",
   signupWhy = false,
+  footerText?: string | null,
 ): string {
   const logo = "https://machrun.com/brand/mach-run-logo.jpg?v=21";
-  const why = signupWhy
+  const typedFooter = footerText == null ? null : footerText;
+  const customWhy =
+    typedFooter && typedFooter.trim()
+      ? `<tr>
+            <td align="center" style="padding:16px 12px 0;">
+              <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+                <tr>
+                  <td style="padding:4px 16px 8px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.55;color:#5d6c78;text-align:left;">
+                    ${escapeHtml(typedFooter).replace(/\n/g, "<br />")}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`
+      : "";
+  const why = typedFooter != null
+    ? customWhy
+    : signupWhy
     ? `<tr>
             <td align="center" style="padding:16px 12px 0;">
               <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">

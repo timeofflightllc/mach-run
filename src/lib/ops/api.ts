@@ -391,12 +391,13 @@ export const listOpsEmailCopyFn = createServerFn({ method: "POST" })
 
 export const saveOpsEmailCopyFn = createServerFn({ method: "POST" })
   .middleware([opsSessionMiddleware])
-  .validator((input: { kind?: string; subject?: string; body?: string }) => {
+  .validator((input: { kind?: string; subject?: string; body?: string; footer?: string }) => {
     const raw = asRecord(input);
     return {
       kind: String(input?.kind ?? raw.kind ?? ""),
       subject: String(input?.subject ?? raw.subject ?? ""),
       body: String(input?.body ?? raw.body ?? ""),
+      footer: String(input?.footer ?? raw.footer ?? ""),
     };
   })
   .handler(async ({ context, data }) => {
@@ -406,19 +407,20 @@ export const saveOpsEmailCopyFn = createServerFn({ method: "POST" })
     const { isEmailKind } = await import("@/lib/notify/email-copy");
     if (!isEmailKind(data.kind)) return { ok: false as const, error: "Unknown email." };
     const { saveEmailCopy } = await import("@/lib/notify/email-copy.server");
-    const result = await saveEmailCopy(data.kind, data.subject, data.body);
+    const result = await saveEmailCopy(data.kind, data.subject, data.body, data.footer);
     if (!result.ok) return { ok: false as const, error: result.reason };
     return { ok: true as const };
   });
 
 export const sendOpsEmailTestFn = createServerFn({ method: "POST" })
   .middleware([opsSessionMiddleware])
-  .validator((input: { kind?: string; subject?: string; body?: string }) => {
+  .validator((input: { kind?: string; subject?: string; body?: string; footer?: string }) => {
     const raw = asRecord(input);
     return {
       kind: String(input?.kind ?? raw.kind ?? ""),
       subject: String(input?.subject ?? raw.subject ?? ""),
       body: String(input?.body ?? raw.body ?? ""),
+      footer: String(input?.footer ?? raw.footer ?? ""),
     };
   })
   .handler(async ({ context, data }) => {
@@ -431,6 +433,7 @@ export const sendOpsEmailTestFn = createServerFn({ method: "POST" })
     const result = await sendEmailCopyTest(actor.email, data.kind, {
       subject: data.subject,
       body: data.body,
+      footer: data.footer,
     });
     if (!result.ok) return { ok: false as const, error: result.reason };
     return { ok: true as const, to: actor.email };

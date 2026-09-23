@@ -144,8 +144,11 @@ export function renderAutomatedEmail(
     shell.preheader,
     shell.align,
     shell.why,
+    draft.footer,
   );
   const subject = fillTokens(draft.subject, kind, tokens).replace(/\s+/g, " ").trim();
-  const text = fillTokens(body, kind, tokens);
+  const textBody = fillTokens(body, kind, tokens);
+  const foot = draft.footer == null ? "" : fillTokens(draft.footer, kind, tokens).trim();
+  const text = foot ? `${textBody}\n\n${foot}` : textBody;
   return { subject, html, text };
 }

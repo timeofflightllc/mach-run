@@ -9,6 +9,7 @@ type Row = {
   tokens: string[];
   subject: string;
   body: string;
+  footer: string;
   custom: boolean;
 };
 
@@ -40,7 +41,7 @@ export function EmailCopyDesk() {
     setStatus((s) => ({ ...s, [row.kind]: null }));
     try {
       const r = await saveOpsEmailCopyFn({
-        data: { kind: row.kind, subject: row.subject, body: row.body },
+        data: { kind: row.kind, subject: row.subject, body: row.body, footer: row.footer },
       });
       if (!r.ok) {
         setStatus((s) => ({ ...s, [row.kind]: r.error }));
@@ -49,7 +50,7 @@ export function EmailCopyDesk() {
       const cleared = !row.subject.trim() && !row.body.trim();
       setStatus((s) => ({
         ...s,
-        [row.kind]: cleared ? "Back to the built-in email." : "Saved. The next real send uses this.",
+        [row.kind]: cleared ? "Back to the built-in email." : "Saved. Nobody was emailed.",
       }));
       await reload();
     } catch {
@@ -64,7 +65,7 @@ export function EmailCopyDesk() {
     setStatus((s) => ({ ...s, [row.kind]: null }));
     try {
       const r = await sendOpsEmailTestFn({
-        data: { kind: row.kind, subject: row.subject, body: row.body },
+        data: { kind: row.kind, subject: row.subject, body: row.body, footer: row.footer },
       });
       if (!r.ok) {
         setStatus((s) => ({ ...s, [row.kind]: r.error }));
@@ -84,9 +85,9 @@ export function EmailCopyDesk() {
   return (
     <div className="space-y-4">
       <p className="max-w-3xl text-sm text-muted">
-        These three go out on their own. Subject and the words inside are editable. The logo,
-        colors, and buttons stay. Clear both fields and save to use the built-in email again.
-        Send test goes only to the email on this desk login.
+        These three go out on their own. Subject, body, and the footer under the card are editable.
+        The logo, colors, and buttons stay. Save does not send mail. Clear subject and body, then
+        save, to use the built-in email again. Send test goes only to the email on this desk login.
       </p>
       {rows.map((row) => (
         <section
@@ -110,6 +111,13 @@ export function EmailCopyDesk() {
                 value={row.body}
                 rows={12}
                 onChange={(e) => patch(row.kind, { body: e.target.value })}
+              />
+            </Field>
+            <Field label="Footer" hint="Small print under the card. Clear it to send with no footer.">
+              <TextArea
+                value={row.footer}
+                rows={4}
+                onChange={(e) => patch(row.kind, { footer: e.target.value })}
               />
             </Field>
             <p className="text-xs text-muted">
