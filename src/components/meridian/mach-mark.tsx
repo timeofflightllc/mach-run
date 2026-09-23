@@ -114,7 +114,7 @@ export function PageMast() {
 function CopyrightLine() {
   return (
     <p className="mt-1 border-t border-border pt-4 text-center text-[11px] leading-snug text-muted">
-      Copyright © Time of Flight LLC dba Mach Run.com
+      Copyright © MACHRUN.com
     </p>
   );
 }
