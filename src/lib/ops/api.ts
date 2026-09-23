@@ -282,6 +282,37 @@ export const sendOpsDeskMailFn = createServerFn({ method: "POST" })
     });
   });
 
+export const loadOpsMailDraftFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((_input?: unknown) => ({}))
+  .handler(async ({ context }) => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { allowed: false as const, draft: null };
+    const { readDeskMailDraft } = await import("./mail-draft.server");
+    return { allowed: true as const, draft: await readDeskMailDraft() };
+  });
+
+export const saveOpsMailDraftFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((input: { subject?: string; body?: string; footer?: string }) => {
+    const raw = asRecord(input);
+    return {
+      subject: String(input?.subject ?? raw.subject ?? ""),
+      body: String(input?.body ?? raw.body ?? ""),
+      footer: String(input?.footer ?? raw.footer ?? ""),
+    };
+  })
+  .handler(async ({ context, data }) => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { ok: false as const, error: "Not found." };
+    const { saveDeskMailDraft } = await import("./mail-draft.server");
+    const result = await saveDeskMailDraft(data);
+    if (!result.ok) return { ok: false as const, error: result.reason };
+    return { ok: true as const };
+  });
+
 export const listOpsPromosFn = createServerFn({ method: "POST" })
   .middleware([opsSessionMiddleware])
   .validator((_input?: unknown) => ({}))

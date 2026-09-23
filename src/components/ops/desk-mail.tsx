@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Field, PrimaryButton, SelectInput, TextInput } from "@/components/ui/field";
-import { listOpsRoster, sendOpsDeskMailFn } from "@/lib/ops/api";
+import { Field, GhostButton, PrimaryButton, SelectInput, TextInput } from "@/components/ui/field";
+import { listOpsRoster, loadOpsMailDraftFn, saveOpsMailDraftFn, sendOpsDeskMailFn } from "@/lib/ops/api";
 import {
   audienceLabel,
   MAIL_FOOTER_TEXT,
@@ -46,11 +46,29 @@ export function DeskMail({
   const [footer, setFooter] = useState(MAIL_FOOTER_TEXT);
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [statusLine, setStatusLine] = useState<string | null>(null);
   const [findQ, setFindQ] = useState("");
   const [findHits, setFindHits] = useState<OpsRosterRow[]>([]);
-  const [highlight, setHighlight] = useState(0);
   const [listOpen, setListOpen] = useState(false);
+  const [highlight, setHighlight] = useState(0);
+
+  useEffect(() => {
+    let live = true;
+    void loadOpsMailDraftFn({ data: {} })
+      .then((r) => {
+        if (!live || !r.allowed || !r.draft) return;
+        setSubject(r.draft.subject);
+        setBody(r.draft.body);
+        setFooter(r.draft.footer);
+      })
+      .catch(() => {
+        /* built-in copy stays */
+      });
+    return () => {
+      live = false;
+    };
+  }, []);
 
   const people = useMemo(() => {
     if (only) return peopleFromRoster([only]);
@@ -111,6 +129,23 @@ export function DeskMail({
     setFindQ("");
     setListOpen(false);
     setFindHits([]);
+  }
+
+  async function saveDraft() {
+    setSaving(true);
+    setStatusLine(null);
+    try {
+      const r = await saveOpsMailDraftFn({ data: { subject, body, footer } });
+      if (!r.ok) {
+        setStatusLine(r.error);
+        return;
+      }
+      setStatusLine("Draft saved. Nobody was emailed.");
+    } catch {
+      setStatusLine("Could not save the draft.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function send() {
@@ -325,9 +360,14 @@ export function DeskMail({
           spellCheck={false}
         />
       </Field>
-      <PrimaryButton type="button" disabled={busy || !people.length} onClick={() => void send()}>
-        {busy ? "Sending…" : toLine}
-      </PrimaryButton>
+      <div className="flex flex-wrap gap-2">
+        <GhostButton type="button" disabled={busy || saving} onClick={() => void saveDraft()}>
+          {saving ? "Saving…" : "Save draft"}
+        </GhostButton>
+        <PrimaryButton type="button" disabled={busy || saving || !people.length} onClick={() => void send()}>
+          {busy ? "Sending…" : toLine}
+        </PrimaryButton>
+      </div>
       {statusLine ? <p className="text-sm text-muted">{statusLine}</p> : null}
     </section>
   );
