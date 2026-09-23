@@ -85,7 +85,7 @@ async function sendResend(mail: {
   }
 }
 
-function wrapEmail(
+export function wrapEmail(
   innerTitle: string,
   innerHtml: string,
   preheader = "Your MACH RUN account is ready. Open Family, then Accounts. Hit Calculate.",
@@ -278,17 +278,42 @@ export function welcomeSignupEmail(notice: SignupNotice): { subject: string; htm
   return { subject, html, text };
 }
 
+export async function deliverNotify(mail: {
+  to: string[];
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<NotifyResult> {
+  return sendResend(mail);
+}
+
+async function mailed(
+  kind: "verify" | "first_flight" | "owner_alert",
+  notice: SignupNotice,
+  fallback: () => { subject: string; html: string; text: string },
+): Promise<{ subject: string; html: string; text: string }> {
+  try {
+    const { readEmailCopy } = await import("./email-copy.server");
+    const saved = await readEmailCopy(kind);
+    if (!saved) return fallback();
+    const { renderAutomatedEmail } = await import("./email-render");
+    const { tokensFromNotice } = await import("./email-copy");
+    return renderAutomatedEmail(kind, saved, tokensFromNotice(notice));
+  } catch {
+    return fallback();
+  }
+}
 export async function notifyOwnerOfSignup(notice: SignupNotice): Promise<NotifyResult> {
   const to = notifyRecipients();
   if (!to.length) return { ok: false, skipped: true, reason: "MACH_NOTIFY_EMAIL is not set." };
-  const mail = ownerSignupEmail(notice);
+  const mail = await mailed("owner_alert", notice, () => ownerSignupEmail(notice));
   return sendResend({ to, ...mail });
 }
 
 export async function sendWelcomeSignupEmail(notice: SignupNotice): Promise<NotifyResult> {
   const to = (notice.email ?? "").trim();
   if (!to) return { ok: false, skipped: true, reason: "New user has no email." };
-  const mail = welcomeSignupEmail(notice);
+  const mail = await mailed("verify", notice, () => welcomeSignupEmail(notice));
   return sendResend({ to: [to], ...mail });
 }
 
@@ -407,7 +432,7 @@ export function firstFlightEmail(notice: SignupNotice): { subject: string; html:
 export async function sendFirstFlightEmail(notice: SignupNotice): Promise<NotifyResult> {
   const to = (notice.email ?? "").trim();
   if (!to) return { ok: false, skipped: true, reason: "Verified user has no email." };
-  const mail = firstFlightEmail(notice);
+  const mail = await mailed("first_flight", notice, () => firstFlightEmail(notice));
   return sendResend({ to: [to], ...mail });
 }
 

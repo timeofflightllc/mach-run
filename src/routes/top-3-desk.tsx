@@ -5,6 +5,7 @@ import { DeskUsers } from "@/components/ops/desk-users";
 import { OpsDeleteAccount } from "@/components/ops/ops-delete-account";
 import { PromoCodesDesk } from "@/components/ops/promo-codes-desk";
 import { DeskMail } from "@/components/ops/desk-mail";
+import { EmailCopyDesk } from "@/components/ops/email-copy-desk";
 import { useEffect, useMemo, useState } from "react";
 import { Field, SelectInput, TextInput } from "@/components/ui/field";
 import {
@@ -54,7 +55,7 @@ function intervalLabel(value: OpsRosterRow["interval"]): string {
 
 function Top3DeskDoor() {
   const [gate, setGate] = useState<"wait" | "no" | "yes">("wait");
-  const [tab, setTab] = useState<"roster" | "users" | "copy" | "codes" | "mail">("roster");
+  const [tab, setTab] = useState<"roster" | "users" | "copy" | "codes" | "mail" | "emails">("roster");
   const [q, setQ] = useState("");
   const [plan, setPlan] = useState<OpsPlanFilter>("all");
   const [paid, setPaid] = useState<OpsPaidFilter>("all");
@@ -158,7 +159,9 @@ function Top3DeskDoor() {
                   ? "Referral codes. Create a code, set the window, set the offer, pick packages."
                   : tab === "mail"
                     ? "Desk mail. One template, merged per person. Roster filters choose who."
-                    : "Roster. Packages only — no household numbers."}
+                    : tab === "emails"
+                      ? "Automated mail. Verify, first flight, and the owner alert."
+                      : "Roster. Packages only — no household numbers."}
           </p>
           <p className="mt-3 max-w-3xl text-xs text-subtle">
             Vercel Deployment Protection password: Preview deployments only. Never on
@@ -166,7 +169,7 @@ function Top3DeskDoor() {
           </p>
         </header>
 
-        <div className="flex max-w-2xl rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+        <div className="flex max-w-4xl rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
           {(
             [
               ["roster", "Roster"],
@@ -174,6 +177,7 @@ function Top3DeskDoor() {
               ["copy", "Copy"],
               ["codes", "Codes"],
               ["mail", "Mail"],
+              ["emails", "Emails"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -193,6 +197,7 @@ function Top3DeskDoor() {
         {tab === "users" ? <DeskUsers /> : null}
         {tab === "copy" ? <SiteCopyDesk /> : null}
         {tab === "codes" ? <PromoCodesDesk /> : null}
+        {tab === "emails" ? <EmailCopyDesk /> : null}
         {tab === "mail" ? (
           <DeskMail
             q={q}

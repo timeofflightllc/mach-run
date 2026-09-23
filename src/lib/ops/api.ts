@@ -347,3 +347,61 @@ export const setOpsPromoActiveFn = createServerFn({ method: "POST" })
     return setPromoActive(actor, data.code, data.active);
   });
 
+export const listOpsEmailCopyFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((_input?: unknown) => ({}))
+  .handler(async ({ context }) => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { allowed: false as const, rows: [] };
+    const { listEmailCopy } = await import("@/lib/notify/email-copy.server");
+    return { allowed: true as const, rows: await listEmailCopy() };
+  });
+
+export const saveOpsEmailCopyFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((input: { kind?: string; subject?: string; body?: string }) => {
+    const raw = asRecord(input);
+    return {
+      kind: String(input?.kind ?? raw.kind ?? ""),
+      subject: String(input?.subject ?? raw.subject ?? ""),
+      body: String(input?.body ?? raw.body ?? ""),
+    };
+  })
+  .handler(async ({ context, data }) => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { ok: false as const, error: "Not found." };
+    const { isEmailKind } = await import("@/lib/notify/email-copy");
+    if (!isEmailKind(data.kind)) return { ok: false as const, error: "Unknown email." };
+    const { saveEmailCopy } = await import("@/lib/notify/email-copy.server");
+    const result = await saveEmailCopy(data.kind, data.subject, data.body);
+    if (!result.ok) return { ok: false as const, error: result.reason };
+    return { ok: true as const };
+  });
+
+export const sendOpsEmailTestFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((input: { kind?: string; subject?: string; body?: string }) => {
+    const raw = asRecord(input);
+    return {
+      kind: String(input?.kind ?? raw.kind ?? ""),
+      subject: String(input?.subject ?? raw.subject ?? ""),
+      body: String(input?.body ?? raw.body ?? ""),
+    };
+  })
+  .handler(async ({ context, data }) => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { ok: false as const, error: "Not found." };
+    const { isEmailKind } = await import("@/lib/notify/email-copy");
+    if (!isEmailKind(data.kind)) return { ok: false as const, error: "Unknown email." };
+    const { sendEmailCopyTest } = await import("@/lib/notify/email-copy.server");
+    const result = await sendEmailCopyTest(actor.email, data.kind, {
+      subject: data.subject,
+      body: data.body,
+    });
+    if (!result.ok) return { ok: false as const, error: result.reason };
+    return { ok: true as const, to: actor.email };
+  });
+
