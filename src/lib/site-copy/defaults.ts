@@ -10,7 +10,7 @@ export const PINNED_ANNOUNCEMENTS: SiteAnnouncement[] = [
     at: "2026-09-23",
     title: "One short footer, except on Act",
     blurb:
-      "About, Method, Features, Pricing, FAQ, and Contact share the short MACH footer: page links, Measure through Harvest, then Privacy and Legal above the copyright. Act keeps the full legal footer.",
+      "About, Method, Pricing, FAQ, Updates, and Contact share the short MACH footer: page links, Measure through Harvest, then Privacy and Legal above the copyright. Act keeps the full legal footer.",
     sortOrder: 0,
   },
   {
@@ -42,7 +42,7 @@ It was built by a retired U.S. Air Force fighter pilot who wanted one place to s
 
 Free gets you in the cockpit with limits. Paid plans unlock the full ledger, Net Worth, encrypted backups, and OODA AI. None of it is financial, tax, legal, or investment advice. It is a planning sketch from the numbers you type.
 
-Questions, a bug, or a feature you want on the jet — [Contact](/contact). What shipped recently lives on [Features](/announcements). Common how-to lives on [FAQ](/faq).`,
+Questions, a bug, or a feature you want on the jet — [Contact](/contact). What shipped recently lives on [Updates](/announcements). Common how-to lives on [FAQ](/faq).`,
   },
   {
     slug: "method",
@@ -233,7 +233,7 @@ If this policy changes in a material way, we will update this page and the date 
   },
   {
     slug: "announcements",
-    title: "Feature announcements",
+    title: "Updates",
     kicker: "Ten newest ships on this page. Older notes sit behind a month.",
     body: "",
   },

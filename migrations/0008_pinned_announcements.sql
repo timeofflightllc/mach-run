@@ -28,7 +28,7 @@ select
   'feat-2026-09-23-footer',
   '2026-09-23',
   'One short footer, except on Act',
-  'About, Method, Features, Pricing, FAQ, and Contact share the short MACH footer: page links, Measure through Harvest, then Privacy and Legal above the copyright. Act keeps the full legal footer.',
+  'About, Method, Pricing, FAQ, Updates, and Contact share the short MACH footer: page links, Measure through Harvest, then Privacy and Legal above the copyright. Act keeps the full legal footer.',
   coalesce((select max(sort_order) from mach_announcements), 0) + 1
 where exists (select 1 from mach_announcements)
   and not exists (
