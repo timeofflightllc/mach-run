@@ -188,8 +188,35 @@
   animation: mach-run-pulse 1.15s ease-in-out infinite;
 }
 
+.mach-run-dots {
+  display: inline-block;
+  width: 1.7em;
+  text-align: left;
+}
+
+.mach-run-dots::after {
+  content: ".";
+  animation: mach-run-dots 1.2s steps(1, end) infinite;
+}
+
+@keyframes mach-run-dots {
+  0% {
+    content: ".";
+  }
+  34% {
+    content: "..";
+  }
+  67% {
+    content: "...";
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mach-run-pulse {
+    animation: none;
+  }
+  .mach-run-dots::after {
+    content: "...";
     animation: none;
   }
 }

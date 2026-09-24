@@ -305,6 +305,14 @@ function Home() {
       clearStoredRun(key);
     }
     goStep(next);
+    const toTop = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+    toTop();
+    window.requestAnimationFrame(toTop);
+    window.setTimeout(toTop, 320);
   }
 
   function goStep(next: StepId) {
@@ -708,7 +716,9 @@ function Home() {
                 height={428}
                 className="mach-run-pulse w-[16rem] max-w-full"
               />
-              <p className="mt-6 font-display text-2xl text-fg">MACH RUN in progress.</p>
+              <p className="mt-6 font-display text-2xl text-fg" aria-label="MACH RUN in progress.">
+                MACH RUN in progress<span className="mach-run-dots" aria-hidden="true" />
+              </p>
               <p className="mt-2 text-sm text-muted">Kicking the tires and lighting the fires.</p>
             </div>
           ) : sim ? (
@@ -818,7 +828,14 @@ function Home() {
             <span />
           )}
           {shownIndex >= 0 && shownIndex < route.length - 1 ? (
-            <PrimaryButton onClick={onNext}>Next</PrimaryButton>
+            <PrimaryButton
+              onClick={(e) => {
+                e.currentTarget.blur();
+                onNext();
+              }}
+            >
+              Next
+            </PrimaryButton>
           ) : null}
         </div>
       </main>
