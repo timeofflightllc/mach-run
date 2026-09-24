@@ -1,5 +1,5 @@
 import type { Plan } from "./types";
-import { coerceIsoDate } from "./dates.ts";
+import { coerceIsoDate, todayIso, validIso } from "./dates.ts";
 
 /**
  * Blank household. Observe accounts, income stages, and contribution rules
@@ -11,7 +11,7 @@ export function createDefaultPlan(): Plan {
     spouse: { name: "", birthDate: "" },
     children: [],
     assumptions: {
-      asOfDate: "2026-08-01",
+      asOfDate: todayIso(),
       inflationPct: 2.5,
       defaultColaPct: 2.5,
       defaultReturnPct: 7,
@@ -64,7 +64,10 @@ export function ensurePlan(plan: Plan): Plan {
     incomes: Array.isArray(plan.incomes) ? plan.incomes : [],
     spending: Array.isArray(plan.spending) ? plan.spending : [],
   };
-  const asOf = next.assumptions?.asOfDate ?? "2026-08-01";
+  if (!validIso(next.assumptions?.asOfDate)) {
+    next.assumptions = { ...next.assumptions, asOfDate: todayIso() };
+  }
+  const asOf = next.assumptions.asOfDate;
   next.incomes = next.incomes.map((s) => ({
     ...s,
     startDate: coerceIsoDate(s.startDate) || s.startDate || asOf,

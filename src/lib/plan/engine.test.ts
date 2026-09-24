@@ -341,6 +341,7 @@ test("percent-of-income contribution plus employer match", () => {
 test("percent contribution and match end when the income ends", () => {
   const plan = createDefaultPlan();
   plan.primary.birthDate = "1970-01-01";
+  plan.assumptions.asOfDate = "2026-08-01";
   plan.assumptions.ordinaryTaxRatePct = 0;
   plan.assumptions.inflationPct = 0;
   plan.assumptions.defaultReturnPct = 0;

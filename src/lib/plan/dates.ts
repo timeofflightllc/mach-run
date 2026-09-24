@@ -1,4 +1,5 @@
 import {
+  addDays,
   addMonths,
   addYears,
   differenceInMonths,
@@ -49,6 +50,23 @@ export function formatMonthYear(isoDate: string | null | undefined): string {
 
 export function iso(d: Date): string {
   return format(d, "yyyy-MM-dd");
+}
+
+/** The calendar day after a stored date. Empty if the date is not usable. */
+export function dayAfter(isoDate: string | null | undefined): string {
+  if (!isoDate || !validIso(isoDate)) return "";
+  return iso(addDays(parseDate(isoDate), 1));
+}
+
+/** Local calendar date. A new MACH RUN starts here. */
+export function todayIso(): string {
+  return iso(new Date());
+}
+
+export function longDate(isoDate: string): string {
+  const d = parseDate(isoDate);
+  if (Number.isNaN(d.getTime())) return isoDate;
+  return format(d, "MMMM d, yyyy");
 }
 
 export function monthStart(isoDate: string): Date {

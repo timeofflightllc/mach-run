@@ -170,6 +170,28 @@
   animation: master-caution-flash 1.8s ease-in-out infinite;
 }
 
+@keyframes mach-run-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(1.045);
+  }
+}
+
+.mach-run-pulse {
+  animation: mach-run-pulse 1.15s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mach-run-pulse {
+    animation: none;
+  }
+}
+
 /* Yearly Ledger: collapse kills sticky <th> in Chrome/Safari. */
 .ledger-table {
   border-collapse: separate;

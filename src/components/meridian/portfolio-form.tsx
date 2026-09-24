@@ -76,7 +76,7 @@ export function PortfolioForm() {
             key={p.id}
             className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
           >
-            <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="mb-2 flex items-center gap-2">
               <TextInput
                 value={p.name}
                 onChange={(e) => updatePortfolio(p.id, { name: e.target.value })}

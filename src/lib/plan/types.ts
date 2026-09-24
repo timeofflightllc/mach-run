@@ -165,6 +165,8 @@ export interface SpendingPhase {
 
 export interface Assumptions {
   asOfDate: string;
+  /** True after the user sets As-of by hand. Later edits leave that date alone. */
+  asOfPinned?: boolean;
   inflationPct: number;
   /** Default COLA on incomes unless a stream sets its own colaPct. */
   defaultColaPct: number;

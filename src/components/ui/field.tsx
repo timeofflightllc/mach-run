@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { coerceIsoDate } from "@/lib/plan/dates";
 
 const controlClass =
-  "h-11 w-full min-w-0 rounded-lg border border-border bg-elevated px-3 text-sm text-fg tabular-nums outline-none transition-[box-shadow,border-color] duration-150 placeholder:text-subtle focus:border-accent/40 focus:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] disabled:opacity-50";
+  "h-11 w-full max-w-[20rem] min-w-0 rounded-lg border border-border bg-elevated px-3 text-sm text-fg tabular-nums outline-none transition-[box-shadow,border-color] duration-150 placeholder:text-subtle focus:border-accent/40 focus:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] disabled:opacity-50";
 
 export function Field({
   label,

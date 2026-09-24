@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AuthSlot } from "@/components/meridian/auth-slot";
 import { ProfileSwitcher } from "@/components/meridian/profile-switcher";
 import { MACH_RESET_BASELINE } from "@/components/meridian/account-menu";
@@ -14,7 +14,7 @@ import { PortfolioForm } from "@/components/meridian/portfolio-form";
 import { LiabilityForm } from "@/components/meridian/liability-form";
 import { PeerBriefCard } from "@/components/meridian/peer-brief";
 import { OodaAiCard } from "@/components/meridian/ooda-ai";
-import { Section, SectionFoldToggle, collapseAllOodSections } from "@/components/meridian/section";
+import { Section, collapseAllOodSections } from "@/components/meridian/section";
 import { SiteMenu } from "@/components/meridian/site-nav";
 import { SpendingForm } from "@/components/meridian/spending-form";
 import { Verdict } from "@/components/meridian/verdict";
@@ -40,6 +40,7 @@ import {
 import { cn } from "@/lib/utils";
 import { WelcomeEmailPreviewOverlay } from "@/components/meridian/welcome-email-preview";
 import { EmailVerifyBanner } from "@/components/meridian/email-verify-banner";
+import { GhostButton, PrimaryButton } from "@/components/ui/field";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -76,11 +77,23 @@ function ActChartColumn({ plan, sim }: { plan: Plan; sim: SimResult }) {
   );
 }
 
-const LOOP = [
-  { id: "ooda-observe", label: "Observe" },
-  { id: "ooda-orient", label: "Orient" },
-  { id: "ooda-decide", label: "Decide" },
-  { id: "ooda-act", label: "Act" },
+const PAGES = [
+  { id: "family", phase: "observe" },
+  { id: "assets", phase: "observe" },
+  { id: "liabilities", phase: "observe" },
+  { id: "income", phase: "orient" },
+  { id: "spending", phase: "orient" },
+  { id: "contributions", phase: "decide" },
+  { id: "act", phase: "act" },
+] as const;
+
+type StepId = (typeof PAGES)[number]["id"];
+
+const PHASES = [
+  { id: "observe", label: "Observe", page: "family" },
+  { id: "orient", label: "Orient", page: "income" },
+  { id: "decide", label: "Decide", page: "contributions" },
+  { id: "act", label: "Act", page: "act" },
 ] as const;
 
 function PhaseLabel({
@@ -112,43 +125,8 @@ function ActPhase() {
       className="scroll-mt-40 font-display text-lg font-semibold tracking-[0.18em] text-muted sm:text-xl"
     >
       <span className="uppercase">Act</span>
-      {" — MachRun"}
     </p>
   );
-}
-
-function scrollParent(el: HTMLElement): HTMLElement | null {
-  let n: HTMLElement | null = el.parentElement;
-  while (n && n !== document.body) {
-    const s = getComputedStyle(n);
-    if (/(auto|scroll)/.test(s.overflowY) && n.scrollHeight > n.clientHeight + 4) {
-      return n;
-    }
-    n = n.parentElement;
-  }
-  return null;
-}
-
-function jumpToPhase(id: string) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const header = document.getElementById("mach-header");
-  const headerH =
-    header instanceof HTMLElement ? header.getBoundingClientRect().height : 0;
-  const gap = 16;
-  const parent = scrollParent(el);
-  if (parent) {
-    const parentRect = parent.getBoundingClientRect();
-    const elRect = el.getBoundingClientRect();
-    const pad = Math.max(gap, headerH - parentRect.top + gap);
-    parent.scrollTo({
-      top: Math.max(0, parent.scrollTop + (elRect.top - parentRect.top) - pad),
-      behavior: "smooth",
-    });
-    return;
-  }
-  const y = window.scrollY + el.getBoundingClientRect().top - headerH - gap;
-  window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
 }
 
 function Home() {
@@ -158,9 +136,29 @@ function Home() {
   const { user, isPending } = useCurrentUserState();
   const signedIn = Boolean(user?.id);
   const ent = useEntitlement();
-  const [tab, setTab] = useState<"act" | "loop">("loop");
-  const [activePhase, setActivePhase] = useState<string | null>(null);
-  const [pendingPhase, setPendingPhase] = useState<string | null>(null);
+  const [step, setStep] = useState<StepId>("family");
+  const sheet = hasBalanceSheet(ent.plan);
+  const route = PAGES.filter((page) => page.id !== "liabilities" || sheet);
+  const stepIndex = route.findIndex((item) => item.id === step);
+  const [motion, setMotion] = useState<{
+    from: StepId;
+    to: StepId;
+    dir: 1 | -1;
+    on: boolean;
+  } | null>(null);
+  const [frameHeight, setFrameHeight] = useState<number | null>(null);
+  const panelRefs = useRef<Partial<Record<StepId, HTMLDivElement | null>>>({});
+  const holdTimer = useRef<number | null>(null);
+  const holdGen = useRef(0);
+  const [holding, setHolding] = useState(false);
+  useEffect(() => {
+    return () => {
+      if (holdTimer.current) window.clearTimeout(holdTimer.current);
+    };
+  }, []);
+  const shown = motion?.to ?? step;
+  const shownIndex = route.findIndex((item) => item.id === shown);
+  const shownPhase = PAGES.find((page) => page.id === shown)?.phase ?? "observe";
   const [runError, setRunError] = useState<string | null>(null);
   const activeProfileId = useProfileStore((s) => s.activeId);
   const runKey = activeProfileId || "local";
@@ -252,18 +250,6 @@ function Home() {
     return () => ro.disconnect();
   }, []);
 
-  useEffect(() => {
-    if (!pendingPhase) return;
-    if (pendingPhase === "ooda-act" && tab !== "act") return;
-    if (pendingPhase !== "ooda-act" && tab !== "loop") return;
-    const id = pendingPhase;
-    const t = window.setTimeout(() => {
-      jumpToPhase(id);
-      setPendingPhase(null);
-    }, 40);
-    return () => window.clearTimeout(t);
-  }, [pendingPhase, tab]);
-
   const displayPlan = run
     ? {
         ...run.plan,
@@ -272,6 +258,10 @@ function Home() {
     : plan;
   const sim = run?.sim;
   const real = plan.assumptions.dollars === "real";
+
+  useEffect(() => {
+    if (step === "liabilities" && !sheet) setStep("assets");
+  }, [step, sheet]);
 
   useEffect(() => {
     setRunError(null);
@@ -286,6 +276,62 @@ function Home() {
     });
   }, [ent.paid, runKey]);
 
+  function goStep(next: StepId) {
+    if (next === step || motion) return;
+    const nextIndex = route.findIndex((item) => item.id === next);
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (nextIndex < 0) return;
+    if (reduce) {
+      setStep(next);
+      return;
+    }
+    setFrameHeight(panelRefs.current[step]?.offsetHeight ?? null);
+    setMotion({
+      from: step,
+      to: next,
+      dir: nextIndex > stepIndex ? 1 : -1,
+      on: false,
+    });
+  }
+
+  const slideKey = motion ? `${motion.from}>${motion.to}` : "";
+  useEffect(() => {
+    if (!motion || motion.on) return;
+    const from = motion.from;
+    const to = motion.to;
+    const fromEl = panelRefs.current[from];
+    const toEl = panelRefs.current[to];
+    const h = Math.max(fromEl?.offsetHeight ?? 0, toEl?.offsetHeight ?? 0);
+    if (h) setFrameHeight(h);
+    let timeout = 0;
+    let inner = 0;
+    let cancelled = false;
+    const raf = window.requestAnimationFrame(() => {
+      inner = window.requestAnimationFrame(() => {
+        if (cancelled) return;
+        setMotion((current) =>
+          current && current.from === from && current.to === to && !current.on
+            ? { ...current, on: true }
+            : current,
+        );
+        timeout = window.setTimeout(() => {
+          if (cancelled) return;
+          setStep(to);
+          setMotion(null);
+          setFrameHeight(null);
+        }, 250);
+      });
+    });
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(raf);
+      window.cancelAnimationFrame(inner);
+      window.clearTimeout(timeout);
+    };
+  }, [slideKey]);
+
   async function calculate(opts?: { stay?: boolean }) {
     try {
       setRunError(null);
@@ -296,18 +342,40 @@ function Home() {
       const nextSim = simulate(snapshot);
       const brief = buildPeerBrief(snapshot, nextSim, { expanded: Boolean(ent.paid) });
       const runId = Date.now();
-      setRuns((prev) => ({
-        ...prev,
-        [key]: {
-          id: runId,
-          plan: snapshot,
-          sim: { ...nextSim, months: [] },
-          brief,
-        },
-      }));
-      saveStoredRun(key, { id: runId, plan: snapshot });
-      setTab("act");
-      if (!opts?.stay) setPendingPhase("ooda-act");
+      const nextRun = {
+        id: runId,
+        plan: snapshot,
+        sim: { ...nextSim, months: [] },
+        brief,
+      };
+      holdGen.current += 1;
+      const gen = holdGen.current;
+      if (holdTimer.current) window.clearTimeout(holdTimer.current);
+      setHolding(true);
+      if (!opts?.stay) goStep("act");
+      let expanded: PeerBrief | null = null;
+      void getEntitlement()
+        .then((liveEnt) => {
+          if (!liveEnt?.paid) return;
+          expanded = buildPeerBrief(snapshot, nextSim, { expanded: true });
+          setRuns((prev) => {
+            const cur = prev[key];
+            if (!cur || cur.id !== runId || cur.brief.expanded) return prev;
+            return { ...prev, [key]: { ...cur, brief: expanded as PeerBrief } };
+          });
+        })
+        .catch(() => {
+          /* keep hook entitlement */
+        });
+      holdTimer.current = window.setTimeout(() => {
+        if (holdGen.current !== gen) return;
+        setRuns((prev) => ({
+          ...prev,
+          [key]: expanded ? { ...nextRun, brief: expanded } : nextRun,
+        }));
+        saveStoredRun(key, { id: runId, plan: snapshot });
+        setHolding(false);
+      }, 3000);
       void saveNow(snapshot);
       try {
         const { pingActivity } = await import("@/lib/ops/activity-api");
@@ -317,20 +385,10 @@ function Home() {
       } catch {
         /* activity is optional */
       }
-      void getEntitlement()
-        .then((liveEnt) => {
-          if (!liveEnt?.paid) return;
-          const expanded = buildPeerBrief(snapshot, nextSim, { expanded: true });
-          setRuns((prev) => {
-            const cur = prev[key];
-            if (!cur?.brief || cur.brief.expanded) return prev;
-            return { ...prev, [key]: { ...cur, brief: expanded } };
-          });
-        })
-        .catch(() => {
-          /* keep hook entitlement */
-        });
     } catch (err) {
+      holdGen.current += 1;
+      if (holdTimer.current) window.clearTimeout(holdTimer.current);
+      setHolding(false);
       console.error("MACH Run calculate failed", err);
       setRunError(
         err instanceof Error ? err.message : "Calculate failed. Check the numbers and try again.",
@@ -338,11 +396,34 @@ function Home() {
     }
   }
 
-  function goPhase(id: string) {
-    setActivePhase(id);
-    setTab(id === "ooda-act" ? "act" : "loop");
-    setPendingPhase(id);
+  function pane(id: StepId, idle: string): {
+    className: string;
+    style?: { transform: string; transition: string };
+    hidden: boolean;
+  } {
+    if (!motion || (id !== motion.from && id !== motion.to)) {
+      const visible = step === id;
+      return { className: visible ? idle : "hidden", hidden: !visible };
+    }
+    const fromX = motion.on ? (motion.dir === 1 ? "-100%" : "100%") : "0%";
+    const toX = motion.on ? "0%" : motion.dir === 1 ? "100%" : "-100%";
+    return {
+      className: cn(idle, "absolute inset-x-0 top-0 w-full"),
+      style: {
+        transform: `translateX(${id === motion.from ? fromX : toX})`,
+        transition: motion.on ? "transform 250ms ease" : "none",
+      },
+      hidden: false,
+    };
   }
+
+  const familyPane = pane("family", "flex flex-col gap-3");
+  const assetsPane = pane("assets", "flex flex-col gap-3");
+  const liabilitiesPane = pane("liabilities", "flex flex-col gap-3");
+  const incomePane = pane("income", "flex flex-col gap-3");
+  const spendingPane = pane("spending", "flex flex-col gap-3");
+  const contributionsPane = pane("contributions", "flex flex-col gap-3");
+  const actPane = pane("act", "flex min-w-0 flex-col gap-4");
 
   return (
     <div className="min-h-screen bg-bg text-fg">
@@ -385,7 +466,7 @@ function Home() {
               <ProfileSwitcher ent={ent} />
               <AuthSlot saved={saveStatus} />
             </div>
-            <p className="min-w-0 text-left text-[11px] font-bold leading-snug tracking-[0.12em] text-muted sm:text-xs md:text-[13px]">
+            <p className="w-[7.5rem] min-w-0 whitespace-normal text-left text-[11px] font-bold leading-snug tracking-[0.04em] text-muted sm:w-[12.5rem] sm:text-xs sm:tracking-[0.08em] md:w-auto md:whitespace-nowrap md:text-[13px] md:tracking-[0.12em]">
               The Supersonic Retirement Calculator
             </p>
             <div className="flex items-center justify-end gap-1 md:hidden">
@@ -417,31 +498,22 @@ function Home() {
             </div>
           </div>
         </div>
-        <nav
-          aria-label="OODA loop"
-          className="page-gutter mx-auto flex max-w-none items-center justify-center gap-1 overflow-x-auto pb-3"
-        >
-          {LOOP.map((phase, i) => (
-            <span key={phase.id} className="flex items-center gap-1">
-              {i > 0 ? (
-                <span className="px-1 text-xs text-subtle" aria-hidden>
-                  ·
-                </span>
-              ) : null}
+        <nav aria-label="OODA loop" className="page-gutter mx-auto max-w-none pb-3">
+          <div className="mx-auto flex max-w-3xl rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+            {PHASES.map((item) => (
               <button
+                key={item.id}
                 type="button"
-                onClick={() => goPhase(phase.id)}
+                onClick={() => goStep(item.page)}
                 className={cn(
-                  "relative z-30 inline-flex h-9 items-center px-1.5 text-xs font-medium uppercase tracking-[0.16em] underline-offset-[5px]",
-                  activePhase === phase.id
-                    ? "text-fg underline decoration-fg"
-                    : "text-fg/85 underline decoration-fg/40 hover:text-fg hover:decoration-fg",
+                  "h-11 flex-1 whitespace-nowrap rounded-md px-0.5 text-[10px] font-medium uppercase tracking-[0.04em] sm:px-1 sm:text-xs sm:tracking-[0.08em] md:text-sm md:tracking-[0.14em]",
+                  shownPhase === item.id ? "bg-accent text-accent-fg" : "text-muted",
                 )}
               >
-                {phase.label}
+                {item.label}
               </button>
-            </span>
-          ))}
+            ))}
+          </div>
         </nav>
         <GuestOnly>
           <div
@@ -452,10 +524,8 @@ function Home() {
             }}
           >
             <p className="page-gutter mx-auto max-w-none text-sm font-bold leading-relaxed text-fg">
-              Get started — open Family, then Accounts. Continue down the
-              inputs and complete your first OODA Loop with Calculate.
-              <br />
-              That’s a MACH RUN.
+              Get started — Family first, then Accounts, Income, Spending, and
+              Contributions. On Act, Execute. That’s a MACH RUN.
             </p>
           </div>
           <div className="border-t border-[#5c4a18] bg-[#241c0c]">
@@ -480,84 +550,137 @@ function Home() {
         <EmailVerifyBanner />
       </header>
 
-      <main className="page-gutter mx-auto grid max-w-none grid-cols-1 gap-5 py-5 lg:grid-cols-[minmax(20rem,28rem)_minmax(0,1fr)] lg:items-start">
-        <aside
-          className={cn(
-            "flex flex-col gap-6 lg:sticky lg:top-[var(--mach-header-h,7rem)] lg:max-h-[calc(100vh-var(--mach-header-h,7rem))] lg:overflow-y-auto lg:pr-1",
-            tab === "act" ? "hidden lg:flex" : "flex",
-          )}
+      <main className="page-gutter mx-auto flex max-w-none flex-col gap-5 py-5">
+        <div
+          className="relative overflow-hidden"
+          style={frameHeight != null ? { height: frameHeight } : undefined}
         >
-          <div className="flex flex-col gap-3">
-            <div className="flex items-center justify-between gap-3">
-              <PhaseLabel id="ooda-observe" label="Observe" />
-              <SectionFoldToggle />
-            </div>
+          <div
+            ref={(node) => {
+              panelRefs.current.family = node;
+            }}
+            className={familyPane.className}
+            style={familyPane.style}
+            aria-hidden={familyPane.hidden}
+          >
+            <PhaseLabel id="ooda-observe" label="Observe" />
             <Section
               title="Family"
-              hint="Names and birthdays, retirement goal date and nest egg amount, and what to do with leftover dollars after income minus spending (a.k.a. “sweep”)."
-              defaultOpen={false}
+              hint="Who is in the household, and when you want to retire."
+              pinned
             >
               <HouseholdForm />
             </Section>
+          </div>
+          <div
+            ref={(node) => {
+              panelRefs.current.assets = node;
+            }}
+            className={assetsPane.className}
+            style={assetsPane.style}
+            aria-hidden={assetsPane.hidden}
+          >
+            <PhaseLabel id="ooda-observe-assets" label="Observe" />
             <Section
               title="Accounts - Assets"
-              hint="Your financial lowdown — add your accounts, update balances, define account types, set as spendable and decide to include in net worth."
-              defaultOpen={false}
+              hint="The accounts you have today, and what each one is worth."
+              pinned
             >
               <PortfolioForm />
             </Section>
-            {hasBalanceSheet(ent.plan) ? (
-              <Section
-                title="Accounts - Liabilities"
-                hint="Car, student, HELOC, personal, credit card. Remaining principal comes off net worth. House mortgages stay on the real estate account."
-                defaultOpen={false}
-              >
-                <LiabilityForm />
-              </Section>
-            ) : null}
-            <CalculateButton onCalculate={calculate} />
           </div>
-          <div className="flex flex-col gap-3">
+          <div
+            ref={(node) => {
+              panelRefs.current.liabilities = node;
+            }}
+            className={liabilitiesPane.className}
+            style={liabilitiesPane.style}
+            aria-hidden={liabilitiesPane.hidden}
+          >
+            <PhaseLabel id="ooda-observe-liabilities" label="Observe" />
+            <Section
+              title="Accounts - Liabilities"
+              hint="What you owe, apart from a mortgage already on a house."
+              pinned
+            >
+              <LiabilityForm />
+            </Section>
+          </div>
+          <div
+            ref={(node) => {
+              panelRefs.current.income = node;
+            }}
+            className={incomePane.className}
+            style={incomePane.style}
+            aria-hidden={incomePane.hidden}
+          >
             <PhaseLabel id="ooda-orient" label="Orient" />
             <Section
               title="Income"
-              hint="Name it, amount, start, end — add another for the next paycheck"
-              defaultOpen={false}
+              hint="Each paycheck, what kind it is, and how long it lasts."
+              pinned
             >
               <IncomeForm />
             </Section>
+          </div>
+          <div
+            ref={(node) => {
+              panelRefs.current.spending = node;
+            }}
+            className={spendingPane.className}
+            style={spendingPane.style}
+            aria-hidden={spendingPane.hidden}
+          >
+            <PhaseLabel id="ooda-orient-spending" label="Orient" />
             <Section
               title="Spending"
-              hint="Set specific monthly expected spending here. Do not include spending from investments or contributions to accounts you have listed above — those will be set below in Contributions."
-              defaultOpen={false}
+              hint="What the household spends in a normal month."
+              pinned
             >
               <SpendingForm />
             </Section>
-            <CalculateButton onCalculate={calculate} />
           </div>
-          <div className="flex flex-col gap-3">
+          <div
+            ref={(node) => {
+              panelRefs.current.contributions = node;
+            }}
+            className={contributionsPane.className}
+            style={contributionsPane.style}
+            aria-hidden={contributionsPane.hidden}
+          >
             <PhaseLabel id="ooda-decide" label="Decide" />
             <Section
               title="Contributions"
-              hint="Set your monthly contributions to the accounts created above. Different rules apply for different types of accounts, so ensure the “kind” of account is correctly set above."
-              defaultOpen={false}
+              hint="How much goes into which account, and when it stops."
+              pinned
             >
               <ContributionForm />
             </Section>
-            <CalculateButton onCalculate={calculate} />
           </div>
-        </aside>
-
-        <div
-          className={cn(
-            "flex min-w-0 flex-col gap-4",
-            tab === "loop" ? "hidden lg:flex" : "flex",
-          )}
-        >
+          <div
+            ref={(node) => {
+              panelRefs.current.act = node;
+            }}
+            className={actPane.className}
+            style={actPane.style}
+            aria-hidden={actPane.hidden}
+          >
           {runError ? (
             <p className="text-sm text-[#e8c547]">{runError}</p>
           ) : null}
-          {sim ? (
+          {holding ? (
+            <div className="flex min-h-[70svh] flex-col items-center justify-center rounded-xl bg-surface px-5 py-10 text-center shadow-[0_0_0_1px_var(--color-border)]">
+              <img
+                src="/brand/mach-run-logo.jpg?v=21"
+                alt=""
+                width={1257}
+                height={428}
+                className="mach-run-pulse w-[16rem] max-w-full"
+              />
+              <p className="mt-6 font-display text-2xl text-fg">MACH RUN in progress.</p>
+              <p className="mt-2 text-sm text-muted">Kicking the tires and lighting the fires.</p>
+            </div>
+          ) : sim ? (
             <div className="flex flex-col gap-4">
               {!ent.paid ? (
                 <div
@@ -595,6 +718,7 @@ function Home() {
                       <div className="flex min-w-0 flex-col gap-3">
                         <div className="flex min-h-11 items-center justify-center">
                           <CalculateButton
+                            label="Execute the MACH RUN"
                             onCalculate={() => calculate({ stay: true })}
                             className="h-9 w-auto min-w-[6.8rem] px-5 text-sm"
                           />
@@ -630,6 +754,7 @@ function Home() {
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                   <div className="pointer-events-auto">
                     <CalculateButton
+                      label="Execute the MACH RUN"
                       onCalculate={() => calculate({ stay: true })}
                       className="h-9 w-auto min-w-[6.8rem] px-5 text-sm"
                     />
@@ -642,17 +767,53 @@ function Home() {
                   You need to kick the tires and light the fires!
                 </p>
                 <p className="mt-2 max-w-xl text-left text-sm text-muted">
-                  Complete Observe, Orient, and Decide to the left to begin your
-                  financial MACH RUN. Hit Calculate above to go supersonic and
-                  Act with financial purpose.
+                  Finish Observe, Orient, and Decide, then come to Act and execute the MACH RUN.
                 </p>
               </div>
             </div>
           )}
-          <CalculateButton onCalculate={() => calculate({ stay: true })} />
+          {holding ? null : (
+            <CalculateButton
+              label="Execute the MACH RUN"
+              onCalculate={() => calculate({ stay: true })}
+            />
+          )}
+        </div>
+        </div>
+        <div className="flex items-center justify-between gap-3">
+          {shownIndex > 0 ? (
+            <GhostButton onClick={() => goStep(route[shownIndex - 1].id)}>Back</GhostButton>
+          ) : (
+            <span />
+          )}
+          {shownIndex >= 0 && shownIndex < route.length - 1 ? (
+            <PrimaryButton onClick={() => goStep(route[shownIndex + 1].id)}>Next</PrimaryButton>
+          ) : null}
         </div>
       </main>
-      <MachFooter variant="full" />
+      {shown === "act" ? (
+        <MachFooter variant="full" />
+      ) : (
+        <footer className="mt-8 border-t border-border">
+          <p className="page-gutter mx-auto py-4 text-center text-xs leading-snug text-muted">
+            <Link
+              to="/legal"
+              hash="terms"
+              className="font-medium text-fg underline underline-offset-4 hover:text-accent"
+            >
+              Terms of Service
+            </Link>
+            {" | "}
+            <Link
+              to="/privacy"
+              className="font-medium text-fg underline underline-offset-4 hover:text-accent"
+            >
+              Privacy Policy
+            </Link>
+            {" — Copyright © MACHRUN.com"}
+          </p>
+        </footer>
+      )}
     </div>
   );
 }

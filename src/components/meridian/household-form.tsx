@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Field, DateInput, MonthInput, MoneyInput, NumberInput, SelectInput, TextInput } from "@/components/ui/field";
+import { longDate } from "@/lib/plan/dates";
 import { usePlanStore } from "@/lib/plan/store";
 
 export function HouseholdForm() {
@@ -6,6 +8,13 @@ export function HouseholdForm() {
   const patchPrimary = usePlanStore((s) => s.patchPrimary);
   const patchSpouse = usePlanStore((s) => s.patchSpouse);
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
+  const spouseOnFile = Boolean(plan.spouse.name.trim() || plan.spouse.birthDate);
+  const [includeSpouse, setIncludeSpouse] = useState(spouseOnFile);
+  const [editingAsOf, setEditingAsOf] = useState(false);
+
+  useEffect(() => {
+    if (spouseOnFile) setIncludeSpouse(true);
+  }, [spouseOnFile]);
 
   return (
     <div className="flex flex-col gap-5">
@@ -23,25 +32,60 @@ export function HouseholdForm() {
             onValue={(v) => patchPrimary({ birthDate: v })}
           />
         </Field>
-        <Field label="Spouse name">
-          <TextInput
-            value={plan.spouse.name}
-            onChange={(e) => patchSpouse({ name: e.target.value })}
-            placeholder="Name"
+        <label className="flex items-center gap-2 text-sm text-fg">
+          <input
+            type="checkbox"
+            checked={includeSpouse}
+            onChange={(e) => {
+              const on = e.target.checked;
+              setIncludeSpouse(on);
+              if (!on) patchSpouse({ name: "", birthDate: "" });
+            }}
           />
-        </Field>
-        <Field label="Spouse birth date">
-          <DateInput
-            value={plan.spouse.birthDate}
-            onValue={(v) => patchSpouse({ birthDate: v })}
-          />
-        </Field>
-        <Field label="As-of date" hint="Balances and today's dollars keyed to this month">
-          <DateInput
-            value={plan.assumptions.asOfDate}
-            onValue={(v) => patchAssumptions({ asOfDate: v })}
-          />
-        </Field>
+          Include spouse or significant other
+        </label>
+        {includeSpouse ? (
+          <div className="flex flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
+            <Field label="Spouse or Significant Other's Name">
+              <TextInput
+                value={plan.spouse.name}
+                onChange={(e) => patchSpouse({ name: e.target.value })}
+                placeholder="Name"
+              />
+            </Field>
+            <Field label="Birth date">
+              <DateInput
+                value={plan.spouse.birthDate}
+                onValue={(v) => patchSpouse({ birthDate: v })}
+              />
+            </Field>
+          </div>
+        ) : null}
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <span className="text-xs font-medium tracking-wide text-muted">As-of date</span>
+          {editingAsOf ? (
+            <DateInput
+              value={plan.assumptions.asOfDate}
+              onValue={(v) => {
+                if (v) patchAssumptions({ asOfDate: v });
+              }}
+            />
+          ) : (
+            <div className="flex items-baseline gap-3">
+              <p className="text-sm text-fg">{longDate(plan.assumptions.asOfDate)}</p>
+              <button
+                type="button"
+                className="shrink-0 text-[11px] text-fg underline-offset-4 hover:underline"
+                onClick={() => setEditingAsOf(true)}
+              >
+                Change As-of date
+              </button>
+            </div>
+          )}
+          <span className="text-xs text-subtle">
+            Balances and today's dollars pegged to this date
+          </span>
+        </div>
         <Field label="Project through primary age">
           <NumberInput
             min={70}

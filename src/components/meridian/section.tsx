@@ -61,6 +61,7 @@ export function Section({
   hint,
   children,
   defaultOpen = false,
+  pinned = false,
 }: {
   id?: string;
   kicker?: string;
@@ -68,18 +69,21 @@ export function Section({
   hint?: string;
   children: ReactNode;
   defaultOpen?: boolean;
+  pinned?: boolean;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(defaultOpen || pinned);
   const root = useRef<HTMLElement>(null);
+  const shown = pinned || open;
 
   useEffect(() => {
+    if (pinned) return;
     function onFold(e: Event) {
       const next = (e as CustomEvent<{ open?: boolean }>).detail?.open;
       if (typeof next === "boolean") setOpen(next);
     }
     window.addEventListener(FOLD_EVENT, onFold);
     return () => window.removeEventListener(FOLD_EVENT, onFold);
-  }, []);
+  }, [pinned]);
 
   function collapse() {
     setOpen(false);
@@ -92,44 +96,54 @@ export function Section({
       ref={root}
       className="rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]"
     >
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-start justify-between gap-3 px-4 py-3.5 text-left"
-      >
-        <span>
+      {pinned ? (
+        <div className="px-4 py-3.5 text-left">
           {kicker ? (
             <span className="mb-0.5 block text-xs font-medium uppercase tracking-[0.2em] text-subtle">
               {kicker}
             </span>
           ) : null}
-          <span className="block font-display text-lg font-bold text-fg">
-            {title}
+          <span className="block font-display text-lg font-bold text-fg">{title}</span>
+          {hint ? <span className="mt-0.5 block text-xs text-subtle">{hint}</span> : null}
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex w-full items-start justify-between gap-3 px-4 py-3.5 text-left"
+        >
+          <span>
+            {kicker ? (
+              <span className="mb-0.5 block text-xs font-medium uppercase tracking-[0.2em] text-subtle">
+                {kicker}
+              </span>
+            ) : null}
+            <span className="block font-display text-lg font-bold text-fg">{title}</span>
+            {hint ? <span className="mt-0.5 block text-xs text-subtle">{hint}</span> : null}
           </span>
-          {hint ? (
-            <span className="mt-0.5 block text-xs text-subtle">{hint}</span>
-          ) : null}
-        </span>
-        <ChevronDown
-          className={cn(
-            "mt-1 size-4 shrink-0 text-muted transition-transform duration-200",
-            open ? "rotate-0" : "-rotate-90",
-          )}
-        />
-      </button>
-      {open ? (
+          <ChevronDown
+            className={cn(
+              "mt-1 size-4 shrink-0 text-muted transition-transform duration-200",
+              open ? "rotate-0" : "-rotate-90",
+            )}
+          />
+        </button>
+      )}
+      {shown ? (
         <div className="border-t border-border px-4 py-4">
           {children}
-          <div className="mt-4 flex justify-end border-t border-border pt-3">
-            <button
-              type="button"
-              onClick={collapse}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-muted hover:bg-elevated hover:text-fg"
-            >
-              Close {title}
-              <ChevronUp className="size-3.5" />
-            </button>
-          </div>
+          {pinned ? null : (
+            <div className="mt-4 flex justify-end border-t border-border pt-3">
+              <button
+                type="button"
+                onClick={collapse}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2 text-xs font-medium text-muted hover:bg-elevated hover:text-fg"
+              >
+                Close {title}
+                <ChevronUp className="size-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       ) : null}
     </section>

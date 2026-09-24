@@ -25,7 +25,7 @@ export function AuthSlot({ saved }: { saved?: "idle" | "saving" | "saved" | "gue
           <p className="inline-flex h-11 items-center justify-end gap-0.5 px-0 text-[11px] font-medium leading-tight sm:gap-1 sm:px-3 sm:text-sm">
             <a
               href="/login"
-              className="rounded-lg px-1 py-1 text-muted hover:bg-surface hover:text-fg"
+              className="shrink-0 whitespace-nowrap rounded-lg px-1 py-1 text-muted hover:bg-surface hover:text-fg"
             >
               Sign In
             </a>

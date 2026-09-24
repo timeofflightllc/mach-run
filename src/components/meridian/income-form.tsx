@@ -13,6 +13,7 @@ import {
 import type { IncomeKind, IncomeStream, TaxTreatment } from "@/lib/plan/types";
 import { newId, usePlanStore } from "@/lib/plan/store";
 import { ssBenefitFromPia, ssBirthFor, ssScheduleDates } from "@/lib/plan/social-security";
+import { dayAfter } from "@/lib/plan/dates";
 import { usd } from "@/lib/plan/format";
 import { VaKids } from "@/components/meridian/va-kids";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
@@ -100,6 +101,9 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
   const endAge = plan.assumptions.projectionEndAge;
   const birth = ssBirthFor(plan, s);
   const ssWindow = ssScheduleDates(birth, claimAge, endAge);
+  const previous = i > 0 ? plan.incomes[i - 1] : null;
+  const dayAfterPrevious = previous?.endDate ? dayAfter(previous.endDate) : "";
+  const previousLabel = previous?.name.trim() || (previous ? `Income ${i}` : "");
 
   useEffect(() => {
     if (s.kind !== "ss") return;
@@ -298,12 +302,23 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
             />
           </Field>
         )}
-        <Field label="Start">
-          <DateInput
-            value={s.startDate}
-            onValue={(v) => updateIncome(s.id, { startDate: v })}
-          />
-        </Field>
+        <div className="flex flex-col gap-1">
+          <Field label="Start">
+            <DateInput
+              value={s.startDate}
+              onValue={(v) => updateIncome(s.id, { startDate: v })}
+            />
+          </Field>
+          {dayAfterPrevious && s.kind !== "ss" && s.startDate !== dayAfterPrevious ? (
+            <button
+              type="button"
+              className="self-start text-[11px] text-fg underline-offset-4 hover:underline"
+              onClick={() => updateIncome(s.id, { startDate: dayAfterPrevious })}
+            >
+              Start the day after {previousLabel} ends
+            </button>
+          ) : null}
+        </div>
         <Field label="End (blank = ongoing)">
           <DateInput
             value={s.endDate}

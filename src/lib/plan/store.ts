@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { createDefaultPlan, ensurePlan } from "./defaults";
+import { todayIso } from "./dates";
 import type {
   Assumptions,
   Child,
@@ -39,147 +40,142 @@ interface PlanState {
   reset: () => void;
 }
 
+function stampAsOf(plan: Plan): Plan {
+  if (plan.assumptions.asOfPinned) return plan;
+  const today = todayIso();
+  if (plan.assumptions.asOfDate === today) return plan;
+  return {
+    ...plan,
+    assumptions: { ...plan.assumptions, asOfDate: today },
+  };
+}
+
 export const usePlanStore = create<PlanState>()(
   persist(
-    (set) => ({
-      plan: createDefaultPlan(),
-      setPlan: (plan) => set({ plan: ensurePlan(plan) }),
-      patchAssumptions: (patch) =>
-        set((s) => ({
-          plan: { ...s.plan, assumptions: { ...s.plan.assumptions, ...patch } },
-        })),
-      patchPrimary: (patch) =>
-        set((s) => ({ plan: { ...s.plan, primary: { ...s.plan.primary, ...patch } } })),
-      patchSpouse: (patch) =>
-        set((s) => ({ plan: { ...s.plan, spouse: { ...s.plan.spouse, ...patch } } })),
-      addChild: (row) =>
-        set((s) => ({ plan: { ...s.plan, children: [...s.plan.children, row] } })),
-      updateChild: (id, patch) =>
-        set((s) => ({
-          plan: {
-            ...s.plan,
-            children: s.plan.children.map((c) => (c.id === id ? { ...c, ...patch } : c)),
-          },
-        })),
-      removeChild: (id) =>
-        set((s) => ({
-          plan: { ...s.plan, children: s.plan.children.filter((c) => c.id !== id) },
-        })),
-      updatePortfolio: (id, patch) =>
-        set((s) => ({
-          plan: {
-            ...s.plan,
-            portfolios: s.plan.portfolios.map((p) =>
-              p.id === id ? { ...p, ...patch } : p,
-            ),
-          },
-        })),
-      addPortfolio: (row) =>
-        set((s) => ({ plan: { ...s.plan, portfolios: [...s.plan.portfolios, row] } })),
-      removePortfolio: (id) =>
-        set((s) => ({
-          plan: {
-            ...s.plan,
-            portfolios: s.plan.portfolios.filter((p) => p.id !== id),
-            contributions: s.plan.contributions.filter((c) => c.portfolioId !== id),
+    (set) => {
+      const edit = (recipe: (plan: Plan) => Plan) =>
+        set((s) => ({ plan: stampAsOf(recipe(s.plan)) }));
+      return {
+        plan: createDefaultPlan(),
+        setPlan: (plan) => set({ plan: ensurePlan(plan) }),
+        patchAssumptions: (patch) =>
+          set((s) => {
+            const keys = Object.keys(patch);
+            const onlyView = keys.length > 0 && keys.every((key) => key === "dollars");
+            const settingAsOf = Object.prototype.hasOwnProperty.call(patch, "asOfDate");
+            const plan = {
+              ...s.plan,
+              assumptions: {
+                ...s.plan.assumptions,
+                ...patch,
+                ...(settingAsOf ? { asOfPinned: true } : {}),
+              },
+            };
+            return { plan: onlyView || settingAsOf ? plan : stampAsOf(plan) };
+          }),
+        patchPrimary: (patch) =>
+          edit((plan) => ({ ...plan, primary: { ...plan.primary, ...patch } })),
+        patchSpouse: (patch) =>
+          edit((plan) => ({ ...plan, spouse: { ...plan.spouse, ...patch } })),
+        addChild: (row) => edit((plan) => ({ ...plan, children: [...plan.children, row] })),
+        updateChild: (id, patch) =>
+          edit((plan) => ({
+            ...plan,
+            children: plan.children.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+          })),
+        removeChild: (id) =>
+          edit((plan) => ({
+            ...plan,
+            children: plan.children.filter((c) => c.id !== id),
+          })),
+        updatePortfolio: (id, patch) =>
+          edit((plan) => ({
+            ...plan,
+            portfolios: plan.portfolios.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+          })),
+        addPortfolio: (row) =>
+          edit((plan) => ({ ...plan, portfolios: [...plan.portfolios, row] })),
+        removePortfolio: (id) =>
+          edit((plan) => ({
+            ...plan,
+            portfolios: plan.portfolios.filter((p) => p.id !== id),
+            contributions: plan.contributions.filter((c) => c.portfolioId !== id),
             assumptions: {
-              ...s.plan.assumptions,
+              ...plan.assumptions,
               sweepPortfolioId:
-                s.plan.assumptions.sweepPortfolioId === id
+                plan.assumptions.sweepPortfolioId === id
                   ? null
-                  : s.plan.assumptions.sweepPortfolioId,
+                  : plan.assumptions.sweepPortfolioId,
             },
-          },
-        })),
-      updateLiability: (id, patch) =>
-        set((s) => ({
-          plan: {
-            ...s.plan,
-            liabilities: (s.plan.liabilities ?? []).map((l) =>
+          })),
+        updateLiability: (id, patch) =>
+          edit((plan) => ({
+            ...plan,
+            liabilities: (plan.liabilities ?? []).map((l) =>
               l.id === id ? { ...l, ...patch } : l,
             ),
-          },
-        })),
-      addLiability: (row) =>
-        set((s) => ({
-          plan: {
-            ...s.plan,
-            liabilities: [...(s.plan.liabilities ?? []), row],
-          },
-        })),
-      removeLiability: (id) =>
-        set((s) => ({
-          plan: {
-            ...s.plan,
-            liabilities: (s.plan.liabilities ?? []).filter((l) => l.id !== id),
-          },
-        })),
-      updateContribution: (id, patch) =>
-        set((s) => ({
-          plan: {
-            ...s.plan,
-            contributions: s.plan.contributions.map((c) =>
+          })),
+        addLiability: (row) =>
+          edit((plan) => ({
+            ...plan,
+            liabilities: [...(plan.liabilities ?? []), row],
+          })),
+        removeLiability: (id) =>
+          edit((plan) => ({
+            ...plan,
+            liabilities: (plan.liabilities ?? []).filter((l) => l.id !== id),
+          })),
+        updateContribution: (id, patch) =>
+          edit((plan) => ({
+            ...plan,
+            contributions: plan.contributions.map((c) =>
               c.id === id ? { ...c, ...patch } : c,
             ),
-          },
-        })),
-      addContribution: (row) =>
-        set((s) => ({
-          plan: { ...s.plan, contributions: [...s.plan.contributions, row] },
-        })),
-      removeContribution: (id) =>
-        set((s) => ({
-          plan: {
-            ...s.plan,
-            contributions: s.plan.contributions.filter((c) => c.id !== id),
-          },
-        })),
-      updateIncome: (id, patch) =>
-        set((s) => {
-          const incomes = s.plan.incomes.map((c) => (c.id === id ? { ...c, ...patch } : c));
-          const datePatch =
-            patch.startDate !== undefined || patch.endDate !== undefined;
-          const contributions = datePatch
-            ? s.plan.contributions.map((c) => {
-                if (c.amountMode !== "percent" || c.percentOfIncomeId !== id) {
-                  return c;
-                }
-                return {
-                  ...c,
-                  startDate:
-                    patch.startDate !== undefined ? patch.startDate : c.startDate,
-                  endDate: patch.endDate !== undefined ? patch.endDate : c.endDate,
-                };
-              })
-            : s.plan.contributions;
-          return { plan: { ...s.plan, incomes, contributions } };
-        }),
-      addIncome: (row) =>
-        set((s) => ({ plan: { ...s.plan, incomes: [...s.plan.incomes, row] } })),
-      removeIncome: (id) =>
-        set((s) => ({
-          plan: { ...s.plan, incomes: s.plan.incomes.filter((c) => c.id !== id) },
-        })),
-      updateSpending: (id, patch) =>
-        set((s) => ({
-          plan: {
-            ...s.plan,
-            spending: s.plan.spending.map((c) =>
-              c.id === id ? { ...c, ...patch } : c,
-            ),
-          },
-        })),
-      addSpending: (row) =>
-        set((s) => ({ plan: { ...s.plan, spending: [...s.plan.spending, row] } })),
-      removeSpending: (id) =>
-        set((s) => ({
-          plan: {
-            ...s.plan,
-            spending: s.plan.spending.filter((c) => c.id !== id),
-          },
-        })),
-      reset: () => set({ plan: createDefaultPlan() }),
-    }),
+          })),
+        addContribution: (row) =>
+          edit((plan) => ({ ...plan, contributions: [...plan.contributions, row] })),
+        removeContribution: (id) =>
+          edit((plan) => ({
+            ...plan,
+            contributions: plan.contributions.filter((c) => c.id !== id),
+          })),
+        updateIncome: (id, patch) =>
+          edit((plan) => {
+            const incomes = plan.incomes.map((c) => (c.id === id ? { ...c, ...patch } : c));
+            const datePatch = patch.startDate !== undefined || patch.endDate !== undefined;
+            const contributions = datePatch
+              ? plan.contributions.map((c) => {
+                  if (c.amountMode !== "percent" || c.percentOfIncomeId !== id) return c;
+                  return {
+                    ...c,
+                    startDate: patch.startDate !== undefined ? patch.startDate : c.startDate,
+                    endDate: patch.endDate !== undefined ? patch.endDate : c.endDate,
+                  };
+                })
+              : plan.contributions;
+            return { ...plan, incomes, contributions };
+          }),
+        addIncome: (row) => edit((plan) => ({ ...plan, incomes: [...plan.incomes, row] })),
+        removeIncome: (id) =>
+          edit((plan) => ({
+            ...plan,
+            incomes: plan.incomes.filter((c) => c.id !== id),
+          })),
+        updateSpending: (id, patch) =>
+          edit((plan) => ({
+            ...plan,
+            spending: plan.spending.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+          })),
+        addSpending: (row) =>
+          edit((plan) => ({ ...plan, spending: [...plan.spending, row] })),
+        removeSpending: (id) =>
+          edit((plan) => ({
+            ...plan,
+            spending: plan.spending.filter((c) => c.id !== id),
+          })),
+        reset: () => set({ plan: createDefaultPlan() }),
+      };
+    },
     {
       name: "mach-plan-v4",
       storage: createJSONStorage(() => localStorage),
