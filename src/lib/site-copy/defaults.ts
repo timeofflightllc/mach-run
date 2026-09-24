@@ -3,6 +3,34 @@ import { DEFAULT_FOOTER_COPY, serializeFooterCopy } from "./footer-copy";
 import { DEFAULT_PRICING_COPY, serializePricingCopy } from "./pricing-copy";
 import type { SiteAnnouncement, SitePage } from "./types";
 
+/** Tonight's ships. Stable ids so they insert once and stay editable in the desk. Newest first. */
+export const PINNED_ANNOUNCEMENTS: SiteAnnouncement[] = [
+  {
+    id: "feat-2026-09-23-footer",
+    at: "2026-09-23",
+    title: "One short footer, except on Act",
+    blurb:
+      "About, Method, Features, Pricing, FAQ, and Contact share the short MACH footer: page links, Measure through Harvest, then Privacy and Legal above the copyright. Act keeps the full legal footer.",
+    sortOrder: 0,
+  },
+  {
+    id: "feat-2026-09-23-next",
+    at: "2026-09-23",
+    title: "Next clears a stale MACH RUN",
+    blurb:
+      "Change an input and press Next. Act waits on the un-run screen until you Execute again. Back and the phase tabs leave the last run alone.",
+    sortOrder: 0,
+  },
+  {
+    id: "feat-2026-09-23-walk",
+    at: "2026-09-23",
+    title: "One step at a time",
+    blurb:
+      "The MACH RUN walks Family, Accounts, Income, Spending, and Contributions in order. The as-of date starts today. The next paycheck can begin the day after the one before it ends.",
+    sortOrder: 0,
+  },
+];
+
 export const DEFAULT_PAGES: SitePage[] = [
   {
     slug: "about",
@@ -224,11 +252,17 @@ If this policy changes in a material way, we will update this page and the date 
 ];
 
 export function defaultAnnouncements(): SiteAnnouncement[] {
-  return ANNOUNCEMENTS.map((item, i) => ({
+  const seeded = ANNOUNCEMENTS.map((item, i) => ({
     id: `seed-${i + 1}`,
     at: item.at,
     title: item.title,
     blurb: item.blurb,
     sortOrder: ANNOUNCEMENTS.length - i,
   }));
+  const floor = seeded.reduce((max, item) => Math.max(max, item.sortOrder), 0);
+  const pinned = PINNED_ANNOUNCEMENTS.map((item, i) => ({
+    ...item,
+    sortOrder: floor + PINNED_ANNOUNCEMENTS.length - i,
+  }));
+  return [...pinned, ...seeded];
 }
