@@ -539,19 +539,49 @@ function Home() {
         </div>
         <nav aria-label="OODA loop" className="page-gutter mx-auto max-w-none pb-3">
           <div className="mx-auto flex max-w-3xl rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
-            {PHASES.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => goStep(item.page)}
-                className={cn(
-                  "h-11 flex-1 whitespace-nowrap rounded-md px-0.5 text-[10px] font-medium uppercase tracking-[0.04em] sm:px-1 sm:text-xs sm:tracking-[0.08em] md:text-sm md:tracking-[0.14em]",
-                  shownPhase === item.id ? "bg-accent text-accent-fg" : "text-muted",
-                )}
-              >
-                {item.label}
-              </button>
-            ))}
+            {PHASES.map((item) => {
+              const pages = route.filter((page) => page.phase === item.id);
+              const here = pages.findIndex((page) => page.id === shown);
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-current={shownPhase === item.id ? "step" : undefined}
+                  aria-label={
+                    here >= 0
+                      ? `${item.label}, ${here + 1} of ${pages.length}`
+                      : item.label
+                  }
+                  onClick={() => goStep(item.page)}
+                  className={cn(
+                    "flex flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap rounded-md px-0.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.04em] sm:px-1 sm:text-xs sm:tracking-[0.08em] md:text-sm md:tracking-[0.14em]",
+                    shownPhase === item.id ? "bg-accent text-accent-fg" : "text-muted",
+                  )}
+                >
+                  <span>{item.label}</span>
+                  <span className="flex items-center gap-1" aria-hidden="true">
+                    {pages.map((page) => {
+                      const index = route.findIndex((entry) => entry.id === page.id);
+                      const on = index === shownIndex;
+                      const done = index < shownIndex;
+                      return (
+                        <span
+                          key={page.id}
+                          className={cn(
+                            "rounded-full bg-current",
+                            on
+                              ? "h-1.5 w-1.5 opacity-100"
+                              : done
+                                ? "h-1 w-1 opacity-80"
+                                : "h-1 w-1 opacity-35",
+                          )}
+                        />
+                      );
+                    })}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </nav>
         <GuestOnly>
