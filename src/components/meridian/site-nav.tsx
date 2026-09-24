@@ -23,16 +23,19 @@ export function SiteNav({
   tone?: "strong" | "page";
 }) {
   const page = tone === "page";
+  const links = LINKS.filter((link) => link.to !== "/").filter(
+    (link) => !page || (link.to !== "/privacy" && link.to !== "/legal"),
+  );
   return (
     <nav
       aria-label="Site"
       className={cn(
         "flex flex-wrap items-center gap-x-5 gap-y-2",
-        page ? "justify-end text-lg font-normal" : "text-sm font-medium",
+        page ? "justify-end text-sm font-normal" : "text-sm font-medium",
         className,
       )}
     >
-      {LINKS.filter((link) => link.to !== "/").map((link) => (
+      {links.map((link) => (
         <Link
           key={link.to}
           to={link.to}

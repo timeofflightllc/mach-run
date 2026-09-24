@@ -169,7 +169,14 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
             <SiteNav tone="page" className="min-w-0 max-w-[72%] justify-end" />
           </div>
           <MachSteps copy={copy} />
-          <CopyrightLine />
+          <div className="mt-1 w-full border-t border-border pt-4">
+            <p className="w-full text-center text-[12.5px] leading-snug text-muted">
+              <Link to="/privacy" className="font-medium text-fg underline underline-offset-4 hover:text-accent">Privacy</Link>
+              <span className="px-4">|</span>
+              <Link to="/legal" className="font-medium text-fg underline underline-offset-4 hover:text-accent">Legal</Link>
+            </p>
+            <p className="mt-2 w-full text-center text-[11px] leading-snug text-muted">Copyright © MACHRUN.com</p>
+          </div>
         </div>
       </footer>
     );

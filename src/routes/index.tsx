@@ -822,29 +822,7 @@ function Home() {
           ) : null}
         </div>
       </main>
-      {shown === "act" ? (
-        <MachFooter variant="full" />
-      ) : (
-        <footer className="mt-8 border-t border-border">
-          <p className="page-gutter mx-auto py-4 text-center text-xs leading-snug text-muted">
-            <Link
-              to="/legal"
-              hash="terms"
-              className="font-medium text-fg underline underline-offset-4 hover:text-accent"
-            >
-              Terms of Service
-            </Link>
-            {" | "}
-            <Link
-              to="/privacy"
-              className="font-medium text-fg underline underline-offset-4 hover:text-accent"
-            >
-              Privacy Policy
-            </Link>
-            {" — Copyright © MACHRUN.com"}
-          </p>
-        </footer>
-      )}
+      {shown === "act" ? <MachFooter variant="full" /> : <MachFooter />}
     </div>
   );
 }
