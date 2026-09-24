@@ -64,7 +64,7 @@ export function ContributionForm() {
   })();
 
   return (
-    <div className="@container flex flex-col gap-4">
+    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4">
       <div className="flex flex-col gap-3 text-sm text-muted">
         <p>
           Tell MACH RUN how much to put into which account, and when. It only

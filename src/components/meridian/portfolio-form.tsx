@@ -63,7 +63,7 @@ export function PortfolioForm() {
   const net = startingNetWorth(plan);
 
   return (
-    <div className="@container flex flex-col gap-4">
+    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4">
       <p className="text-sm text-muted">
         Spendable (retirement) {usd(spendable)} · Net worth {usd(net)}. These
         accounts are the only ones Orient can sweep into and Decide can

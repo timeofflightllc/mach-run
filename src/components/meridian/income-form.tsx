@@ -44,7 +44,7 @@ export function IncomeForm() {
   const capped = atIncomeCap(plan.incomes.length, ent);
 
   return (
-    <div className="@container flex flex-col gap-4">
+    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4">
       <p className="text-sm text-muted">
         Each block is one paycheck over a specific stretch of time. Name it, set
         the monthly amount, set start and end. Tell MACH RUN what kind of income

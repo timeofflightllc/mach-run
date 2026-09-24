@@ -16,7 +16,7 @@ export function SpendingForm() {
   const removeSpending = usePlanStore((s) => s.removeSpending);
 
   return (
-    <div className="@container flex flex-col gap-4">
+    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4">
       <p className="text-sm text-muted">
         Phases are in today's dollars and inflate with the assumption rate.
         Overlapping phases add together. Add a second phase when spending steps

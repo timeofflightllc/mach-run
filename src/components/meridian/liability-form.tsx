@@ -38,7 +38,7 @@ export function LiabilityForm() {
   const owners = familyOwnerOptions(plan, "taxable");
 
   return (
-    <div className="@container flex flex-col gap-4">
+    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4">
       <p className="text-sm text-muted">
         Car, student, HELOC, personal, credit card. Remaining principal comes
         off net worth. House mortgages stay on the real estate account above —

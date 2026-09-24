@@ -17,8 +17,8 @@ export function HouseholdForm() {
   }, [spouseOnFile]);
 
   return (
-    <div className="@container flex flex-col gap-5">
-      <div className="grid grid-cols-1 items-start gap-x-8 gap-y-3 sm:grid-cols-2 sm:max-w-[46rem]">
+    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-5">
+      <div className="grid grid-cols-1 items-start gap-x-8 gap-y-3 sm:grid-cols-2">
         <div className="flex min-w-0 flex-col gap-3">
           <Field label="Primary name">
             <TextInput
