@@ -145,6 +145,11 @@
   padding-inline: max(1rem, 7.5vw);
 }
 
+/* Top 3 desk keeps the old inset. The public 7.5% gutter does not apply here. */
+.desk-gutter {
+  padding-inline: clamp(1rem, 4vw, 4.25rem);
+}
+
 /* Same inset as the page column so the short footer lines up. */
 .short-footer-gutter {
   padding-inline: max(1rem, 7.5vw);
