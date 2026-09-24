@@ -18,49 +18,54 @@ export function HouseholdForm() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex flex-col gap-3">
-        <Field label="Primary name">
-          <TextInput
-            value={plan.primary.name}
-            onChange={(e) => patchPrimary({ name: e.target.value })}
-            placeholder="Name"
-          />
-        </Field>
-        <Field label="Primary birth date">
-          <DateInput
-            value={plan.primary.birthDate}
-            onValue={(v) => patchPrimary({ birthDate: v })}
-          />
-        </Field>
-        <label className="flex items-center gap-2 text-sm text-fg">
-          <input
-            type="checkbox"
-            checked={includeSpouse}
-            onChange={(e) => {
-              const on = e.target.checked;
-              setIncludeSpouse(on);
-              if (!on) patchSpouse({ name: "", birthDate: "" });
-            }}
-          />
-          Include spouse or significant other
-        </label>
-        {includeSpouse ? (
-          <div className="flex flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
-            <Field label="Spouse or Significant Other's Name">
-              <TextInput
-                value={plan.spouse.name}
-                onChange={(e) => patchSpouse({ name: e.target.value })}
-                placeholder="Name"
-              />
-            </Field>
-            <Field label="Birth date">
-              <DateInput
-                value={plan.spouse.birthDate}
-                onValue={(v) => patchSpouse({ birthDate: v })}
-              />
-            </Field>
-          </div>
-        ) : null}
+      <div className="grid grid-cols-1 items-start gap-x-8 gap-y-3 sm:grid-cols-2 sm:max-w-[46rem]">
+        <div className="flex min-w-0 flex-col gap-3">
+          <Field label="Primary name">
+            <TextInput
+              value={plan.primary.name}
+              onChange={(e) => patchPrimary({ name: e.target.value })}
+              placeholder="Name"
+            />
+          </Field>
+          <Field label="Primary birth date">
+            <DateInput
+              value={plan.primary.birthDate}
+              onValue={(v) => patchPrimary({ birthDate: v })}
+            />
+          </Field>
+        </div>
+        <div className="flex min-w-0 flex-col gap-3">
+          <label className="flex items-center gap-2 text-sm text-fg">
+            <input
+              type="checkbox"
+              checked={includeSpouse}
+              onChange={(e) => {
+                const on = e.target.checked;
+                setIncludeSpouse(on);
+                if (!on) patchSpouse({ name: "", birthDate: "" });
+              }}
+            />
+            Include spouse or significant other
+          </label>
+          {includeSpouse ? (
+            <div className="flex flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
+              <Field label="Spouse or Significant Other's Name">
+                <TextInput
+                  value={plan.spouse.name}
+                  onChange={(e) => patchSpouse({ name: e.target.value })}
+                  placeholder="Name"
+                />
+              </Field>
+              <Field label="Birth date">
+                <DateInput
+                  value={plan.spouse.birthDate}
+                  onValue={(v) => patchSpouse({ birthDate: v })}
+                />
+              </Field>
+            </div>
+          ) : null}
+        </div>
+      </div>
         <div className="flex min-w-0 flex-col gap-1.5">
           <span className="text-xs font-medium tracking-wide text-muted">As-of date</span>
           {editingAsOf ? (
@@ -95,7 +100,6 @@ export function HouseholdForm() {
             onValue={(n) => patchAssumptions({ projectionEndAge: n })}
           />
         </Field>
-      </div>
 
       <div className="flex flex-col gap-3">
         <Field
