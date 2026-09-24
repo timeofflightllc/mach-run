@@ -102,12 +102,14 @@ export function EmailCopyDesk() {
           <div className="mt-4 space-y-3">
             <Field label="Subject">
               <TextInput
+                className="max-w-none"
                 value={row.subject}
                 onChange={(e) => patch(row.kind, { subject: e.target.value })}
               />
             </Field>
             <Field label="Body">
               <TextArea
+                className="max-w-none"
                 value={row.body}
                 rows={12}
                 onChange={(e) => patch(row.kind, { body: e.target.value })}
@@ -115,6 +117,7 @@ export function EmailCopyDesk() {
             </Field>
             <Field label="Footer" hint="Small print under the card. Clear it to send with no footer.">
               <TextArea
+                className="max-w-none"
                 value={row.footer}
                 rows={4}
                 onChange={(e) => patch(row.kind, { footer: e.target.value })}
