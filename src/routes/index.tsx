@@ -42,6 +42,13 @@ import { WelcomeEmailPreviewOverlay } from "@/components/meridian/welcome-email-
 import { EmailVerifyBanner } from "@/components/meridian/email-verify-banner";
 import { GhostButton, PrimaryButton } from "@/components/ui/field";
 
+/** View toggle only. It does not change the run, so it must not force a re-execute. */
+function inputSignature(plan: Plan): string {
+  const assumptions = { ...plan.assumptions };
+  delete assumptions.dollars;
+  return JSON.stringify({ ...plan, assumptions });
+}
+
 export const Route = createFileRoute("/")({ component: Home });
 
 function ActChartColumn({ plan, sim }: { plan: Plan; sim: SimResult }) {
@@ -275,6 +282,30 @@ function Home() {
       return { ...prev, [runKey]: { ...cur, brief: { ...cur.brief, expanded: true } } };
     });
   }, [ent.paid, runKey]);
+
+  function onNext() {
+    const next = route[shownIndex + 1]?.id;
+    if (!next || motion) return;
+    const live = usePlanStore.getState().plan;
+    const key = useProfileStore.getState().activeId || "local";
+    const current = runs[key];
+    if (current && inputSignature(current.plan) !== inputSignature(live)) {
+      holdGen.current += 1;
+      if (holdTimer.current) {
+        window.clearTimeout(holdTimer.current);
+        holdTimer.current = null;
+      }
+      setHolding(false);
+      setRuns((prev) => {
+        if (!(key in prev)) return prev;
+        const copy = { ...prev };
+        delete copy[key];
+        return copy;
+      });
+      clearStoredRun(key);
+    }
+    goStep(next);
+  }
 
   function goStep(next: StepId) {
     if (next === step || motion) return;
@@ -787,7 +818,7 @@ function Home() {
             <span />
           )}
           {shownIndex >= 0 && shownIndex < route.length - 1 ? (
-            <PrimaryButton onClick={() => goStep(route[shownIndex + 1].id)}>Next</PrimaryButton>
+            <PrimaryButton onClick={onNext}>Next</PrimaryButton>
           ) : null}
         </div>
       </main>
