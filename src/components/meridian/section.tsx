@@ -62,6 +62,7 @@ export function Section({
   children,
   defaultOpen = false,
   pinned = false,
+  nav,
 }: {
   id?: string;
   kicker?: string;
@@ -70,6 +71,7 @@ export function Section({
   children: ReactNode;
   defaultOpen?: boolean;
   pinned?: boolean;
+  nav?: ReactNode;
 }) {
   const [open, setOpen] = useState(defaultOpen || pinned);
   const root = useRef<HTMLElement>(null);
@@ -98,13 +100,31 @@ export function Section({
     >
       {pinned ? (
         <div className="px-4 py-3.5 text-left">
-          {kicker ? (
-            <span className="mb-0.5 block text-xs font-medium uppercase tracking-[0.2em] text-subtle">
-              {kicker}
-            </span>
-          ) : null}
-          <span className="block font-display text-lg font-bold text-fg">{title}</span>
-          {hint ? <span className="mt-0.5 block text-xs text-subtle">{hint}</span> : null}
+          {nav ? (
+            <div className="flex flex-col gap-3 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-4">
+              <div className="min-w-0">
+                {kicker ? (
+                  <span className="mb-0.5 block text-xs font-medium uppercase tracking-[0.2em] text-subtle">
+                    {kicker}
+                  </span>
+                ) : null}
+                <span className="block font-display text-lg font-bold text-fg">{title}</span>
+                {hint ? <span className="mt-0.5 block text-xs text-subtle">{hint}</span> : null}
+              </div>
+              <div className="flex items-center justify-center gap-3">{nav}</div>
+              <div className="hidden md:block" aria-hidden />
+            </div>
+          ) : (
+            <>
+              {kicker ? (
+                <span className="mb-0.5 block text-xs font-medium uppercase tracking-[0.2em] text-subtle">
+                  {kicker}
+                </span>
+              ) : null}
+              <span className="block font-display text-lg font-bold text-fg">{title}</span>
+              {hint ? <span className="mt-0.5 block text-xs text-subtle">{hint}</span> : null}
+            </>
+          )}
         </div>
       ) : (
         <button

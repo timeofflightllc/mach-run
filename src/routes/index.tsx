@@ -464,6 +464,26 @@ function Home() {
   const contributionsPane = pane("contributions", "flex flex-col gap-3");
   const actPane = pane("act", "flex min-w-0 flex-col gap-4");
 
+  function SweepNav() {
+    return (
+      <>
+        {shownIndex > 0 ? (
+          <GhostButton onClick={() => goStep(route[shownIndex - 1].id)}>Back</GhostButton>
+        ) : null}
+        {shownIndex >= 0 && shownIndex < route.length - 1 ? (
+          <PrimaryButton
+            onClick={(e) => {
+              e.currentTarget.blur();
+              onNext();
+            }}
+          >
+            Next
+          </PrimaryButton>
+        ) : null}
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-bg text-fg">
       <WelcomeEmailPreviewOverlay />
@@ -637,6 +657,7 @@ function Home() {
               title="Family"
               hint="Who is in the household, and when you want to retire."
               pinned
+              nav={<SweepNav />}
             >
               <HouseholdForm />
             </Section>
@@ -654,6 +675,7 @@ function Home() {
               title="Accounts - Assets"
               hint="The accounts you have today, and what each one is worth."
               pinned
+              nav={<SweepNav />}
             >
               <PortfolioForm />
             </Section>
@@ -671,6 +693,7 @@ function Home() {
               title="Accounts - Liabilities"
               hint="What you owe, apart from a mortgage already on a house."
               pinned
+              nav={<SweepNav />}
             >
               <LiabilityForm />
             </Section>
@@ -688,6 +711,7 @@ function Home() {
               title="Income"
               hint="Each paycheck, what kind it is, and how long it lasts."
               pinned
+              nav={<SweepNav />}
             >
               <IncomeForm />
             </Section>
@@ -705,6 +729,7 @@ function Home() {
               title="Spending"
               hint="What the household spends in a normal month."
               pinned
+              nav={<SweepNav />}
             >
               <SpendingForm />
             </Section>
@@ -722,6 +747,7 @@ function Home() {
               title="Contributions"
               hint="How much goes into which account, and when it stops."
               pinned
+              nav={<SweepNav />}
             >
               <ContributionForm />
             </Section>
