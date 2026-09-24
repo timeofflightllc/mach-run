@@ -140,17 +140,14 @@
   --color-border: #d5d0c6;
 }
 
-/* Side inset ≈ Calculate button width (8.5rem) on a wide screen. */
+/* 7.5% each side, still grows with the window. 1rem floor on a phone. */
 .page-gutter {
-  padding-inline: clamp(1rem, 4vw, 4.25rem);
+  padding-inline: max(1rem, 7.5vw);
 }
 
-/* About, Method, Features, Pricing, FAQ, Contact, Privacy, Legal.
-   Halfway between the screen-edge gutter and the header column. Not flush. */
+/* Same inset as the page column so the short footer lines up. */
 .short-footer-gutter {
-  padding-inline: calc(
-    (max(1rem, (100vw - 80rem) / 2) + clamp(1rem, 4vw, 4.25rem)) / 2
-  );
+  padding-inline: max(1rem, 7.5vw);
 }
 
 @keyframes master-caution-flash {

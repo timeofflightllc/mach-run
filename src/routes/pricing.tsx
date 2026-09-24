@@ -254,8 +254,8 @@ function Pricing() {
         }`;
 
   return (
-    <main className="min-h-screen bg-bg px-4 py-10 text-fg">
-      <div className="mx-auto w-full max-w-7xl">
+    <main className="min-h-screen bg-bg py-10 text-fg">
+      <div className="page-gutter mx-auto w-full">
         <PageMast />
 
         <header className="mt-10 max-w-[50.5rem]">

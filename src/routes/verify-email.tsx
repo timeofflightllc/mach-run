@@ -148,8 +148,8 @@ function VerifyEmail() {
   const inbox = waitingOnPending ? pendingEmail : (user?.primaryEmail ?? "your inbox");
 
   return (
-    <main className="flex min-h-screen flex-col bg-bg px-4 py-10 text-fg">
-      <div className="mx-auto w-full max-w-7xl">
+    <main className="flex min-h-screen flex-col bg-bg py-10 text-fg">
+      <div className="page-gutter mx-auto w-full">
         <PageMast />
       </div>
       <div className="flex flex-1 items-center justify-center">

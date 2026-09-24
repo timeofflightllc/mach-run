@@ -64,8 +64,8 @@ function Contact() {
   }
 
   return (
-    <main className="min-h-screen bg-bg px-4 py-10 text-fg">
-      <div className="mx-auto w-full max-w-7xl space-y-8">
+    <main className="min-h-screen bg-bg py-10 text-fg">
+      <div className="page-gutter mx-auto w-full space-y-8">
         <PageMast />
         <header>
           <h1 className="font-display text-4xl text-fg sm:text-5xl">{page.title}</h1>
