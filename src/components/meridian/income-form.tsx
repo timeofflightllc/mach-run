@@ -44,7 +44,7 @@ export function IncomeForm() {
   const capped = atIncomeCap(plan.incomes.length, ent);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="@container flex flex-col gap-4">
       <p className="text-sm text-muted">
         Each block is one paycheck over a specific stretch of time. Name it, set
         the monthly amount, set start and end. Tell MACH RUN what kind of income
@@ -52,7 +52,7 @@ export function IncomeForm() {
         military retired pay, VA, Social Security, other retirement). Blank end
         date = it keeps paying indefinitely.
       </p>
-      <ul className="flex flex-col gap-3">
+      <ul className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
         {plan.incomes.map((s, i) => (
           <IncomeRow key={s.id} stream={s} index={i} />
         ))}

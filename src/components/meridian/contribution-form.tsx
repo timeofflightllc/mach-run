@@ -64,7 +64,7 @@ export function ContributionForm() {
   })();
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="@container flex flex-col gap-4">
       <div className="flex flex-col gap-3 text-sm text-muted">
         <p>
           Tell MACH RUN how much to put into which account, and when. It only
@@ -77,7 +77,7 @@ export function ContributionForm() {
           {matchLine}
         </p>
       </div>
-      <ul className="flex flex-col gap-3">
+      <ul className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
         {plan.contributions.map((c) => {
           const dest = plan.portfolios.find((p) => p.id === c.portfolioId);
           const workplace = dest ? isWorkplace(dest.kind) : false;

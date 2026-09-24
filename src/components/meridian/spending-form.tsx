@@ -16,13 +16,13 @@ export function SpendingForm() {
   const removeSpending = usePlanStore((s) => s.removeSpending);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="@container flex flex-col gap-4">
       <p className="text-sm text-muted">
         Phases are in today's dollars and inflate with the assumption rate.
         Overlapping phases add together. Add a second phase when spending steps
         up or down.
       </p>
-      <ul className="flex flex-col gap-3">
+      <ul className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
         {plan.spending.map((s) => (
           <li
             key={s.id}

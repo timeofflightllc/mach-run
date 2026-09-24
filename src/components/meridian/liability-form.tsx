@@ -38,13 +38,13 @@ export function LiabilityForm() {
   const owners = familyOwnerOptions(plan, "taxable");
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="@container flex flex-col gap-4">
       <p className="text-sm text-muted">
         Car, student, HELOC, personal, credit card. Remaining principal comes
         off net worth. House mortgages stay on the real estate account above —
         do not enter those here.
       </p>
-      <ul className="flex flex-col gap-3">
+      <ul className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
         {(plan.liabilities ?? []).map((l) => {
           const remaining = remainingLiability(l, asOf);
           const original = originalLiability(l);
@@ -53,7 +53,7 @@ export function LiabilityForm() {
           return (
             <li
               key={l.id}
-              className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
+              className="@container rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
             >
               <div className="mb-2 flex items-center gap-2">
                 <TextInput
@@ -69,7 +69,7 @@ export function LiabilityForm() {
                   <Trash2 className="size-4" />
                 </DangerButton>
               </div>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 @min-[28rem]:grid-cols-2">
                 <Field label="Kind">
                   <SelectInput
                     value={l.kind}

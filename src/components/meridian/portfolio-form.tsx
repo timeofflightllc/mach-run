@@ -63,18 +63,18 @@ export function PortfolioForm() {
   const net = startingNetWorth(plan);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="@container flex flex-col gap-4">
       <p className="text-sm text-muted">
         Spendable (retirement) {usd(spendable)} · Net worth {usd(net)}. These
         accounts are the only ones Orient can sweep into and Decide can
         contribute to. Per-account return blank uses the global{" "}
         {plan.assumptions.defaultReturnPct}% nominal.
       </p>
-      <ul className="flex flex-col gap-3">
+      <ul className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
         {plan.portfolios.map((p) => (
           <li
             key={p.id}
-            className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
+            className="@container rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
           >
             <div className="mb-2 flex items-center gap-2">
               <TextInput
@@ -89,7 +89,7 @@ export function PortfolioForm() {
                 <Trash2 className="size-4" />
               </DangerButton>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2 @min-[28rem]:grid-cols-2">
               <Field label="Account Type">
                 <SelectInput
                   value={p.kind}
