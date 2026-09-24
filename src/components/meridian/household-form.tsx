@@ -68,41 +68,106 @@ export function HouseholdForm() {
       </div>
 
       <div className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
-        <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <span className="text-xs font-medium tracking-wide text-muted">As-of date</span>
-            {editingAsOf ? (
-              <DateInput
-                value={plan.assumptions.asOfDate}
-                onValue={(v) => {
-                  if (v) patchAssumptions({ asOfDate: v });
-                }}
+        <div className="flex min-w-0 flex-col gap-3">
+          <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <span className="text-xs font-medium tracking-wide text-muted">As-of date</span>
+              {editingAsOf ? (
+                <DateInput
+                  value={plan.assumptions.asOfDate}
+                  onValue={(v) => {
+                    if (v) patchAssumptions({ asOfDate: v });
+                  }}
+                />
+              ) : (
+                <div className="flex items-baseline gap-3">
+                  <p className="text-sm text-fg">{longDate(plan.assumptions.asOfDate)}</p>
+                  <button
+                    type="button"
+                    className="shrink-0 text-[11px] text-fg underline-offset-4 hover:underline"
+                    onClick={() => setEditingAsOf(true)}
+                  >
+                    Change As-of date
+                  </button>
+                </div>
+              )}
+              <span className="text-xs text-subtle">
+                Balances and today's dollars pegged to this date
+              </span>
+            </div>
+            <Field label="Project through primary age">
+              <NumberInput
+                min={70}
+                max={110}
+                step={1}
+                value={plan.assumptions.projectionEndAge}
+                onValue={(n) => patchAssumptions({ projectionEndAge: n })}
               />
-            ) : (
-              <div className="flex items-baseline gap-3">
-                <p className="text-sm text-fg">{longDate(plan.assumptions.asOfDate)}</p>
-                <button
-                  type="button"
-                  className="shrink-0 text-[11px] text-fg underline-offset-4 hover:underline"
-                  onClick={() => setEditingAsOf(true)}
-                >
-                  Change As-of date
-                </button>
-              </div>
-            )}
-            <span className="text-xs text-subtle">
-              Balances and today's dollars pegged to this date
-            </span>
+            </Field>
           </div>
-          <Field label="Project through primary age">
-            <NumberInput
-              min={70}
-              max={110}
-              step={1}
-              value={plan.assumptions.projectionEndAge}
-              onValue={(n) => patchAssumptions({ projectionEndAge: n })}
-            />
-          </Field>
+
+          <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
+            {(() => {
+              const goal = plan.assumptions.retirementGoalDate;
+              const asOf = plan.assumptions.asOfDate.slice(0, 7);
+              const already = Boolean(goal && goal.slice(0, 7) <= asOf);
+              return (
+                <>
+                  <label className="flex items-center gap-2 text-sm text-fg">
+                    <input
+                      type="checkbox"
+                      checked={already}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          const stamp = `${asOf}-01`;
+                          patchAssumptions({ retirementGoalDate: stamp });
+                        } else {
+                          patchAssumptions({ retirementGoalDate: null });
+                        }
+                      }}
+                    />
+                    Already retired
+                  </label>
+                  {already ? (
+                    <Field
+                      label="About when did you retire?"
+                      hint="Month and year. Act keys spendable-in-retirement off this."
+                    >
+                      <MonthInput
+                        value={goal}
+                        onValue={(v) =>
+                          patchAssumptions({ retirementGoalDate: v === "" ? null : v })
+                        }
+                      />
+                    </Field>
+                  ) : (
+                    <Field
+                      label="Retirement goal date"
+                      hint="Act’s Spendable strip keys off this date — pile, retirement income, and when spendable runs out."
+                    >
+                      <DateInput
+                        value={goal}
+                        onValue={(v) =>
+                          patchAssumptions({ retirementGoalDate: v === "" ? null : v })
+                        }
+                      />
+                    </Field>
+                  )}
+                  <Field
+                    label="Nest egg goal (today $)"
+                    hint="Spendable target at that retirement date — e.g. 3,000,000. MACH RUN will say if you're on track, or how much more to invest each month. Blank = no lump-sum goal."
+                  >
+                    <MoneyInput
+                      value={plan.assumptions.nestEggGoal ?? 0}
+                      onValue={(n) =>
+                        patchAssumptions({ nestEggGoal: n > 0 ? n : null })
+                      }
+                    />
+                  </Field>
+                </>
+              );
+            })()}
+          </div>
         </div>
 
         <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
@@ -172,69 +237,6 @@ export function HouseholdForm() {
               ))}
             </SelectInput>
           </Field>
-        </div>
-
-        <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
-          {(() => {
-            const goal = plan.assumptions.retirementGoalDate;
-            const asOf = plan.assumptions.asOfDate.slice(0, 7);
-            const already = Boolean(goal && goal.slice(0, 7) <= asOf);
-            return (
-              <>
-                <label className="flex items-center gap-2 text-sm text-fg">
-                  <input
-                    type="checkbox"
-                    checked={already}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        const stamp = `${asOf}-01`;
-                        patchAssumptions({ retirementGoalDate: stamp });
-                      } else {
-                        patchAssumptions({ retirementGoalDate: null });
-                      }
-                    }}
-                  />
-                  Already retired
-                </label>
-                {already ? (
-                  <Field
-                    label="About when did you retire?"
-                    hint="Month and year. Act keys spendable-in-retirement off this."
-                  >
-                    <MonthInput
-                      value={goal}
-                      onValue={(v) =>
-                        patchAssumptions({ retirementGoalDate: v === "" ? null : v })
-                      }
-                    />
-                  </Field>
-                ) : (
-                  <Field
-                    label="Retirement goal date"
-                    hint="Act’s Spendable strip keys off this date — pile, retirement income, and when spendable runs out."
-                  >
-                    <DateInput
-                      value={goal}
-                      onValue={(v) =>
-                        patchAssumptions({ retirementGoalDate: v === "" ? null : v })
-                      }
-                    />
-                  </Field>
-                )}
-                <Field
-                  label="Nest egg goal (today $)"
-                  hint="Spendable target at that retirement date — e.g. 3,000,000. MACH RUN will say if you're on track, or how much more to invest each month. Blank = no lump-sum goal."
-                >
-                  <MoneyInput
-                    value={plan.assumptions.nestEggGoal ?? 0}
-                    onValue={(n) =>
-                      patchAssumptions({ nestEggGoal: n > 0 ? n : null })
-                    }
-                  />
-                </Field>
-              </>
-            );
-          })()}
         </div>
       </div>
     </div>
