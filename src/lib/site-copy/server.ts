@@ -1,5 +1,5 @@
 import { getSql } from "@/lib/db";
-import { DEFAULT_PAGES, PINNED_ANNOUNCEMENTS, defaultAnnouncements } from "./defaults";
+import { DEFAULT_PAGES, defaultAnnouncements } from "./defaults";
 import {
   SITE_PAGE_SLUGS,
   type SiteAnnouncement,
@@ -54,10 +54,20 @@ async function seedIfEmpty(): Promise<void> {
       [page.slug, page.title, page.kicker || null, page.body],
     );
   }
-  const notes = await sql.query<{ id: string }>(
-    "select id from mach_announcements where id = 'seed-1' limit 1",
+  await sql.query(`
+    create table if not exists mach_copy_flags (
+      key text primary key,
+      created_at timestamptz not null default now()
+    )
+  `);
+  const flagged = await sql.query<{ key: string }>(
+    "select key from mach_copy_flags where key = 'announcements_seeded'",
   );
-  if (!notes.length) {
+  if (flagged.length) return;
+  const notes = await sql.query<{ n: number }>(
+    "select count(*)::int as n from mach_announcements",
+  );
+  if ((notes[0]?.n ?? 0) === 0) {
     for (const item of defaultAnnouncements()) {
       await sql.query(
         `insert into mach_announcements (id, at, title, blurb, sort_order)
@@ -67,29 +77,10 @@ async function seedIfEmpty(): Promise<void> {
       );
     }
   }
-}
-
-/** Insert tonight's notes if missing. Existing rows stay so the desk can edit them. */
-async function ensurePinnedAnnouncements(): Promise<void> {
-  const sql = await getSql();
-  const rows = await sql.query<{ n: number }>(
-    "select coalesce(max(sort_order), 0)::int as n from mach_announcements",
+  await sql.query(
+    `insert into mach_copy_flags (key) values ('announcements_seeded')
+     on conflict (key) do nothing`,
   );
-  let order = rows[0]?.n ?? 0;
-  for (const item of [...PINNED_ANNOUNCEMENTS].reverse()) {
-    const found = await sql.query<{ id: string }>(
-      "select id from mach_announcements where id = $1",
-      [item.id],
-    );
-    if (found.length) continue;
-    order += 1;
-    await sql.query(
-      `insert into mach_announcements (id, at, title, blurb, sort_order)
-       values ($1, $2, $3, $4, $5)
-       on conflict (id) do nothing`,
-      [item.id, item.at, item.title, item.blurb, order],
-    );
-  }
 }
 
 function mapPage(row: {
@@ -116,7 +107,6 @@ export async function loadSiteCopy(): Promise<SiteCopy> {
   if (!ok) return fallback;
   try {
     await seedIfEmpty();
-    await ensurePinnedAnnouncements();
     const sql = await getSql();
     const pageRows = await sql.query<{
       slug: string;
@@ -144,7 +134,7 @@ export async function loadSiteCopy(): Promise<SiteCopy> {
     }));
     return {
       pages,
-      announcements: announcements.length ? announcements : defaultAnnouncements(),
+      announcements,
     };
   } catch {
     return fallback;
