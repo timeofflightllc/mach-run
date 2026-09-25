@@ -42,6 +42,40 @@ import { WelcomeEmailPreviewOverlay } from "@/components/meridian/welcome-email-
 import { EmailVerifyBanner } from "@/components/meridian/email-verify-banner";
 import { GhostButton, PrimaryButton } from "@/components/ui/field";
 
+function NavButton({
+  kind,
+  onPress,
+  children,
+}: {
+  kind: "back" | "next";
+  onPress: () => void;
+  children: string;
+}) {
+  const armed = useRef(false);
+  const Button = kind === "back" ? GhostButton : PrimaryButton;
+  return (
+    <Button
+      onPointerDown={(e) => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        e.stopPropagation();
+        armed.current = true;
+        onPress();
+      }}
+      onClick={(e) => {
+        if (armed.current) {
+          armed.current = false;
+          e.preventDefault();
+          return;
+        }
+        onPress();
+      }}
+    >
+      {children}
+    </Button>
+  );
+}
+
 function SweepNav({
   showBack,
   showNext,
@@ -56,20 +90,14 @@ function SweepNav({
   return (
     <>
       {showBack ? (
-        <GhostButton
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={onBack}
-        >
+        <NavButton kind="back" onPress={onBack}>
           Back
-        </GhostButton>
+        </NavButton>
       ) : null}
       {showNext ? (
-        <PrimaryButton
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={onNext}
-        >
+        <NavButton kind="next" onPress={onNext}>
           Next
-        </PrimaryButton>
+        </NavButton>
       ) : null}
     </>
   );
@@ -179,14 +207,6 @@ function Home() {
   const [step, setStep] = useState<StepId>("family");
   const sheet = hasBalanceSheet(ent.plan);
   const route = PAGES.filter((page) => page.id !== "liabilities" || sheet);
-  const [motion, setMotion] = useState<{
-    from: StepId;
-    to: StepId;
-    dir: 1 | -1;
-    on: boolean;
-  } | null>(null);
-  const [frameHeight, setFrameHeight] = useState<number | null>(null);
-  const panelRefs = useRef<Partial<Record<StepId, HTMLDivElement | null>>>({});
   const holdTimer = useRef<number | null>(null);
   const holdGen = useRef(0);
   const [holding, setHolding] = useState(false);
@@ -195,7 +215,7 @@ function Home() {
       if (holdTimer.current) window.clearTimeout(holdTimer.current);
     };
   }, []);
-  const shown = motion?.to ?? step;
+  const shown = step;
   const shownIndex = route.findIndex((item) => item.id === shown);
   const shownPhase = PAGES.find((page) => page.id === shown)?.phase ?? "observe";
   const [runError, setRunError] = useState<string | null>(null);
@@ -337,77 +357,21 @@ function Home() {
       clearStoredRun(key);
     }
     goStep(next);
-    const toTop = () => {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    };
-    toTop();
-    window.requestAnimationFrame(toTop);
-    window.setTimeout(toTop, 320);
+    window.scrollTo(0, 0);
   }
 
   function goStep(next: StepId) {
-    const from = motion?.to ?? step;
-    if (next === from) return;
-    const nextIndex = route.findIndex((item) => item.id === next);
-    const fromIndex = route.findIndex((item) => item.id === from);
-    const reduce =
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (nextIndex < 0) return;
-    if (reduce) {
-      setMotion(null);
-      setFrameHeight(null);
-      setStep(next);
-      return;
-    }
-    const fromEl = panelRefs.current[from] ?? panelRefs.current[step];
-    setFrameHeight(fromEl?.offsetHeight ?? null);
+    if (!route.some((page) => page.id === next) || next === step) return;
     setStep(next);
-    setMotion({
-      from,
-      to: next,
-      dir: nextIndex > fromIndex ? 1 : -1,
-      on: false,
-    });
   }
 
-  const slideKey = motion ? `${motion.from}>${motion.to}` : "";
-  useEffect(() => {
-    if (!motion || motion.on) return;
-    const from = motion.from;
-    const to = motion.to;
-    const fromEl = panelRefs.current[from];
-    const toEl = panelRefs.current[to];
-    const h = Math.max(fromEl?.offsetHeight ?? 0, toEl?.offsetHeight ?? 0);
-    if (h) setFrameHeight(h);
-    let timeout = 0;
-    let inner = 0;
-    let cancelled = false;
-    const raf = window.requestAnimationFrame(() => {
-      inner = window.requestAnimationFrame(() => {
-        if (cancelled) return;
-        setMotion((current) =>
-          current && current.from === from && current.to === to && !current.on
-            ? { ...current, on: true }
-            : current,
-        );
-        timeout = window.setTimeout(() => {
-          if (cancelled) return;
-          setStep(to);
-          setMotion(null);
-          setFrameHeight(null);
-        }, 250);
-      });
-    });
-    return () => {
-      cancelled = true;
-      window.cancelAnimationFrame(raf);
-      window.cancelAnimationFrame(inner);
-      window.clearTimeout(timeout);
+  function pane(id: StepId, idle: string): { className: string; hidden: boolean } {
+    const visible = step === id;
+    return {
+      className: visible ? idle : "hidden",
+      hidden: !visible,
     };
-  }, [slideKey]);
+  }
 
   async function calculate(opts?: { stay?: boolean }) {
     try {
@@ -471,35 +435,6 @@ function Home() {
         err instanceof Error ? err.message : "Calculate failed. Check the numbers and try again.",
       );
     }
-  }
-
-  function pane(id: StepId, idle: string): {
-    className: string;
-    style?: { transform: string; transition: string };
-    hidden: boolean;
-  } {
-    if (!motion || (id !== motion.from && id !== motion.to)) {
-      const visible = step === id;
-      return {
-        className: visible ? cn(idle, "relative z-20") : "pointer-events-none hidden",
-        hidden: !visible,
-      };
-    }
-    const fromX = motion.on ? (motion.dir === 1 ? "-100%" : "100%") : "0%";
-    const toX = motion.on ? "0%" : motion.dir === 1 ? "100%" : "-100%";
-    const onScreen = id === motion.from ? !motion.on : motion.on;
-    return {
-      className: cn(
-        idle,
-        "absolute inset-x-0 top-0 w-full",
-        onScreen ? "z-20" : "pointer-events-none",
-      ),
-      style: {
-        transform: `translateX(${id === motion.from ? fromX : toX})`,
-        transition: motion.on ? "transform 250ms ease" : "none",
-      },
-      hidden: false,
-    };
   }
 
   const familyPane = pane("family", "flex flex-col gap-3");
@@ -673,16 +608,9 @@ function Home() {
       </header>
 
       <main className="page-gutter mx-auto flex max-w-none flex-col gap-5 py-5">
-        <div
-          className="relative overflow-hidden"
-          style={frameHeight != null ? { height: frameHeight } : undefined}
-        >
+        <div>
           <div
-            ref={(node) => {
-              panelRefs.current.family = node;
-            }}
             className={familyPane.className}
-            style={familyPane.style}
             aria-hidden={familyPane.hidden}
             hidden={familyPane.hidden}
           >
@@ -697,11 +625,7 @@ function Home() {
             </Section>
           </div>
           <div
-            ref={(node) => {
-              panelRefs.current.assets = node;
-            }}
             className={assetsPane.className}
-            style={assetsPane.style}
             aria-hidden={assetsPane.hidden}
             hidden={assetsPane.hidden}
           >
@@ -716,11 +640,7 @@ function Home() {
             </Section>
           </div>
           <div
-            ref={(node) => {
-              panelRefs.current.liabilities = node;
-            }}
             className={liabilitiesPane.className}
-            style={liabilitiesPane.style}
             aria-hidden={liabilitiesPane.hidden}
             hidden={liabilitiesPane.hidden}
           >
@@ -735,11 +655,7 @@ function Home() {
             </Section>
           </div>
           <div
-            ref={(node) => {
-              panelRefs.current.income = node;
-            }}
             className={incomePane.className}
-            style={incomePane.style}
             aria-hidden={incomePane.hidden}
             hidden={incomePane.hidden}
           >
@@ -754,11 +670,7 @@ function Home() {
             </Section>
           </div>
           <div
-            ref={(node) => {
-              panelRefs.current.spending = node;
-            }}
             className={spendingPane.className}
-            style={spendingPane.style}
             aria-hidden={spendingPane.hidden}
             hidden={spendingPane.hidden}
           >
@@ -773,11 +685,7 @@ function Home() {
             </Section>
           </div>
           <div
-            ref={(node) => {
-              panelRefs.current.contributions = node;
-            }}
             className={contributionsPane.className}
-            style={contributionsPane.style}
             aria-hidden={contributionsPane.hidden}
             hidden={contributionsPane.hidden}
           >
@@ -792,11 +700,7 @@ function Home() {
             </Section>
           </div>
           <div
-            ref={(node) => {
-              panelRefs.current.act = node;
-            }}
             className={actPane.className}
-            style={actPane.style}
             aria-hidden={actPane.hidden}
             hidden={actPane.hidden}
           >
@@ -919,22 +823,16 @@ function Home() {
         </div>
         <div className="flex items-center justify-between gap-3">
           {shownIndex > 0 ? (
-            <GhostButton
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={() => goStep(route[shownIndex - 1].id)}
-            >
+            <NavButton kind="back" onPress={() => goStep(route[shownIndex - 1].id)}>
               Back
-            </GhostButton>
+            </NavButton>
           ) : (
             <span />
           )}
           {shownIndex >= 0 && shownIndex < route.length - 1 ? (
-            <PrimaryButton
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={onNext}
-            >
+            <NavButton kind="next" onPress={onNext}>
               Next
-            </PrimaryButton>
+            </NavButton>
           ) : null}
         </div>
       </main>
