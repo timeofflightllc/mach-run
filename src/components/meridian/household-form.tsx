@@ -219,7 +219,7 @@ export function HouseholdForm() {
           </Field>
           <Field
             label="Sweep surplus into"
-            hint="Only accounts you add in Observe. Empty until you add one."
+            hint="Blank means the leftover is spent. It is included in Spend and is not added to an account."
           >
             <SelectInput
               value={plan.assumptions.sweepPortfolioId ?? ""}

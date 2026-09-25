@@ -585,6 +585,8 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
         appliedContrib += pool;
         const sweepFlow = auditFlow?.get(sweepId);
         if (sweepFlow) sweepFlow.sweep += pool;
+      } else if (pool > 0.5) {
+        spending += pool;
       }
       for (const f of funded) {
         if (f.matchPct <= 0) continue;

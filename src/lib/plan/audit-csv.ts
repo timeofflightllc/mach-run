@@ -68,7 +68,7 @@ function loanParts(
 const DICTIONARY: [string, string][] = [
   ["month_order", "Each month the engine grows balances, then adds income, then spending, then withdrawals, then employee contributions, then sweep, then employer match."],
   ["identity", "residual uses left = income + withdrawals and right = tax + spending + employee contributions. Employer match is inside income and is not on the right, so a match month is off by about the match."],
-  ["residual_engine", "income + withdrawals − tax − spending − contributions. Contributions here include employee dollars, sweep, and match. Match is on both sides, so it cancels. This is the ledger identity."],
+  ["residual_engine", "income + withdrawals − tax − spending − contributions. Contributions here include employee dollars, sweep, and match. Match is on both sides, so it cancels. When no sweep account is selected, leftover cash is added to spending instead of dropped. This should be near zero except for a withdrawal-tax gross-up."],
   ["cents", "The engine does not round until this file. Amounts are shown to two decimals. A residual under half a cent is the display, not a broken month."],
   ["return", "Growth is nominal monthly compound from the annual return. A blank account return uses the default return."],
   ["income_nominal", "Income amounts are nominal dollars that month, after COLA from the as-of date."],
@@ -79,6 +79,7 @@ const DICTIONARY: [string, string][] = [
   ["rmd", "Roth accounts are omitted. A workplace account is deferred only while salary is on and that account is still receiving contributions. monthly_rmd = prior December 31 balance / Uniform Lifetime factor / 12."],
   ["loan_principal", "Net worth uses principal at the start of the month, before that month's payment. principal_end is the next month's starting principal."],
   ["irs", "irs_limit is the employee cap used that year, including catch-up when catch_up is yes. Blank when the rule is not capped."],
+  ["sweep_blank", "When Sweep surplus into is blank, cash left after tax, typed spending, and contributions is spent. It is listed in month_spending as Unallocated surplus. It is not deposited."],
 ];
 
 export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
@@ -336,6 +337,18 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
       const due = liabilityPaymentDue(l, date);
       if (due > 0) spendRows.push([date, l.id, l.name, due]);
       loanRows.push([date, l.id, "liability", parts.start, parts.interest, parts.principalPaid, parts.end, parts.inSpending]);
+    }
+    const listedSpend = spendRows
+      .filter((row) => row[0] === date)
+      .reduce((sum, row) => sum + Number(row[3] ?? 0), 0);
+    const unallocated = month.spending - listedSpend;
+    if (unallocated > 0.5) {
+      spendRows.push([
+        date,
+        "unallocated",
+        "Unallocated surplus (no sweep account)",
+        unallocated,
+      ]);
     }
     homeRows.push(householdRow(plan, month, inflationIndex, ssShare, goalKey, audit, date));
   });

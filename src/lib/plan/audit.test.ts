@@ -281,3 +281,50 @@ test("audit G: planned contrib bigger than leftover is capped — identity holds
   near(jan.income + jan.withdrawals, jan.tax + jan.spending + jan.contributions);
   near(jan.spendableEnd, 102_000);
 });
+
+test("audit H: blank sweep spends leftover instead of dropping it", () => {
+  const plan = roundPlan();
+  plan.portfolios = [taxable(100_000)];
+  plan.assumptions.sweepPortfolioId = null;
+  plan.incomes = [
+    {
+      id: "inc",
+      name: "Pay",
+      kind: "salary",
+      monthlyAmount: 20_000,
+      startDate: "2026-01-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.spending = [
+    {
+      id: "sp",
+      label: "Life",
+      monthlyAmount: 8_000,
+      startDate: "2026-01-01",
+      endDate: null,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c",
+      label: "Save 2k",
+      portfolioId: "acct-taxable",
+      monthlyAmount: 2_000,
+      startDate: "2026-01-01",
+      endDate: null,
+    },
+  ];
+  const sim = simulate(plan);
+  const jan = month(sim, "2026-01");
+  near(jan.income, 20_000);
+  near(jan.contributions, 2_000);
+  near(jan.spending, 18_000);
+  near(jan.income + jan.withdrawals, jan.tax + jan.spending + jan.contributions);
+  near(jan.spendableEnd, 102_000);
+  const dec = month(sim, "2026-12");
+  near(dec.spendableEnd, 100_000 + 12 * 2_000);
+});
