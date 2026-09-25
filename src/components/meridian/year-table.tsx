@@ -57,11 +57,38 @@ function incomeLines(
   return rows;
 }
 
+const TRI_KIND = [
+  ["military", "Military retired pay"],
+  ["va", "VA disability"],
+  ["ss", "Social Security"],
+  ["pension", "Pension"],
+  ["other_retirement", "Other retirement"],
+] as const;
+
+function triLines(
+  byKind: Record<string, number> | undefined,
+  withdrawals: number,
+  scale: (n: number) => number,
+): { label: string; amount: number }[] {
+  const rows: { label: string; amount: number }[] = [];
+  for (const [kind, label] of TRI_KIND) {
+    const raw = byKind?.[kind] ?? 0;
+    if (raw > 0.5) rows.push({ label, amount: scale(raw) });
+  }
+  if (withdrawals > 0.5) {
+    rows.push({
+      label: "Investment and annuity withdrawals",
+      amount: scale(withdrawals),
+    });
+  }
+  return rows;
+}
+
 type LedgerTip = {
   year: number;
   x: number;
   y: number;
-  mode: "cap" | "income";
+  mode: "cap" | "income" | "tri";
 };
 
 function tipPoint(e: { clientX: number; clientY: number }): { x: number; y: number } {
@@ -116,6 +143,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
       "irsCut",
       "employerMatch",
       "withdrawals",
+      "tri",
       "surplus",
       "guaranteed",
       "endSpendable",
@@ -135,6 +163,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
         (y.irsCut ?? 0).toFixed(2),
         (y.employerMatch ?? 0).toFixed(2),
         y.withdrawals.toFixed(2),
+        (y.guaranteed + y.withdrawals).toFixed(2),
         y.surplus.toFixed(2),
         y.guaranteed.toFixed(2),
         y.endSpendable.toFixed(2),
@@ -158,6 +187,12 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
     tip?.mode === "income" && yearRow
       ? incomeLines(yearRow.incomeByKind, (n) => flow(n, yearRow.year))
       : [];
+  const retirementLines =
+    tip?.mode === "tri" && yearRow
+      ? triLines(yearRow.incomeByKind, yearRow.withdrawals, (n) =>
+          flow(n, yearRow.year),
+        )
+      : [];
 
   return (
     <div className="rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
@@ -173,8 +208,9 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
       </div>
       {sim.fundingGaps.length ? (
         <p className="border-t border-border px-4 py-3 text-sm text-muted">
-          Hover <span className="font-bold text-negative">CAPPED</span> for why
-          that year was cut. Hover an income amount for the paycheck mix.
+          Identity: income + drawn = tax + spend + saved. Hover{" "}
+          <span className="font-bold text-negative">CAPPED</span> for why that
+          year was cut. Hover an income amount for the paycheck mix.
         </p>
       ) : (
         <p className="border-t border-border px-4 py-3 text-xs text-subtle">
@@ -184,6 +220,9 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           marked.
         </p>
       )}
+      <p className="border-t border-border px-4 py-2 text-xs text-subtle">
+        TRI is not part of that equation. It is the retirement cash that arrived, before tax.
+      </p>
       <div className="max-h-[min(42rem,calc(100dvh-var(--mach-header-h,7rem)-4rem))] overflow-auto">
         <table className="ledger-table w-max min-w-full text-left text-sm">
           <thead>
@@ -197,10 +236,19 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                   ["Spend", "px-3 py-2 font-medium"],
                   ["Saved", "px-3 py-2 font-medium"],
                   ["Drawn", "px-3 py-2 font-medium"],
+                  ["TRI", "px-3 py-2 font-medium"],
                   ["Spendable", "px-3 py-2 pr-5 font-medium"],
                 ] as const
               ).map(([label, cls]) => (
-                <th key={label} className={cls}>
+                <th
+                  key={label}
+                  className={cls}
+                  title={
+                    label === "TRI"
+                      ? "Total Retirement Income — military retired pay, VA, Social Security, pension, other retirement, plus investment and annuity withdrawals. Not the job. Not the Spendable balance."
+                      : undefined
+                  }
+                >
                   {label}
                 </th>
               ))}
@@ -280,6 +328,25 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                   <td className="whitespace-nowrap px-3 py-2 text-negative">
                     {usd(flow(y.withdrawals, y.year))}
                   </td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    <button
+                      type="button"
+                      onMouseEnter={(e) => showTip(y.year, "tri", e)}
+                      onMouseMove={(e) => showTip(y.year, "tri", e)}
+                      onMouseLeave={() => setTip(null)}
+                      onFocus={(e) => {
+                        const r = e.currentTarget.getBoundingClientRect();
+                        showTip(y.year, "tri", {
+                          clientX: r.right,
+                          clientY: r.top,
+                        });
+                      }}
+                      onBlur={() => setTip(null)}
+                      className="cursor-help text-fg underline decoration-dotted underline-offset-2"
+                    >
+                      {usd(flow(y.guaranteed + y.withdrawals, y.year))}
+                    </button>
+                  </td>
                   <td className="whitespace-nowrap px-3 py-2 pr-5 text-fg">
                     {usd(real ? y.endSpendableReal : y.endSpendable)}
                   </td>
@@ -333,6 +400,37 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
             </ul>
           ) : (
             <p className="mt-1.5 text-sm text-muted">No paychecks this year.</p>
+          )}
+        </div>
+      ) : null}
+      {tip?.mode === "tri" ? (
+        <div
+          role="tooltip"
+          className="pointer-events-none fixed z-[80] w-80 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-elevated px-3 py-2.5 text-left shadow-lg"
+          style={{ left: tip.x, top: tip.y }}
+        >
+          <p className="text-xs font-bold uppercase tracking-wider text-subtle">
+            {tip.year} total retirement income
+          </p>
+          {retirementLines.length ? (
+            <ul className="mt-1.5 space-y-1 text-sm text-fg">
+              {retirementLines.map((row) => (
+                <li key={row.label} className="flex justify-between gap-3">
+                  <span>{row.label}</span>
+                  <span className="tabular-nums">{usd(row.amount)}</span>
+                </li>
+              ))}
+              {yearRow ? (
+                <li className="flex justify-between gap-3 border-t border-border pt-1 font-medium">
+                  <span>Total</span>
+                  <span className="tabular-nums">
+                    {usd(flow(yearRow.guaranteed + yearRow.withdrawals, yearRow.year))}
+                  </span>
+                </li>
+              ) : null}
+            </ul>
+          ) : (
+            <p className="mt-1.5 text-sm text-muted">None this year.</p>
           )}
         </div>
       ) : null}
