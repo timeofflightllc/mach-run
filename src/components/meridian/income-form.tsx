@@ -106,6 +106,23 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
   const previousLabel = previous?.name.trim() || (previous ? `Income ${i}` : "");
 
   useEffect(() => {
+    if (s.kind === "ss" || !s.startDayAfterPrevious) return;
+    if (!dayAfterPrevious) {
+      updateIncome(s.id, { startDayAfterPrevious: false });
+      return;
+    }
+    if (s.startDate === dayAfterPrevious) return;
+    updateIncome(s.id, { startDate: dayAfterPrevious });
+  }, [
+    s.kind,
+    s.startDayAfterPrevious,
+    s.startDate,
+    s.id,
+    dayAfterPrevious,
+    updateIncome,
+  ]);
+
+  useEffect(() => {
     if (s.kind !== "ss") return;
     if (!ssWindow) return;
     if (s.startDate === ssWindow.startDate && s.endDate === ssWindow.endDate) return;
@@ -152,6 +169,7 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
         person: nextPerson,
         taxTreatment: "ss",
         ssClaimAge: s.ssClaimAge ?? 67,
+        startDayAfterPrevious: false,
         ...(window ?? {}),
       });
       return;
@@ -302,23 +320,35 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
             />
           </Field>
         )}
-        <div className="flex flex-col gap-1">
-          <Field label="Start">
-            <DateInput
-              value={s.startDate}
-              onValue={(v) => updateIncome(s.id, { startDate: v })}
-            />
-          </Field>
-          {dayAfterPrevious && s.kind !== "ss" && s.startDate !== dayAfterPrevious ? (
-            <button
-              type="button"
-              className="self-start text-[11px] text-fg underline-offset-4 hover:underline"
-              onClick={() => updateIncome(s.id, { startDate: dayAfterPrevious })}
-            >
-              Start the day after {previousLabel} ends
-            </button>
-          ) : null}
-        </div>
+        <Field label="Start">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <div className="min-w-[12rem] flex-1">
+              <DateInput
+                value={s.startDate}
+                onValue={(v) =>
+                  updateIncome(s.id, { startDate: v, startDayAfterPrevious: false })
+                }
+              />
+            </div>
+            {dayAfterPrevious && s.kind !== "ss" ? (
+              <label className="flex max-w-[16rem] items-start gap-2 text-sm leading-snug text-fg">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-4 shrink-0"
+                  checked={Boolean(s.startDayAfterPrevious)}
+                  onChange={(e) => {
+                    const on = e.target.checked;
+                    updateIncome(s.id, {
+                      startDayAfterPrevious: on,
+                      ...(on ? { startDate: dayAfterPrevious } : {}),
+                    });
+                  }}
+                />
+                Start the day after {previousLabel} ends
+              </label>
+            ) : null}
+          </div>
+        </Field>
         <Field label="End (blank = ongoing)">
           <DateInput
             value={s.endDate}

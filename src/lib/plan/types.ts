@@ -152,6 +152,8 @@ export interface IncomeStream {
   vaRatingPct?: number;
   /** Spouse is a dependent on the VA award. */
   vaSpouseDependent?: boolean;
+  /** Start date tracks the day after the previous income ends. */
+  startDayAfterPrevious?: boolean;
 }
 
 export interface SpendingPhase {
@@ -161,6 +163,8 @@ export interface SpendingPhase {
   startDate: string;
   endDate: string | null;
   tiedToStageId?: string;
+  /** Start date tracks the day after the previous spending phase ends. */
+  startDayAfterPrevious?: boolean;
 }
 
 export interface Assumptions {
