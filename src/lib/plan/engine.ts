@@ -588,6 +588,22 @@ export function simulate(raw: Plan): SimResult {
         incomeByKind[k] = (incomeByKind[k] ?? 0) + v;
       }
     }
+    const goalKey = plan.assumptions.retirementGoalDate?.slice(0, 7) ?? "";
+    const triMonths = goalKey
+      ? arr.filter((m) => m.date.slice(0, 7) >= goalKey)
+      : [];
+    const triByKind: Record<string, number> = {};
+    let triGuaranteed = 0;
+    let triWithdrawals = 0;
+    for (const m of triMonths) {
+      triGuaranteed += m.guaranteed;
+      triWithdrawals += m.withdrawals;
+      for (const kind of ["military", "va", "ss", "pension", "other_retirement"]) {
+        const v = m.incomeByKind[kind] ?? 0;
+        if (v) triByKind[kind] = (triByKind[kind] ?? 0) + v;
+      }
+    }
+    const triPublished = triMonths.length > 0;
     years.push({
       year,
       primaryAge: last.primaryAge,
@@ -612,6 +628,9 @@ export function simulate(raw: Plan): SimResult {
       spending: sum((m) => m.spending),
       surplus: sum((m) => m.surplus),
       guaranteed: sum((m) => m.guaranteed),
+      tri: triPublished ? triGuaranteed + triWithdrawals : null,
+      triWithdrawals: triPublished ? triWithdrawals : 0,
+      triByKind: triPublished ? triByKind : {},
       incomeByKind,
     });
   }

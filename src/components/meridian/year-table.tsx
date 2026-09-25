@@ -163,7 +163,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
         (y.irsCut ?? 0).toFixed(2),
         (y.employerMatch ?? 0).toFixed(2),
         y.withdrawals.toFixed(2),
-        (y.guaranteed + y.withdrawals).toFixed(2),
+        y.tri == null ? "" : y.tri.toFixed(2),
         y.surplus.toFixed(2),
         y.guaranteed.toFixed(2),
         y.endSpendable.toFixed(2),
@@ -189,7 +189,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
       : [];
   const retirementLines =
     tip?.mode === "tri" && yearRow
-      ? triLines(yearRow.incomeByKind, yearRow.withdrawals, (n) =>
+      ? triLines(yearRow.triByKind, yearRow.triWithdrawals, (n) =>
           flow(n, yearRow.year),
         )
       : [];
@@ -221,7 +221,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
         </p>
       )}
       <p className="border-t border-border px-4 py-2 text-xs text-subtle">
-        TRI is not part of that equation. It is the retirement cash that arrived, before tax.
+        TRI starts at the retirement date in Family. Before that, the column is blank. It is not part of that equation. It is the retirement cash that arrived, before tax.
       </p>
       <div className="max-h-[min(42rem,calc(100dvh-var(--mach-header-h,7rem)-4rem))] overflow-auto">
         <table className="ledger-table w-max min-w-full text-left text-sm">
@@ -245,7 +245,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                   className={cls}
                   title={
                     label === "TRI"
-                      ? "Total Retirement Income — military retired pay, VA, Social Security, pension, other retirement, plus investment and annuity withdrawals. Not the job. Not the Spendable balance."
+                      ? "Total Retirement Income — starts at the retirement date in Family. Military retired pay, VA, Social Security, pension, other retirement, plus investment and annuity withdrawals from that month on. Not the job. Not the Spendable balance."
                       : undefined
                   }
                 >
@@ -329,23 +329,36 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                     {usd(flow(y.withdrawals, y.year))}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2">
-                    <button
-                      type="button"
-                      onMouseEnter={(e) => showTip(y.year, "tri", e)}
-                      onMouseMove={(e) => showTip(y.year, "tri", e)}
-                      onMouseLeave={() => setTip(null)}
-                      onFocus={(e) => {
-                        const r = e.currentTarget.getBoundingClientRect();
-                        showTip(y.year, "tri", {
-                          clientX: r.right,
-                          clientY: r.top,
-                        });
-                      }}
-                      onBlur={() => setTip(null)}
-                      className="cursor-help text-fg underline decoration-dotted underline-offset-2"
-                    >
-                      {usd(flow(y.guaranteed + y.withdrawals, y.year))}
-                    </button>
+                    {y.tri == null ? (
+                      <span
+                        className="text-subtle"
+                        title={
+                          plan.assumptions.retirementGoalDate
+                            ? `TRI starts ${plan.assumptions.retirementGoalDate.slice(0, 7)}.`
+                            : "Set a retirement date in Family."
+                        }
+                      >
+                        —
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onMouseEnter={(e) => showTip(y.year, "tri", e)}
+                        onMouseMove={(e) => showTip(y.year, "tri", e)}
+                        onMouseLeave={() => setTip(null)}
+                        onFocus={(e) => {
+                          const r = e.currentTarget.getBoundingClientRect();
+                          showTip(y.year, "tri", {
+                            clientX: r.right,
+                            clientY: r.top,
+                          });
+                        }}
+                        onBlur={() => setTip(null)}
+                        className="cursor-help text-fg underline decoration-dotted underline-offset-2"
+                      >
+                        {usd(flow(y.tri, y.year))}
+                      </button>
+                    )}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 pr-5 text-fg">
                     {usd(real ? y.endSpendableReal : y.endSpendable)}
@@ -424,7 +437,9 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                 <li className="flex justify-between gap-3 border-t border-border pt-1 font-medium">
                   <span>Total</span>
                   <span className="tabular-nums">
-                    {usd(flow(yearRow.guaranteed + yearRow.withdrawals, yearRow.year))}
+                    {usd(
+                      flow(yearRow.tri ?? 0, yearRow.year),
+                    )}
                   </span>
                 </li>
               ) : null}
