@@ -5,7 +5,7 @@ import {
   GhostButton,
   MonthInput,
   NumberInput,
-  MoneyInput,
+  MonthYearMoney,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
@@ -128,13 +128,13 @@ export function LiabilityForm() {
                         onValue={(n) => updateLiability(l.id, { aprPct: n })}
                       />
                     </Field>
-                    <Field label="P&I / month" className="w-[8.75rem]">
-                      <MoneyInput
-                        min={0}
-                        value={Math.round((l.monthlyPi || 0) * 100) / 100}
-                        onValue={(n) => updateLiability(l.id, { monthlyPi: n })}
-                      />
-                    </Field>
+                    <MonthYearMoney
+                      compact
+                      monthLabel="P&I / month"
+                      yearLabel="P&I / year"
+                      monthly={l.monthlyPi || 0}
+                      onMonthly={(n) => updateLiability(l.id, { monthlyPi: n })}
+                    />
                     <Field label="Length (years)" className="w-[8.75rem]">
                       <NumberInput
                         min={1}

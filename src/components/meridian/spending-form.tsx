@@ -5,11 +5,11 @@ import {
   DateInput,
   Field,
   GhostButton,
-  MoneyInput,
+  MonthYearMoney,
   TextInput,
 } from "@/components/ui/field";
 import { newId, usePlanStore } from "@/lib/plan/store";
-import { dayAfter } from "@/lib/plan/dates";
+import { monthAfter } from "@/lib/plan/dates";
 import type { SpendingPhase } from "@/lib/plan/types";
 
 export function SpendingForm() {
@@ -51,18 +51,18 @@ function SpendingRow({ phase: s, index: i }: { phase: SpendingPhase; index: numb
   const updateSpending = usePlanStore((s) => s.updateSpending);
   const removeSpending = usePlanStore((s) => s.removeSpending);
   const previous = i > 0 ? plan.spending[i - 1] : null;
-  const dayAfterPrevious = previous?.endDate ? dayAfter(previous.endDate) : "";
+  const monthAfterPrevious = previous?.endDate ? monthAfter(previous.endDate) : "";
   const previousLabel = previous?.label.trim() || (previous ? `Spending ${i}` : "");
 
   useEffect(() => {
     if (!s.startDayAfterPrevious) return;
-    if (!dayAfterPrevious) {
+    if (!monthAfterPrevious) {
       updateSpending(s.id, { startDayAfterPrevious: false });
       return;
     }
-    if (s.startDate === dayAfterPrevious) return;
-    updateSpending(s.id, { startDate: dayAfterPrevious });
-  }, [s.startDayAfterPrevious, s.startDate, s.id, dayAfterPrevious, updateSpending]);
+    if (s.startDate === monthAfterPrevious) return;
+    updateSpending(s.id, { startDate: monthAfterPrevious });
+  }, [s.startDayAfterPrevious, s.startDate, s.id, monthAfterPrevious, updateSpending]);
 
   return (
     <li className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
@@ -80,12 +80,12 @@ function SpendingRow({ phase: s, index: i }: { phase: SpendingPhase; index: numb
         </DangerButton>
       </div>
       <div className="flex flex-col gap-2">
-        <Field label="$ / month (today)">
-          <MoneyInput
-            value={s.monthlyAmount}
-            onValue={(n) => updateSpending(s.id, { monthlyAmount: n })}
-          />
-        </Field>
+        <MonthYearMoney
+          monthLabel="$ / month (today)"
+          yearLabel="$ / year (today)"
+          monthly={s.monthlyAmount}
+          onMonthly={(n) => updateSpending(s.id, { monthlyAmount: n })}
+        />
         <Field label="Start">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <div className="min-w-[12rem] flex-1">
@@ -96,8 +96,11 @@ function SpendingRow({ phase: s, index: i }: { phase: SpendingPhase; index: numb
                 }
               />
             </div>
-            {dayAfterPrevious ? (
-              <label className="flex max-w-[16rem] items-start gap-2 text-sm leading-snug text-fg">
+            {monthAfterPrevious ? (
+              <label
+                className="flex max-w-[16rem] items-start gap-2 text-sm leading-snug text-fg"
+                onMouseDown={(e) => e.preventDefault()}
+              >
                 <input
                   type="checkbox"
                   className="mt-0.5 size-4 shrink-0"
@@ -106,11 +109,11 @@ function SpendingRow({ phase: s, index: i }: { phase: SpendingPhase; index: numb
                     const on = e.target.checked;
                     updateSpending(s.id, {
                       startDayAfterPrevious: on,
-                      ...(on ? { startDate: dayAfterPrevious } : {}),
+                      ...(on ? { startDate: monthAfterPrevious } : {}),
                     });
                   }}
                 />
-                Start the day after {previousLabel} ends
+                Start the month after {previousLabel} ends
               </label>
             ) : null}
           </div>

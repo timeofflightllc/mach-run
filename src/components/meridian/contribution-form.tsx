@@ -6,7 +6,7 @@ import {
   Field,
   GhostButton,
   NumberInput,
-  MoneyInput,
+  MonthYearMoney,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
@@ -183,12 +183,12 @@ export function ContributionForm() {
                     </p>
                   </>
                 ) : (
-                  <Field label="$ / month">
-                    <MoneyInput
-                      value={Math.round(c.monthlyAmount * 100) / 100}
-                      onValue={(n) => updateContribution(c.id, { monthlyAmount: n })}
-                    />
-                  </Field>
+                  <MonthYearMoney
+                    monthLabel="$ / month"
+                    yearLabel="$ / year"
+                    monthly={c.monthlyAmount}
+                    onMonthly={(n) => updateContribution(c.id, { monthlyAmount: n })}
+                  />
                 )}
                 {irsCappedKind ? (
                   <label className="flex items-center gap-2 text-sm text-fg">

@@ -42,6 +42,39 @@ import { WelcomeEmailPreviewOverlay } from "@/components/meridian/welcome-email-
 import { EmailVerifyBanner } from "@/components/meridian/email-verify-banner";
 import { GhostButton, PrimaryButton } from "@/components/ui/field";
 
+function SweepNav({
+  showBack,
+  showNext,
+  onBack,
+  onNext,
+}: {
+  showBack: boolean;
+  showNext: boolean;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  return (
+    <>
+      {showBack ? (
+        <GhostButton
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onBack}
+        >
+          Back
+        </GhostButton>
+      ) : null}
+      {showNext ? (
+        <PrimaryButton
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={onNext}
+        >
+          Next
+        </PrimaryButton>
+      ) : null}
+    </>
+  );
+}
+
 /** View toggle only. It does not change the run, so it must not force a re-execute. */
 function inputSignature(plan: Plan): string {
   const assumptions = { ...plan.assumptions };
@@ -146,7 +179,6 @@ function Home() {
   const [step, setStep] = useState<StepId>("family");
   const sheet = hasBalanceSheet(ent.plan);
   const route = PAGES.filter((page) => page.id !== "liabilities" || sheet);
-  const stepIndex = route.findIndex((item) => item.id === step);
   const [motion, setMotion] = useState<{
     from: StepId;
     to: StepId;
@@ -285,7 +317,7 @@ function Home() {
 
   function onNext() {
     const next = route[shownIndex + 1]?.id;
-    if (!next || motion) return;
+    if (!next) return;
     const live = usePlanStore.getState().plan;
     const key = useProfileStore.getState().activeId || "local";
     const current = runs[key];
@@ -316,21 +348,27 @@ function Home() {
   }
 
   function goStep(next: StepId) {
-    if (next === step || motion) return;
+    const from = motion?.to ?? step;
+    if (next === from) return;
     const nextIndex = route.findIndex((item) => item.id === next);
+    const fromIndex = route.findIndex((item) => item.id === from);
     const reduce =
       typeof window !== "undefined" &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (nextIndex < 0) return;
     if (reduce) {
+      setMotion(null);
+      setFrameHeight(null);
       setStep(next);
       return;
     }
-    setFrameHeight(panelRefs.current[step]?.offsetHeight ?? null);
+    const fromEl = panelRefs.current[from] ?? panelRefs.current[step];
+    setFrameHeight(fromEl?.offsetHeight ?? null);
+    setStep(next);
     setMotion({
-      from: step,
+      from,
       to: next,
-      dir: nextIndex > stepIndex ? 1 : -1,
+      dir: nextIndex > fromIndex ? 1 : -1,
       on: false,
     });
   }
@@ -442,12 +480,20 @@ function Home() {
   } {
     if (!motion || (id !== motion.from && id !== motion.to)) {
       const visible = step === id;
-      return { className: visible ? idle : "hidden", hidden: !visible };
+      return {
+        className: visible ? cn(idle, "relative z-20") : "pointer-events-none hidden",
+        hidden: !visible,
+      };
     }
     const fromX = motion.on ? (motion.dir === 1 ? "-100%" : "100%") : "0%";
     const toX = motion.on ? "0%" : motion.dir === 1 ? "100%" : "-100%";
+    const onScreen = id === motion.from ? !motion.on : motion.on;
     return {
-      className: cn(idle, "absolute inset-x-0 top-0 w-full"),
+      className: cn(
+        idle,
+        "absolute inset-x-0 top-0 w-full",
+        onScreen ? "z-20" : "pointer-events-none",
+      ),
       style: {
         transform: `translateX(${id === motion.from ? fromX : toX})`,
         transition: motion.on ? "transform 250ms ease" : "none",
@@ -464,25 +510,12 @@ function Home() {
   const contributionsPane = pane("contributions", "flex flex-col gap-3");
   const actPane = pane("act", "flex min-w-0 flex-col gap-4");
 
-  function SweepNav() {
-    return (
-      <>
-        {shownIndex > 0 ? (
-          <GhostButton onClick={() => goStep(route[shownIndex - 1].id)}>Back</GhostButton>
-        ) : null}
-        {shownIndex >= 0 && shownIndex < route.length - 1 ? (
-          <PrimaryButton
-            onClick={(e) => {
-              e.currentTarget.blur();
-              onNext();
-            }}
-          >
-            Next
-          </PrimaryButton>
-        ) : null}
-      </>
-    );
-  }
+  const showBack = shownIndex > 0;
+  const showNext = shownIndex >= 0 && shownIndex < route.length - 1;
+  const onBack = () => {
+    const prev = route[shownIndex - 1]?.id;
+    if (prev) goStep(prev);
+  };
 
   return (
     <div className="min-h-screen bg-bg text-fg">
@@ -651,13 +684,14 @@ function Home() {
             className={familyPane.className}
             style={familyPane.style}
             aria-hidden={familyPane.hidden}
+            hidden={familyPane.hidden}
           >
             <PhaseLabel id="ooda-observe" label="Observe" />
             <Section
               title="Family"
               hint="Who is in the household, and when you want to retire."
               pinned
-              nav={<SweepNav />}
+              nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
             >
               <HouseholdForm />
             </Section>
@@ -669,13 +703,14 @@ function Home() {
             className={assetsPane.className}
             style={assetsPane.style}
             aria-hidden={assetsPane.hidden}
+            hidden={assetsPane.hidden}
           >
             <PhaseLabel id="ooda-observe-assets" label="Observe" />
             <Section
               title="Accounts - Assets"
               hint="The accounts you have today, and what each one is worth."
               pinned
-              nav={<SweepNav />}
+              nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
             >
               <PortfolioForm />
             </Section>
@@ -687,13 +722,14 @@ function Home() {
             className={liabilitiesPane.className}
             style={liabilitiesPane.style}
             aria-hidden={liabilitiesPane.hidden}
+            hidden={liabilitiesPane.hidden}
           >
             <PhaseLabel id="ooda-observe-liabilities" label="Observe" />
             <Section
               title="Accounts - Liabilities"
               hint="What you owe, apart from a mortgage already on a house."
               pinned
-              nav={<SweepNav />}
+              nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
             >
               <LiabilityForm />
             </Section>
@@ -705,13 +741,14 @@ function Home() {
             className={incomePane.className}
             style={incomePane.style}
             aria-hidden={incomePane.hidden}
+            hidden={incomePane.hidden}
           >
             <PhaseLabel id="ooda-orient" label="Orient" />
             <Section
               title="Income"
               hint="Each paycheck, what kind it is, and how long it lasts."
               pinned
-              nav={<SweepNav />}
+              nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
             >
               <IncomeForm />
             </Section>
@@ -723,13 +760,14 @@ function Home() {
             className={spendingPane.className}
             style={spendingPane.style}
             aria-hidden={spendingPane.hidden}
+            hidden={spendingPane.hidden}
           >
             <PhaseLabel id="ooda-orient-spending" label="Orient" />
             <Section
               title="Spending"
               hint="What the household spends in a normal month."
               pinned
-              nav={<SweepNav />}
+              nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
             >
               <SpendingForm />
             </Section>
@@ -741,13 +779,14 @@ function Home() {
             className={contributionsPane.className}
             style={contributionsPane.style}
             aria-hidden={contributionsPane.hidden}
+            hidden={contributionsPane.hidden}
           >
             <PhaseLabel id="ooda-decide" label="Decide" />
             <Section
               title="Contributions"
               hint="How much goes into which account, and when it stops."
               pinned
-              nav={<SweepNav />}
+              nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
             >
               <ContributionForm />
             </Section>
@@ -759,6 +798,7 @@ function Home() {
             className={actPane.className}
             style={actPane.style}
             aria-hidden={actPane.hidden}
+            hidden={actPane.hidden}
           >
           {runError ? (
             <p className="text-sm text-[#e8c547]">{runError}</p>
@@ -879,16 +919,19 @@ function Home() {
         </div>
         <div className="flex items-center justify-between gap-3">
           {shownIndex > 0 ? (
-            <GhostButton onClick={() => goStep(route[shownIndex - 1].id)}>Back</GhostButton>
+            <GhostButton
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => goStep(route[shownIndex - 1].id)}
+            >
+              Back
+            </GhostButton>
           ) : (
             <span />
           )}
           {shownIndex >= 0 && shownIndex < route.length - 1 ? (
             <PrimaryButton
-              onClick={(e) => {
-                e.currentTarget.blur();
-                onNext();
-              }}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={onNext}
             >
               Next
             </PrimaryButton>

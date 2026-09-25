@@ -120,6 +120,50 @@ export function MoneyInput({
   );
 }
 
+/** Nearest cent. The plan stores monthly dollars only. */
+export function roundCents(n: number): number {
+  if (!Number.isFinite(n)) return 0;
+  return Math.round(n * 100) / 100;
+}
+
+/** Year box that always equals the stored month × 12. */
+export function yearFromMonthly(monthly: number): number {
+  return roundCents(roundCents(monthly) * 12);
+}
+
+/** Month stored when the user types a year. Year then redisplays as this × 12. */
+export function monthlyFromYear(year: number): number {
+  return roundCents(roundCents(year) / 12);
+}
+
+export function MonthYearMoney({
+  monthly,
+  onMonthly,
+  monthLabel,
+  yearLabel,
+  compact,
+}: {
+  monthly: number;
+  onMonthly: (monthly: number) => void;
+  monthLabel: string;
+  yearLabel: string;
+  compact?: boolean;
+}) {
+  const month = roundCents(monthly);
+  const year = yearFromMonthly(month);
+  const fieldClass = compact ? "w-[8.75rem]" : "min-w-[9.5rem] flex-1";
+  return (
+    <div className="flex min-w-0 flex-wrap items-end gap-x-3 gap-y-2">
+      <Field label={monthLabel} className={fieldClass}>
+        <MoneyInput value={month} onValue={(n) => onMonthly(roundCents(n))} />
+      </Field>
+      <Field label={yearLabel} className={fieldClass}>
+        <MoneyInput value={year} onValue={(n) => onMonthly(monthlyFromYear(n))} />
+      </Field>
+    </div>
+  );
+}
+
 const datePartClass =
   "h-11 rounded-lg border border-border bg-elevated px-2 text-sm text-fg tabular-nums outline-none transition-[box-shadow,border-color] duration-150 placeholder:text-subtle focus:border-accent/40 focus:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-accent)_25%,transparent)]";
 

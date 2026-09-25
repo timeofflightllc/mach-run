@@ -5,7 +5,7 @@ import {
   GhostButton,
   MonthInput,
   NumberInput,
-  MoneyInput,
+  MonthYearMoney,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
@@ -305,13 +305,13 @@ function RealEstateMortgage({
                   onValue={(n) => patch({ aprPct: n })}
                 />
               </Field>
-              <Field label="P&I / month" className="w-[8.75rem]">
-                <MoneyInput
-                  min={0}
-                  value={Math.round((mortgage.monthlyPi || 0) * 100) / 100}
-                  onValue={(n) => patch({ monthlyPi: n })}
-                />
-              </Field>
+              <MonthYearMoney
+                compact
+                monthLabel="P&I / month"
+                yearLabel="P&I / year"
+                monthly={mortgage.monthlyPi || 0}
+                onMonthly={(n) => patch({ monthlyPi: n })}
+              />
               <Field label="Length (years)" className="w-[8.75rem]">
                 <NumberInput
                   min={1}

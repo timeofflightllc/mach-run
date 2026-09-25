@@ -58,6 +58,16 @@ export function dayAfter(isoDate: string | null | undefined): string {
   return iso(addDays(parseDate(isoDate), 1));
 }
 
+/**
+ * First day of the month after `endIso`.
+ * Paychecks are modeled by month, so the next one must start the next month
+ * or both pay in the handoff month.
+ */
+export function monthAfter(endIso: string | null | undefined): string {
+  if (!endIso || !validIso(endIso)) return "";
+  return iso(addMonths(monthStart(endIso), 1));
+}
+
 /** Local calendar date. A new MACH RUN starts here. */
 export function todayIso(): string {
   return iso(new Date());

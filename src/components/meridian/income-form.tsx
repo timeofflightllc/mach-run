@@ -6,14 +6,14 @@ import {
   Field,
   GhostButton,
   NumberInput,
-  MoneyInput,
+  MonthYearMoney,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
 import type { IncomeKind, IncomeStream, TaxTreatment } from "@/lib/plan/types";
 import { newId, usePlanStore } from "@/lib/plan/store";
 import { ssBenefitFromPia, ssBirthFor, ssScheduleDates } from "@/lib/plan/social-security";
-import { dayAfter } from "@/lib/plan/dates";
+import { monthAfter } from "@/lib/plan/dates";
 import { usd } from "@/lib/plan/format";
 import { VaKids } from "@/components/meridian/va-kids";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
@@ -102,23 +102,23 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
   const birth = ssBirthFor(plan, s);
   const ssWindow = ssScheduleDates(birth, claimAge, endAge);
   const previous = i > 0 ? plan.incomes[i - 1] : null;
-  const dayAfterPrevious = previous?.endDate ? dayAfter(previous.endDate) : "";
+  const monthAfterPrevious = previous?.endDate ? monthAfter(previous.endDate) : "";
   const previousLabel = previous?.name.trim() || (previous ? `Income ${i}` : "");
 
   useEffect(() => {
     if (s.kind === "ss" || !s.startDayAfterPrevious) return;
-    if (!dayAfterPrevious) {
+    if (!monthAfterPrevious) {
       updateIncome(s.id, { startDayAfterPrevious: false });
       return;
     }
-    if (s.startDate === dayAfterPrevious) return;
-    updateIncome(s.id, { startDate: dayAfterPrevious });
+    if (s.startDate === monthAfterPrevious) return;
+    updateIncome(s.id, { startDate: monthAfterPrevious });
   }, [
     s.kind,
     s.startDayAfterPrevious,
     s.startDate,
     s.id,
-    dayAfterPrevious,
+    monthAfterPrevious,
     updateIncome,
   ]);
 
@@ -313,12 +313,12 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
             )}
           </>
         ) : s.kind === "va" ? null : (
-          <Field label="$ / month (today)">
-            <MoneyInput
-              value={Math.round(s.monthlyAmount * 100) / 100}
-              onValue={(n) => updateIncome(s.id, { monthlyAmount: n })}
-            />
-          </Field>
+          <MonthYearMoney
+            monthLabel="$ / month (today)"
+            yearLabel="$ / year (today)"
+            monthly={s.monthlyAmount}
+            onMonthly={(n) => updateIncome(s.id, { monthlyAmount: n })}
+          />
         )}
         <Field label="Start">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -330,8 +330,11 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
                 }
               />
             </div>
-            {dayAfterPrevious && s.kind !== "ss" ? (
-              <label className="flex max-w-[16rem] items-start gap-2 text-sm leading-snug text-fg">
+            {monthAfterPrevious && s.kind !== "ss" ? (
+              <label
+                className="flex max-w-[16rem] items-start gap-2 text-sm leading-snug text-fg"
+                onMouseDown={(e) => e.preventDefault()}
+              >
                 <input
                   type="checkbox"
                   className="mt-0.5 size-4 shrink-0"
@@ -340,11 +343,11 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
                     const on = e.target.checked;
                     updateIncome(s.id, {
                       startDayAfterPrevious: on,
-                      ...(on ? { startDate: dayAfterPrevious } : {}),
+                      ...(on ? { startDate: monthAfterPrevious } : {}),
                     });
                   }}
                 />
-                Start the day after {previousLabel} ends
+                Start the month after {previousLabel} ends
               </label>
             ) : null}
           </div>

@@ -111,7 +111,7 @@ export function Section({
                 <span className="block font-display text-lg font-bold text-fg">{title}</span>
                 {hint ? <span className="mt-0.5 block text-xs text-subtle">{hint}</span> : null}
               </div>
-              <div className="flex items-center justify-center gap-3">{nav}</div>
+              <div className="relative z-20 flex items-center justify-center gap-3">{nav}</div>
               <div className="hidden md:block" aria-hidden />
             </div>
           ) : (
