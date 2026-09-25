@@ -7,6 +7,7 @@ import {
   GhostButton,
   NumberInput,
   MonthYearMoney,
+  MoneyInput,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
