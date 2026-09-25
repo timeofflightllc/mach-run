@@ -363,6 +363,9 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
     const incomeByKind: Record<string, number> = {};
     let income = 0;
     let taxableBase = 0;
+    let ordinaryTaxable = 0;
+    let ssBenefit = 0;
+    let ssTaxable = 0;
     let guaranteed = 0;
 
     for (const stream of plan.incomes) {
@@ -374,25 +377,58 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
       const nominal = todayAmt * (1 + mCola) ** monthsFromAsOf;
       income += nominal;
       incomeByKind[stream.kind] = (incomeByKind[stream.kind] ?? 0) + nominal;
-      if (stream.taxTreatment === "ordinary") taxableBase += nominal;
-      if (stream.taxTreatment === "ss") taxableBase += nominal * ssTaxShare;
+      if (stream.taxTreatment === "ordinary") {
+        taxableBase += nominal;
+        ordinaryTaxable += nominal;
+      }
+      if (stream.taxTreatment === "ss") {
+        const taxed = nominal * ssTaxShare;
+        taxableBase += taxed;
+        ssBenefit += nominal;
+        ssTaxable += taxed;
+      }
       if (isGuaranteedKind(stream.kind)) {
         guaranteed += nominal;
       }
     }
 
+    const spendingLines: { id: string; label: string; amount: number }[] = [];
     let spending = 0;
     for (const phase of plan.spending) {
       const win = spendingWindow(plan, phase);
       if (!inRange(cursor, win.start, win.end)) continue;
-      spending += inflate(phase.monthlyAmount, mInf, monthsFromAsOf);
+      const amount = inflate(phase.monthlyAmount, mInf, monthsFromAsOf);
+      spending += amount;
+      if (amount > 0.005) {
+        spendingLines.push({
+          id: phase.id,
+          label: phase.label.trim() || "Spending",
+          amount,
+        });
+      }
     }
     for (const p of plan.portfolios) {
       if (p.kind !== "real_estate") continue;
-      spending += mortgagePaymentDue(p.mortgage, cursor);
+      const duePay = mortgagePaymentDue(p.mortgage, cursor);
+      spending += duePay;
+      if (duePay > 0.005) {
+        spendingLines.push({
+          id: `${p.id}:mortgage`,
+          label: `${p.name.trim() || "Real estate"} mortgage`,
+          amount: duePay,
+        });
+      }
     }
     for (const l of plan.liabilities ?? []) {
-      spending += liabilityPaymentDue(l, cursor);
+      const duePay = liabilityPaymentDue(l, cursor);
+      spending += duePay;
+      if (duePay > 0.005) {
+        spendingLines.push({
+          id: l.id,
+          label: l.name.trim() || "Liability",
+          amount: duePay,
+        });
+      }
     }
 
     const due: { portfolioId: string; amount: number; matchPct: number; ruleId: string }[] = [];
@@ -535,6 +571,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
     let appliedContrib = 0;
     let withdrawals = 0;
     let employerMatch = 0;
+    const drawnLines: { id: string; label: string; amount: number }[] = [];
     for (const t of rmdTakes) {
       const v = values.get(t.id) ?? 0;
       const take = Math.min(v, t.amount);
@@ -542,9 +579,21 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
       withdrawals += take;
       const rmdFlow = auditFlow?.get(t.id);
       if (rmdFlow) rmdFlow.withdrawal += take;
+      if (take > 0.005) {
+        const dest = plan.portfolios.find((row) => row.id === t.id);
+        drawnLines.push({
+          id: `${t.id}:rmd`,
+          label: `RMD from ${dest?.name.trim() || "account"}`,
+          amount: take,
+        });
+      }
     }
 
     const fundedAudit: { ruleId: string; amount: number; matchApplied: number }[] = [];
+    const savedLines: { id: string; label: string; amount: number }[] = [];
+    const matchLines: { id: string; label: string; amount: number }[] = [];
+    let sweepLine: { id: string; label: string; amount: number } | null = null;
+    let unallocatedSpent = 0;
     if (leftover > 0.5) {
       let pool = leftover;
       const funded: { portfolioId: string; amount: number; matchPct: number; ruleId: string }[] = [];
@@ -565,6 +614,13 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
         appliedContrib += take;
         const contribFlow = auditFlow?.get(d.portfolioId);
         if (contribFlow) contribFlow.contribution += take;
+        const rule = plan.contributions.find((row) => row.id === d.ruleId);
+        const dest = plan.portfolios.find((row) => row.id === d.portfolioId);
+        savedLines.push({
+          id: d.ruleId,
+          label: rule?.label.trim() || dest?.name.trim() || "Contribution",
+          amount: take,
+        });
         funded.push({
           portfolioId: d.portfolioId,
           amount: take,
@@ -585,8 +641,15 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
         appliedContrib += pool;
         const sweepFlow = auditFlow?.get(sweepId);
         if (sweepFlow) sweepFlow.sweep += pool;
+        const dest = plan.portfolios.find((row) => row.id === sweepId);
+        sweepLine = {
+          id: sweepId,
+          label: `Sweep into ${dest?.name.trim() || "account"}`,
+          amount: pool,
+        };
       } else if (pool > 0.5) {
         spending += pool;
+        unallocatedSpent = pool;
       }
       for (const f of funded) {
         if (f.matchPct <= 0) continue;
@@ -600,6 +663,12 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
         employerMatch += match;
         const matchFlow = auditFlow?.get(f.portfolioId);
         if (matchFlow) matchFlow.match += match;
+        const dest = plan.portfolios.find((row) => row.id === f.portfolioId);
+        matchLines.push({
+          id: `${f.ruleId}:match`,
+          label: `${dest?.name.trim() || "Account"} employer match`,
+          amount: match,
+        });
         const logged = fundedAudit.find(
           (row) => row.ruleId === f.ruleId && row.matchApplied === 0,
         );
@@ -608,17 +677,19 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
     } else if (leftover < -0.5) {
       const withdrawLog: { id: string; amount: number; taxableGain: number; basisReturn: number }[] =
         [];
-      withdrawals += withdrawNeed(
-        plan,
-        values,
-        basis,
-        -leftover,
-        taxR,
-        audit ? withdrawLog : undefined,
-      );
-      if (audit) {
-        let gain = 0;
-        for (const w of withdrawLog) {
+      withdrawals += withdrawNeed(plan, values, basis, -leftover, taxR, withdrawLog);
+      let gain = 0;
+      for (const w of withdrawLog) {
+        const dest = plan.portfolios.find((row) => row.id === w.id);
+        const name = dest?.name.trim() || "Account";
+        const note =
+          dest?.taxBucket === "pre_tax"
+            ? " (pre-tax)"
+            : dest && isNonQualifiedAnnuity(dest)
+              ? " (annuity)"
+              : "";
+        drawnLines.push({ id: w.id, label: `${name}${note}`, amount: w.amount });
+        if (audit) {
           const flowed = auditFlow?.get(w.id);
           if (flowed) flowed.withdrawal += w.amount;
           if (w.taxableGain) {
@@ -632,8 +703,8 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
             );
           }
         }
-        if (gain) audit.annuityEarningsByDate[iso(cursor)] = gain;
       }
+      if (audit && gain) audit.annuityEarningsByDate[iso(cursor)] = gain;
       if (!markedDepleted) {
         const left = plan.portfolios
           .filter((p) => p.spendable)
@@ -651,6 +722,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
     let netWorthEnd = 0;
     let assetsEnd = 0;
     let liabilitiesEnd = 0;
+    const spendableLines: { id: string; label: string; amount: number }[] = [];
     for (const p of plan.portfolios) {
       const v = values.get(p.id) ?? 0;
       byBucket[p.taxBucket] += v;
@@ -660,7 +732,14 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
         liabilitiesEnd += debt;
         netWorthEnd += v - debt;
       }
-      if (p.spendable) spendableEnd += v;
+      if (p.spendable) {
+        spendableEnd += v;
+        spendableLines.push({
+          id: p.id,
+          label: p.name.trim() || "Account",
+          amount: v,
+        });
+      }
     }
     for (const l of plan.liabilities ?? []) {
       const debt = remainingLiability(l, cursor);
@@ -766,6 +845,20 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
       guaranteed,
       incomeByKind,
       byBucket,
+      detail: {
+        ordinaryTaxable,
+        ssBenefit,
+        ssTaxable,
+        rmdTaxable: rmd,
+        taxRatePct: plan.assumptions.ordinaryTaxRatePct,
+        spendingLines,
+        unallocatedSpent,
+        savedLines,
+        sweep: sweepLine,
+        matchLines,
+        drawnLines,
+        spendableLines,
+      },
     });
 
     if (cursor.getMonth() === 11) {

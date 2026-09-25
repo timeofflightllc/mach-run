@@ -3,7 +3,7 @@ import { canDownloadInvestmentAudit } from "@/lib/ops/audit-download-api";
 import { buildInvestmentAuditCsv } from "@/lib/plan/audit-csv";
 import { simulate } from "@/lib/plan/engine";
 import { usd } from "@/lib/plan/format";
-import type { Plan, SimResult, YearCap } from "@/lib/plan/types";
+import type { LedgerLine, Plan, SimResult, YearCap } from "@/lib/plan/types";
 
 const KIND_LABEL: Record<string, string> = {
   salary: "Salary / wages",
@@ -91,8 +91,87 @@ type LedgerTip = {
   year: number;
   x: number;
   y: number;
-  mode: "cap" | "income" | "air";
+  mode:
+    | "cap"
+    | "year"
+    | "age"
+    | "income"
+    | "tax"
+    | "spend"
+    | "saved"
+    | "drawn"
+    | "air"
+    | "spendable";
 };
+
+function sumLabeled(
+  groups: LedgerLine[][],
+  scale: (n: number) => number,
+): { label: string; amount: number }[] {
+  const map = new Map<string, { label: string; amount: number }>();
+  for (const lines of groups) {
+    for (const line of lines) {
+      if (line.amount <= 0.005) continue;
+      const got = map.get(line.id) ?? { label: line.label, amount: 0 };
+      got.amount += line.amount;
+      got.label = line.label;
+      map.set(line.id, got);
+    }
+  }
+  return [...map.values()]
+    .filter((row) => row.amount > 0.5)
+    .map((row) => ({ label: row.label, amount: scale(row.amount) }))
+    .sort((a, b) => b.amount - a.amount);
+}
+
+function LinesTip({
+  x,
+  y,
+  title,
+  rows,
+  note,
+  total,
+}: {
+  x: number;
+  y: number;
+  title: string;
+  rows: { label: string; amount: number }[];
+  note?: string;
+  total?: number;
+}) {
+  return (
+    <div
+      role="tooltip"
+      className="pointer-events-none fixed z-[80] w-96 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-elevated px-3 py-2.5 text-left shadow-lg"
+      style={{ left: x, top: y }}
+    >
+      <p className="text-xs font-bold uppercase tracking-wider text-subtle">
+        {title}
+      </p>
+      {rows.length ? (
+        <ul className="mt-1.5 space-y-1 text-sm text-fg">
+          {rows.map((row, index) => (
+            <li key={`${row.label}-${index}`} className="flex justify-between gap-3">
+              <span>{row.label}</span>
+              <span className="shrink-0 tabular-nums">{usd(row.amount)}</span>
+            </li>
+          ))}
+          {total != null ? (
+            <li className="flex justify-between gap-3 border-t border-border pt-1 font-medium">
+              <span>Total</span>
+              <span className="tabular-nums">{usd(total)}</span>
+            </li>
+          ) : null}
+        </ul>
+      ) : note ? null : (
+        <p className="mt-1.5 text-sm text-muted">None this year.</p>
+      )}
+      {note ? (
+        <p className="mt-2 text-xs leading-snug text-muted">{note}</p>
+      ) : null}
+    </div>
+  );
+}
 
 function tipPoint(e: { clientX: number; clientY: number }): { x: number; y: number } {
   const pad = 14;
@@ -110,6 +189,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
   const inf = plan.assumptions.inflationPct / 100;
   const asOfYear = Number(plan.assumptions.asOfDate.slice(0, 4));
   const [tip, setTip] = useState<LedgerTip | null>(null);
+  const [airTip, setAirTip] = useState<{ x: number; y: number } | null>(null);
   const [auditAllowed, setAuditAllowed] = useState(false);
   const capsByYear = new Map<number, YearCap[]>();
   for (const cap of sim.yearCaps ?? []) {
@@ -146,6 +226,34 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
     if (!real) return amount;
     const yearsOut = year - asOfYear;
     return amount / (1 + inf) ** Math.max(0, yearsOut);
+  }
+
+  function dollarsNote() {
+    return real ? "Shown in today's dollars." : "Shown in future dollars.";
+  }
+
+  function hoverNumber(
+    year: number,
+    mode: LedgerTip["mode"],
+    className: string,
+    text: string,
+  ) {
+    return (
+      <button
+        type="button"
+        onMouseEnter={(e) => showTip(year, mode, e)}
+        onMouseMove={(e) => showTip(year, mode, e)}
+        onMouseLeave={() => setTip(null)}
+        onFocus={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          showTip(year, mode, { clientX: r.right, clientY: r.top });
+        }}
+        onBlur={() => setTip(null)}
+        className={`cursor-help underline decoration-dotted underline-offset-2 ${className}`}
+      >
+        {text}
+      </button>
+    );
   }
 
   function download() {
@@ -224,6 +332,74 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           flow(n, yearRow.year),
         )
       : [];
+  const tipMonths = tip ? sim.months.filter((m) => m.year === tip.year) : [];
+  const details = tipMonths.flatMap((m) => (m.detail ? [m.detail] : []));
+  const scaleTip = (n: number) => (yearRow ? flow(n, yearRow.year) : n);
+  const taxRate = details[0]?.taxRatePct ?? plan.assumptions.ordinaryTaxRatePct;
+  const ordinaryTaxable = details.reduce((s, d) => s + d.ordinaryTaxable, 0);
+  const ssBenefit = details.reduce((s, d) => s + d.ssBenefit, 0);
+  const ssTaxable = details.reduce((s, d) => s + d.ssTaxable, 0);
+  const rmdTaxable = details.reduce((s, d) => s + d.rmdTaxable, 0);
+  const taxBase = ordinaryTaxable + ssTaxable + rmdTaxable;
+  const taxRows: { label: string; amount: number }[] = [];
+  if (ordinaryTaxable > 0.5) {
+    taxRows.push({ label: "Ordinary income", amount: scaleTip(ordinaryTaxable) });
+  }
+  if (ssBenefit > 0.5) {
+    taxRows.push({
+      label: `Social Security taxed (${plan.assumptions.ssTaxablePct}%)`,
+      amount: scaleTip(ssTaxable),
+    });
+  }
+  if (rmdTaxable > 0.5) {
+    taxRows.push({
+      label: "Required minimum distributions",
+      amount: scaleTip(rmdTaxable),
+    });
+  }
+  const spendRows = sumLabeled(
+    details.map((d) => [
+      ...d.spendingLines,
+      ...(d.unallocatedSpent > 0.5
+        ? [
+            {
+              id: "unallocated",
+              label: "Unallocated surplus (no sweep account)",
+              amount: d.unallocatedSpent,
+            },
+          ]
+        : []),
+    ]),
+    scaleTip,
+  );
+  const savedRows = sumLabeled(
+    details.map((d) => [
+      ...d.savedLines,
+      ...(d.sweep ? [d.sweep] : []),
+      ...d.matchLines,
+    ]),
+    scaleTip,
+  );
+  const drawnRows = sumLabeled(
+    details.map((d) => d.drawnLines),
+    scaleTip,
+  );
+  const lastDetailMonth = [...tipMonths].reverse().find((m) => m.detail);
+  const spendableNominal = lastDetailMonth?.spendableEnd ?? 0;
+  const spendableShown = yearRow
+    ? real
+      ? yearRow.endSpendableReal
+      : yearRow.endSpendable
+    : 0;
+  const spendableScale =
+    spendableNominal > 0.5 ? spendableShown / spendableNominal : 1;
+  const spendableRows = (lastDetailMonth?.detail?.spendableLines ?? [])
+    .filter((line) => Math.abs(line.amount) > 0.5)
+    .map((line) => ({
+      label: line.label,
+      amount: line.amount * spendableScale,
+    }))
+    .sort((a, b) => b.amount - a.amount);
 
   return (
     <div className="rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
@@ -263,7 +439,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
         </p>
       )}
       <p className="border-t border-border px-4 py-2 text-xs text-subtle">
-        AIR starts at the retirement date in Family. Before that, the column is blank. It is not part of that equation. It is Actual Income Retired, before tax.
+        A.I.R. starts at the retirement date in Family. Before that, the column is blank. It is not part of that equation. It is Actual Income Retired, before tax.
       </p>
       <div className="max-h-[min(42rem,calc(100dvh-var(--mach-header-h,7rem)-4rem))] overflow-auto">
         <table className="ledger-table w-max min-w-full text-left text-sm">
@@ -278,20 +454,34 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                   ["Spend", "px-3 py-2 font-medium"],
                   ["Saved", "px-3 py-2 font-medium"],
                   ["Drawn", "px-3 py-2 font-medium"],
-                  ["AIR", "px-3 py-2 font-medium"],
+                  ["A.I.R.", "px-3 py-2 font-medium"],
                   ["Spendable", "px-3 py-2 pr-5 font-medium"],
                 ] as const
               ).map(([label, cls]) => (
                 <th
                   key={label}
                   className={cls}
-                  title={
-                    label === "AIR"
-                      ? "Actual Income Retired — starts at the retirement date in Family. Military retired pay, VA, Social Security, pension, other retirement, plus investment and annuity withdrawals from that month on. Not the job. Not the Spendable balance."
+                  onMouseEnter={
+                    label === "A.I.R."
+                      ? (e) => setAirTip(tipPoint(e))
                       : undefined
                   }
+                  onMouseMove={
+                    label === "A.I.R."
+                      ? (e) => setAirTip(tipPoint(e))
+                      : undefined
+                  }
+                  onMouseLeave={
+                    label === "A.I.R." ? () => setAirTip(null) : undefined
+                  }
                 >
-                  {label}
+                  {label === "A.I.R." ? (
+                    <span className="cursor-help underline decoration-dotted underline-offset-2">
+                      {label}
+                    </span>
+                  ) : (
+                    label
+                  )}
                 </th>
               ))}
             </tr>
@@ -306,7 +496,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                   className="border-b border-border/70 last:border-0"
                 >
                   <td className="whitespace-nowrap px-4 py-2 text-fg">
-                    {y.year}
+                    {hoverNumber(y.year, "year", "text-fg", String(y.year))}
                     {capped ? (
                       <button
                         type="button"
@@ -336,74 +526,50 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                     ) : null}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2 text-muted">
-                    {plan.primary.birthDate ? y.primaryAge : "—"}/
-                    {plan.spouse.birthDate ? y.spouseAge : "—"}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2">
-                    <button
-                      type="button"
-                      onMouseEnter={(e) => showTip(y.year, "income", e)}
-                      onMouseMove={(e) => showTip(y.year, "income", e)}
-                      onMouseLeave={() => setTip(null)}
-                      onFocus={(e) => {
-                        const r = e.currentTarget.getBoundingClientRect();
-                        showTip(y.year, "income", {
-                          clientX: r.right,
-                          clientY: r.top,
-                        });
-                      }}
-                      onBlur={() => setTip(null)}
-                      className="cursor-help text-fg underline decoration-dotted underline-offset-2"
-                    >
-                      {usd(flow(y.income, y.year))}
-                    </button>
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-muted">
-                    {usd(flow(y.tax, y.year))}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-fg">
-                    {usd(flow(y.spending, y.year))}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-positive">
-                    {usd(flow(y.contributions, y.year))}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-negative">
-                    {usd(flow(y.withdrawals, y.year))}
-                  </td>
-                  <td className="whitespace-nowrap px-3 py-2">
-                    {y.air == null ? (
-                      <span
-                        className="text-subtle"
-                        title={
-                          plan.assumptions.retirementGoalDate
-                            ? `AIR starts ${plan.assumptions.retirementGoalDate.slice(0, 7)}.`
-                            : "Set a retirement date in Family."
-                        }
-                      >
-                        —
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        onMouseEnter={(e) => showTip(y.year, "air", e)}
-                        onMouseMove={(e) => showTip(y.year, "air", e)}
-                        onMouseLeave={() => setTip(null)}
-                        onFocus={(e) => {
-                          const r = e.currentTarget.getBoundingClientRect();
-                          showTip(y.year, "air", {
-                            clientX: r.right,
-                            clientY: r.top,
-                          });
-                        }}
-                        onBlur={() => setTip(null)}
-                        className="cursor-help text-fg underline decoration-dotted underline-offset-2"
-                      >
-                        {usd(flow(y.air, y.year))}
-                      </button>
+                    {hoverNumber(
+                      y.year,
+                      "age",
+                      "text-muted",
+                      `${plan.primary.birthDate ? y.primaryAge : "—"}/${plan.spouse.birthDate ? y.spouseAge : "—"}`,
                     )}
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 pr-5 text-fg">
-                    {usd(real ? y.endSpendableReal : y.endSpendable)}
+                  <td className="whitespace-nowrap px-3 py-2">
+                    {hoverNumber(y.year, "income", "text-fg", usd(flow(y.income, y.year)))}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    {hoverNumber(y.year, "tax", "text-muted", usd(flow(y.tax, y.year)))}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    {hoverNumber(y.year, "spend", "text-fg", usd(flow(y.spending, y.year)))}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    {hoverNumber(
+                      y.year,
+                      "saved",
+                      "text-positive",
+                      usd(flow(y.contributions, y.year)),
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    {hoverNumber(
+                      y.year,
+                      "drawn",
+                      "text-negative",
+                      usd(flow(y.withdrawals, y.year)),
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    {y.air == null
+                      ? hoverNumber(y.year, "air", "text-subtle", "—")
+                      : hoverNumber(y.year, "air", "text-fg", usd(flow(y.air, y.year)))}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 pr-5">
+                    {hoverNumber(
+                      y.year,
+                      "spendable",
+                      "text-fg",
+                      usd(real ? y.endSpendableReal : y.endSpendable),
+                    )}
                   </td>
                 </tr>
               );
@@ -411,6 +577,23 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           </tbody>
         </table>
       </div>
+      {airTip ? (
+        <div
+          role="tooltip"
+          className="pointer-events-none fixed z-[80] w-80 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-elevated px-3 py-2.5 text-left shadow-lg"
+          style={{ left: airTip.x, top: airTip.y }}
+        >
+          <p className="text-xs font-bold uppercase tracking-wider text-subtle">
+            A.I.R.
+          </p>
+          <p className="mt-1.5 text-sm leading-snug text-fg">
+            Actual Income Retired. Starts at the retirement date in Family.
+            Military retired pay, VA, Social Security, pension, other
+            retirement, plus withdrawals from that month on. Not the job. Not
+            the Spendable balance.
+          </p>
+        </div>
+      ) : null}
       {tip?.mode === "cap" && capLines.length ? (
         <div
           role="tooltip"
@@ -456,6 +639,10 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           ) : (
             <p className="mt-1.5 text-sm text-muted">No paychecks this year.</p>
           )}
+          <p className="mt-2 text-xs leading-snug text-muted">
+            Paychecks, required minimum distributions, and employer match for
+            this year. {dollarsNote()}
+          </p>
         </div>
       ) : null}
       {tip?.mode === "air" ? (
@@ -487,9 +674,86 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
               ) : null}
             </ul>
           ) : (
-            <p className="mt-1.5 text-sm text-muted">None this year.</p>
+            <p className="mt-1.5 text-sm text-muted">
+              {plan.assumptions.retirementGoalDate
+                ? `A.I.R. starts ${plan.assumptions.retirementGoalDate.slice(0, 7)}. Nothing is counted before that month.`
+                : "Set a retirement date in Family."}
+            </p>
           )}
+          <p className="mt-2 text-xs leading-snug text-muted">
+            Actual Income Retired. Military retired pay, VA, Social Security,
+            pension, other retirement, plus withdrawals from the retirement
+            month on. Not the job. Not the Spendable balance. {dollarsNote()}
+          </p>
         </div>
+      ) : null}
+      {tip && yearRow && tip.mode === "year" ? (
+        <LinesTip
+          x={tip.x}
+          y={tip.y}
+          title={`${tip.year}`}
+          rows={[]}
+          note={`Calendar year in this MACH RUN. The other columns add up the months in ${tip.year}. Ages are as of the last of those months.`}
+        />
+      ) : null}
+      {tip && yearRow && tip.mode === "age" ? (
+        <LinesTip
+          x={tip.x}
+          y={tip.y}
+          title={`${tip.year} ages`}
+          rows={[]}
+          note={`${plan.primary.name.trim() || "Primary"} ${plan.primary.birthDate ? `is ${yearRow.primaryAge} at the end of ${tip.year}, born ${plan.primary.birthDate}.` : "has no birthday set."} ${plan.spouse.name.trim() || "Spouse"} ${plan.spouse.birthDate ? `is ${yearRow.spouseAge} at the end of ${tip.year}, born ${plan.spouse.birthDate}.` : "has no birthday set."}`}
+        />
+      ) : null}
+      {tip && yearRow && tip.mode === "tax" ? (
+        <LinesTip
+          x={tip.x}
+          y={tip.y}
+          title={`${tip.year} tax`}
+          rows={taxRows}
+          total={flow(yearRow.tax, yearRow.year)}
+          note={`Each month, taxable income times the Family tax rate of ${taxRate}%. Ordinary income is taxed in full. Social Security uses the ${plan.assumptions.ssTaxablePct}% taxable share${ssBenefit > 0.5 ? ` of ${usd(scaleTip(ssBenefit))} in benefits` : ""}. Tax-free income is left out. Required minimum distributions are taxed as ordinary income. ${dollarsNote()}`}
+        />
+      ) : null}
+      {tip && yearRow && tip.mode === "spend" ? (
+        <LinesTip
+          x={tip.x}
+          y={tip.y}
+          title={`${tip.year} spending`}
+          rows={spendRows}
+          total={flow(yearRow.spending, yearRow.year)}
+          note={`Spending you typed, raised with inflation from the as-of date, plus mortgage and loan payments you marked to include. If Sweep surplus into is blank, leftover paycheck is unallocated surplus and is counted as spent. It is not saved. ${dollarsNote()}`}
+        />
+      ) : null}
+      {tip && yearRow && tip.mode === "saved" ? (
+        <LinesTip
+          x={tip.x}
+          y={tip.y}
+          title={`${tip.year} saved`}
+          rows={savedRows}
+          total={flow(yearRow.contributions, yearRow.year)}
+          note={`Dollars actually deposited, plus employer match. Match is not taken from the paycheck, and it is also counted in Income. Sweep is leftover cash sent to the account you picked.${yearRow.irsCut > 0.5 ? ` The IRS cap held back ${usd(flow(yearRow.irsCut, yearRow.year))}.` : ""} ${dollarsNote()}`}
+        />
+      ) : null}
+      {tip && yearRow && tip.mode === "drawn" ? (
+        <LinesTip
+          x={tip.x}
+          y={tip.y}
+          title={`${tip.year} drawn`}
+          rows={drawnRows}
+          total={flow(yearRow.withdrawals, yearRow.year)}
+          note={`Cash taken out of spendable accounts. RMDs are required. Other draws cover a short paycheck. Pre-tax accounts and annuity gains can be larger than the shortfall because tax comes out of the withdrawal. ${dollarsNote()}`}
+        />
+      ) : null}
+      {tip && yearRow && tip.mode === "spendable" ? (
+        <LinesTip
+          x={tip.x}
+          y={tip.y}
+          title={`${tip.year} spendable`}
+          rows={spendableRows}
+          total={real ? yearRow.endSpendableReal : yearRow.endSpendable}
+          note={`Ending balance of accounts marked spendable. This is not net worth. ${dollarsNote()}`}
+        />
       ) : null}
     </div>
   );

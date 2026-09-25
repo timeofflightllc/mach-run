@@ -323,6 +323,8 @@ test("audit H: blank sweep spends leftover instead of dropping it", () => {
   near(jan.income, 20_000);
   near(jan.contributions, 2_000);
   near(jan.spending, 18_000);
+  near(jan.detail?.unallocatedSpent ?? 0, 10_000);
+  near(jan.detail?.spendingLines[0]?.amount ?? 0, 8_000);
   near(jan.income + jan.withdrawals, jan.tax + jan.spending + jan.contributions);
   near(jan.spendableEnd, 102_000);
   const dec = month(sim, "2026-12");

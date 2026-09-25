@@ -202,6 +202,28 @@ export interface Plan {
   spending: SpendingPhase[];
 }
 
+export interface LedgerLine {
+  id: string;
+  label: string;
+  amount: number;
+}
+
+/** Where a month's ledger numbers came from. Optional so chart samples can omit it. */
+export interface MonthLedgerDetail {
+  ordinaryTaxable: number;
+  ssBenefit: number;
+  ssTaxable: number;
+  rmdTaxable: number;
+  taxRatePct: number;
+  spendingLines: LedgerLine[];
+  unallocatedSpent: number;
+  savedLines: LedgerLine[];
+  sweep: LedgerLine | null;
+  matchLines: LedgerLine[];
+  drawnLines: LedgerLine[];
+  spendableLines: LedgerLine[];
+}
+
 export interface MonthSnapshot {
   date: string;
   year: number;
@@ -231,6 +253,7 @@ export interface MonthSnapshot {
   guaranteed: number;
   incomeByKind: Record<string, number>;
   byBucket: Record<TaxBucket, number>;
+  detail?: MonthLedgerDetail;
 }
 
 export interface YearSnapshot {
