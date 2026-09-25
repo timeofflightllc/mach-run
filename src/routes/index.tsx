@@ -464,7 +464,7 @@ function Home() {
             <div className="flex min-w-0 items-center gap-0">
               <BrandLockup showTagline={false} />
             </div>
-            <div className="flex min-w-0 items-center justify-end gap-0.5 sm:gap-1.5">
+            <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1">
               <div className="hidden rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)] md:flex">
                 <button
                   type="button"

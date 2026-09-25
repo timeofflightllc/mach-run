@@ -100,7 +100,7 @@ export function Section({
     >
       {pinned ? (
         <div className="px-4 py-3.5 text-left">
-          <div className="relative flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
               {kicker ? (
                 <span className="mb-0.5 block text-xs font-medium uppercase tracking-[0.2em] text-subtle">
@@ -113,12 +113,7 @@ export function Section({
               ) : null}
             </div>
             {nav ? (
-              <>
-                <div className="pointer-events-none absolute inset-0 hidden items-center justify-center sm:flex">
-                  <div className="pointer-events-auto flex items-center gap-3">{nav}</div>
-                </div>
-                <div className="flex shrink-0 items-center gap-2 sm:hidden">{nav}</div>
-              </>
+              <div className="ml-auto flex shrink-0 items-center gap-2">{nav}</div>
             ) : null}
           </div>
           {hint ? (
