@@ -257,10 +257,10 @@ export interface YearSnapshot {
   spending: number;
   surplus: number;
   guaranteed: number;
-  /** Retirement cash from the Family retirement month forward. Null before that date, or if no date is set. */
-  tri: number | null;
-  triWithdrawals: number;
-  triByKind: Record<string, number>;
+  /** Actual Income in Retirement from the Family retirement month forward. Null before that date, or if no date is set. */
+  air: number | null;
+  airWithdrawals: number;
+  airByKind: Record<string, number>;
   incomeByKind: Record<string, number>;
 }
 

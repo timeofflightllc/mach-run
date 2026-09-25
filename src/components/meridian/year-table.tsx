@@ -57,7 +57,7 @@ function incomeLines(
   return rows;
 }
 
-const TRI_KIND = [
+const AIR_KIND = [
   ["military", "Military retired pay"],
   ["va", "VA disability"],
   ["ss", "Social Security"],
@@ -65,13 +65,13 @@ const TRI_KIND = [
   ["other_retirement", "Other retirement"],
 ] as const;
 
-function triLines(
+function airLines(
   byKind: Record<string, number> | undefined,
   withdrawals: number,
   scale: (n: number) => number,
 ): { label: string; amount: number }[] {
   const rows: { label: string; amount: number }[] = [];
-  for (const [kind, label] of TRI_KIND) {
+  for (const [kind, label] of AIR_KIND) {
     const raw = byKind?.[kind] ?? 0;
     if (raw > 0.5) rows.push({ label, amount: scale(raw) });
   }
@@ -88,7 +88,7 @@ type LedgerTip = {
   year: number;
   x: number;
   y: number;
-  mode: "cap" | "income" | "tri";
+  mode: "cap" | "income" | "air";
 };
 
 function tipPoint(e: { clientX: number; clientY: number }): { x: number; y: number } {
@@ -143,7 +143,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
       "irsCut",
       "employerMatch",
       "withdrawals",
-      "tri",
+      "air",
       "surplus",
       "guaranteed",
       "endSpendable",
@@ -163,7 +163,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
         (y.irsCut ?? 0).toFixed(2),
         (y.employerMatch ?? 0).toFixed(2),
         y.withdrawals.toFixed(2),
-        y.tri == null ? "" : y.tri.toFixed(2),
+        y.air == null ? "" : y.air.toFixed(2),
         y.surplus.toFixed(2),
         y.guaranteed.toFixed(2),
         y.endSpendable.toFixed(2),
@@ -188,8 +188,8 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
       ? incomeLines(yearRow.incomeByKind, (n) => flow(n, yearRow.year))
       : [];
   const retirementLines =
-    tip?.mode === "tri" && yearRow
-      ? triLines(yearRow.triByKind, yearRow.triWithdrawals, (n) =>
+    tip?.mode === "air" && yearRow
+      ? airLines(yearRow.airByKind, yearRow.airWithdrawals, (n) =>
           flow(n, yearRow.year),
         )
       : [];
@@ -221,7 +221,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
         </p>
       )}
       <p className="border-t border-border px-4 py-2 text-xs text-subtle">
-        TRI starts at the retirement date in Family. Before that, the column is blank. It is not part of that equation. It is the retirement cash that arrived, before tax.
+        AIR starts at the retirement date in Family. Before that, the column is blank. It is not part of that equation. It is the actual income in retirement, before tax.
       </p>
       <div className="max-h-[min(42rem,calc(100dvh-var(--mach-header-h,7rem)-4rem))] overflow-auto">
         <table className="ledger-table w-max min-w-full text-left text-sm">
@@ -236,7 +236,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                   ["Spend", "px-3 py-2 font-medium"],
                   ["Saved", "px-3 py-2 font-medium"],
                   ["Drawn", "px-3 py-2 font-medium"],
-                  ["TRI", "px-3 py-2 font-medium"],
+                  ["AIR", "px-3 py-2 font-medium"],
                   ["Spendable", "px-3 py-2 pr-5 font-medium"],
                 ] as const
               ).map(([label, cls]) => (
@@ -244,8 +244,8 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                   key={label}
                   className={cls}
                   title={
-                    label === "TRI"
-                      ? "Total Retirement Income — starts at the retirement date in Family. Military retired pay, VA, Social Security, pension, other retirement, plus investment and annuity withdrawals from that month on. Not the job. Not the Spendable balance."
+                    label === "AIR"
+                      ? "Actual Income in Retirement — starts at the retirement date in Family. Military retired pay, VA, Social Security, pension, other retirement, plus investment and annuity withdrawals from that month on. Not the job. Not the Spendable balance."
                       : undefined
                   }
                 >
@@ -329,12 +329,12 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                     {usd(flow(y.withdrawals, y.year))}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2">
-                    {y.tri == null ? (
+                    {y.air == null ? (
                       <span
                         className="text-subtle"
                         title={
                           plan.assumptions.retirementGoalDate
-                            ? `TRI starts ${plan.assumptions.retirementGoalDate.slice(0, 7)}.`
+                            ? `AIR starts ${plan.assumptions.retirementGoalDate.slice(0, 7)}.`
                             : "Set a retirement date in Family."
                         }
                       >
@@ -343,12 +343,12 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                     ) : (
                       <button
                         type="button"
-                        onMouseEnter={(e) => showTip(y.year, "tri", e)}
-                        onMouseMove={(e) => showTip(y.year, "tri", e)}
+                        onMouseEnter={(e) => showTip(y.year, "air", e)}
+                        onMouseMove={(e) => showTip(y.year, "air", e)}
                         onMouseLeave={() => setTip(null)}
                         onFocus={(e) => {
                           const r = e.currentTarget.getBoundingClientRect();
-                          showTip(y.year, "tri", {
+                          showTip(y.year, "air", {
                             clientX: r.right,
                             clientY: r.top,
                           });
@@ -356,7 +356,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                         onBlur={() => setTip(null)}
                         className="cursor-help text-fg underline decoration-dotted underline-offset-2"
                       >
-                        {usd(flow(y.tri, y.year))}
+                        {usd(flow(y.air, y.year))}
                       </button>
                     )}
                   </td>
@@ -416,14 +416,14 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           )}
         </div>
       ) : null}
-      {tip?.mode === "tri" ? (
+      {tip?.mode === "air" ? (
         <div
           role="tooltip"
           className="pointer-events-none fixed z-[80] w-80 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-elevated px-3 py-2.5 text-left shadow-lg"
           style={{ left: tip.x, top: tip.y }}
         >
           <p className="text-xs font-bold uppercase tracking-wider text-subtle">
-            {tip.year} total retirement income
+            {tip.year} actual income in retirement
           </p>
           {retirementLines.length ? (
             <ul className="mt-1.5 space-y-1 text-sm text-fg">
@@ -438,7 +438,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                   <span>Total</span>
                   <span className="tabular-nums">
                     {usd(
-                      flow(yearRow.tri ?? 0, yearRow.year),
+                      flow(yearRow.air ?? 0, yearRow.year),
                     )}
                   </span>
                 </li>
