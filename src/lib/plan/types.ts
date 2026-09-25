@@ -324,6 +324,8 @@ export interface SimResult {
   totalContributed: number;
   totalWithdrawn: number;
   rmd: RmdReport;
+  /** Present only when simulate() is asked for the admin audit. */
+  audit?: import("./audit.ts").PlanAudit;
 }
 
 export interface RmdAccountRow {

@@ -586,5 +586,38 @@ test("house mortgage plus car loan: net worth is assets minus both remaining pri
   assert.ok(Math.abs(first.liabilitiesEnd - (houseDebt + carDebt)) < 2);
 });
 
+test("audit trail does not change the run and account months balance", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.defaultReturnPct = 6;
+  plan.assumptions.asOfDate = "2026-09-01";
+  plan.portfolios = [
+    {
+      id: "port-audit",
+      name: "Brokerage",
+      kind: "taxable",
+      owner: "Joint",
+      currentValue: 10000,
+      returnPct: 6,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  const quiet = simulate(plan);
+  const full = simulate(plan, { audit: true });
+  assert.equal(quiet.audit, undefined);
+  assert.ok(full.audit);
+  assert.equal(quiet.months.length, full.months.length);
+  assert.equal(quiet.months[0].spendableEnd, full.months[0].spendableEnd);
+  assert.equal(quiet.months.at(-1)?.netWorthEnd, full.months.at(-1)?.netWorthEnd);
+  const row = full.audit?.accounts[0];
+  assert.ok(row);
+  const expected =
+    row.start + row.growth + row.contribution + row.match + row.sweep - row.withdrawal;
+  assert.ok(Math.abs(row.end - expected) < 0.02);
+  assert.ok(Math.abs(row.residual) < 0.02);
+  assert.ok(full.audit?.accounts.every((item) => Math.abs(item.residual) < 0.02));
+});
+
 
 

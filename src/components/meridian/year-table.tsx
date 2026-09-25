@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { canDownloadInvestmentAudit } from "@/lib/ops/audit-download-api";
+import { buildInvestmentAuditCsv } from "@/lib/plan/audit-csv";
+import { simulate } from "@/lib/plan/engine";
 import { usd } from "@/lib/plan/format";
 import type { Plan, SimResult, YearCap } from "@/lib/plan/types";
 
@@ -107,6 +110,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
   const inf = plan.assumptions.inflationPct / 100;
   const asOfYear = Number(plan.assumptions.asOfDate.slice(0, 4));
   const [tip, setTip] = useState<LedgerTip | null>(null);
+  const [auditAllowed, setAuditAllowed] = useState(false);
   const capsByYear = new Map<number, YearCap[]>();
   for (const cap of sim.yearCaps ?? []) {
     const list = capsByYear.get(cap.year) ?? [];
@@ -114,6 +118,20 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
     capsByYear.set(cap.year, list);
   }
   const yearRow = tip ? sim.years.find((y) => y.year === tip.year) : undefined;
+
+  useEffect(() => {
+    let cancelled = false;
+    canDownloadInvestmentAudit()
+      .then((result) => {
+        if (!cancelled) setAuditAllowed(Boolean(result?.allowed));
+      })
+      .catch(() => {
+        if (!cancelled) setAuditAllowed(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function showTip(
     year: number,
@@ -177,7 +195,20 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "mach-projection.csv";
+    a.download = "mach-ledger.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadAudit() {
+    if (!auditAllowed) return;
+    const full = simulate(plan, { audit: true });
+    const csv = buildInvestmentAuditCsv(plan, full);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "mach-investment-audit.csv";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -198,13 +229,24 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
     <div className="rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
       <div className="flex items-center justify-between gap-3 px-4 py-3">
         <h2 className="font-display text-xl font-bold text-fg">Yearly Ledger</h2>
-        <button
-          type="button"
-          onClick={download}
-          className="h-11 rounded-lg px-3 text-sm font-medium text-muted transition-colors hover:bg-elevated hover:text-fg"
-        >
-          Download CSV
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={download}
+            className="h-11 rounded-lg px-3 text-sm font-medium text-muted transition-colors hover:bg-elevated hover:text-fg"
+          >
+            Download Ledger CSV
+          </button>
+          {auditAllowed ? (
+            <button
+              type="button"
+              onClick={downloadAudit}
+              className="h-11 rounded-lg px-3 text-sm font-medium text-muted transition-colors hover:bg-elevated hover:text-fg"
+            >
+              Download Full Investment CSV
+            </button>
+          ) : null}
+        </div>
       </div>
       {sim.fundingGaps.length ? (
         <p className="border-t border-border px-4 py-3 text-sm text-muted">

@@ -18,7 +18,9 @@ import {
   rmdClass,
   rmdDueThisMonth,
   rmdStartAge,
+  uniformLifetimeFactor,
 } from "./rmd.ts";
+import { emptyAudit, type PlanAudit } from "./audit.ts";
 import { normalizeOwner } from "./family-owners.ts";
 import { irsAnnualCap, irsLimitClass } from "./irs-limits.ts";
 import { mortgagePaymentDue, portfolioEquity, remainingMortgage } from "./mortgage.ts";
@@ -103,7 +105,7 @@ export function streamWindow(
   return { start, end };
 }
 
-function spendingWindow(
+export function spendingWindow(
   plan: Plan,
   phase: Plan["spending"][number],
 ): { start: string; end: string | null } {
@@ -112,7 +114,7 @@ function spendingWindow(
   return { start: stage.startDate, end: stage.endDate };
 }
 
-function contributionWindow(
+export function contributionWindow(
   plan: Plan,
   rule: Plan["contributions"][number],
 ): { start: string; end: string | null } {
@@ -129,7 +131,7 @@ function isWorkplaceMatchAccount(kind: string): boolean {
   return kind === "401k" || kind === "401k_roth" || kind === "tsp";
 }
 
-function streamColaAnnual(plan: Plan, stream: IncomeStream, infA: number): number {
+export function streamColaAnnual(plan: Plan, stream: IncomeStream, infA: number): number {
   if (stream.colaPct != null) return stream.colaPct / 100;
   const d = plan.assumptions.defaultColaPct;
   if (d != null && Number.isFinite(d)) return d / 100;
@@ -225,6 +227,7 @@ function withdrawNeed(
   basis: Map<string, number>,
   need: number,
   taxR: number,
+  log?: { id: string; amount: number; taxableGain: number; basisReturn: number }[],
 ): number {
   let remaining = need;
   let withdrawn = 0;
@@ -246,6 +249,7 @@ function withdrawNeed(
           gain -= take;
           withdrawn += take;
           remaining -= taxR < 0.99 ? take * (1 - taxR) : take;
+          log?.push({ id: p.id, amount: take, taxableGain: take, basisReturn: 0 });
         }
         if (remaining > 0.5 && v > 0) {
           const take = Math.min(v, remaining);
@@ -253,6 +257,7 @@ function withdrawNeed(
           b = Math.max(0, b - take);
           withdrawn += take;
           remaining -= take;
+          log?.push({ id: p.id, amount: take, taxableGain: 0, basisReturn: take });
         }
         values.set(p.id, v);
         basis.set(p.id, Math.min(b, v));
@@ -264,19 +269,23 @@ function withdrawNeed(
         values.set(p.id, v - take);
         withdrawn += take;
         remaining -= take * (1 - taxR);
+        log?.push({ id: p.id, amount: take, taxableGain: 0, basisReturn: 0 });
       } else {
         const take = Math.min(v, remaining);
         values.set(p.id, v - take);
         withdrawn += take;
         remaining -= take;
+        log?.push({ id: p.id, amount: take, taxableGain: 0, basisReturn: 0 });
       }
     }
   }
   return withdrawn;
 }
 
-export function simulate(raw: Plan): SimResult {
+export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
   const plan = ensurePlan(raw);
+  const wantAudit = Boolean(opts?.audit);
+  const audit: PlanAudit | null = wantAudit ? emptyAudit() : null;
   const asOf = monthStart(plan.assumptions.asOfDate);
   const endDate = validIso(plan.primary.birthDate)
     ? dateAtAge(plan.primary.birthDate, plan.assumptions.projectionEndAge)
@@ -326,12 +335,30 @@ export function simulate(raw: Plan): SimResult {
     guard += 1;
     const monthsFromAsOf = months.length;
     const inflationIndex = (1 + mInf) ** monthsFromAsOf;
+    const auditStart = audit ? new Map(values) : null;
+    const auditBasisStart = audit ? new Map(basis) : null;
+    const auditBasisAdded = audit ? new Map<string, number>() : null;
+    const auditAnnuityGain = audit ? new Map<string, number>() : null;
+    const auditAnnuityBasisOut = audit ? new Map<string, number>() : null;
 
     for (const p of plan.portfolios) {
       const annual = (p.returnPct ?? plan.assumptions.defaultReturnPct) / 100;
       const mRet = yearlyRateToMonthly(annual);
       values.set(p.id, (values.get(p.id) ?? 0) * (1 + mRet));
     }
+
+    const auditFlow = audit
+      ? new Map(
+          plan.portfolios.map((p) => {
+            const start = auditStart?.get(p.id) ?? 0;
+            const now = values.get(p.id) ?? 0;
+            return [
+              p.id,
+              { growth: now - start, contribution: 0, match: 0, withdrawal: 0, sweep: 0 },
+            ] as const;
+          }),
+        )
+      : null;
 
     const incomeByKind: Record<string, number> = {};
     let income = 0;
@@ -368,7 +395,18 @@ export function simulate(raw: Plan): SimResult {
       spending += liabilityPaymentDue(l, cursor);
     }
 
-    const due: { portfolioId: string; amount: number; matchPct: number }[] = [];
+    const due: { portfolioId: string; amount: number; matchPct: number; ruleId: string }[] = [];
+    const contribDrafts: {
+      ruleId: string;
+      accountId: string;
+      mode: string;
+      incomeBase: number | null;
+      planned: number;
+      irsLimit: number | null;
+      catchUp: boolean;
+      capped: number;
+      matchPct: number;
+    }[] = [];
     let planned = 0;
     let irsCut = 0;
     for (const rule of plan.contributions) {
@@ -385,22 +423,46 @@ export function simulate(raw: Plan): SimResult {
           : `${cursor.getFullYear()}|${person}|${cls}`
         : null;
       const asked = amount;
+      let capUsed: number | null = null;
+      let catchUp = false;
       if (rule.capToIrsLimit && dest && cls && ytdKey) {
         const birth =
           person === "spouse" ? plan.spouse.birthDate : plan.primary.birthDate;
         const age = ageInCalendarYear(birth, cursor.getFullYear());
         const cap = irsAnnualCap(dest.kind, age) ?? 0;
+        capUsed = cap;
+        catchUp = cls !== "trump" && age >= 50;
         const used = irsYtd.get(ytdKey) ?? 0;
         amount = Math.min(amount, Math.max(0, cap - used));
       }
       if (asked - amount > 0.5) irsCut += asked - amount;
-      if (amount <= 0) continue;
-      if (ytdKey) irsYtd.set(ytdKey, (irsYtd.get(ytdKey) ?? 0) + amount);
       const matchPct =
         rule.employerMatch && dest && isWorkplaceMatchAccount(dest.kind)
           ? Math.max(0, Math.min(100, rule.employerMatchPct ?? 0))
           : 0;
-      due.push({ portfolioId: rule.portfolioId, amount, matchPct });
+      if (audit) {
+        let incomeBase: number | null = null;
+        if (rule.amountMode === "percent" && rule.percentOfIncomeId) {
+          const stream = plan.incomes.find((s) => s.id === rule.percentOfIncomeId);
+          incomeBase = stream
+            ? streamNominalAt(plan, stream, cursor, monthsFromAsOf, infA)
+            : 0;
+        }
+        contribDrafts.push({
+          ruleId: rule.id,
+          accountId: rule.portfolioId,
+          mode: rule.amountMode === "percent" ? "percent" : "fixed",
+          incomeBase,
+          planned: asked,
+          irsLimit: capUsed,
+          catchUp,
+          capped: amount,
+          matchPct,
+        });
+      }
+      if (amount <= 0) continue;
+      if (ytdKey) irsYtd.set(ytdKey, (irsYtd.get(ytdKey) ?? 0) + amount);
+      due.push({ portfolioId: rule.portfolioId, amount, matchPct, ruleId: rule.id });
       planned += amount;
     }
     const contribIds = new Set(due.map((d) => d.portfolioId));
@@ -420,6 +482,27 @@ export function simulate(raw: Plan): SimResult {
       if (rmdClass(p) === "workplace" && salaryOn && contributing) {
         if (!rmdNote.stillWorkingDeferred.includes(label)) {
           rmdNote.stillWorkingDeferred.push(label);
+        }
+      }
+      if (audit && rmdClass(p) !== "none") {
+        const birth = ownerBirth(plan, p);
+        const startAge = rmdStartAge(birth);
+        const age = ageInCalendarYear(birth, cursor.getFullYear());
+        const deferred = rmdClass(p) === "workplace" && salaryOn && contributing;
+        if (startAge != null && age >= startAge && (deferred || dueNow)) {
+          const monthly = monthlyRmd(priorYearEnd.get(p.id) ?? 0, age);
+          if (deferred || monthly > 0.5) {
+            audit.rmds.push({
+              date: iso(cursor),
+              accountId: p.id,
+              ownerAge: age,
+              startAge,
+              factor: uniformLifetimeFactor(age),
+              priorYearEnd: priorYearEnd.get(p.id) ?? 0,
+              monthlyRmd: monthly,
+              status: deferred ? "deferred" : "taken",
+            });
+          }
         }
       }
       if (!dueNow) continue;
@@ -457,29 +540,51 @@ export function simulate(raw: Plan): SimResult {
       const take = Math.min(v, t.amount);
       values.set(t.id, v - take);
       withdrawals += take;
+      const rmdFlow = auditFlow?.get(t.id);
+      if (rmdFlow) rmdFlow.withdrawal += take;
     }
 
+    const fundedAudit: { ruleId: string; amount: number; matchApplied: number }[] = [];
     if (leftover > 0.5) {
       let pool = leftover;
-      const funded: { portfolioId: string; amount: number; matchPct: number }[] = [];
+      const funded: { portfolioId: string; amount: number; matchPct: number; ruleId: string }[] = [];
       for (const d of due) {
         if (pool <= 0.5) break;
         const take = Math.min(d.amount, pool);
         values.set(d.portfolioId, (values.get(d.portfolioId) ?? 0) + take);
         if (basis.has(d.portfolioId)) {
           basis.set(d.portfolioId, (basis.get(d.portfolioId) ?? 0) + take);
+          if (auditBasisAdded) {
+            auditBasisAdded.set(
+              d.portfolioId,
+              (auditBasisAdded.get(d.portfolioId) ?? 0) + take,
+            );
+          }
         }
         pool -= take;
         appliedContrib += take;
-        funded.push({ portfolioId: d.portfolioId, amount: take, matchPct: d.matchPct });
+        const contribFlow = auditFlow?.get(d.portfolioId);
+        if (contribFlow) contribFlow.contribution += take;
+        funded.push({
+          portfolioId: d.portfolioId,
+          amount: take,
+          matchPct: d.matchPct,
+          ruleId: d.ruleId,
+        });
+        fundedAudit.push({ ruleId: d.ruleId, amount: take, matchApplied: 0 });
       }
       const sweepId = plan.assumptions.sweepPortfolioId;
       if (pool > 0.5 && sweepId && values.has(sweepId)) {
         values.set(sweepId, (values.get(sweepId) ?? 0) + pool);
         if (basis.has(sweepId)) {
           basis.set(sweepId, (basis.get(sweepId) ?? 0) + pool);
+          if (auditBasisAdded) {
+            auditBasisAdded.set(sweepId, (auditBasisAdded.get(sweepId) ?? 0) + pool);
+          }
         }
         appliedContrib += pool;
+        const sweepFlow = auditFlow?.get(sweepId);
+        if (sweepFlow) sweepFlow.sweep += pool;
       }
       for (const f of funded) {
         if (f.matchPct <= 0) continue;
@@ -491,9 +596,42 @@ export function simulate(raw: Plan): SimResult {
         appliedContrib += match;
         planned += match;
         employerMatch += match;
+        const matchFlow = auditFlow?.get(f.portfolioId);
+        if (matchFlow) matchFlow.match += match;
+        const logged = fundedAudit.find(
+          (row) => row.ruleId === f.ruleId && row.matchApplied === 0,
+        );
+        if (logged) logged.matchApplied = match;
       }
     } else if (leftover < -0.5) {
-      withdrawals += withdrawNeed(plan, values, basis, -leftover, taxR);
+      const withdrawLog: { id: string; amount: number; taxableGain: number; basisReturn: number }[] =
+        [];
+      withdrawals += withdrawNeed(
+        plan,
+        values,
+        basis,
+        -leftover,
+        taxR,
+        audit ? withdrawLog : undefined,
+      );
+      if (audit) {
+        let gain = 0;
+        for (const w of withdrawLog) {
+          const flowed = auditFlow?.get(w.id);
+          if (flowed) flowed.withdrawal += w.amount;
+          if (w.taxableGain) {
+            auditAnnuityGain?.set(w.id, (auditAnnuityGain.get(w.id) ?? 0) + w.taxableGain);
+            gain += w.taxableGain;
+          }
+          if (w.basisReturn) {
+            auditAnnuityBasisOut?.set(
+              w.id,
+              (auditAnnuityBasisOut.get(w.id) ?? 0) + w.basisReturn,
+            );
+          }
+        }
+        if (gain) audit.annuityEarningsByDate[iso(cursor)] = gain;
+      }
       if (!markedDepleted) {
         const left = plan.portfolios
           .filter((p) => p.spendable)
@@ -530,6 +668,72 @@ export function simulate(raw: Plan): SimResult {
 
     totalContributed += appliedContrib;
     totalWithdrawn += withdrawals;
+
+    if (audit && auditStart && auditFlow) {
+      const date = iso(cursor);
+      for (const p of plan.portfolios) {
+        const start = auditStart.get(p.id) ?? 0;
+        const end = values.get(p.id) ?? 0;
+        const flow = auditFlow.get(p.id) ?? {
+          growth: 0,
+          contribution: 0,
+          match: 0,
+          withdrawal: 0,
+          sweep: 0,
+        };
+        const expected =
+          start + flow.growth + flow.contribution + flow.match + flow.sweep - flow.withdrawal;
+        audit.accounts.push({
+          date,
+          accountId: p.id,
+          accountName: p.name,
+          start,
+          annualReturnPct: p.returnPct ?? plan.assumptions.defaultReturnPct,
+          growth: flow.growth,
+          contribution: flow.contribution,
+          match: flow.match,
+          withdrawal: flow.withdrawal,
+          sweep: flow.sweep,
+          end,
+          residual: end - expected,
+          spendable: p.spendable,
+          includeInNetWorth: p.includeInNetWorth,
+        });
+        if (isNonQualifiedAnnuity(p)) {
+          audit.annuities.push({
+            date,
+            accountId: p.id,
+            basisStart: auditBasisStart?.get(p.id) ?? 0,
+            basisAdded: auditBasisAdded?.get(p.id) ?? 0,
+            taxableEarnings: auditAnnuityGain?.get(p.id) ?? 0,
+            basisReturned: auditAnnuityBasisOut?.get(p.id) ?? 0,
+            basisEnd: basis.get(p.id) ?? 0,
+          });
+        }
+      }
+      const invested = new Map<string, { invested: number; match: number }>();
+      for (const row of fundedAudit) {
+        const got = invested.get(row.ruleId) ?? { invested: 0, match: 0 };
+        got.invested += row.amount;
+        got.match += row.matchApplied;
+        invested.set(row.ruleId, got);
+      }
+      for (const draft of contribDrafts) {
+        const got = invested.get(draft.ruleId) ?? { invested: 0, match: 0 };
+        audit.contributions.push({
+          date,
+          ruleId: draft.ruleId,
+          accountId: draft.accountId,
+          mode: draft.mode,
+          incomeBase: draft.incomeBase,
+          planned: draft.planned,
+          irsLimit: draft.irsLimit,
+          catchUp: draft.catchUp,
+          invested: got.invested,
+          match: got.match,
+        });
+      }
+    }
 
     months.push({
       date: iso(cursor),
@@ -763,6 +967,7 @@ export function simulate(raw: Plan): SimResult {
       total: rmdNote.total,
       accounts: buildRmdAccountRows(plan, rmdNote, rmdYearTotals),
     },
+    ...(audit ? { audit } : {}),
   };
 }
 
