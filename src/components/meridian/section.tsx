@@ -99,22 +99,21 @@ export function Section({
       className="rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]"
     >
       {pinned ? (
-        <div className="px-4 py-3.5 text-left">
-          <div className="flex flex-col gap-3 md:grid md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] md:items-center md:gap-4">
-            <div className="min-w-0">
-              {kicker ? (
-                <span className="mb-0.5 block text-xs font-medium uppercase tracking-[0.2em] text-subtle">
-                  {kicker}
-                </span>
-              ) : null}
-              <span className="block font-display text-lg font-bold text-fg">{title}</span>
-              {hint ? <span className="mt-0.5 block text-xs text-subtle">{hint}</span> : null}
-            </div>
-            {nav ? (
-              <div className="relative z-20 flex items-center justify-center gap-3">{nav}</div>
+        <div className="relative flex items-center px-4 py-3.5 text-left">
+          <div className="min-w-0">
+            {kicker ? (
+              <span className="mb-0.5 block text-xs font-medium uppercase tracking-[0.2em] text-subtle">
+                {kicker}
+              </span>
             ) : null}
-            <div className="hidden md:block" aria-hidden />
+            <span className="block font-display text-lg font-bold text-fg">{title}</span>
+            {hint ? <span className="mt-0.5 block text-xs text-subtle">{hint}</span> : null}
           </div>
+          {nav ? (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+              <div className="pointer-events-auto flex items-center gap-3">{nav}</div>
+            </div>
+          ) : null}
         </div>
       ) : (
         <button
