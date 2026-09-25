@@ -8,6 +8,7 @@ import {
   TextInput,
 } from "@/components/ui/field";
 import { newId, usePlanStore } from "@/lib/plan/store";
+import { dayAfter } from "@/lib/plan/dates";
 
 export function SpendingForm() {
   const plan = usePlanStore((s) => s.plan);
@@ -23,7 +24,12 @@ export function SpendingForm() {
         up or down.
       </p>
       <ul className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
-        {plan.spending.map((s) => (
+        {plan.spending.map((s, i) => {
+          const previous = i > 0 ? plan.spending[i - 1] : null;
+          const dayAfterPrevious = previous?.endDate ? dayAfter(previous.endDate) : "";
+          const previousLabel =
+            previous?.label.trim() || (previous ? `Spending ${i}` : "");
+          return (
           <li
             key={s.id}
             className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
@@ -48,12 +54,23 @@ export function SpendingForm() {
                   onValue={(n) => updateSpending(s.id, { monthlyAmount: n })}
                 />
               </Field>
-              <Field label="Start">
-                <DateInput
-                  value={s.startDate}
-                  onValue={(v) => updateSpending(s.id, { startDate: v })}
-                />
-              </Field>
+              <div className="flex flex-col gap-1">
+                <Field label="Start">
+                  <DateInput
+                    value={s.startDate}
+                    onValue={(v) => updateSpending(s.id, { startDate: v })}
+                  />
+                </Field>
+                {dayAfterPrevious && s.startDate !== dayAfterPrevious ? (
+                  <button
+                    type="button"
+                    className="self-start text-[11px] text-fg underline-offset-4 hover:underline"
+                    onClick={() => updateSpending(s.id, { startDate: dayAfterPrevious })}
+                  >
+                    Start the day after {previousLabel} ends
+                  </button>
+                ) : null}
+              </div>
               <Field label="End (blank = open)">
                 <DateInput
                   value={s.endDate}
@@ -65,7 +82,8 @@ export function SpendingForm() {
               </Field>
             </div>
           </li>
-        ))}
+          );
+        })}
       </ul>
       <GhostButton
         onClick={() =>
