@@ -257,7 +257,7 @@ export interface YearSnapshot {
   spending: number;
   surplus: number;
   guaranteed: number;
-  /** Actual Income in Retirement from the Family retirement month forward. Null before that date, or if no date is set. */
+  /** Actual Income Retired from the Family retirement month forward. Null before that date, or if no date is set. */
   air: number | null;
   airWithdrawals: number;
   airByKind: Record<string, number>;

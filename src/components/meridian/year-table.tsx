@@ -221,7 +221,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
         </p>
       )}
       <p className="border-t border-border px-4 py-2 text-xs text-subtle">
-        AIR starts at the retirement date in Family. Before that, the column is blank. It is not part of that equation. It is the actual income in retirement, before tax.
+        AIR starts at the retirement date in Family. Before that, the column is blank. It is not part of that equation. It is Actual Income Retired, before tax.
       </p>
       <div className="max-h-[min(42rem,calc(100dvh-var(--mach-header-h,7rem)-4rem))] overflow-auto">
         <table className="ledger-table w-max min-w-full text-left text-sm">
@@ -245,7 +245,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                   className={cls}
                   title={
                     label === "AIR"
-                      ? "Actual Income in Retirement — starts at the retirement date in Family. Military retired pay, VA, Social Security, pension, other retirement, plus investment and annuity withdrawals from that month on. Not the job. Not the Spendable balance."
+                      ? "Actual Income Retired — starts at the retirement date in Family. Military retired pay, VA, Social Security, pension, other retirement, plus investment and annuity withdrawals from that month on. Not the job. Not the Spendable balance."
                       : undefined
                   }
                 >
@@ -423,7 +423,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           style={{ left: tip.x, top: tip.y }}
         >
           <p className="text-xs font-bold uppercase tracking-wider text-subtle">
-            {tip.year} actual income in retirement
+            {tip.year} Actual Income Retired
           </p>
           {retirementLines.length ? (
             <ul className="mt-1.5 space-y-1 text-sm text-fg">
