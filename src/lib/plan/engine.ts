@@ -9,6 +9,7 @@ import {
   monthStart,
   validIso,
   yearlyRateToMonthly,
+  calendarColaYears,
 } from "./dates.ts";
 import { ssBenefitFromPia, ssBirthFor, ssScheduleDates } from "./social-security.ts";
 import {
@@ -148,8 +149,8 @@ function streamNominalAt(
   if (!inRange(cursor, win.start, win.end)) return 0;
   const todayAmt = streamBenefitToday(plan, stream, cursor);
   const colaAnnual = streamColaAnnual(plan, stream, infA);
-  const mCola = yearlyRateToMonthly(colaAnnual);
-  return todayAmt * (1 + mCola) ** monthsFromAsOf;
+  const years = calendarColaYears(monthStart(plan.assumptions.asOfDate), cursor);
+  return todayAmt * (1 + colaAnnual) ** years;
 }
 
 function contributionDueThisMonth(
@@ -372,8 +373,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
       if (!inRange(cursor, win.start, win.end)) continue;
       const todayAmt = streamBenefitToday(plan, stream, cursor);
       const colaAnnual = streamColaAnnual(plan, stream, infA);
-      const mCola = yearlyRateToMonthly(colaAnnual);
-      const nominal = todayAmt * (1 + mCola) ** monthsFromAsOf;
+      const nominal = todayAmt * (1 + colaAnnual) ** calendarColaYears(asOf, cursor);
       income += nominal;
       incomeByKind[stream.kind] = (incomeByKind[stream.kind] ?? 0) + nominal;
       if (stream.taxTreatment === "ordinary") {

@@ -142,3 +142,8 @@ export function yearlyRateToMonthly(annual: number): number {
   if (annual <= -1) return 0;
   return (1 + annual) ** (1 / 12) - 1;
 }
+
+/** January steps since the as-of year. The as-of year itself is 0. */
+export function calendarColaYears(asOf: Date, at: Date): number {
+  return Math.max(0, at.getFullYear() - asOf.getFullYear());
+}

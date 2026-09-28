@@ -1,5 +1,5 @@
 import { addMonths } from "date-fns";
-import { formatMonthYear, iso, monthStart, validIso, dateAtAge, yearlyRateToMonthly } from "./dates.ts";
+import { formatMonthYear, iso, monthStart, validIso, dateAtAge, yearlyRateToMonthly, calendarColaYears } from "./dates.ts";
 import { streamBenefitToday, streamWindow } from "./engine.ts";
 import { usd } from "./format.ts";
 import type { IncomeKind, IncomeStream, Plan } from "./types.ts";
@@ -71,7 +71,7 @@ export function presentValueOfGuaranteedStream(
       ? monthStart(iso(dateAtAge(plan.primary.birthDate, plan.assumptions.projectionEndAge)))
       : addMonths(asOf, 12 * Math.max(10, plan.assumptions.projectionEndAge - 40));
   const rf = yearlyRateToMonthly(discountPct / 100);
-  const cola = yearlyRateToMonthly(streamColaAnnual(plan, stream));
+  const colaAnnual = streamColaAnnual(plan, stream);
   let pv = 0;
   const last = end < start ? start : end;
   const horizon = addMonths(asOf, 12 * 80);
@@ -84,7 +84,7 @@ export function presentValueOfGuaranteedStream(
     }
     const todayAmt = streamBenefitToday(plan, stream, cursor);
     if (todayAmt > 0) {
-      const nominal = todayAmt * (1 + cola) ** fromAsOf;
+      const nominal = todayAmt * (1 + colaAnnual) ** calendarColaYears(asOf, cursor);
       pv += nominal / (1 + rf) ** fromAsOf;
     }
     cursor = addMonths(cursor, 1);

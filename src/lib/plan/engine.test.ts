@@ -619,5 +619,69 @@ test("audit trail does not change the run and account months balance", () => {
   assert.ok(full.audit?.accounts.every((item) => Math.abs(item.residual) < 0.02));
 });
 
+test("COLA steps each January and stays flat the rest of the year", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-09-01";
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultColaPct = 0;
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.primary.birthDate = "1979-01-01";
+  plan.assumptions.projectionEndAge = 52;
+  plan.incomes = [
+    {
+      id: "job",
+      name: "Boeing",
+      kind: "salary",
+      monthlyAmount: 10000,
+      startDate: "2026-09-01",
+      endDate: "2028-12-01",
+      colaPct: 10,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.spending = [];
+  plan.portfolios = [
+    {
+      id: "t",
+      name: "Taxable",
+      kind: "taxable",
+      owner: "primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c",
+      label: "Ten percent",
+      portfolioId: "t",
+      monthlyAmount: 0,
+      amountMode: "percent",
+      percentOfIncome: 10,
+      percentOfIncomeId: "job",
+      startDate: "2026-09-01",
+      endDate: "2028-12-01",
+    },
+  ];
+  const sim = simulate(plan, { audit: true });
+  const income = (ym: string) => sim.months.find((m) => m.date.startsWith(ym))?.income ?? -1;
+  const asked = (ym: string) =>
+    sim.audit?.contributions.find((row) => row.date.startsWith(ym))?.planned ?? -1;
+  assert.equal(Math.round(income("2026-09")), 10000);
+  assert.equal(Math.round(income("2026-12")), 10000);
+  assert.equal(Math.round(income("2027-01")), 11000);
+  assert.equal(Math.round(income("2027-06")), 11000);
+  assert.equal(Math.round(income("2027-12")), 11000);
+  assert.equal(Math.round(income("2028-01")), 12100);
+  assert.equal(Math.round(asked("2027-01")), 1100);
+  assert.equal(Math.round(asked("2027-10")), 1100);
+  assert.equal(Math.round(asked("2027-12")), 1100);
+  assert.equal(Math.round(asked("2028-01")), 1210);
+});
+
 
 

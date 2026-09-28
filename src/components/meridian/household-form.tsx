@@ -193,8 +193,9 @@ export function HouseholdForm() {
             />
           </Field>
           <p className="text-xs leading-relaxed text-[#5c4a18]">
-            This is the default COLA for every income. You can set a different
-            COLA on each income in Orient.
+            This is the default COLA for every income. It steps up each January
+            and stays flat the rest of the year. You can set a different COLA
+            on each income in Orient.
           </p>
           <Field label="Inflation (% / yr)">
             <NumberInput
