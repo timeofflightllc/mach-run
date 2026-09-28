@@ -73,6 +73,8 @@ export function emptyMortgage(): Mortgage {
     termYears: 30,
     includeInSpending: false,
     associated: false,
+    institutionId: null,
+    institutionName: "",
   };
 }
 

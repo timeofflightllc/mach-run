@@ -84,7 +84,13 @@ export function ensurePlan(plan: Plan): Plan {
           ? Number(p.costBasis)
           : 0
         : p.costBasis ?? null,
-    mortgage: p.kind === "real_estate" ? p.mortgage ?? null : p.mortgage ?? null,
+    mortgage:
+      p.mortgage
+        ? {
+            ...p.mortgage,
+            ...institutionFields(p.mortgage.institutionId, p.mortgage.institutionName),
+          }
+        : p.mortgage ?? null,
   }));
   next.liabilities = next.liabilities.map((l) => ({
     ...l,

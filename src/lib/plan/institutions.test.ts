@@ -63,4 +63,30 @@ test("old plans missing institution fields still load", () => {
   const withLoan = ensurePlan(raw);
   assert.equal(withLoan.liabilities[0].institutionId, null);
   assert.equal(withLoan.liabilities[0].institutionName, "");
+  raw.portfolios = [
+    {
+      id: "house",
+      name: "House",
+      kind: "real_estate",
+      owner: "Joint",
+      currentValue: 400_000,
+      returnPct: null,
+      taxBucket: "taxable",
+      spendable: false,
+      includeInNetWorth: true,
+      mortgage: {
+        originationDate: "2018-06-01",
+        aprPct: 3.5,
+        monthlyPi: 1800,
+        termYears: 30,
+        includeInSpending: true,
+        associated: true,
+        institutionId: "rocket-mortgage",
+        institutionName: "Rocket Mortgage",
+      },
+    },
+  ];
+  const withMortgage = ensurePlan(raw);
+  assert.equal(withMortgage.portfolios[0].mortgage?.institutionId, "rocket-mortgage");
+  assert.equal(withMortgage.portfolios[0].mortgage?.institutionName, "Rocket Mortgage");
 });

@@ -57,6 +57,10 @@ export interface Mortgage {
   includeInSpending: boolean;
   /** User opted in to model a loan on this property. */
   associated?: boolean;
+  /** Catalog id. Null when the lender was typed and is not on the list. */
+  institutionId?: string | null;
+  /** Mortgage company. Not used in any calculation. */
+  institutionName?: string;
 }
 
 export interface Portfolio {

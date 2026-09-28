@@ -336,9 +336,24 @@ function RealEstateMortgage({
             boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 35%, transparent)",
           }}
         >
-          <p className="text-xs font-medium tracking-wide text-[#5c4a18]">
-            Associated loan / mortgage
-          </p>
+          <div className="mb-2">
+            <Field label="Institution">
+              <InstitutionInput
+                institutionId={mortgage.institutionId ?? null}
+                institutionName={mortgage.institutionName ?? ""}
+                onChange={(next) => patch(next)}
+              />
+            </Field>
+          </div>
+          <div className="flex items-center gap-2">
+            <InstitutionMark
+              institutionId={mortgage.institutionId ?? null}
+              institutionName={mortgage.institutionName ?? ""}
+            />
+            <p className="text-xs font-medium tracking-wide text-[#5c4a18]">
+              Associated loan / mortgage
+            </p>
+          </div>
           <p className="mt-1 text-xs leading-relaxed text-[#5c4a18]">
             Remaining principal is subtracted from net worth. Property value still
             grows at the return above. Check the box only if this P&I is not
