@@ -40,7 +40,7 @@ export function SpendingForm() {
         onClick={() =>
           addSpending({
             id: newId("sp"),
-            label: "New spending phase",
+            label: "",
             monthlyAmount: 10000,
             startDate: plan.assumptions.asOfDate,
             endDate: null,
@@ -88,6 +88,8 @@ function SpendingRow({
       <div className="mb-2 flex items-center gap-2">
         <TextInput
           value={s.label}
+          replaceSeed="New spending phase"
+          placeholder="Name this spending"
           onChange={(e) => updateSpending(s.id, { label: e.target.value })}
           className="h-10"
         />

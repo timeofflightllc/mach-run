@@ -33,8 +33,21 @@ export function Field({
   );
 }
 
-export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={cn(controlClass, props.className)} />;
+export function TextInput({
+  replaceSeed,
+  onFocus,
+  ...props
+}: InputHTMLAttributes<HTMLInputElement> & { replaceSeed?: string }) {
+  return (
+    <input
+      {...props}
+      onFocus={(e) => {
+        if (replaceSeed && e.currentTarget.value === replaceSeed) e.currentTarget.select();
+        onFocus?.(e);
+      }}
+      className={cn(controlClass, props.className)}
+    />
+  );
 }
 
 export function NumberInput({

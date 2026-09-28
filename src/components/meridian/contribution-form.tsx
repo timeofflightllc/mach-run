@@ -1,12 +1,12 @@
-import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import {
-  DangerButton,
   DateInput,
   Field,
   GhostButton,
   NumberInput,
   MonthYearMoney,
+  PrimaryButton,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
@@ -22,12 +22,49 @@ import {
 } from "@/lib/plan/contribution-now";
 import { irsCapPerson, irsEmployeeAnnualLimit, irsOverLimitWarning } from "@/lib/plan/irs-limits";
 import { ageInCalendarYear } from "@/lib/plan/rmd";
-import type { ContributionRule } from "@/lib/plan/types";
+import type { ContributionRule, Plan } from "@/lib/plan/types";
 
 const MATCH_PCTS = Array.from({ length: 21 }, (_, i) => i * 5);
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const bandField = "w-[9.5rem] shrink-0";
+const bandControl = "h-10 max-w-none";
 
 function isWorkplace(kind: string): boolean {
   return kind === "401k" || kind === "401k_roth" || kind === "tsp";
+}
+
+function accountLabel(plan: Plan, rule: ContributionRule): string {
+  const dest = plan.portfolios.find((p) => p.id === rule.portfolioId);
+  return dest?.name.trim() || "Account";
+}
+
+function summaryAmount(plan: Plan, rule: ContributionRule): string {
+  if (rule.amountMode === "percent") {
+    const inc = plan.incomes.find((s) => s.id === rule.percentOfIncomeId);
+    const name = inc?.name.trim() || "that income";
+    return `${rule.percentOfIncome ?? 0}% of ${name}`;
+  }
+  return `${usd(rule.monthlyAmount)}/mo`;
+}
+
+function shortDate(iso: string | null | undefined): string {
+  if (!iso) return "ongoing";
+  const match = /^(\d{4})-(\d{2})/.exec(iso);
+  if (!match) return "ongoing";
+  return `${MONTHS[Number(match[2]) - 1] ?? match[2]} ${match[1]}`;
+}
+
+function sortedIds(plan: Plan): string[] {
+  return plan.contributions
+    .map((rule, index) => ({ rule, index }))
+    .sort((a, b) => {
+      const byDate = a.rule.startDate.localeCompare(b.rule.startDate);
+      if (byDate !== 0) return byDate;
+      const byAccount = accountLabel(plan, a.rule).localeCompare(accountLabel(plan, b.rule));
+      if (byAccount !== 0) return byAccount;
+      return a.index - b.index;
+    })
+    .map((row) => row.rule.id);
 }
 
 export function ContributionForm() {
@@ -39,6 +76,10 @@ export function ContributionForm() {
   const capped = atContributionCap(plan.contributions.length, ent);
   const advisories = useOpenAdvisories();
   const [needAccount, setNeedAccount] = useState(false);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [orderTick, setOrderTick] = useState(0);
+  const frozenOrder = useRef<string[] | null>(null);
+  const sortTimer = useRef<number | null>(null);
 
   useEffect(() => {
     const ret = plan.assumptions.retirementGoalDate;
@@ -49,6 +90,12 @@ export function ContributionForm() {
       }
     }
   }, [plan.assumptions.retirementGoalDate, plan.contributions, updateContribution]);
+
+  useEffect(() => {
+    return () => {
+      if (sortTimer.current != null) window.clearTimeout(sortTimer.current);
+    };
+  }, []);
 
   const activeMonthly = activeEmployerMatchMonthly(plan);
   const scheduledMonthly = scheduledEmployerMatchMonthly(plan);
@@ -63,6 +110,59 @@ export function ContributionForm() {
     }
     return ` Right now this adds up to ${usd(0, true)}/mo in employer match.`;
   })();
+
+  function cancelSort() {
+    if (sortTimer.current != null) {
+      window.clearTimeout(sortTimer.current);
+      sortTimer.current = null;
+    }
+  }
+
+  function displayIds(): string[] {
+    const ids = plan.contributions.map((rule) => rule.id);
+    const have = new Set(ids);
+    if (frozenOrder.current) {
+      const kept = frozenOrder.current.filter((id) => have.has(id));
+      for (const id of ids) {
+        if (!kept.includes(id)) kept.push(id);
+      }
+      return kept;
+    }
+    return sortedIds(plan);
+  }
+
+  function beginEdit(id: string) {
+    cancelSort();
+    if (!frozenOrder.current) frozenOrder.current = sortedIds(plan);
+    setOpenId(id);
+  }
+
+  function saveOpen() {
+    setOpenId(null);
+    cancelSort();
+    sortTimer.current = window.setTimeout(() => {
+      frozenOrder.current = null;
+      sortTimer.current = null;
+      setOrderTick((n) => n + 1);
+    }, 320);
+  }
+
+  function removeRule(id: string) {
+    removeContribution(id);
+    if (frozenOrder.current) {
+      frozenOrder.current = frozenOrder.current.filter((row) => row !== id);
+    }
+    if (openId === id) {
+      cancelSort();
+      frozenOrder.current = null;
+      setOpenId(null);
+    }
+  }
+
+  const rows = displayIds()
+    .map((id) => plan.contributions.find((rule) => rule.id === id))
+    .filter((rule): rule is ContributionRule => Boolean(rule));
+  void orderTick;
 
   return (
     <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
@@ -82,8 +182,8 @@ export function ContributionForm() {
           every contribution.
         </p>
       </div>
-      <ul className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
-        {plan.contributions.map((c) => {
+      <ul className="flex flex-col gap-2">
+        {rows.map((c) => {
           const dest = plan.portfolios.find((p) => p.id === c.portfolioId);
           const workplace = dest ? isWorkplace(dest.kind) : false;
           const emp = employeeMonthlyNow(plan, c);
@@ -103,142 +203,161 @@ export function ContributionForm() {
               })
             : null;
           const irsCappedKind = dest ? irsEmployeeAnnualLimit(dest.kind) != null : false;
+          const open = openId === c.id;
+          const advisory = advisories.find((row) => row.cardId === `card-contributions-${c.id}`);
+          const income = plan.incomes.find((s) => s.id === c.percentOfIncomeId);
           return (
             <li
               key={c.id}
               id={`card-contributions-${c.id}`}
-              className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
+              className="rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
             >
-              <div className="mb-2 flex items-center gap-2">
-                <TextInput
-                  value={c.label}
-                  onChange={(e) => updateContribution(c.id, { label: e.target.value })}
-                  className="h-10"
-                />
-                <DangerButton
-                  aria-label={`Remove ${c.label}`}
-                  onClick={() => removeContribution(c.id)}
-                >
-                  <Trash2 className="size-4" />
-                </DangerButton>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Field label="Portfolio">
-                  <SelectInput
-                    value={c.portfolioId}
-                    onChange={(e) =>
-                      updateContribution(c.id, { portfolioId: e.target.value })
-                    }
-                    disabled={!plan.portfolios.length}
-                  >
-                    {!plan.portfolios.length ? (
-                      <option value="">Add an account in Observe</option>
-                    ) : null}
-                    {plan.portfolios.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name.trim() || "Untitled account"}
-                      </option>
-                    ))}
-                  </SelectInput>
-                </Field>
-                <Field label="Amount is">
-                  <SelectInput
-                    value={c.amountMode === "percent" ? "percent" : "fixed"}
-                    onChange={(e) =>
-                      updateContribution(c.id, {
-                        amountMode: e.target.value === "percent" ? "percent" : "fixed",
-                      })
-                    }
-                  >
-                    <option value="fixed">Dollars per month</option>
-                    <option value="percent">Percent of an income</option>
-                  </SelectInput>
-                </Field>
-                {c.amountMode === "percent" ? (
-                  <>
-                    <Field label="Percent of income">
-                      <NumberInput
-                        min={0}
-                        max={100}
-                        step={0.5}
-                        value={c.percentOfIncome ?? 0}
-                        onValue={(n) => updateContribution(c.id, { percentOfIncome: n })}
+              <div
+                className="grid transition-[grid-template-rows] duration-300 ease-out"
+                style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
+                inert={!open}
+              >
+                <div className="min-h-0 overflow-hidden">
+                  <div className="flex flex-wrap items-end gap-x-3 gap-y-3 pb-1">
+                    <Field label="Name" className="w-40 shrink-0">
+                      <TextInput
+                        value={c.label}
+                        replaceSeed="New contribution"
+                        placeholder="Name this contribution"
+                        onChange={(e) => updateContribution(c.id, { label: e.target.value })}
+                        className={bandControl}
                       />
                     </Field>
-                    <Field label="Which income">
+                    <Field label="Account" className="w-44 shrink-0">
                       <SelectInput
-                        value={c.percentOfIncomeId ?? ""}
-                        onChange={(e) => {
-                          const id = e.target.value || null;
-                          const inc = plan.incomes.find((s) => s.id === id);
-                          updateContribution(c.id, {
-                            percentOfIncomeId: id,
-                            startDate: inc?.startDate || c.startDate,
-                            endDate: inc ? inc.endDate : c.endDate,
-                          });
-                        }}
+                        value={c.portfolioId}
+                        onChange={(e) =>
+                          updateContribution(c.id, { portfolioId: e.target.value })
+                        }
+                        disabled={!plan.portfolios.length}
+                        className={bandControl}
                       >
-                        <option value="">Select an income</option>
-                        {plan.incomes.map((s, i) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name.trim() || `Income ${i + 1}`}
+                        {!plan.portfolios.length ? (
+                          <option value="">Add an account in Observe</option>
+                        ) : null}
+                        {plan.portfolios.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name.trim() || "Untitled account"}
                           </option>
                         ))}
                       </SelectInput>
                     </Field>
-                    <p className="text-xs text-subtle">
-                      About {usd(emp, true)}/mo at today’s amount of that income.
-                      Dates and employer match follow that paycheck — when it
-                      ends, this contribution and the match end.
-                    </p>
-                  </>
-                ) : (
-                  <MonthYearMoney
-                    monthLabel="$ / month"
-                    yearLabel="$ / year"
-                    monthly={c.monthlyAmount}
-                    onMonthly={(n) => updateContribution(c.id, { monthlyAmount: n })}
-                  />
-                )}
-                {irsCappedKind ? (
-                  <label className="flex items-center gap-2 text-sm text-fg">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(c.capToIrsLimit)}
-                      onChange={(e) =>
-                        updateContribution(c.id, { capToIrsLimit: e.target.checked })
-                      }
-                    />
-                    Stop my contribution when I hit the IRS annual limit
-                  </label>
-                ) : null}
-                {overIrs ? (
-                  <p className="text-xs leading-relaxed text-[#5c4a18]">
-                    {overIrs}
-                  </p>
-                ) : null}
-                {workplace ? (
-                  <>
-                    <label className="flex items-center gap-2 text-sm text-fg">
-                      <input
-                        type="checkbox"
-                        checked={Boolean(c.employerMatch)}
+                    <Field label="Amount is" className="w-44 shrink-0">
+                      <SelectInput
+                        value={c.amountMode === "percent" ? "percent" : "fixed"}
                         onChange={(e) =>
                           updateContribution(c.id, {
-                            employerMatch: e.target.checked,
-                            employerMatchPct: e.target.checked
-                              ? (c.employerMatchPct ?? 100)
-                              : 0,
+                            amountMode: e.target.value === "percent" ? "percent" : "fixed",
                           })
                         }
-                      />
-                      My employer matches this contribution
-                    </label>
-                    {c.employerMatch ? (
-                      <Field
-                        label="Employer match"
-                        hint="Percent of the employee dollars that actually get invested."
+                        className={bandControl}
                       >
+                        <option value="fixed">Dollars per month</option>
+                        <option value="percent">Percent of an income</option>
+                      </SelectInput>
+                    </Field>
+                    {c.amountMode === "percent" ? (
+                      <>
+                        <Field label="Percent" className={bandField}>
+                          <NumberInput
+                            min={0}
+                            max={100}
+                            step={0.5}
+                            value={c.percentOfIncome ?? 0}
+                            onValue={(n) => updateContribution(c.id, { percentOfIncome: n })}
+                            className={bandControl}
+                          />
+                        </Field>
+                        <Field label="Which income" className="w-44 shrink-0">
+                          <SelectInput
+                            value={c.percentOfIncomeId ?? ""}
+                            onChange={(e) => {
+                              const id = e.target.value || null;
+                              const inc = plan.incomes.find((s) => s.id === id);
+                              updateContribution(c.id, {
+                                percentOfIncomeId: id,
+                                startDate: inc?.startDate || c.startDate,
+                                endDate: inc ? inc.endDate : c.endDate,
+                              });
+                            }}
+                            className={bandControl}
+                          >
+                            <option value="">Select an income</option>
+                            {plan.incomes.map((s, i) => (
+                              <option key={s.id} value={s.id}>
+                                {s.name.trim() || `Income ${i + 1}`}
+                              </option>
+                            ))}
+                          </SelectInput>
+                        </Field>
+                      </>
+                    ) : (
+                      <MonthYearMoney
+                        compact
+                        monthLabel="$ / month"
+                        yearLabel="$ / year"
+                        monthly={c.monthlyAmount}
+                        onMonthly={(n) => updateContribution(c.id, { monthlyAmount: n })}
+                      />
+                    )}
+                    {c.amountMode === "percent" ? null : (
+                      <>
+                        <Field label="Start" className="shrink-0">
+                          <DateInput
+                            value={c.startDate}
+                            onValue={(v) => updateContribution(c.id, { startDate: v })}
+                          />
+                        </Field>
+                        <Field label="End (blank = open)" className="shrink-0">
+                          <DateInput
+                            value={c.endDate}
+                            clearable
+                            onValue={(v) =>
+                              updateContribution(c.id, {
+                                endDate: v === "" ? null : v,
+                                endAtRetirement: false,
+                              })
+                            }
+                          />
+                        </Field>
+                      </>
+                    )}
+                    {irsCappedKind ? (
+                      <label className="flex h-10 items-center gap-2 self-end text-sm text-fg">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(c.capToIrsLimit)}
+                          onChange={(e) =>
+                            updateContribution(c.id, { capToIrsLimit: e.target.checked })
+                          }
+                        />
+                        Stop at the IRS annual limit
+                      </label>
+                    ) : null}
+                    {workplace ? (
+                      <label className="flex h-10 items-center gap-2 self-end text-sm text-fg">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(c.employerMatch)}
+                          onChange={(e) =>
+                            updateContribution(c.id, {
+                              employerMatch: e.target.checked,
+                              employerMatchPct: e.target.checked
+                                ? (c.employerMatchPct ?? 100)
+                                : 0,
+                            })
+                          }
+                        />
+                        Employer matches
+                      </label>
+                    ) : null}
+                    {workplace && c.employerMatch ? (
+                      <Field label="Match" className="w-24 shrink-0">
                         <SelectInput
                           value={String(c.employerMatchPct ?? 100)}
                           onChange={(e) =>
@@ -246,6 +365,7 @@ export function ContributionForm() {
                               employerMatchPct: Number(e.target.value),
                             })
                           }
+                          className={bandControl}
                         >
                           {MATCH_PCTS.map((n) => (
                             <option key={n} value={n}>
@@ -255,72 +375,83 @@ export function ContributionForm() {
                         </SelectInput>
                       </Field>
                     ) : null}
-                  </>
-                ) : null}
-                {c.amountMode === "percent" ? (
-                  <p className="text-xs leading-relaxed text-subtle">
-                    {(() => {
-                      const inc = plan.incomes.find((s) => s.id === c.percentOfIncomeId);
-                      const name = inc
-                        ? inc.name.trim() || "that income"
-                        : null;
-                      if (!inc || !name) {
-                        return "Pick an income — start, end, and match will follow that paycheck automatically.";
-                      }
-                      const start = inc.startDate.slice(0, 7);
-                      const end = inc.endDate ? inc.endDate.slice(0, 7) : "ongoing";
-                      return `Follows ${name}: ${start} → ${end}. Employer match (if any) stops when this paycheck stops.`;
-                    })()}
-                  </p>
-                ) : (
-                  <>
-                    <Field label="Start">
-                      <DateInput
-                        value={c.startDate}
-                        onValue={(v) => updateContribution(c.id, { startDate: v })}
-                      />
-                    </Field>
-                    <Field label="End (blank = open)">
-                      <DateInput
-                        value={c.endDate}
-                        clearable
-                        onValue={(v) =>
+                    <label className="flex h-10 max-w-xs items-center gap-2 self-end text-sm text-[#5c4a18]">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(c.endAtRetirement)}
+                        onChange={(e) => {
+                          const on = e.target.checked;
+                          const ret = plan.assumptions.retirementGoalDate;
                           updateContribution(c.id, {
-                            endDate: v === "" ? null : v,
-                            endAtRetirement: false,
-                          })
-                        }
+                            endAtRetirement: on,
+                            ...(on && ret ? { endDate: ret } : {}),
+                          });
+                        }}
                       />
-                    </Field>
-                  </>
-                )}
-                <label className="flex items-start gap-2 text-xs leading-relaxed text-[#5c4a18]">
-                  <input
-                    type="checkbox"
-                    className="mt-0.5"
-                    checked={Boolean(c.endAtRetirement)}
-                    onChange={(e) => {
-                      const on = e.target.checked;
-                      const ret = plan.assumptions.retirementGoalDate;
-                      updateContribution(c.id, {
-                        endAtRetirement: on,
-                        ...(on && ret ? { endDate: ret } : {}),
-                      });
-                    }}
-                  />
-                  Select to automatically stop this contribution at planned
-                  retirement date.
-                </label>
-                {c.endAtRetirement && !plan.assumptions.retirementGoalDate ? (
-                  <p className="text-xs leading-relaxed text-[#5c4a18]">
-                    Set a retirement goal date in Family first.
-                  </p>
-                ) : null}
-                <AdvisoryNote
-                  advisory={advisories.find(
-                    (row) => row.cardId === `card-contributions-${c.id}`,
-                  )}
-                />
+                      Stop at planned retirement
+                    </label>
+                    <PrimaryButton className="h-10 self-end" onClick={saveOpen}>
+                      Save contribution
+                    </PrimaryButton>
+                    {c.amountMode === "percent" ? (
+                      <p className="basis-full text-xs leading-relaxed text-subtle">
+                        {income
+                          ? `About ${usd(emp, true)}/mo at today’s amount of that income. Follows ${income.name.trim() || "that income"}: ${income.startDate.slice(0, 7)} → ${income.endDate ? income.endDate.slice(0, 7) : "ongoing"}. Dates and employer match follow that paycheck — when it ends, this contribution and the match end.`
+                          : "Pick an income — start, end, and match will follow that paycheck automatically."}
+                      </p>
+                    ) : null}
+                    {overIrs ? (
+                      <p className="basis-full text-xs leading-relaxed text-[#5c4a18]">{overIrs}</p>
+                    ) : null}
+                    {c.endAtRetirement && !plan.assumptions.retirementGoalDate ? (
+                      <p className="basis-full text-xs leading-relaxed text-[#5c4a18]">
+                        Set a retirement goal date in Family first.
+                      </p>
+                    ) : null}
+                    {open && advisory ? <div className="basis-full"><AdvisoryNote advisory={advisory} /></div> : null}
+                  </div>
+                </div>
+              </div>
+              <div
+                className="grid transition-[grid-template-rows] duration-300 ease-out"
+                style={{ gridTemplateRows: open ? "0fr" : "1fr" }}
+                inert={open}
+              >
+                <div className="min-h-0 overflow-hidden">
+                  <div className="flex items-center gap-3">
+                    <p className="min-w-0 flex-1 truncate text-sm text-fg">
+                      <span className="font-medium">{c.label.trim() || "Contribution"}</span>
+                      <span className="text-muted"> · {accountLabel(plan, c)}</span>
+                      <span className="text-muted"> · {summaryAmount(plan, c)}</span>
+                      <span className="text-muted">
+                        {" "}
+                        · {shortDate(c.startDate)} → {c.endDate ? shortDate(c.endDate) : "ongoing"}
+                      </span>
+                      {c.employerMatch ? (
+                        <span className="text-muted"> · {c.employerMatchPct ?? 0}% match</span>
+                      ) : null}
+                    </p>
+                    <button
+                      type="button"
+                      className="shrink-0 text-xs text-muted hover:text-negative"
+                      onClick={() => removeRule(c.id)}
+                    >
+                      Remove
+                    </button>
+                    <button
+                      type="button"
+                      className="shrink-0 text-sm font-medium text-fg"
+                      onClick={() => beginEdit(c.id)}
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  {!open && advisory ? (
+                    <div className="mt-2">
+                      <AdvisoryNote advisory={advisory} />
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </li>
           );
@@ -344,9 +475,13 @@ export function ContributionForm() {
                 return;
               }
               setNeedAccount(false);
+              cancelSort();
+              const id = newId("c");
+              const base = frozenOrder.current ?? sortedIds(plan);
+              frozenOrder.current = [...base.filter((row) => row !== id), id];
               addContribution({
-                id: newId("c"),
-                label: "New contribution",
+                id,
+                label: "",
                 portfolioId: dest.id,
                 monthlyAmount: 0,
                 startDate: plan.assumptions.asOfDate,
@@ -359,6 +494,7 @@ export function ContributionForm() {
                 capToIrsLimit: false,
                 endAtRetirement: false,
               });
+              setOpenId(id);
             }}
           >
             <Plus className="size-4" />

@@ -75,9 +75,10 @@ export function LiabilityForm() {
                 />
                 <TextInput
                   value={l.name}
+                  replaceSeed="New liability"
+                  placeholder="Name this loan"
                   onChange={(e) => updateLiability(l.id, { name: e.target.value })}
                   className="h-10"
-                  placeholder="Name this loan"
                 />
                 <DangerButton
                   aria-label={`Remove ${l.name || "liability"}`}
@@ -198,7 +199,7 @@ export function LiabilityForm() {
           addLiability({
             ...emptyLiability(),
             id: newId("lia"),
-            name: "New liability",
+            name: "",
             kind: "car",
           })
         }

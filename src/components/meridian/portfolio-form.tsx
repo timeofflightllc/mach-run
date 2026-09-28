@@ -101,6 +101,8 @@ export function PortfolioForm() {
               ) : null}
               <TextInput
                 value={p.name}
+                replaceSeed="New account"
+                placeholder="Name this account"
                 onChange={(e) => updatePortfolio(p.id, { name: e.target.value })}
                 className="h-10"
               />
@@ -247,7 +249,7 @@ export function PortfolioForm() {
           onClick={() =>
             addPortfolio({
               id: newId("port"),
-              name: "New account",
+              name: "",
               kind: "taxable",
               owner: "primary",
               currentValue: 0,
