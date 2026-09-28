@@ -311,3 +311,100 @@ test("the IRS cap does not hide a real paycheck shortfall", () => {
   assert.match(cash.body, /\$3,000 a month, \$36,000 for the year/);
   assert.match(cash.body, /\$12,000 of that will be invested/);
 });
+
+test("a $1 contribution is invested when the paycheck has room", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-01-01";
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultReturnPct = 0;
+  plan.assumptions.defaultColaPct = 0;
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.primary.birthDate = "1979-01-01";
+  plan.assumptions.projectionEndAge = 50;
+  plan.incomes = [
+    {
+      id: "pay",
+      name: "Pay",
+      kind: "salary",
+      monthlyAmount: 10000,
+      startDate: "2026-01-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.spending = [];
+  plan.portfolios = [
+    {
+      id: "t",
+      name: "Taxable",
+      kind: "taxable",
+      owner: "primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c",
+      label: "Test",
+      portfolioId: "t",
+      monthlyAmount: 1,
+      startDate: "2027-01-01",
+      endDate: "2027-12-01",
+    },
+  ];
+  assert.equal(
+    openAdvisories(plan).some((row) => row.kind === "cash"),
+    false,
+  );
+});
+
+test("a $1 contribution with no paycheck says the paycheck is already short", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-01-01";
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultReturnPct = 0;
+  plan.assumptions.defaultColaPct = 0;
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.primary.birthDate = "1979-01-01";
+  plan.assumptions.projectionEndAge = 50;
+  plan.incomes = [];
+  plan.spending = [];
+  plan.portfolios = [
+    {
+      id: "t",
+      name: "Taxable",
+      kind: "taxable",
+      owner: "primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c",
+      label: "Test",
+      portfolioId: "t",
+      monthlyAmount: 1,
+      startDate: "2027-01-01",
+      endDate: "2027-12-01",
+    },
+  ];
+  const cash = openAdvisories(plan).find((row) => row.kind === "cash");
+  assert.ok(cash);
+  assert.match(cash.body, /This is not an IRS limit/);
+  assert.match(cash.body, /nothing is left to invest/);
+  assert.match(cash.body, /income \$0\.00/);
+  if (cash.detail.kind === "cash") {
+    assert.equal(cash.detail.months[0].got, 0);
+    assert.ok(cash.detail.months[0].leftover <= 0.5);
+  }
+});

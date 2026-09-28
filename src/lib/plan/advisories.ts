@@ -25,6 +25,10 @@ export interface AdvisoryMonth {
   asked: number;
   got: number;
   short: boolean;
+  income: number;
+  tax: number;
+  spending: number;
+  leftover: number;
 }
 
 export type AdvisoryDetail =
@@ -203,17 +207,23 @@ function cashAdvisories(plan: Plan): Advisory[] {
   }
   const rows = sim.audit?.contributions ?? [];
   if (!rows.length) return [];
+  const byDate = new Map(sim.months.map((month) => [month.date, month]));
 
   const byRule = new Map<string, MonthHit[]>();
   for (const row of rows) {
     const tried = row.eligible ?? row.planned;
     if (tried <= 0.5 && row.invested <= 0.5) continue;
+    const month = byDate.get(row.date);
     const list = byRule.get(row.ruleId) ?? [];
     list.push({
       date: row.date,
       asked: tried,
       got: row.invested,
       short: tried > row.invested + 0.5,
+      income: month?.income ?? 0,
+      tax: month?.tax ?? 0,
+      spending: month?.spending ?? 0,
+      leftover: month?.surplus ?? 0,
     });
     byRule.set(row.ruleId, list);
   }
@@ -282,6 +292,10 @@ function cashAdvisories(plan: Plan): Advisory[] {
           asked: hit.asked,
           got: hit.got,
           short: hit.short,
+          income: hit.income,
+          tax: hit.tax,
+          spending: hit.spending,
+          leftover: hit.leftover,
         })),
       },
     });
@@ -294,6 +308,10 @@ interface MonthHit {
   asked: number;
   got: number;
   short: boolean;
+  income: number;
+  tax: number;
+  spending: number;
+  leftover: number;
 }
 
 function sumHits(hits: MonthHit[], key: "asked" | "got"): number {
@@ -339,7 +357,11 @@ function cashSentence(
     laterYears === 0
       ? ""
       : ` The same shortfall shows up in ${laterYears} later ${laterYears === 1 ? "year" : "years"}.`;
-  const reason = `The rest is more than income minus taxes minus spending. ${ahead}`;
+  const broke = short.length > 0 && short.every((hit) => hit.leftover <= 0.5);
+  const sample = short[0] ?? ordered[0];
+  const reason = broke
+    ? `This is not an IRS limit. Income does not cover taxes and spending, so nothing is left to invest. ${monthLabel(sample.date)}: income ${usd(sample.income)}, tax ${usd(sample.tax)}, spending ${usd(sample.spending)}. MACH RUN will not take this contribution from savings.`
+    : `The rest is more than what is left after taxes and spending. ${ahead}`;
   if (!covered.length) {
     const asked = sumHits(ordered, "asked");
     const got = sumHits(ordered, "got");

@@ -13,6 +13,7 @@ import {
 import { usd } from "@/lib/plan/format";
 import { newId, usePlanStore } from "@/lib/plan/store";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
+import { ConfirmRemove } from "@/components/meridian/confirm-remove";
 import { AdvisoryNote, useOpenAdvisories } from "@/components/meridian/advisory-note";
 import { atContributionCap, useEntitlement } from "@/lib/billing/use-entitlement";
 import {
@@ -90,6 +91,7 @@ export function ContributionForm() {
   const advisories = useOpenAdvisories();
   const [needAccount, setNeedAccount] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
+  const [pendingRemove, setPendingRemove] = useState<string | null>(null);
   const [orderTick, setOrderTick] = useState(0);
   const frozenOrder = useRef<string[] | null>(null);
   const sortTimer = useRef<number | null>(null);
@@ -459,7 +461,7 @@ export function ContributionForm() {
                     <button
                       type="button"
                       className="shrink-0 text-xs text-muted hover:text-negative"
-                      onClick={() => removeRule(c.id)}
+                      onClick={() => setPendingRemove(c.id)}
                     >
                       Remove
                     </button>
@@ -498,7 +500,7 @@ export function ContributionForm() {
                       <button
                         type="button"
                         className="text-xs text-muted hover:text-negative"
-                        onClick={() => removeRule(c.id)}
+                        onClick={() => setPendingRemove(c.id)}
                       >
                         Remove
                       </button>
@@ -567,6 +569,17 @@ export function ContributionForm() {
           </GhostButton>
         </>
       )}
+      {pendingRemove ? (
+        <ConfirmRemove
+          title="Remove contribution"
+          body="Are you sure you want to remove this contribution? This cannot be undone."
+          onCancel={() => setPendingRemove(null)}
+          onConfirm={() => {
+            removeRule(pendingRemove);
+            setPendingRemove(null);
+          }}
+        />
+      ) : null}
     </div>
   );
 }

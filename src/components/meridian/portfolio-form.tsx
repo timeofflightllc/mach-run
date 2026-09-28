@@ -1,5 +1,6 @@
 import { Plus, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
+import { ConfirmRemove } from "@/components/meridian/confirm-remove";
 import {
   DangerButton,
   Field,
@@ -61,7 +62,6 @@ export function PortfolioForm() {
   const addPortfolio = usePlanStore((s) => s.addPortfolio);
   const removePortfolio = usePlanStore((s) => s.removePortfolio);
   const [pendingRemove, setPendingRemove] = useState<string | null>(null);
-  const cancelRemoveRef = useRef<HTMLButtonElement>(null);
   const ent = useEntitlement();
   const capped = atAccountCap(plan.portfolios.length, ent);
 
@@ -69,16 +69,6 @@ export function PortfolioForm() {
     .filter((p) => p.spendable)
     .reduce((s, p) => s + p.currentValue, 0);
   const net = startingNetWorth(plan);
-
-  useEffect(() => {
-    if (!pendingRemove) return;
-    cancelRemoveRef.current?.focus();
-    function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape") setPendingRemove(null);
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [pendingRemove]);
 
   return (
     <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
@@ -120,8 +110,12 @@ export function PortfolioForm() {
                 className="h-10"
               />
               <DangerButton
-                aria-label={`Remove ${p.name}`}
-                onClick={() => setPendingRemove(p.id)}
+                aria-label={`Remove ${p.name || "account"}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  setPendingRemove(p.id);
+                }}
               >
                 <Trash2 className="size-4" />
               </DangerButton>
@@ -280,45 +274,15 @@ export function PortfolioForm() {
         </GhostButton>
       )}
       {pendingRemove ? (
-        <div
-          className="fixed inset-0 z-[100] grid place-items-center bg-black/60 px-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="remove-account-title"
-          onClick={() => setPendingRemove(null)}
-        >
-          <div
-            className="w-full max-w-md rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p id="remove-account-title" className="font-display text-lg text-fg">
-              Remove account
-            </p>
-            <p className="mt-3 text-sm leading-relaxed text-muted">
-              Are you sure you want to remove this account? This cannot be undone.
-            </p>
-            <div className="mt-5 flex justify-end gap-2">
-              <button
-                ref={cancelRemoveRef}
-                type="button"
-                onClick={() => setPendingRemove(null)}
-                className="h-11 rounded-lg px-4 text-sm font-medium text-muted hover:bg-surface hover:text-fg"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  removePortfolio(pendingRemove);
-                  setPendingRemove(null);
-                }}
-                className="h-11 rounded-lg bg-negative px-4 text-sm font-medium text-white hover:opacity-90"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmRemove
+          title="Remove account"
+          body="Are you sure you want to remove this account? This cannot be undone."
+          onCancel={() => setPendingRemove(null)}
+          onConfirm={() => {
+            removePortfolio(pendingRemove);
+            setPendingRemove(null);
+          }}
+        />
       ) : null}
     </div>
   );

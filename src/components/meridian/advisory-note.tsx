@@ -313,13 +313,19 @@ function CashBody({
     Boolean(stopAfter) &&
     validIso(detail.start) &&
     stopAfter.slice(0, 7) >= detail.start.slice(0, 7);
+  const short = detail.months.filter((month) => month.short);
+  const sample = short[0];
+  const paycheckShort = short.length > 0 && short.every((month) => month.leftover <= 0.5);
+  const later =
+    detail.laterYears > 0
+      ? ` The same thing happens in ${detail.laterYears} later ${detail.laterYears === 1 ? "year" : "years"}.`
+      : "";
   return (
     <div className="mt-3 space-y-4">
       <p className="text-sm leading-relaxed text-fg">
-        {detail.year}, month by month. A highlighted row is a month the paycheck cannot fully fund. Tax-qualified contributions are funded first, then the rest in the order you listed them.
-        {detail.laterYears > 0
-          ? ` The same shortfall shows up in ${detail.laterYears} later ${detail.laterYears === 1 ? "year" : "years"}.`
-          : ""}
+        {paycheckShort && sample
+          ? `This is not an IRS limit, and this contribution is not maxing out your income. In ${detail.year} the paycheck does not cover taxes and spending, so there is nothing left to invest. ${monthLabel(sample.date)}: income ${usd(sample.income)}, tax ${usd(sample.tax)}, spending ${usd(sample.spending)}. MACH RUN will not take this contribution from savings.${later}`
+          : `${detail.year}, month by month. A highlighted row is a month the paycheck cannot fully fund this contribution. Tax-qualified contributions are funded first, then the rest in the order you listed them.${detail.laterYears > 0 ? ` The same shortfall shows up in ${detail.laterYears} later ${detail.laterYears === 1 ? "year" : "years"}.` : ""}`}
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm text-fg">
@@ -327,7 +333,8 @@ function CashBody({
             <tr className="text-muted">
               <th className="py-1 pr-3 font-medium">Month</th>
               <th className="py-1 pr-3 font-medium">Asked</th>
-              <th className="py-1 font-medium">Invested</th>
+              <th className="py-1 pr-3 font-medium">Invested</th>
+              <th className="py-1 font-medium">Paycheck left</th>
             </tr>
           </thead>
           <tbody>
@@ -335,7 +342,8 @@ function CashBody({
               <tr key={month.date} style={month.short ? YELLOW : undefined}>
                 <td className="py-1 pr-3">{monthLabel(month.date)}</td>
                 <td className="py-1 pr-3">{usd(month.asked)}</td>
-                <td className="py-1">{usd(month.got)}</td>
+                <td className="py-1 pr-3">{usd(month.got)}</td>
+                <td className="py-1">{usd(month.leftover)}</td>
               </tr>
             ))}
           </tbody>
