@@ -503,19 +503,23 @@ export function buildPeerBrief(
   }
 
   if (plan.portfolios.length) {
+    const closer =
+      plan.portfolios.length === 1
+        ? "One account is a clean start. Add the rest of the hangar when you're ready."
+        : "That mix is the machine. Returns do the quiet work if you leave them invested.";
     const listed = plan.portfolios
       .map((p) => {
-        const base =
+        const name = p.name.trim() || p.kind;
+        const invested =
           p.kind === "annuity" && (p.costBasis ?? 0) > 0
-            ? `${p.name.trim() || p.kind} ${usd(p.currentValue)} (invested ${usd(p.costBasis ?? 0)})`
-            : `${p.name.trim() || p.kind} ${usd(p.currentValue)}`;
-        return base;
+            ? ` (invested ${usd(p.costBasis ?? 0)})`
+            : "";
+        return `${name} ${usd(p.currentValue)}${invested}`;
       })
       .join("; ");
-    add(
-      "Accounts on this run",
-      `${listed}. ${plan.portfolios.length === 1 ? "One account is a clean start. Add the rest of the hangar when you're ready." : "That mix is the machine. Returns do the quiet work if you leave them invested."}`,
-    );
+    add("Accounts on this run", `${listed}. ${closer}`, {
+      table: accountTable(plan, closer),
+    });
   }
 
   const debt = debtSentence(plan, month0?.liabilitiesEnd);
@@ -564,6 +568,28 @@ export function debtSentence(plan: Plan, remainingNow?: number): string | null {
   }
   const when = lastPayoff ? formatMonthYear(lastPayoff) : "the end of the term you entered";
   return `Remaining debt now is ${usd(now)}. Last modeled loan pays off ${when}.`;
+}
+
+function accountTable(plan: Plan, note: string): BriefTableSpec {
+  return {
+    intro: "",
+    note,
+    headers: [
+      { label: "Account" },
+      { label: "Value", align: "right", nowrap: true },
+    ],
+    rows: plan.portfolios.map((p) => {
+      const invested =
+        p.kind === "annuity" && (p.costBasis ?? 0) > 0
+          ? ` (invested ${usd(p.costBasis ?? 0)})`
+          : "";
+      return [`${p.name.trim() || p.kind}`, `${usd(p.currentValue)}${invested}`];
+    }),
+    logos: plan.portfolios.map((p) => ({
+      institutionId: p.institutionId ?? null,
+      institutionName: p.institutionName ?? "",
+    })),
+  };
 }
 
 function rmdIntro(plan: Plan, sim: SimResult): string {

@@ -137,6 +137,9 @@ test("free and paid generate the same full OODA; expanded is a clip flag", () =>
   assert.doesNotMatch(short.paragraphs.join(" "), /short OODA/i);
   assert.match(full.paragraphs.join(" "), /RMD/);
   assert.match(full.paragraphs.join(" "), /Accounts on this run/);
+  const accounts = full.sections.find((s) => s.title === "Accounts on this run");
+  assert.equal(accounts?.table?.rows[0]?.[0], "Brokerage");
+  assert.match(accounts?.table?.rows[0]?.[1] ?? "", /\$400,000/);
 });
 
 test("nest egg goal says extra monthly when the pile will miss", () => {

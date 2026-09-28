@@ -34,7 +34,7 @@ function BriefTable({
 }) {
   return (
     <div className="mt-1">
-      <p>{intro}</p>
+      {intro ? <p>{intro}</p> : null}
       <div className="mt-2 overflow-x-auto">
         <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
           <thead>
