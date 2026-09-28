@@ -295,6 +295,13 @@ function horizonMonth(plan: Plan): string {
   return projectionEndMonth(plan.primary.birthDate, plan.assumptions.projectionEndAge);
 }
 
+function throughPrimaryAge(plan: Plan, endIso: string | null): string {
+  const horizon = horizonMonth(plan);
+  const end = endIso ? formatMonthYear(endIso) : horizon;
+  if (end !== horizon) return end;
+  return `${end} (Primary Age ${plan.assumptions.projectionEndAge})`;
+}
+
 export function buildPeerBrief(
   plan: Plan,
   sim: SimResult,
@@ -404,7 +411,7 @@ export function buildPeerBrief(
     const rows: BriefColumnRow[] = ordered.map((s) => {
       const win = streamWindow(plan, s);
       const amt = streamBenefitToday(plan, s, asOf);
-      const end = win.end ? formatMonthYear(win.end) : horizonMonth(plan);
+      const end = throughPrimaryAge(plan, win.end);
       return {
         name: s.name.trim() || s.kind,
         amount: `${usd(amt, true)}/mo`,
