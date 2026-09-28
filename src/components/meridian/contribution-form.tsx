@@ -21,13 +21,14 @@ import {
   scheduledEmployerMatchMonthly,
 } from "@/lib/plan/contribution-now";
 import { irsCapPerson, irsEmployeeAnnualLimit, irsOverLimitWarning } from "@/lib/plan/irs-limits";
+import { institutionById, resolveInstitution } from "@/lib/plan/institutions";
 import { ageInCalendarYear } from "@/lib/plan/rmd";
 import type { ContributionRule, Plan } from "@/lib/plan/types";
 
 const MATCH_PCTS = Array.from({ length: 21 }, (_, i) => i * 5);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const summaryGrid =
-  "grid-cols-[minmax(0,1.15fr)_minmax(0,1.25fr)_8.75rem_12rem_4.75rem_auto] items-center gap-x-3";
+  "grid-cols-[minmax(0,1.15fr)_minmax(0,1.25fr)_minmax(9.5rem,9.5rem)_minmax(13rem,13rem)_minmax(4.5rem,4.5rem)_minmax(7.25rem,7.25rem)] items-center gap-x-3";
 const bandField = "w-[9.5rem] shrink-0";
 const bandControl = "h-10 max-w-none";
 
@@ -40,13 +41,23 @@ function accountLabel(plan: Plan, rule: ContributionRule): string {
   return dest?.name.trim() || "Account";
 }
 
-function summaryAmount(plan: Plan, rule: ContributionRule): { main: string; note: string } {
+function accountLogo(plan: Plan, rule: ContributionRule): string | undefined {
+  const dest = plan.portfolios.find((p) => p.id === rule.portfolioId);
+  if (!dest) return undefined;
+  const byId = institutionById(dest.institutionId);
+  if (byId?.logo) return byId.logo;
+  return institutionById(resolveInstitution(dest.institutionName ?? "").institutionId)?.logo;
+}
+
+function summaryAmount(plan: Plan, rule: ContributionRule): { main: string; title?: string } {
   if (rule.amountMode === "percent") {
     const inc = plan.incomes.find((s) => s.id === rule.percentOfIncomeId);
     const name = inc?.name.trim() || "that income";
-    return { main: `${rule.percentOfIncome ?? 0}%`, note: `of ${name}` };
+    const short = name.length > 5 ? `${name.slice(0, 5).trimEnd()}…` : name;
+    const pct = rule.percentOfIncome ?? 0;
+    return { main: `${pct}% of ${short}`, title: `${pct}% of ${name}` };
   }
-  return { main: `${usd(rule.monthlyAmount)}/mo`, note: "" };
+  return { main: `${usd(rule.monthlyAmount)}/mo` };
 }
 
 function shortDate(iso: string | null | undefined): string {
@@ -186,9 +197,9 @@ export function ContributionForm() {
       </div>
       <ul className="flex flex-col gap-2">
         {rows.length > 0 ? (
-          <li className={`hidden px-3 text-[0.7rem] font-medium uppercase tracking-[0.14em] text-subtle @min-[46rem]:grid ${summaryGrid}`}>
-            <span>Name</span>
-            <span>Account</span>
+          <li className={`hidden px-3 text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid ${summaryGrid}`}>
+            <span className="min-w-0">Name</span>
+            <span className="min-w-0">Account</span>
             <span className="text-right">Amount</span>
             <span>When</span>
             <span>Match</span>
@@ -219,6 +230,7 @@ export function ContributionForm() {
           const advisory = advisories.find((row) => row.cardId === `card-contributions-${c.id}`);
           const income = plan.incomes.find((s) => s.id === c.percentOfIncomeId);
           const amount = summaryAmount(plan, c);
+          const logo = accountLogo(plan, c);
           return (
             <li
               key={c.id}
@@ -435,7 +447,7 @@ export function ContributionForm() {
                     <p className="min-w-0 flex-1 truncate text-sm text-fg">
                       <span className="font-medium">{c.label.trim() || "Contribution"}</span>
                       <span className="text-muted"> · {accountLabel(plan, c)}</span>
-                      <span className="text-muted"> · {amount.note ? `${amount.main} ${amount.note}` : amount.main}</span>
+                      <span className="text-muted" title={amount.title}> · {amount.main}</span>
                       <span className="text-muted">
                         {" "}
                         · {shortDate(c.startDate)} → {c.endDate ? shortDate(c.endDate) : "ongoing"}
@@ -460,21 +472,29 @@ export function ContributionForm() {
                     </button>
                   </div>
                   <div className={`hidden text-sm @min-[46rem]:grid ${summaryGrid}`}>
-                    <span className="truncate font-medium text-fg">{c.label.trim() || "Contribution"}</span>
-                    <span className="truncate text-muted">{accountLabel(plan, c)}</span>
-                    <span className="text-right tabular-nums text-fg">
-                      <span className="block">{amount.main}</span>
-                      {amount.note ? (
-                        <span className="block truncate text-xs text-muted">{amount.note}</span>
+                    <span className="min-w-0 truncate font-medium text-fg">{c.label.trim() || "Contribution"}</span>
+                    <span className="flex min-w-0 items-center gap-1.5 text-muted">
+                      <span className="min-w-0 truncate">{accountLabel(plan, c)}</span>
+                      {logo ? (
+                        <img
+                          src={logo}
+                          alt=""
+                          width={18}
+                          height={18}
+                          className="size-[18px] shrink-0 rounded-sm bg-white object-contain"
+                        />
                       ) : null}
                     </span>
-                    <span className="whitespace-nowrap tabular-nums text-muted">
+                    <span className="min-w-0 truncate whitespace-nowrap text-right tabular-nums text-fg" title={amount.title}>
+                      {amount.main}
+                    </span>
+                    <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-muted">
                       {shortDate(c.startDate)} → {c.endDate ? shortDate(c.endDate) : "ongoing"}
                     </span>
-                    <span className="tabular-nums text-muted">
+                    <span className="min-w-0 truncate tabular-nums text-muted">
                       {c.employerMatch ? `${c.employerMatchPct ?? 0}%` : "—"}
                     </span>
-                    <span className="flex items-center justify-end gap-3">
+                    <span className="flex min-w-0 items-center justify-end gap-3">
                       <button
                         type="button"
                         className="text-xs text-muted hover:text-negative"
