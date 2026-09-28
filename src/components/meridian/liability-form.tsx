@@ -19,6 +19,10 @@ import {
   remainingLiability,
 } from "@/lib/plan/liability";
 import { familyOwnerOptions, normalizeOwner } from "@/lib/plan/family-owners";
+import {
+  InstitutionInput,
+  InstitutionMark,
+} from "@/components/meridian/institution-field";
 
 const KINDS: { value: LiabilityKind; label: string }[] = [
   { value: "car", label: "Car loan" },
@@ -55,7 +59,20 @@ export function LiabilityForm() {
               key={l.id}
               className="@container rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
             >
+              <div className="mb-2">
+                <Field label="Institution">
+                  <InstitutionInput
+                    institutionId={l.institutionId ?? null}
+                    institutionName={l.institutionName ?? ""}
+                    onChange={(next) => updateLiability(l.id, next)}
+                  />
+                </Field>
+              </div>
               <div className="mb-2 flex items-center gap-2">
+                <InstitutionMark
+                  institutionId={l.institutionId ?? null}
+                  institutionName={l.institutionName ?? ""}
+                />
                 <TextInput
                   value={l.name}
                   onChange={(e) => updateLiability(l.id, { name: e.target.value })}

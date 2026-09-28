@@ -1,5 +1,6 @@
 import type { Plan } from "./types";
 import { coerceIsoDate, todayIso, validIso } from "./dates.ts";
+import { institutionFields } from "./institutions.ts";
 
 /**
  * Blank household. Observe accounts, income stages, and contribution rules
@@ -76,6 +77,7 @@ export function ensurePlan(plan: Plan): Plan {
   }));
   next.portfolios = next.portfolios.map((p) => ({
     ...p,
+    ...institutionFields(p.institutionId, p.institutionName),
     costBasis:
       p.kind === "annuity"
         ? Number.isFinite(p.costBasis as number)
@@ -83,6 +85,10 @@ export function ensurePlan(plan: Plan): Plan {
           : 0
         : p.costBasis ?? null,
     mortgage: p.kind === "real_estate" ? p.mortgage ?? null : p.mortgage ?? null,
+  }));
+  next.liabilities = next.liabilities.map((l) => ({
+    ...l,
+    ...institutionFields(l.institutionId, l.institutionName),
   }));
   next.contributions = next.contributions.map((c) => ({
     ...c,

@@ -78,6 +78,10 @@ export interface Portfolio {
   costBasis?: number | null;
   /** Real estate only. Remaining principal is subtracted from net worth. */
   mortgage?: Mortgage | null;
+  /** Catalog id. Null when the name was typed and is not on the list. */
+  institutionId?: string | null;
+  /** Custodian or lender. Not used in any calculation. */
+  institutionName?: string;
 }
 
 export type LiabilityKind =
@@ -99,6 +103,10 @@ export interface Liability {
   termYears: number;
   includeInSpending: boolean;
   owner: string;
+  /** Catalog id. Null when the name was typed and is not on the list. */
+  institutionId?: string | null;
+  /** Lender. Not used in any calculation. */
+  institutionName?: string;
 }
 
 export interface ContributionRule {

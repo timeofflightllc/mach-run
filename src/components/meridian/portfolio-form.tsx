@@ -22,6 +22,10 @@ import {
   remainingMortgage,
 } from "@/lib/plan/mortgage";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
+import {
+  InstitutionInput,
+  InstitutionMark,
+} from "@/components/meridian/institution-field";
 import { atAccountCap, useEntitlement } from "@/lib/billing/use-entitlement";
 import {
   familyOwnerOptions,
@@ -77,7 +81,24 @@ export function PortfolioForm() {
             key={p.id}
             className="@container rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
           >
+            {p.kind !== "real_estate" ? (
+              <div className="mb-2">
+                <Field label="Institution">
+                  <InstitutionInput
+                    institutionId={p.institutionId ?? null}
+                    institutionName={p.institutionName ?? ""}
+                    onChange={(next) => updatePortfolio(p.id, next)}
+                  />
+                </Field>
+              </div>
+            ) : null}
             <div className="mb-2 flex items-center gap-2">
+              {p.kind !== "real_estate" ? (
+                <InstitutionMark
+                  institutionId={p.institutionId ?? null}
+                  institutionName={p.institutionName ?? ""}
+                />
+              ) : null}
               <TextInput
                 value={p.name}
                 onChange={(e) => updatePortfolio(p.id, { name: e.target.value })}
@@ -222,6 +243,8 @@ export function PortfolioForm() {
               taxBucket: "taxable",
               spendable: true,
               includeInNetWorth: true,
+              institutionId: null,
+              institutionName: "",
             })
           }
         >

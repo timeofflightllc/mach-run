@@ -54,5 +54,7 @@ export function emptyLiability(): Liability {
     termYears: 5,
     includeInSpending: false,
     owner: "primary",
+    institutionId: null,
+    institutionName: "",
   };
 }
