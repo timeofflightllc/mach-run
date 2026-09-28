@@ -11,6 +11,43 @@ import type { Plan, PlanConfirmation } from "./types.ts";
 
 const EARNED = new Set(["salary", "bonus", "other"]);
 
+export interface AdvisorySide {
+  id: string;
+  name: string;
+  amount: number;
+  start: string;
+  end: string | null;
+}
+
+export interface AdvisoryMonth {
+  date: string;
+  asked: number;
+  got: number;
+  short: boolean;
+}
+
+export type AdvisoryDetail =
+  | {
+      kind: "overlap";
+      verb: "paid" | "spent";
+      overlapStart: string;
+      current: AdvisorySide;
+      other: AdvisorySide;
+    }
+  | {
+      kind: "cash";
+      ruleId: string;
+      mode: "fixed" | "percent";
+      monthlyAmount: number;
+      percent: number | null;
+      incomeName: string | null;
+      start: string;
+      end: string | null;
+      year: number;
+      laterYears: number;
+      months: AdvisoryMonth[];
+    };
+
 export interface Advisory {
   id: string;
   cardId: string;
@@ -26,6 +63,7 @@ export interface Advisory {
     id: string;
     endDate: string;
   } | null;
+  detail: AdvisoryDetail;
 }
 
 interface Windowed {
@@ -95,6 +133,25 @@ function overlaps(rows: Windowed[], step: "income" | "spending"): Advisory[] {
         endOther: canEnd
           ? { kind: step, id: earlier.id, endDate }
           : null,
+        detail: {
+          kind: "overlap",
+          verb,
+          overlapStart: start,
+          current: {
+            id: later.id,
+            name: later.name,
+            amount: later.amount,
+            start: later.start,
+            end: later.end,
+          },
+          other: {
+            id: earlier.id,
+            name: earlier.name,
+            amount: earlier.amount,
+            start: earlier.start,
+            end: earlier.end,
+          },
+        },
       });
       break;
     }
@@ -194,6 +251,11 @@ function cashAdvisories(plan: Plan): Advisory[] {
     const win = contributionWindow(plan, rule);
     const name = rule.label.trim() || `Contribution ${index + 1}`;
     const shown = list.reduce((sum, hit) => sum + hit.asked, 0);
+    const ordered = [...list].sort((a, b) => a.date.localeCompare(b.date));
+    const income =
+      rule.amountMode === "percent" && rule.percentOfIncomeId
+        ? plan.incomes.find((stream) => stream.id === rule.percentOfIncomeId)
+        : undefined;
     out.push({
       id: `cash:${rule.id}`,
       cardId: `card-contributions-${rule.id}`,
@@ -215,6 +277,24 @@ function cashAdvisories(plan: Plan): Advisory[] {
       body: cashSentence(year, list, later),
       keep: "Keep it",
       endOther: null,
+      detail: {
+        kind: "cash",
+        ruleId: rule.id,
+        mode: rule.amountMode === "percent" ? "percent" : "fixed",
+        monthlyAmount: rule.monthlyAmount,
+        percent: rule.percentOfIncome ?? null,
+        incomeName: income?.name.trim() || null,
+        start: win.start,
+        end: win.end,
+        year,
+        laterYears: later,
+        months: ordered.map((hit) => ({
+          date: hit.date,
+          asked: hit.asked,
+          got: hit.got,
+          short: hit.short,
+        })),
+      },
     });
   });
   return out;

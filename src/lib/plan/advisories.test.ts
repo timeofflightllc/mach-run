@@ -70,6 +70,12 @@ test("two salaries on the same months ask once on the later card", () => {
   assert.match(income[0].body, /paid/);
   assert.equal(income[0].endOther?.id, "a");
   assert.equal(income[0].endOther?.endDate.slice(0, 7), "2027-12");
+  assert.equal(income[0].detail.kind, "overlap");
+  if (income[0].detail.kind === "overlap") {
+    assert.equal(income[0].detail.other.name, "Boeing");
+    assert.equal(income[0].detail.current.name, "Guard");
+    assert.equal(income[0].detail.current.amount + income[0].detail.other.amount, 12000);
+  }
 });
 
 test("a kept answer stays kept until an amount changes", () => {
@@ -186,4 +192,15 @@ test("a November start counts November and December, not one month of $5,000", (
   assert.match(cash.body, /November and December 2029/);
   assert.match(cash.body, /\$5,000 a month, \$10,000 for those two months/);
   assert.doesNotMatch(cash.body, /asked to invest \$5,000/);
+  assert.equal(cash.detail.kind, "cash");
+  if (cash.detail.kind === "cash") {
+    assert.deepEqual(
+      cash.detail.months.map((month) => month.date.slice(0, 7)),
+      ["2029-11", "2029-12"],
+    );
+    assert.equal(cash.detail.months[0].asked, 5000);
+    assert.equal(cash.detail.months[1].asked, 5000);
+    assert.equal(cash.detail.months[0].got, 0);
+    assert.equal(cash.detail.months[1].got, 0);
+  }
 });

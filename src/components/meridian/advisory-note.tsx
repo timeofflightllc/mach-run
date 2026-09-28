@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
-import { openAdvisories, type Advisory } from "@/lib/plan/advisories";
+import { createPortal } from "react-dom";
+import { format } from "date-fns";
+import { openAdvisories, type Advisory, type AdvisorySide } from "@/lib/plan/advisories";
+import { monthBefore, monthStart, validIso } from "@/lib/plan/dates";
+import { usd } from "@/lib/plan/format";
 import { usePlanStore } from "@/lib/plan/store";
 import type { Plan } from "@/lib/plan/types";
+import { Field, MoneyInput, MonthInput } from "@/components/ui/field";
 
 const YELLOW = {
   background: "color-mix(in oklab, #e8c547 12%, transparent)",
@@ -19,37 +24,49 @@ export function useOpenAdvisories(): Advisory[] {
 }
 
 export function AdvisoryNote({ advisory }: { advisory?: Advisory }) {
+  const [openId, setOpenId] = useState<string | null>(null);
   const confirmAdvisory = usePlanStore((s) => s.confirmAdvisory);
   const updateIncome = usePlanStore((s) => s.updateIncome);
   const updateSpending = usePlanStore((s) => s.updateSpending);
-  if (!advisory) return null;
   return (
-    <div className="rounded-lg px-3 py-2 text-sm leading-relaxed text-fg" style={YELLOW}>
-      <p>{advisory.body}</p>
-      <div className="mt-2 flex flex-wrap gap-2">
-        <button
-          type="button"
-          className="h-9 rounded-lg bg-[#e8c547] px-3 text-sm font-medium text-[#1a1404]"
-          onClick={() => confirmAdvisory(advisory.id, advisory.fingerprint)}
-        >
-          {advisory.keep}
-        </button>
-        {advisory.endOther ? (
+    <>
+      {advisory ? (
+        <div className="rounded-lg px-3 py-2 text-sm leading-relaxed text-fg" style={YELLOW}>
+          <p>{advisory.body}</p>
           <button
             type="button"
-            className="h-9 rounded-lg px-3 text-sm font-medium text-[#5c4a18]"
-            onClick={() => {
-              const end = advisory.endOther;
-              if (!end) return;
-              if (end.kind === "income") updateIncome(end.id, { endDate: end.endDate });
-              else updateSpending(end.id, { endDate: end.endDate });
-            }}
+            className="mt-1 text-sm font-medium text-[#5c4a18] underline decoration-[#5c4a18]/50 underline-offset-2"
+            onClick={() => setOpenId(advisory.id)}
           >
-            End the other when this starts
+            See the exact conflict
           </button>
-        ) : null}
-      </div>
-    </div>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button
+              type="button"
+              className="h-9 rounded-lg bg-[#e8c547] px-3 text-sm font-medium text-[#1a1404]"
+              onClick={() => confirmAdvisory(advisory.id, advisory.fingerprint)}
+            >
+              {advisory.keep}
+            </button>
+            {advisory.endOther ? (
+              <button
+                type="button"
+                className="h-9 rounded-lg px-3 text-sm font-medium text-[#5c4a18]"
+                onClick={() => {
+                  const end = advisory.endOther;
+                  if (!end) return;
+                  if (end.kind === "income") updateIncome(end.id, { endDate: end.endDate });
+                  else updateSpending(end.id, { endDate: end.endDate });
+                }}
+              >
+                End the other when this starts
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+      {openId ? <ConflictDialog id={openId} onClose={() => setOpenId(null)} /> : null}
+    </>
   );
 }
 
@@ -59,7 +76,8 @@ export function AdvisoryStrip({
   onOpen: (step: Advisory["step"], cardId: string) => void;
 }) {
   const rows = useOpenAdvisories();
-  if (!rows.length) return null;
+  const [openId, setOpenId] = useState<string | null>(null);
+  if (!rows.length && !openId) return null;
   return (
     <div className="rounded-lg px-4 py-3 text-sm leading-relaxed text-fg" style={YELLOW}>
       <p className="font-semibold text-[#e8c547]">Unanswered. Calculate still runs.</p>
@@ -73,14 +91,318 @@ export function AdvisoryStrip({
             >
               {row.name}
             </button>
-            <span className="text-muted"> — {row.body}</span>
+            <span className="text-muted"> — {row.body} </span>
+            <button
+              type="button"
+              className="text-[#5c4a18] underline decoration-[#5c4a18]/50 underline-offset-2"
+              onClick={() => setOpenId(row.id)}
+            >
+              See the exact conflict
+            </button>
           </li>
         ))}
       </ul>
+      {openId ? <ConflictDialog id={openId} onClose={() => setOpenId(null)} /> : null}
     </div>
   );
 }
 
 export function cashAdvisoryStillOpen(plan: Plan): boolean {
   return openAdvisories(plan).some((row) => row.kind === "cash");
+}
+
+function monthLabel(iso: string): string {
+  if (!validIso(iso)) return "open";
+  return format(monthStart(iso), "MMM yyyy");
+}
+
+function ConflictDialog({ id, onClose }: { id: string; onClose: () => void }) {
+  const rows = useOpenAdvisories();
+  const advisory = rows.find((row) => row.id === id);
+  const confirmAdvisory = usePlanStore((s) => s.confirmAdvisory);
+  const updateIncome = usePlanStore((s) => s.updateIncome);
+  const updateSpending = usePlanStore((s) => s.updateSpending);
+  const updateContribution = usePlanStore((s) => s.updateContribution);
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  function patchSide(step: "income" | "spending", sideId: string, patch: {
+    monthlyAmount?: number;
+    startDate?: string;
+    endDate?: string | null;
+  }) {
+    const dates = patch.startDate !== undefined || patch.endDate !== undefined;
+    if (step === "income") {
+      updateIncome(sideId, dates
+        ? { ...patch, tiedToStageId: undefined, tiedToCareer: false, startDayAfterPrevious: false }
+        : patch);
+      return;
+    }
+    updateSpending(sideId, dates
+      ? { ...patch, tiedToStageId: undefined, startDayAfterPrevious: false }
+      : patch);
+  }
+
+  const body = (
+    <div
+      className="paper-dialog fixed inset-0 z-[140] grid place-items-center bg-black/60 px-4 py-8"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="conflict-title"
+      onMouseDown={onClose}
+    >
+      <div
+        className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <p id="conflict-title" className="font-display text-lg text-fg">
+            {advisory ? advisory.name : "Conflict cleared"}
+          </p>
+          <button type="button" className="text-sm text-muted hover:text-fg" onClick={onClose}>
+            Close
+          </button>
+        </div>
+        {!advisory ? (
+          <p className="mt-3 text-sm leading-relaxed text-fg">
+            That change cleared this conflict. The inputs are updated.
+          </p>
+        ) : advisory.detail.kind === "overlap" ? (
+          <OverlapBody
+            advisory={advisory}
+            onPatch={(sideId, patch) => patchSide(advisory.step === "spending" ? "spending" : "income", sideId, patch)}
+            onKeep={() => {
+              confirmAdvisory(advisory.id, advisory.fingerprint);
+              onClose();
+            }}
+            onEndOther={() => {
+              const end = advisory.endOther;
+              if (!end) return;
+              patchSide(end.kind, end.id, { endDate: end.endDate });
+            }}
+          />
+        ) : (
+          <CashBody
+            advisory={advisory}
+            onAmount={(monthlyAmount) => {
+              if (advisory.detail.kind !== "cash") return;
+              updateContribution(advisory.detail.ruleId, { monthlyAmount });
+            }}
+            onPercent={(percentOfIncome) => {
+              if (advisory.detail.kind !== "cash") return;
+              updateContribution(advisory.detail.ruleId, { percentOfIncome });
+            }}
+            onStart={(startDate) => {
+              if (advisory.detail.kind !== "cash") return;
+              updateContribution(advisory.detail.ruleId, { startDate });
+            }}
+            onEnd={(endDate) => {
+              if (advisory.detail.kind !== "cash") return;
+              updateContribution(advisory.detail.ruleId, {
+                endDate,
+                endAtRetirement: false,
+                endWithStageId: undefined,
+              });
+            }}
+            onKeep={() => {
+              confirmAdvisory(advisory.id, advisory.fingerprint);
+              onClose();
+            }}
+          />
+        )}
+      </div>
+    </div>
+  );
+
+  if (typeof document === "undefined") return body;
+  return createPortal(body, document.body);
+}
+
+function OverlapBody({
+  advisory,
+  onPatch,
+  onKeep,
+  onEndOther,
+}: {
+  advisory: Advisory;
+  onPatch: (id: string, patch: { monthlyAmount?: number; startDate?: string; endDate?: string | null }) => void;
+  onKeep: () => void;
+  onEndOther: () => void;
+}) {
+  const detail = advisory.detail;
+  if (detail.kind !== "overlap") return null;
+  const together = detail.current.amount + detail.other.amount;
+  const noun = advisory.step === "spending" ? "spending blocks" : "paychecks";
+  return (
+    <div className="mt-3 space-y-4">
+      <p className="text-sm leading-relaxed text-fg">
+        From {monthLabel(detail.overlapStart)}, both {noun} are {detail.verb}. Together that is {usd(together)} a month, not one or the other.
+      </p>
+      <SideEditor title="This one" side={detail.current} onPatch={(patch) => onPatch(detail.current.id, patch)} />
+      <SideEditor title="The other one" side={detail.other} onPatch={(patch) => onPatch(detail.other.id, patch)} />
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="h-9 rounded-lg bg-[#e8c547] px-3 text-sm font-medium text-[#1a1404]"
+          onClick={onKeep}
+        >
+          {advisory.keep}
+        </button>
+        {advisory.endOther ? (
+          <button
+            type="button"
+            className="h-9 rounded-lg px-3 text-sm font-medium text-fg"
+            onClick={onEndOther}
+          >
+            End {detail.other.name} after {monthLabel(advisory.endOther.endDate)}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function SideEditor({
+  title,
+  side,
+  onPatch,
+}: {
+  title: string;
+  side: AdvisorySide;
+  onPatch: (patch: { monthlyAmount?: number; startDate?: string; endDate?: string | null }) => void;
+}) {
+  return (
+    <div className="rounded-lg px-3 py-3" style={YELLOW}>
+      <p className="text-sm font-semibold text-fg">{title}</p>
+      <p className="text-sm text-fg">{side.name}</p>
+      <div className="mt-2 grid gap-3 sm:grid-cols-3">
+        <Field label="$ / month">
+          <MoneyInput value={side.amount} onValue={(monthlyAmount) => onPatch({ monthlyAmount })} />
+        </Field>
+        <Field label="Start">
+          <MonthInput value={side.start} onValue={(startDate) => startDate && onPatch({ startDate })} />
+        </Field>
+        <Field label="End">
+          <MonthInput
+            value={side.end}
+            clearable
+            onValue={(endDate) => onPatch({ endDate: endDate || null })}
+          />
+        </Field>
+      </div>
+    </div>
+  );
+}
+
+function CashBody({
+  advisory,
+  onAmount,
+  onPercent,
+  onStart,
+  onEnd,
+  onKeep,
+}: {
+  advisory: Advisory;
+  onAmount: (n: number) => void;
+  onPercent: (n: number) => void;
+  onStart: (iso: string) => void;
+  onEnd: (iso: string | null) => void;
+  onKeep: () => void;
+}) {
+  const detail = advisory.detail;
+  if (detail.kind !== "cash") return null;
+  const firstShort = detail.months.find((month) => month.short);
+  const stopAfter = firstShort ? monthBefore(firstShort.date) : "";
+  const canStop =
+    Boolean(stopAfter) &&
+    validIso(detail.start) &&
+    stopAfter.slice(0, 7) >= detail.start.slice(0, 7);
+  return (
+    <div className="mt-3 space-y-4">
+      <p className="text-sm leading-relaxed text-fg">
+        {detail.year}, month by month. A highlighted row is a month the paycheck cannot fully fund. Contributions above this one are paid first.
+        {detail.laterYears > 0
+          ? ` The same shortfall shows up in ${detail.laterYears} later ${detail.laterYears === 1 ? "year" : "years"}.`
+          : ""}
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm text-fg">
+          <thead>
+            <tr className="text-muted">
+              <th className="py-1 pr-3 font-medium">Month</th>
+              <th className="py-1 pr-3 font-medium">Asked</th>
+              <th className="py-1 font-medium">Invested</th>
+            </tr>
+          </thead>
+          <tbody>
+            {detail.months.map((month) => (
+              <tr key={month.date} style={month.short ? YELLOW : undefined}>
+                <td className="py-1 pr-3">{monthLabel(month.date)}</td>
+                <td className="py-1 pr-3">{usd(month.asked)}</td>
+                <td className="py-1">{usd(month.got)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {detail.mode === "percent" ? (
+          <Field label={detail.incomeName ? `% of ${detail.incomeName}` : "% of income"}>
+            <input
+              type="text"
+              inputMode="decimal"
+              className="h-10 w-full rounded-lg bg-transparent px-3 text-sm text-fg shadow-[0_0_0_1px_var(--color-border)]"
+              value={detail.percent ?? ""}
+              onChange={(event) => {
+                const n = Number(event.target.value.replace(/[^0-9.]/g, ""));
+                if (Number.isFinite(n)) onPercent(n);
+              }}
+            />
+          </Field>
+        ) : (
+          <Field label="$ / month">
+            <MoneyInput value={detail.monthlyAmount} onValue={onAmount} />
+          </Field>
+        )}
+        {detail.mode === "percent" ? (
+          <p className="text-sm leading-relaxed text-muted sm:col-span-2">
+            The dates follow {detail.incomeName || "that paycheck"}. Change the start or end on the income card.
+          </p>
+        ) : (
+          <>
+            <Field label="Start">
+              <MonthInput value={detail.start} onValue={(startDate) => startDate && onStart(startDate)} />
+            </Field>
+            <Field label="End">
+              <MonthInput value={detail.end} clearable onValue={(endDate) => onEnd(endDate || null)} />
+            </Field>
+          </>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className="h-9 rounded-lg bg-[#e8c547] px-3 text-sm font-medium text-[#1a1404]"
+          onClick={onKeep}
+        >
+          {advisory.keep}
+        </button>
+        {canStop ? (
+          <button
+            type="button"
+            className="h-9 rounded-lg px-3 text-sm font-medium text-fg"
+            onClick={() => onEnd(stopAfter)}
+          >
+            Stop after {monthLabel(stopAfter)}
+          </button>
+        ) : null}
+      </div>
+    </div>
+  );
 }
