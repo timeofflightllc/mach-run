@@ -9,6 +9,7 @@ import {
   streamWindow,
 } from "./engine.ts";
 import { guaranteedAnnuityEquivalent, type AnnuityEquivalent } from "./annuity-equivalent.ts";
+import { cashShortYears } from "./cash-short.ts";
 import { usd, usdCompact } from "./format.ts";
 import { remainingLiability, liabilityPayoffDate } from "./liability.ts";
 import { mortgageAssociated, mortgagePayoffDate, remainingMortgage } from "./mortgage.ts";
@@ -243,9 +244,12 @@ function bottomLine(opts: {
         body: `Projected spendable at that date is ${usd(egg.projected)} in today's dollars.${early} Stay with the plan — this is the number you asked MACH RUN to hit.`,
       };
     }
+    const cashShort = cashShortYears(sim).length > 0;
     return {
       headline: `You are not on track for ${usd(egg.goal)} by ${egg.targetYear}${byAge}.`,
-      body: `Projected spendable there is ${usd(egg.projected)} — short ${usd(Math.max(0, egg.goal - egg.projected))}. Invest about ${usd(egg.extraMonthly, true)} more per month (on top of what you already entered), compounding at your assumed real return, to close the gap by that date.`,
+      body: cashShort
+        ? `Projected spendable there is ${usd(egg.projected)} — short ${usd(Math.max(0, egg.goal - egg.projected))}. If the paycheck had the room, about ${usd(egg.extraMonthly, true)} more per month, compounding at your assumed real return, would close the gap by that date. It does not have that room. The contributions already entered are larger than income minus tax minus spending, so MACH RUN did not invest them. The notice above lists each year.`
+        : `Projected spendable there is ${usd(egg.projected)} — short ${usd(Math.max(0, egg.goal - egg.projected))}. Invest about ${usd(egg.extraMonthly, true)} more per month (on top of what you already entered), compounding at your assumed real return, to close the gap by that date.`,
     };
   }
 

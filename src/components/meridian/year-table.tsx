@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { CashShortNotice } from "@/components/meridian/cash-short-notice";
 import { canDownloadInvestmentAudit } from "@/lib/ops/audit-download-api";
 import { buildInvestmentAuditCsv } from "@/lib/plan/audit-csv";
 import { simulate } from "@/lib/plan/engine";
@@ -23,9 +24,10 @@ function capReasons(caps: YearCap[]): string[] {
   const lines: string[] = [];
   for (const cap of caps) {
     if (cap.kind === "cash") {
-      const short = Math.max(0, cap.planned - cap.funded);
+      const asked = Math.max(0, cap.planned - cap.employerMatch);
+      const short = Math.max(0, asked - cap.leftover);
       lines.push(
-        `Cash: planned ${usd(cap.planned)}, leftover after tax and spending ${usd(cap.leftover)}. MACH RUN invested ${usd(cap.funded)}. Short ${usd(short)} — it will not invent cash.`,
+        `Cash: you asked to invest ${usd(asked)}. After tax and spending, ${usd(cap.leftover)} was left. MACH RUN invested only that leftover. Short ${usd(short)}. It will not take money from your accounts to finish the contribution.`,
       );
     } else if (cap.kind === "irs") {
       lines.push(
@@ -425,19 +427,16 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
         </div>
       </div>
       {sim.fundingGaps.length ? (
-        <p className="border-t border-border px-4 py-3 text-sm text-muted">
-          Identity: income + drawn = tax + spend + saved. Hover{" "}
-          <span className="font-bold text-negative">CAPPED</span> for why that
-          year was cut. Hover an income amount for the paycheck mix.
-        </p>
-      ) : (
-        <p className="border-t border-border px-4 py-3 text-xs text-subtle">
-          Identity: income + drawn = tax + spend + saved. Hover an income amount
-          for the mix. Hover{" "}
-          <span className="font-bold text-negative">CAPPED</span> when a year is
-          marked.
-        </p>
-      )}
+        <div className="border-t border-border px-4 py-3">
+          <CashShortNotice sim={sim} />
+        </div>
+      ) : null}
+      <p className="border-t border-border px-4 py-3 text-xs text-subtle">
+        Identity: income + drawn = tax + spend + saved. Hover an income amount
+        for the mix. Hover{" "}
+        <span className="font-bold text-negative">CAPPED</span> when a year is
+        marked.
+      </p>
       <p className="border-t border-border px-4 py-2 text-xs text-subtle">
         A.I.R. starts at the retirement date in Family. Before that, the column is blank. It is not part of that equation. It is Actual Income Retired, before tax.
       </p>

@@ -7,6 +7,7 @@ import { MACH_MONTHLY_USD, hasBalanceSheet } from "@/lib/billing/limits";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { OODA_DISCLAIMER } from "@/lib/plan/disclaimer";
 import { NestEggHeadline } from "@/components/meridian/verdict";
+import { CashShortNotice } from "@/components/meridian/cash-short-notice";
 import { nestEggTrack } from "@/lib/plan/peers";
 import { annuityEquivalentCopy } from "@/lib/plan/annuity-equivalent";
 import { PrimaryButton } from "@/components/ui/field";
@@ -187,6 +188,11 @@ export function PeerBriefCard({
       <p className="mt-3 font-display text-xl font-medium leading-snug text-fg">
         {egg ? <NestEggHeadline egg={egg} /> : brief.headline}
       </p>
+      {sim ? (
+        <div className="mt-3">
+          <CashShortNotice sim={sim} />
+        </div>
+      ) : null}
       <div className="mt-3 flex flex-col gap-4 text-sm leading-relaxed text-muted">
         {visible.map((s, i) => (
           <div key={`${brief.runAt}-${i}`}>
