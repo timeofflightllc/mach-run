@@ -204,3 +204,110 @@ test("a November start counts November and December, not one month of $5,000", (
     assert.equal(cash.detail.months[1].got, 0);
   }
 });
+
+test("an IRS cap stop is not a paycheck conflict", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2027-01-01";
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultColaPct = 0;
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.primary.birthDate = "1979-01-01";
+  plan.assumptions.projectionEndAge = 50;
+  plan.incomes = [
+    {
+      id: "bgs",
+      name: "Boeing BGS",
+      kind: "salary",
+      monthlyAmount: 30000,
+      startDate: "2027-01-01",
+      endDate: "2027-12-01",
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.spending = [];
+  plan.portfolios = [
+    {
+      id: "k",
+      name: "Boeing 401k Roth",
+      kind: "401k_roth",
+      owner: "primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "roth",
+      spendable: false,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c",
+      label: "Matt 401k Roth",
+      portfolioId: "k",
+      monthlyAmount: 0,
+      amountMode: "percent",
+      percentOfIncome: 10,
+      percentOfIncomeId: "bgs",
+      startDate: "2027-01-01",
+      endDate: "2027-12-01",
+      capToIrsLimit: true,
+    },
+  ];
+  assert.equal(
+    openAdvisories(plan).some((row) => row.kind === "cash"),
+    false,
+  );
+});
+
+test("the IRS cap does not hide a real paycheck shortfall", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2027-01-01";
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultColaPct = 0;
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.primary.birthDate = "1979-01-01";
+  plan.assumptions.projectionEndAge = 50;
+  plan.incomes = [
+    {
+      id: "bgs",
+      name: "Boeing BGS",
+      kind: "salary",
+      monthlyAmount: 1000,
+      startDate: "2027-01-01",
+      endDate: "2027-12-01",
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.spending = [];
+  plan.portfolios = [
+    {
+      id: "k",
+      name: "Boeing 401k Roth",
+      kind: "401k_roth",
+      owner: "primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "roth",
+      spendable: false,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c",
+      label: "Matt 401k Roth",
+      portfolioId: "k",
+      monthlyAmount: 3000,
+      startDate: "2027-01-01",
+      endDate: "2027-12-01",
+      capToIrsLimit: true,
+    },
+  ];
+  const cash = openAdvisories(plan).find((row) => row.kind === "cash");
+  assert.ok(cash);
+  assert.match(cash.body, /\$3,000 a month, \$36,000 for the year/);
+  assert.match(cash.body, /\$12,000 of that will be invested/);
+});

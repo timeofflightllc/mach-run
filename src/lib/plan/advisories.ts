@@ -203,29 +203,16 @@ function cashAdvisories(plan: Plan): Advisory[] {
   const rows = sim.audit?.contributions ?? [];
   if (!rows.length) return [];
 
-  const leftoverByDate = new Map<string, number>();
-  for (const month of sim.months) {
-    leftoverByDate.set(month.date, month.income - month.tax - month.spending);
-  }
-  const askedByDate = new Map<string, number>();
-  for (const row of rows) {
-    askedByDate.set(row.date, (askedByDate.get(row.date) ?? 0) + row.planned);
-  }
-  const shortDates = new Set<string>();
-  for (const [date, asked] of askedByDate) {
-    const leftover = leftoverByDate.get(date) ?? 0;
-    if (asked > Math.max(0, leftover) + 1) shortDates.add(date);
-  }
-
   const byRule = new Map<string, MonthHit[]>();
   for (const row of rows) {
-    if (row.planned <= 0.5) continue;
+    const tried = row.eligible ?? row.planned;
+    if (tried <= 0.5 && row.invested <= 0.5) continue;
     const list = byRule.get(row.ruleId) ?? [];
     list.push({
       date: row.date,
-      asked: row.planned,
+      asked: tried,
       got: row.invested,
-      short: shortDates.has(row.date) && row.planned > row.invested + 0.5,
+      short: tried > row.invested + 0.5,
     });
     byRule.set(row.ruleId, list);
   }

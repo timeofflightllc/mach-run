@@ -420,7 +420,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   lines.push(
     ...section(
       "month_contribution",
-      ["date", "rule_id", "account_id", "mode", "income_dollars", "planned", "irs_limit", "catch_up", "invested", "match"],
+      ["date", "rule_id", "account_id", "mode", "income_dollars", "planned", "after_irs_cap", "irs_limit", "catch_up", "invested", "match"],
       audit.contributions.map((row) => [
         row.date,
         row.ruleId,
@@ -428,6 +428,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
         row.mode,
         row.incomeBase,
         row.planned,
+        row.eligible,
         row.irsLimit,
         row.catchUp,
         row.invested,

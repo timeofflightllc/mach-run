@@ -25,6 +25,8 @@ export interface AuditContribMonth {
   mode: string;
   incomeBase: number | null;
   planned: number;
+  /** Dollars still allowed after the IRS cap, before the paycheck is applied. */
+  eligible: number;
   irsLimit: number | null;
   catchUp: boolean;
   invested: number;

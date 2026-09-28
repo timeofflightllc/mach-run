@@ -596,6 +596,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
     }
 
     const fundedAudit: { ruleId: string; amount: number; matchApplied: number }[] = [];
+    const eligibleByRule = new Map<string, number>();
     const savedLines: { id: string; label: string; amount: number }[] = [];
     const matchLines: { id: string; label: string; amount: number }[] = [];
     let sweepLine: { id: string; label: string; amount: number } | null = null;
@@ -618,6 +619,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
           intended = afterCap;
         }
         planned += intended;
+        eligibleByRule.set(d.ruleId, intended);
         if (intended <= 0 || pool <= 0.5) continue;
         const take = Math.min(intended, pool);
         values.set(d.portfolioId, (values.get(d.portfolioId) ?? 0) + take);
@@ -710,6 +712,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
           if (intended > 0) shadow.set(d.irs.key, used + intended);
         }
         planned += intended;
+        eligibleByRule.set(d.ruleId, intended);
       }
       if (leftover < -0.5) {
       const withdrawLog: { id: string; amount: number; taxableGain: number; basisReturn: number }[] =
@@ -846,6 +849,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
           mode: draft.mode,
           incomeBase: draft.incomeBase,
           planned: draft.planned,
+          eligible: eligibleByRule.get(draft.ruleId) ?? draft.planned,
           irsLimit: draft.irsLimit,
           catchUp: draft.catchUp,
           invested: got.invested,
