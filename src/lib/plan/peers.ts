@@ -1,4 +1,4 @@
-import { ageYears, dateAtAge, formatMonthYear, monthStart, validIso, yearlyRateToMonthly } from "./dates.ts";
+import { ageYears, dateAtAge, formatMonthYear, iso, monthStart, validIso, yearlyRateToMonthly } from "./dates.ts";
 import {
   monthlyIncomeAt,
   representativeAnnualIncome,
@@ -290,6 +290,16 @@ function bottomLine(opts: {
   };
 }
 
+/** Blank income end = the month the primary reaches Project through primary age. */
+function horizonMonth(plan: Plan): string {
+  const age = plan.assumptions.projectionEndAge;
+  const birth = plan.primary.birthDate;
+  if (validIso(birth) && Number.isFinite(age)) {
+    return formatMonthYear(iso(dateAtAge(birth, age)));
+  }
+  return Number.isFinite(age) ? `age ${age}` : "plan end";
+}
+
 export function buildPeerBrief(
   plan: Plan,
   sim: SimResult,
@@ -399,7 +409,7 @@ export function buildPeerBrief(
     const rows: BriefColumnRow[] = ordered.map((s) => {
       const win = streamWindow(plan, s);
       const amt = streamBenefitToday(plan, s, asOf);
-      const end = win.end ? formatMonthYear(win.end) : "open";
+      const end = win.end ? formatMonthYear(win.end) : horizonMonth(plan);
       return {
         name: s.name.trim() || s.kind,
         amount: `${usd(amt, true)}/mo`,

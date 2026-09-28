@@ -285,6 +285,8 @@ test("OODA paychecks sort by start date and print month then year", () => {
   assert.ok(w2 >= 0 && pension > w2);
   assert.match(pay.body, /Aug 2026/);
   assert.match(pay.body, /Sep 2036/);
+  assert.match(pay.body, /Jan 2071/);
+  assert.doesNotMatch(pay.body, /open/);
   assert.doesNotMatch(pay.body, /2026-08/);
 });
 

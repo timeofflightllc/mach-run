@@ -95,7 +95,10 @@ export function HouseholdForm() {
                 Balances and today's dollars pegged to this date
               </span>
             </div>
-            <Field label="Project through primary age">
+            <Field
+              label="Project through primary age"
+              hint="Blank end dates run through this age."
+            >
               <NumberInput
                 min={70}
                 max={110}
