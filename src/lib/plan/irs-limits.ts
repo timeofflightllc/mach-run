@@ -1,4 +1,4 @@
-import type { AccountKind } from "./types.ts";
+import type { AccountKind, Plan } from "./types.ts";
 
 /** IRS employee/IRA annual limits for 2026. Employer match is not in these figures. */
 export const IRS_LIMITS_2026 = {
@@ -53,6 +53,47 @@ export function irsAnnualCap(kind: AccountKind, ageAtYearEnd: number): number | 
   }
   if (ageAtYearEnd >= 50) return base + IRS_LIMITS_2026.iraCatchUp50;
   return base;
+}
+
+export type IrsCapPerson = "primary" | "spouse";
+
+/**
+ * Who the employee cap belongs to. "Joint" is not an IRS person and must
+ * not fall through to the primary's age. An explicit capPerson wins, then
+ * an owner of primary or spouse, then a name that clearly identifies one
+ * of them (Matt matches Matthew). Anything still ambiguous stays unresolved.
+ */
+export function irsCapPerson(
+  plan: Plan,
+  account: { name?: string; owner?: string },
+  rule?: { label?: string; capPerson?: IrsCapPerson | null },
+): IrsCapPerson | null {
+  const explicit = rule?.capPerson;
+  if (explicit === "primary" || explicit === "spouse") return explicit;
+  const owner = (account.owner ?? "").trim();
+  if (/spouse/i.test(owner)) return "spouse";
+  if (/^(primary|you)$/i.test(owner)) return "primary";
+  const hay = `${account.name ?? ""} ${rule?.label ?? ""} ${owner}`;
+  const spouseHit = personMentioned(hay, plan.spouse?.name ?? "");
+  const primaryHit = personMentioned(hay, plan.primary?.name ?? "");
+  if (spouseHit && !primaryHit) return "spouse";
+  if (primaryHit && !spouseHit) return "primary";
+  return null;
+}
+
+function personMentioned(hay: string, personName: string): boolean {
+  const words = hay.toLowerCase().split(/[^a-z]+/).filter((w) => w.length >= 3);
+  const tokens = personName.toLowerCase().split(/[^a-z]+/).filter((w) => w.length >= 3);
+  if (words.length === 0 || tokens.length === 0) return false;
+  return tokens.some((token) =>
+    words.some(
+      (word) =>
+        word === token ||
+        (token.length >= 4 &&
+          word.length >= 4 &&
+          (token.startsWith(word) || word.startsWith(token))),
+    ),
+  );
 }
 
 export function annualizedMonthly(monthly: number): number {

@@ -19,8 +19,7 @@ import {
   employeeMonthlyNow,
   scheduledEmployerMatchMonthly,
 } from "@/lib/plan/contribution-now";
-import { irsEmployeeAnnualLimit, irsOverLimitWarning } from "@/lib/plan/irs-limits";
-import { normalizeOwner } from "@/lib/plan/family-owners";
+import { irsCapPerson, irsEmployeeAnnualLimit, irsOverLimitWarning } from "@/lib/plan/irs-limits";
 import { ageInCalendarYear } from "@/lib/plan/rmd";
 import type { ContributionRule } from "@/lib/plan/types";
 
@@ -82,9 +81,13 @@ export function ContributionForm() {
           const dest = plan.portfolios.find((p) => p.id === c.portfolioId);
           const workplace = dest ? isWorkplace(dest.kind) : false;
           const emp = employeeMonthlyNow(plan, c);
-          const owner = dest ? normalizeOwner(dest.owner) : "primary";
+          const person = dest ? irsCapPerson(plan, dest, c) : null;
           const birth =
-            owner === "spouse" ? plan.spouse.birthDate : plan.primary.birthDate;
+            person === "spouse"
+              ? plan.spouse.birthDate
+              : person === "primary"
+                ? plan.primary.birthDate
+                : "";
           const year = Number(plan.assumptions.asOfDate.slice(0, 4)) || new Date().getFullYear();
           const age = birth ? ageInCalendarYear(birth, year) : 0;
           const overIrs = dest

@@ -125,8 +125,13 @@ export interface ContributionRule {
   employerMatch?: boolean;
   /** 0–100. Applied to the employee dollars that actually get invested. */
   employerMatchPct?: number | null;
-  /** Stop employee dollars when YTD hits the IRS annual max (catch-up if owner is 50+). */
+  /** Stop employee dollars when YTD hits the IRS annual max for this person. */
   capToIrsLimit?: boolean;
+  /**
+   * Person the IRS employee cap uses. Joint is not a person.
+   * When omitted, the engine infers primary vs spouse from the account.
+   */
+  capPerson?: "primary" | "spouse";
   /** End date tracks Family retirement goal date. */
   endAtRetirement?: boolean;
 }

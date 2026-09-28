@@ -21,8 +21,7 @@ import {
   uniformLifetimeFactor,
 } from "./rmd.ts";
 import { emptyAudit, type PlanAudit } from "./audit.ts";
-import { normalizeOwner } from "./family-owners.ts";
-import { irsAnnualCap, irsLimitClass } from "./irs-limits.ts";
+import { irsAnnualCap, irsCapPerson, irsLimitClass } from "./irs-limits.ts";
 import { mortgagePaymentDue, portfolioEquity, remainingMortgage } from "./mortgage.ts";
 import { liabilityPaymentDue, remainingLiability } from "./liability.ts";
 import type {
@@ -431,7 +430,13 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
       }
     }
 
-    const due: { portfolioId: string; amount: number; matchPct: number; ruleId: string }[] = [];
+    const due: {
+      portfolioId: string;
+      amount: number;
+      matchPct: number;
+      ruleId: string;
+      irs: { key: string; limit: number } | null;
+    }[] = [];
     const contribDrafts: {
       ruleId: string;
       accountId: string;
@@ -446,32 +451,35 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
     let planned = 0;
     let irsCut = 0;
     for (const rule of plan.contributions) {
-      let amount = contributionDueThisMonth(plan, rule, cursor, monthsFromAsOf, infA);
+      const amount = contributionDueThisMonth(plan, rule, cursor, monthsFromAsOf, infA);
       if (amount <= 0) continue;
       if (!values.has(rule.portfolioId)) continue;
       const dest = plan.portfolios.find((p) => p.id === rule.portfolioId);
       const cls = dest ? irsLimitClass(dest.kind) : null;
-      const person =
-        dest && normalizeOwner(dest.owner) === "spouse" ? "spouse" : "primary";
-      const ytdKey = cls
-        ? cls === "trump"
-          ? `${cursor.getFullYear()}|${rule.portfolioId}|trump`
-          : `${cursor.getFullYear()}|${person}|${cls}`
-        : null;
+      const person = dest ? irsCapPerson(plan, dest, rule) : null;
       const asked = amount;
       let capUsed: number | null = null;
       let catchUp = false;
-      if (rule.capToIrsLimit && dest && cls && ytdKey) {
+      let irs: { key: string; limit: number } | null = null;
+      if (rule.capToIrsLimit && dest && cls) {
         const birth =
-          person === "spouse" ? plan.spouse.birthDate : plan.primary.birthDate;
-        const age = ageInCalendarYear(birth, cursor.getFullYear());
+          person === "spouse"
+            ? plan.spouse.birthDate
+            : person === "primary"
+              ? plan.primary.birthDate
+              : "";
+        const age = validIso(birth) ? ageInCalendarYear(birth, cursor.getFullYear()) : 0;
         const cap = irsAnnualCap(dest.kind, age) ?? 0;
         capUsed = cap;
         catchUp = cls !== "trump" && age >= 50;
-        const used = irsYtd.get(ytdKey) ?? 0;
-        amount = Math.min(amount, Math.max(0, cap - used));
+        const ytdKey =
+          cls === "trump"
+            ? `${cursor.getFullYear()}|${rule.portfolioId}|trump`
+            : person
+              ? `${cursor.getFullYear()}|${person}|${cls}`
+              : `${cursor.getFullYear()}|unresolved|${rule.portfolioId}|${cls}`;
+        irs = { key: ytdKey, limit: cap };
       }
-      if (asked - amount > 0.5) irsCut += asked - amount;
       const matchPct =
         rule.employerMatch && dest && isWorkplaceMatchAccount(dest.kind)
           ? Math.max(0, Math.min(100, rule.employerMatchPct ?? 0))
@@ -492,14 +500,12 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
           planned: asked,
           irsLimit: capUsed,
           catchUp,
-          capped: amount,
+          capped: asked,
           matchPct,
         });
       }
-      if (amount <= 0) continue;
-      if (ytdKey) irsYtd.set(ytdKey, (irsYtd.get(ytdKey) ?? 0) + amount);
-      due.push({ portfolioId: rule.portfolioId, amount, matchPct, ruleId: rule.id });
-      planned += amount;
+      if (asked <= 0) continue;
+      due.push({ portfolioId: rule.portfolioId, amount: asked, matchPct, ruleId: rule.id, irs });
     }
     const contribIds = new Set(due.map((d) => d.portfolioId));
     const salaryOn = plan.incomes.some((stream) => {
@@ -596,10 +602,24 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
     let unallocatedSpent = 0;
     if (leftover > 0.5) {
       let pool = leftover;
-      const funded: { portfolioId: string; amount: number; matchPct: number; ruleId: string }[] = [];
+      const funded: {
+        portfolioId: string;
+        amount: number;
+        matchPct: number;
+        ruleId: string;
+      }[] = [];
       for (const d of due) {
-        if (pool <= 0.5) break;
-        const take = Math.min(d.amount, pool);
+        let intended = d.amount;
+        if (d.irs) {
+          const used = irsYtd.get(d.irs.key) ?? 0;
+          const room = Math.max(0, d.irs.limit - used);
+          const afterCap = Math.min(intended, room);
+          if (intended - afterCap > 0.5) irsCut += intended - afterCap;
+          intended = afterCap;
+        }
+        planned += intended;
+        if (intended <= 0 || pool <= 0.5) continue;
+        const take = Math.min(intended, pool);
         values.set(d.portfolioId, (values.get(d.portfolioId) ?? 0) + take);
         if (basis.has(d.portfolioId)) {
           basis.set(d.portfolioId, (basis.get(d.portfolioId) ?? 0) + take);
@@ -612,6 +632,9 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
         }
         pool -= take;
         appliedContrib += take;
+        if (d.irs && take > 0) {
+          irsYtd.set(d.irs.key, (irsYtd.get(d.irs.key) ?? 0) + take);
+        }
         const contribFlow = auditFlow?.get(d.portfolioId);
         if (contribFlow) contribFlow.contribution += take;
         const rule = plan.contributions.find((row) => row.id === d.ruleId);
@@ -674,7 +697,21 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
         );
         if (logged) logged.matchApplied = match;
       }
-    } else if (leftover < -0.5) {
+    } else {
+      const shadow = new Map(irsYtd);
+      for (const d of due) {
+        let intended = d.amount;
+        if (d.irs) {
+          const used = shadow.get(d.irs.key) ?? 0;
+          const room = Math.max(0, d.irs.limit - used);
+          const afterCap = Math.min(intended, room);
+          if (intended - afterCap > 0.5) irsCut += intended - afterCap;
+          intended = afterCap;
+          if (intended > 0) shadow.set(d.irs.key, used + intended);
+        }
+        planned += intended;
+      }
+      if (leftover < -0.5) {
       const withdrawLog: { id: string; amount: number; taxableGain: number; basisReturn: number }[] =
         [];
       withdrawals += withdrawNeed(plan, values, basis, -leftover, taxR, withdrawLog);
@@ -714,6 +751,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
           depletedAge = ageYears(plan.primary.birthDate, cursor);
           depletedYear = cursor.getFullYear();
         }
+      }
       }
     }
 
