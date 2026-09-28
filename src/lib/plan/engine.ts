@@ -1167,6 +1167,8 @@ function buildRmdAccountRows(
       startYear,
       firstYear,
       firstYearAnnual,
+      institutionId: p.institutionId ?? null,
+      institutionName: p.institutionName ?? "",
     });
   }
   return rows;

@@ -11,6 +11,7 @@ import { CashShortNotice } from "@/components/meridian/cash-short-notice";
 import { nestEggTrack } from "@/lib/plan/peers";
 import { annuityEquivalentCopy } from "@/lib/plan/annuity-equivalent";
 import { PrimaryButton } from "@/components/ui/field";
+import { InstitutionMark } from "@/components/meridian/institution-field";
 
 function Disclaimer() {
   return <p className="text-xs italic leading-relaxed text-subtle">{OODA_DISCLAIMER}</p>;
@@ -21,12 +22,14 @@ function BriefTable({
   note,
   headers,
   rows,
+  logos,
   footer,
 }: {
   intro: string;
   note?: string;
   headers: { label: string; align?: "left" | "right"; nowrap?: boolean }[];
   rows: string[][];
+  logos?: { institutionId: string | null; institutionName: string }[];
   footer?: string[];
 }) {
   return (
@@ -64,7 +67,18 @@ function BriefTable({
                         (h?.nowrap ? "whitespace-nowrap " : "")
                       }
                     >
-                      {cell}
+                      {j === 0 && logos?.[i]?.institutionName ? (
+                        <span className="inline-flex items-center gap-2">
+                          <span>{cell}</span>
+                          <InstitutionMark
+                            institutionId={logos[i].institutionId}
+                            institutionName={logos[i].institutionName}
+                            size={20}
+                          />
+                        </span>
+                      ) : (
+                        cell
+                      )}
                     </td>
                   );
                 })}
@@ -205,6 +219,7 @@ export function PeerBriefCard({
                 note={s.table.note}
                 headers={s.table.headers}
                 rows={s.table.rows}
+                logos={s.table.logos}
                 footer={s.table.footer}
               />
             ) : s.columns?.rows.length ? (

@@ -55,6 +55,8 @@ export interface BriefTableSpec {
   note?: string;
   headers: { label: string; align?: "left" | "right"; nowrap?: boolean }[];
   rows: string[][];
+  /** Institution mark to the right of the first cell. Same order as rows. */
+  logos?: { institutionId: string | null; institutionName: string }[];
   footer?: string[];
 }
 
@@ -639,6 +641,10 @@ function rmdTable(sim: SimResult): BriefTableSpec {
       { label: "First-year RMD", align: "right", nowrap: true },
     ],
     rows: tableRows,
+    logos: rows.map((r) => ({
+      institutionId: r.institutionId ?? null,
+      institutionName: r.institutionName ?? "",
+    })),
     footer,
   };
 }

@@ -384,6 +384,8 @@ export interface RmdAccountRow {
   startYear: number | null;
   firstYear: number | null;
   firstYearAnnual: number;
+  institutionId?: string | null;
+  institutionName?: string;
 }
 
 export interface RmdReport {
