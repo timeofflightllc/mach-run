@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createDefaultPlan } from "./defaults.ts";
 import { simulate } from "./engine.ts";
+import { buildInvestmentAuditCsv } from "./audit-csv.ts";
 import {
   fvGrowThenDeposit,
   monthlyRateFromAnnual,
@@ -329,4 +330,18 @@ test("audit H: blank sweep spends leftover instead of dropping it", () => {
   near(jan.spendableEnd, 102_000);
   const dec = month(sim, "2026-12");
   near(dec.spendableEnd, 100_000 + 12 * 2_000);
+});
+
+test("audit CSV opens with a reviewer prompt before the trace", () => {
+  const plan = roundPlan();
+  plan.portfolios = [taxable(1_000)];
+  const csv = buildInvestmentAuditCsv(plan, simulate(plan, { audit: true }));
+  const lines = csv.split("\n");
+  assert.equal(lines[0], "section,step,instruction");
+  assert.match(lines[1] ?? "", /^review_order,1,/);
+  assert.ok(csv.includes("CONFIRMED BUGS"));
+  assert.ok(csv.includes("Do not assume the software is correct"));
+  assert.ok(csv.includes("SAMPLES I RECOMPUTED"));
+  const dictionaryAt = lines.findIndex((line) => line.startsWith("dictionary,"));
+  assert.ok(dictionaryAt > 10, "dictionary should follow the review order");
 });
