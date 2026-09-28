@@ -190,25 +190,10 @@ function ConflictDialog({ id, onClose }: { id: string; onClose: () => void }) {
         ) : (
           <CashBody
             advisory={advisory}
-            onAmount={(monthlyAmount) => {
+            onSave={(patch) => {
               if (advisory.detail.kind !== "cash") return;
-              updateContribution(advisory.detail.ruleId, { monthlyAmount });
-            }}
-            onPercent={(percentOfIncome) => {
-              if (advisory.detail.kind !== "cash") return;
-              updateContribution(advisory.detail.ruleId, { percentOfIncome });
-            }}
-            onStart={(startDate) => {
-              if (advisory.detail.kind !== "cash") return;
-              updateContribution(advisory.detail.ruleId, { startDate });
-            }}
-            onEnd={(endDate) => {
-              if (advisory.detail.kind !== "cash") return;
-              updateContribution(advisory.detail.ruleId, {
-                endDate,
-                endAtRetirement: false,
-                endWithStageId: undefined,
-              });
+              updateContribution(advisory.detail.ruleId, patch);
+              onClose();
             }}
             onKeep={() => {
               confirmAdvisory(advisory.id, advisory.fingerprint);
@@ -302,20 +287,25 @@ function SideEditor({
 
 function CashBody({
   advisory,
-  onAmount,
-  onPercent,
-  onStart,
-  onEnd,
+  onSave,
   onKeep,
 }: {
   advisory: Advisory;
-  onAmount: (n: number) => void;
-  onPercent: (n: number) => void;
-  onStart: (iso: string) => void;
-  onEnd: (iso: string | null) => void;
+  onSave: (patch: {
+    monthlyAmount?: number;
+    percentOfIncome?: number;
+    startDate?: string;
+    endDate?: string | null;
+    endAtRetirement?: boolean;
+    endWithStageId?: undefined;
+  }) => void;
   onKeep: () => void;
 }) {
   const detail = advisory.detail;
+  const [amount, setAmount] = useState(detail.kind === "cash" ? detail.monthlyAmount : 0);
+  const [percent, setPercent] = useState(detail.kind === "cash" ? (detail.percent ?? 0) : 0);
+  const [start, setStart] = useState(detail.kind === "cash" ? detail.start : "");
+  const [end, setEnd] = useState<string | null>(detail.kind === "cash" ? detail.end : null);
   if (detail.kind !== "cash") return null;
   const firstShort = detail.months.find((month) => month.short);
   const stopAfter = firstShort ? monthBefore(firstShort.date) : "";
@@ -358,16 +348,16 @@ function CashBody({
               type="text"
               inputMode="decimal"
               className="h-10 w-full rounded-lg bg-transparent px-3 text-sm text-fg shadow-[0_0_0_1px_var(--color-border)]"
-              value={detail.percent ?? ""}
+              value={percent || ""}
               onChange={(event) => {
                 const n = Number(event.target.value.replace(/[^0-9.]/g, ""));
-                if (Number.isFinite(n)) onPercent(n);
+                if (Number.isFinite(n)) setPercent(n);
               }}
             />
           </Field>
         ) : (
           <Field label="$ / month">
-            <MoneyInput value={detail.monthlyAmount} onValue={onAmount} />
+            <MoneyInput value={amount} onValue={setAmount} />
           </Field>
         )}
         {detail.mode === "percent" ? (
@@ -377,10 +367,10 @@ function CashBody({
         ) : (
           <>
             <Field label="Start">
-              <MonthInput value={detail.start} onValue={(startDate) => startDate && onStart(startDate)} />
+              <MonthInput value={start} onValue={(startDate) => startDate && setStart(startDate)} />
             </Field>
             <Field label="End">
-              <MonthInput value={detail.end} clearable onValue={(endDate) => onEnd(endDate || null)} />
+              <MonthInput value={end} clearable onValue={(endDate) => setEnd(endDate || null)} />
             </Field>
           </>
         )}
@@ -389,6 +379,25 @@ function CashBody({
         <button
           type="button"
           className="h-9 rounded-lg bg-[#e8c547] px-3 text-sm font-medium text-[#1a1404]"
+          onClick={() => {
+            if (detail.mode === "percent") {
+              onSave({ percentOfIncome: percent });
+              return;
+            }
+            onSave({
+              monthlyAmount: amount,
+              startDate: start,
+              endDate: end,
+              endAtRetirement: false,
+              endWithStageId: undefined,
+            });
+          }}
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          className="h-9 rounded-lg px-3 text-sm font-medium text-fg"
           onClick={onKeep}
         >
           {advisory.keep}
@@ -397,7 +406,7 @@ function CashBody({
           <button
             type="button"
             className="h-9 rounded-lg px-3 text-sm font-medium text-fg"
-            onClick={() => onEnd(stopAfter)}
+            onClick={() => setEnd(stopAfter)}
           >
             Stop after {monthLabel(stopAfter)}
           </button>
