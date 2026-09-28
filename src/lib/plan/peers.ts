@@ -518,7 +518,7 @@ export function buildPeerBrief(
       })
       .join("; ");
     add("Accounts on this run", `${listed}. ${closer}`, {
-      table: accountTable(plan, closer),
+      table: accountTable(plan, sim, closer),
     });
   }
 
@@ -570,20 +570,27 @@ export function debtSentence(plan: Plan, remainingNow?: number): string | null {
   return `Remaining debt now is ${usd(now)}. Last modeled loan pays off ${when}.`;
 }
 
-function accountTable(plan: Plan, note: string): BriefTableSpec {
+function accountTable(plan: Plan, sim: SimResult, note: string): BriefTableSpec {
+  const at = new Map((sim.balancesAtRetirement ?? []).map((b) => [b.id, b]));
+  const hasGoal = Boolean(plan.assumptions.retirementGoalDate);
+  const when = hasGoal
+    ? "Position at retirement is today's dollars, the balance entering that month."
+    : "Set a retirement goal date in Family to see the balance there.";
   return {
     intro: "",
-    note,
+    note: `${note} ${when}`,
     headers: [
       { label: "Account" },
-      { label: "Value", align: "right", nowrap: true },
+      { label: "Starting position", align: "right", nowrap: true },
+      { label: "Position at retirement", align: "right", nowrap: true },
     ],
     rows: plan.portfolios.map((p) => {
       const invested =
         p.kind === "annuity" && (p.costBasis ?? 0) > 0
           ? ` (invested ${usd(p.costBasis ?? 0)})`
           : "";
-      return [`${p.name.trim() || p.kind}`, `${usd(p.currentValue)}${invested}`];
+      const later = hasGoal ? usd(at.get(p.id)?.real ?? p.currentValue) : "—";
+      return [`${p.name.trim() || p.kind}`, `${usd(p.currentValue)}${invested}`, later];
     }),
     logos: plan.portfolios.map((p) => ({
       institutionId: p.institutionId ?? null,

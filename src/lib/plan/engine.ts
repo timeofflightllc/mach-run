@@ -340,6 +340,10 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
   let markedDepleted = false;
   let totalContributed = 0;
   let totalWithdrawn = 0;
+  const goalKey = (plan.assumptions.retirementGoalDate ?? "").slice(0, 7);
+  const asOfKey = iso(asOf).slice(0, 7);
+  let atRetirement = new Map<string, number>();
+  let atRetirementReal = new Map<string, number>();
 
   let cursor = asOf;
   let guard = 0;
@@ -872,6 +876,13 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
       }
     }
 
+    if (goalKey && goalKey > asOfKey && iso(cursor).slice(0, 7) < goalKey) {
+      atRetirement = new Map(values);
+      atRetirementReal = new Map(
+        [...values].map(([id, v]) => [id, v / Math.max(inflationIndex, 1e-9)]),
+      );
+    }
+
     months.push({
       date: iso(cursor),
       year: cursor.getFullYear(),
@@ -1109,6 +1120,11 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
     spendableAtEndReal: last?.spendableEndReal ?? 0,
     totalContributed,
     totalWithdrawn,
+    balancesAtRetirement: plan.portfolios.map((p) => ({
+      id: p.id,
+      nominal: atRetirement.get(p.id) ?? p.currentValue,
+      real: atRetirementReal.get(p.id) ?? p.currentValue,
+    })),
     rmd: {
       startAge: rmdStartAge(plan.primary.birthDate),
       lifetimeRothExempt: rmdNote.lifetimeRothExempt,

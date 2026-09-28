@@ -140,6 +140,38 @@ test("free and paid generate the same full OODA; expanded is a clip flag", () =>
   const accounts = full.sections.find((s) => s.title === "Accounts on this run");
   assert.equal(accounts?.table?.rows[0]?.[0], "Brokerage");
   assert.match(accounts?.table?.rows[0]?.[1] ?? "", /\$400,000/);
+  assert.equal(accounts?.table?.rows[0]?.[2], "—");
+});
+
+test("account table shows today's-dollar balance entering retirement", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1976-01-01";
+  plan.assumptions.asOfDate = "2026-01-01";
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultReturnPct = 7;
+  plan.assumptions.retirementGoalDate = "2036-01-01";
+  plan.incomes = [];
+  plan.spending = [];
+  plan.portfolios = [
+    {
+      id: "p1",
+      name: "Brokerage",
+      kind: "taxable",
+      owner: "Joint",
+      currentValue: 100_000,
+      returnPct: null,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  const sim = simulate(plan);
+  const row = buildPeerBrief(plan, sim, { expanded: true }).sections.find(
+    (s) => s.title === "Accounts on this run",
+  )?.table?.rows[0];
+  assert.equal(row?.[1], "$100,000");
+  const later = Number((row?.[2] ?? "").replace(/[^0-9.]/g, ""));
+  assert.ok(later > 180_000 && later < 210_000, row?.[2]);
 });
 
 test("nest egg goal says extra monthly when the pile will miss", () => {

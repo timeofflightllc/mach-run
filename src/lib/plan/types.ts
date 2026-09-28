@@ -353,6 +353,12 @@ export interface RetirementMark {
   monthlySpending: number;
 }
 
+export interface AccountRetirementBalance {
+  id: string;
+  nominal: number;
+  real: number;
+}
+
 export interface SimResult {
   months: MonthSnapshot[];
   years: YearSnapshot[];
@@ -371,6 +377,8 @@ export interface SimResult {
   spendableAtEndReal: number;
   totalContributed: number;
   totalWithdrawn: number;
+  /** Account value entering the retirement month. Real is today's dollars. Empty-goal rows fall back to current value. */
+  balancesAtRetirement: AccountRetirementBalance[];
   rmd: RmdReport;
   /** Present only when simulate() is asked for the admin audit. */
   audit?: import("./audit.ts").PlanAudit;
