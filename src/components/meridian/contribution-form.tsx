@@ -77,6 +77,10 @@ export function ContributionForm() {
           is free money on top, not from your paycheck.
           {matchLine}
         </p>
+        <p>
+          Tax-qualified accounts are funded first when the paycheck cannot cover
+          every contribution.
+        </p>
       </div>
       <ul className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
         {plan.contributions.map((c) => {

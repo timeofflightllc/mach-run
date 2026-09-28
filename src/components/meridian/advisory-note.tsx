@@ -326,7 +326,7 @@ function CashBody({
   return (
     <div className="mt-3 space-y-4">
       <p className="text-sm leading-relaxed text-fg">
-        {detail.year}, month by month. A highlighted row is a month the paycheck cannot fully fund. Contributions above this one are paid first.
+        {detail.year}, month by month. A highlighted row is a month the paycheck cannot fully fund. Tax-qualified contributions are funded first, then the rest in the order you listed them.
         {detail.laterYears > 0
           ? ` The same shortfall shows up in ${detail.laterYears} later ${detail.laterYears === 1 ? "year" : "years"}.`
           : ""}

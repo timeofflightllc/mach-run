@@ -23,6 +23,7 @@ import {
 } from "./rmd.ts";
 import { emptyAudit, type PlanAudit } from "./audit.ts";
 import { irsAnnualCap, irsCapPerson, irsLimitClass } from "./irs-limits.ts";
+import { isTaxQualified } from "./family-owners.ts";
 import { mortgagePaymentDue, portfolioEquity, remainingMortgage } from "./mortgage.ts";
 import { liabilityPaymentDue, remainingLiability } from "./liability.ts";
 import type {
@@ -282,6 +283,18 @@ function withdrawNeed(
   return withdrawn;
 }
 
+/** Qualified destinations first. Relative order inside each group stays as listed. */
+function fundQualifiedFirst<T extends { portfolioId: string }>(plan: Plan, rows: T[]): T[] {
+  const rank = (portfolioId: string) => {
+    const dest = plan.portfolios.find((p) => p.id === portfolioId);
+    return dest && isTaxQualified(dest.kind) ? 0 : 1;
+  };
+  return rows
+    .map((row, index) => ({ row, index, rank: rank(row.portfolioId) }))
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map((item) => item.row);
+}
+
 export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
   const plan = ensurePlan(raw);
   const wantAudit = Boolean(opts?.audit);
@@ -507,7 +520,8 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
       if (asked <= 0) continue;
       due.push({ portfolioId: rule.portfolioId, amount: asked, matchPct, ruleId: rule.id, irs });
     }
-    const contribIds = new Set(due.map((d) => d.portfolioId));
+    const fundingDue = fundQualifiedFirst(plan, due);
+    const contribIds = new Set(fundingDue.map((d) => d.portfolioId));
     const salaryOn = plan.incomes.some((stream) => {
       if (stream.kind !== "salary") return false;
       const win = streamWindow(plan, stream);
@@ -609,7 +623,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
         matchPct: number;
         ruleId: string;
       }[] = [];
-      for (const d of due) {
+      for (const d of fundingDue) {
         let intended = d.amount;
         if (d.irs) {
           const used = irsYtd.get(d.irs.key) ?? 0;
@@ -701,7 +715,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
       }
     } else {
       const shadow = new Map(irsYtd);
-      for (const d of due) {
+      for (const d of fundingDue) {
         let intended = d.amount;
         if (d.irs) {
           const used = shadow.get(d.irs.key) ?? 0;

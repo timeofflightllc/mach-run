@@ -6,6 +6,7 @@ import {
   streamWindow,
 } from "./engine.ts";
 import { monthBefore, monthStart, validIso } from "./dates.ts";
+import { isTaxQualified } from "./family-owners.ts";
 import { usd } from "./format.ts";
 import type { Plan, PlanConfirmation } from "./types.ts";
 
@@ -243,6 +244,7 @@ function cashAdvisories(plan: Plan): Advisory[] {
       rule.amountMode === "percent" && rule.percentOfIncomeId
         ? plan.incomes.find((stream) => stream.id === rule.percentOfIncomeId)
         : undefined;
+    const shortHits = list.filter((hit) => hit.short);
     out.push({
       id: `cash:${rule.id}`,
       cardId: `card-contributions-${rule.id}`,
@@ -261,7 +263,7 @@ function cashAdvisories(plan: Plan): Advisory[] {
         Math.round(shown),
         list.filter((hit) => hit.short).length,
       ].join("|"),
-      body: cashSentence(year, list, later),
+      body: cashSentence(year, list, later, aheadPhrase(plan, rule.id, shortHits, rows)),
       keep: "Keep it",
       endOther: null,
       detail: {
@@ -324,7 +326,12 @@ function monthSpan(hits: MonthHit[]): string {
   return labels.map((label) => `${label.name} ${label.year}`).join(", ");
 }
 
-function cashSentence(year: number, hits: MonthHit[], laterYears: number): string {
+function cashSentence(
+  year: number,
+  hits: MonthHit[],
+  laterYears: number,
+  ahead: string,
+): string {
   const ordered = [...hits].sort((a, b) => a.date.localeCompare(b.date));
   const short = ordered.filter((hit) => hit.short);
   const covered = ordered.filter((hit) => !hit.short);
@@ -332,8 +339,7 @@ function cashSentence(year: number, hits: MonthHit[], laterYears: number): strin
     laterYears === 0
       ? ""
       : ` The same shortfall shows up in ${laterYears} later ${laterYears === 1 ? "year" : "years"}.`;
-  const reason =
-    "The rest is more than income minus taxes minus spending, after the contributions above this one.";
+  const reason = `The rest is more than income minus taxes minus spending. ${ahead}`;
   if (!covered.length) {
     const asked = sumHits(ordered, "asked");
     const got = sumHits(ordered, "got");
@@ -355,6 +361,57 @@ function cashSentence(year: number, hits: MonthHit[], laterYears: number): strin
   const missedAsked = sumHits(short, "asked");
   const missedGot = sumHits(short, "got");
   return `${monthSpan(covered)} will be invested (${usd(sumHits(covered, "got"))}). ${monthSpan(short)} asks for ${usd(missedAsked)} and ${usd(missedGot)} of that will be invested. ${reason}${again}`;
+}
+
+function fundingRank(plan: Plan): Map<string, number> {
+  const ordered = plan.contributions
+    .map((rule, index) => {
+      const dest = plan.portfolios.find((row) => row.id === rule.portfolioId);
+      return { id: rule.id, index, qualified: dest ? isTaxQualified(dest.kind) : false };
+    })
+    .sort((a, b) => Number(b.qualified) - Number(a.qualified) || a.index - b.index);
+  return new Map(ordered.map((row, index) => [row.id, index]));
+}
+
+function aheadPhrase(
+  plan: Plan,
+  ruleId: string,
+  short: MonthHit[],
+  rows: { date: string; ruleId: string; invested: number }[],
+): string {
+  const order = fundingRank(plan);
+  const mine = order.get(ruleId) ?? 0;
+  const nameOf = new Map(
+    plan.contributions.map((rule, index) => [
+      rule.id,
+      rule.label.trim() || `Contribution ${index + 1}`,
+    ]),
+  );
+  const bits: string[] = [];
+  const seen = new Set<string>();
+  for (const hit of [...short].sort((a, b) => a.date.localeCompare(b.date))) {
+    const ahead = rows
+      .filter(
+        (row) =>
+          row.date === hit.date && (order.get(row.ruleId) ?? 0) < mine && row.invested > 0.5,
+      )
+      .sort((a, b) => (order.get(a.ruleId) ?? 0) - (order.get(b.ruleId) ?? 0));
+    const text = ahead
+      .map((row) => `${nameOf.get(row.ruleId) ?? "Contribution"} ${usd(row.invested)}`)
+      .join(" and ");
+    if (seen.has(text)) continue;
+    seen.add(text);
+    if (!text) bits.push("nothing else was funded ahead of this one");
+    else if (short.length === 1) bits.push(text);
+    else bits.push(`${monthLabel(hit.date)}: ${text}`);
+  }
+  if (bits.length === 1 && bits[0] === "nothing else was funded ahead of this one") {
+    return "Tax-qualified contributions are funded first. Nothing else was funded ahead of this one.";
+  }
+  if (bits.length === 1) {
+    return `Tax-qualified contributions are funded first. Ahead of this one: ${bits[0]}.`;
+  }
+  return `Tax-qualified contributions are funded first. Ahead of this one — ${bits.join("; ")}.`;
 }
 
 let cachedKey = "";

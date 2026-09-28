@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createDefaultPlan } from "./defaults.ts";
+import { openAdvisories } from "./advisories.ts";
 import { simulate } from "./engine.ts";
 import { remainingLiability } from "./liability.ts";
 import { remainingMortgage } from "./mortgage.ts";
@@ -681,6 +682,150 @@ test("COLA steps each January and stays flat the rest of the year", () => {
   assert.equal(Math.round(asked("2027-10")), 1100);
   assert.equal(Math.round(asked("2027-12")), 1100);
   assert.equal(Math.round(asked("2028-01")), 1210);
+});
+
+test("October shortfall funds Roths before the taxable contribution listed first", () => {
+  const plan = createDefaultPlan();
+  plan.primary = { name: "Matt", birthDate: "1979-10-01" };
+  plan.spouse = { name: "Sarah", birthDate: "1986-07-22" };
+  plan.assumptions.asOfDate = "2029-10-01";
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultColaPct = 0;
+  plan.assumptions.defaultReturnPct = 0;
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.assumptions.projectionEndAge = 51;
+  plan.assumptions.sweepPortfolioId = null;
+  plan.incomes = [
+    {
+      id: "pay",
+      name: "Post BGS",
+      kind: "salary",
+      monthlyAmount: 11363.74,
+      startDate: "2029-10-01",
+      endDate: "2029-11-01",
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.spending = [];
+  plan.portfolios = [
+    {
+      id: "nq",
+      name: "Fidelity Non Qualified",
+      kind: "taxable",
+      owner: "joint",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+    {
+      id: "matt",
+      name: "Matt Roth IRA - AMS",
+      kind: "roth_ira",
+      owner: "primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "roth",
+      spendable: false,
+      includeInNetWorth: true,
+    },
+    {
+      id: "k401",
+      name: "Boeing 401k Roth",
+      kind: "401k_roth",
+      owner: "primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "roth",
+      spendable: false,
+      includeInNetWorth: true,
+    },
+    {
+      id: "sarah",
+      name: "Sarah Roth IRA - AMS",
+      kind: "roth_ira",
+      owner: "spouse",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "roth",
+      spendable: false,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "nq",
+      label: "Non Qualified",
+      portfolioId: "nq",
+      monthlyAmount: 16000,
+      startDate: "2026-10-01",
+      endDate: "2029-10-01",
+    },
+    {
+      id: "post",
+      label: "Non Qualified post BGS",
+      portfolioId: "nq",
+      monthlyAmount: 5000,
+      startDate: "2029-11-01",
+      endDate: "2029-11-01",
+    },
+    {
+      id: "matt",
+      label: "Matt Roth AMS",
+      portfolioId: "matt",
+      monthlyAmount: 625,
+      startDate: "2026-08-26",
+      endDate: "2029-11-01",
+    },
+    {
+      id: "k401",
+      label: "Matt 401k Roth",
+      portfolioId: "k401",
+      monthlyAmount: 2731.82,
+      startDate: "2026-09-01",
+      endDate: "2029-09-01",
+      employerMatch: true,
+      employerMatchPct: 100,
+    },
+    {
+      id: "sarah",
+      label: "Sarah Roth AMS",
+      portfolioId: "sarah",
+      monthlyAmount: 625,
+      startDate: "2026-08-26",
+      endDate: "2029-11-01",
+    },
+  ];
+  const listed = plan.contributions.map((rule) => rule.id).join(",");
+  const sim = simulate(plan, { audit: true });
+  assert.equal(plan.contributions.map((rule) => rule.id).join(","), listed);
+  const got = (id: string, date: string) =>
+    sim.audit?.contributions.find((row) => row.ruleId === id && row.date === date);
+  const octNq = got("nq", "2029-10-01");
+  const octMatt = got("matt", "2029-10-01");
+  const octSarah = got("sarah", "2029-10-01");
+  const oct401 = got("k401", "2029-10-01");
+  assert.ok(octNq && octMatt && octSarah);
+  assert.equal(oct401, undefined);
+  assert.ok(Math.abs((octMatt?.invested ?? 0) - 625) < 0.02);
+  assert.ok(Math.abs((octSarah?.invested ?? 0) - 625) < 0.02);
+  assert.ok(Math.abs((octNq?.invested ?? 0) - 10113.74) < 0.02);
+  assert.equal(octNq?.match ?? 0, 0);
+  const novPost = got("post", "2029-11-01");
+  const novMatt = got("matt", "2029-11-01");
+  const novSarah = got("sarah", "2029-11-01");
+  assert.ok(novPost && novMatt && novSarah);
+  assert.ok(Math.abs((novPost?.invested ?? 0) - 5000) < 0.02);
+  assert.ok(Math.abs((novMatt?.invested ?? 0) - 625) < 0.02);
+  assert.ok(Math.abs((novSarah?.invested ?? 0) - 625) < 0.02);
+  const cash = openAdvisories(plan).find((row) => row.kind === "cash" && row.name === "Non Qualified");
+  assert.ok(cash);
+  assert.match(cash.body, /Tax-qualified contributions are funded first/);
+  assert.match(cash.body, /Matt Roth AMS \$625\.00 and Sarah Roth AMS \$625\.00/);
+  assert.doesNotMatch(cash.body, /above this one/);
 });
 
 
