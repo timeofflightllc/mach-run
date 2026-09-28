@@ -207,6 +207,16 @@ function Home() {
   const [step, setStep] = useState<StepId>("family");
   const sheet = hasBalanceSheet(ent.plan);
   const route = PAGES.filter((page) => page.id !== "liabilities" || sheet);
+  const [motion, setMotion] = useState<{
+    from: StepId;
+    to: StepId;
+    dir: 1 | -1;
+    on: boolean;
+  } | null>(null);
+  const motionRef = useRef(motion);
+  const [frameHeight, setFrameHeight] = useState<number | null>(null);
+  const panelRefs = useRef<Partial<Record<StepId, HTMLDivElement | null>>>({});
+  const slideKey = motion ? `${motion.from}>${motion.to}` : "";
   const holdTimer = useRef<number | null>(null);
   const holdGen = useRef(0);
   const [holding, setHolding] = useState(false);
@@ -215,6 +225,43 @@ function Home() {
       if (holdTimer.current) window.clearTimeout(holdTimer.current);
     };
   }, []);
+  useEffect(() => {
+    if (!motion || motion.on) return;
+    const from = motion.from;
+    const to = motion.to;
+    const fromEl = panelRefs.current[from];
+    const toEl = panelRefs.current[to];
+    const h = Math.max(fromEl?.offsetHeight ?? 0, toEl?.offsetHeight ?? 0);
+    if (h) setFrameHeight(h);
+    let timeout = 0;
+    let inner = 0;
+    let cancelled = false;
+    const raf = window.requestAnimationFrame(() => {
+      inner = window.requestAnimationFrame(() => {
+        if (cancelled) return;
+        setMotion((current) => {
+          if (!current || current.from !== from || current.to !== to || current.on) return current;
+          const next = { ...current, on: true };
+          motionRef.current = next;
+          return next;
+        });
+        timeout = window.setTimeout(() => {
+          if (cancelled) return;
+          motionRef.current = null;
+          setMotion(null);
+          setFrameHeight(null);
+        }, 250);
+      });
+    });
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(raf);
+      window.cancelAnimationFrame(inner);
+      window.clearTimeout(timeout);
+    };
+    // slideKey is the only trigger. motion.on flipping must not cancel the timer.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slideKey]);
   const shown = step;
   const shownIndex = route.findIndex((item) => item.id === shown);
   const shownPhase = PAGES.find((page) => page.id === shown)?.phase ?? "observe";
@@ -361,15 +408,64 @@ function Home() {
   }
 
   function goStep(next: StepId) {
-    if (!route.some((page) => page.id === next) || next === step) return;
+    if (!route.some((page) => page.id === next)) return;
+    const reduce =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const current = motionRef.current;
+    const from = current?.to ?? step;
+    if (next === from) return;
+    if (reduce || current) {
+      motionRef.current = null;
+      setMotion(null);
+      setFrameHeight(null);
+      setStep(next);
+      window.scrollTo(0, 0);
+      return;
+    }
+    const nextIndex = route.findIndex((page) => page.id === next);
+    const fromIndex = route.findIndex((page) => page.id === from);
+    if (nextIndex < 0) return;
+    const fromEl = panelRefs.current[from];
+    setFrameHeight(fromEl?.offsetHeight ?? null);
+    const nextMotion = {
+      from,
+      to: next,
+      dir: (nextIndex > fromIndex ? 1 : -1) as 1 | -1,
+      on: false,
+    };
+    motionRef.current = nextMotion;
     setStep(next);
+    setMotion(nextMotion);
+    window.scrollTo(0, 0);
   }
 
-  function pane(id: StepId, idle: string): { className: string; hidden: boolean } {
-    const visible = step === id;
+  function pane(id: StepId, idle: string): {
+    className: string;
+    style?: { transform: string; transition: string };
+    hidden: boolean;
+  } {
+    if (!motion || (id !== motion.from && id !== motion.to)) {
+      const visible = step === id;
+      return {
+        className: visible ? idle : "hidden",
+        hidden: !visible,
+      };
+    }
+    const leaving = id === motion.from;
+    const fromX = motion.on ? (motion.dir === 1 ? "-100%" : "100%") : "0%";
+    const toX = motion.on ? "0%" : motion.dir === 1 ? "100%" : "-100%";
     return {
-      className: visible ? idle : "hidden",
-      hidden: !visible,
+      className: cn(
+        idle,
+        "absolute inset-x-0 top-0 w-full",
+        leaving ? "pointer-events-none z-0" : "z-20",
+      ),
+      style: {
+        transform: `translateX(${leaving ? fromX : toX})`,
+        transition: motion.on ? "transform 250ms ease" : "none",
+      },
+      hidden: false,
     };
   }
 
@@ -437,14 +533,16 @@ function Home() {
     }
   }
 
-  const inputPane = "mx-auto flex w-full max-w-6xl flex-col gap-3 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]";
-  const familyPane = pane("family", inputPane);
-  const assetsPane = pane("assets", inputPane);
-  const liabilitiesPane = pane("liabilities", inputPane);
-  const incomePane = pane("income", inputPane);
-  const spendingPane = pane("spending", inputPane);
-  const contributionsPane = pane("contributions", inputPane);
-  const actPane = pane("act", "flex min-w-0 flex-col gap-4");
+  const inputFrame =
+    "mx-auto flex w-full max-w-6xl flex-col gap-3 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]";
+  const shell = "flex w-full flex-col";
+  const familyPane = pane("family", shell);
+  const assetsPane = pane("assets", shell);
+  const liabilitiesPane = pane("liabilities", shell);
+  const incomePane = pane("income", shell);
+  const spendingPane = pane("spending", shell);
+  const contributionsPane = pane("contributions", shell);
+  const actPane = pane("act", "flex min-w-0 w-full flex-col gap-4");
 
   const showBack = shownIndex > 0;
   const showNext = shownIndex >= 0 && shownIndex < route.length - 1;
@@ -609,12 +707,20 @@ function Home() {
       </header>
 
       <main className="page-gutter mx-auto flex max-w-none flex-col gap-5 py-5">
-        <div>
+        <div
+          className="relative"
+          style={frameHeight != null ? { height: frameHeight, overflow: "hidden" } : undefined}
+        >
           <div
+            ref={(node) => {
+              panelRefs.current.family = node;
+            }}
             className={familyPane.className}
+            style={familyPane.style}
             aria-hidden={familyPane.hidden}
             hidden={familyPane.hidden}
           >
+            <div className={inputFrame}>
             <PhaseLabel id="ooda-observe" label="Observe" />
             <Section
               title="Family"
@@ -624,12 +730,18 @@ function Home() {
             >
               <HouseholdForm />
             </Section>
+            </div>
           </div>
           <div
+            ref={(node) => {
+              panelRefs.current.assets = node;
+            }}
             className={assetsPane.className}
+            style={assetsPane.style}
             aria-hidden={assetsPane.hidden}
             hidden={assetsPane.hidden}
           >
+            <div className={inputFrame}>
             <PhaseLabel id="ooda-observe-assets" label="Observe" />
             <Section
               title="Accounts - Assets"
@@ -639,12 +751,18 @@ function Home() {
             >
               <PortfolioForm />
             </Section>
+            </div>
           </div>
           <div
+            ref={(node) => {
+              panelRefs.current.liabilities = node;
+            }}
             className={liabilitiesPane.className}
+            style={liabilitiesPane.style}
             aria-hidden={liabilitiesPane.hidden}
             hidden={liabilitiesPane.hidden}
           >
+            <div className={inputFrame}>
             <PhaseLabel id="ooda-observe-liabilities" label="Observe" />
             <Section
               title="Accounts - Liabilities"
@@ -654,12 +772,18 @@ function Home() {
             >
               <LiabilityForm />
             </Section>
+            </div>
           </div>
           <div
+            ref={(node) => {
+              panelRefs.current.income = node;
+            }}
             className={incomePane.className}
+            style={incomePane.style}
             aria-hidden={incomePane.hidden}
             hidden={incomePane.hidden}
           >
+            <div className={inputFrame}>
             <PhaseLabel id="ooda-orient" label="Orient" />
             <Section
               title="Income"
@@ -669,12 +793,18 @@ function Home() {
             >
               <IncomeForm />
             </Section>
+            </div>
           </div>
           <div
+            ref={(node) => {
+              panelRefs.current.spending = node;
+            }}
             className={spendingPane.className}
+            style={spendingPane.style}
             aria-hidden={spendingPane.hidden}
             hidden={spendingPane.hidden}
           >
+            <div className={inputFrame}>
             <PhaseLabel id="ooda-orient-spending" label="Orient" />
             <Section
               title="Spending"
@@ -684,12 +814,18 @@ function Home() {
             >
               <SpendingForm />
             </Section>
+            </div>
           </div>
           <div
+            ref={(node) => {
+              panelRefs.current.contributions = node;
+            }}
             className={contributionsPane.className}
+            style={contributionsPane.style}
             aria-hidden={contributionsPane.hidden}
             hidden={contributionsPane.hidden}
           >
+            <div className={inputFrame}>
             <PhaseLabel id="ooda-decide" label="Decide" />
             <Section
               title="Contributions"
@@ -699,9 +835,14 @@ function Home() {
             >
               <ContributionForm />
             </Section>
+            </div>
           </div>
           <div
+            ref={(node) => {
+              panelRefs.current.act = node;
+            }}
             className={actPane.className}
+            style={actPane.style}
             aria-hidden={actPane.hidden}
             hidden={actPane.hidden}
           >
