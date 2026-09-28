@@ -878,8 +878,9 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
 
     if (goalKey && goalKey > asOfKey && iso(cursor).slice(0, 7) < goalKey) {
       atRetirement = new Map(values);
+      const index = (1 + mInf) ** (monthsFromAsOf + 1);
       atRetirementReal = new Map(
-        [...values].map(([id, v]) => [id, v / Math.max(inflationIndex, 1e-9)]),
+        [...values].map(([id, v]) => [id, v / Math.max(index, 1e-9)]),
       );
     }
 

@@ -170,8 +170,41 @@ test("account table shows today's-dollar balance entering retirement", () => {
     (s) => s.title === "Accounts on this run",
   )?.table?.rows[0];
   assert.equal(row?.[1], "$100,000");
-  const later = Number((row?.[2] ?? "").replace(/[^0-9.]/g, ""));
-  assert.ok(later > 180_000 && later < 210_000, row?.[2]);
+  assert.match(row?.[2] ?? "", /^\$19[0-9],[0-9]{3}/);
+});
+
+test("real estate at the inflation rate holds today's dollars and still compounds", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1980-11-01";
+  plan.assumptions.asOfDate = "2026-09-01";
+  plan.assumptions.inflationPct = 3;
+  plan.assumptions.defaultReturnPct = 7;
+  plan.assumptions.retirementGoalDate = "2040-11-01";
+  plan.incomes = [];
+  plan.spending = [];
+  plan.portfolios = [
+    {
+      id: "house",
+      name: "Shire Lane Home",
+      kind: "real_estate",
+      owner: "joint",
+      currentValue: 600_000,
+      returnPct: 3,
+      taxBucket: "none",
+      spendable: false,
+      includeInNetWorth: true,
+    },
+  ];
+  const sim = simulate(plan);
+  const row = buildPeerBrief(plan, sim, { expanded: true }).sections.find(
+    (s) => s.title === "Accounts on this run",
+  )?.table?.rows[0];
+  const match = /^\$([0-9,]+) \(\$([0-9,]+) today\)$/.exec(row?.[2] ?? "");
+  assert.ok(match, row?.[2]);
+  const nominal = Number(match?.[1].replace(/,/g, ""));
+  const real = Number(match?.[2].replace(/,/g, ""));
+  assert.ok(nominal > 900_000 && nominal < 930_000, row?.[2]);
+  assert.ok(Math.abs(real - 600_000) < 1, row?.[2]);
 });
 
 test("nest egg goal says extra monthly when the pile will miss", () => {

@@ -574,7 +574,7 @@ function accountTable(plan: Plan, sim: SimResult, note: string): BriefTableSpec 
   const at = new Map((sim.balancesAtRetirement ?? []).map((b) => [b.id, b]));
   const hasGoal = Boolean(plan.assumptions.retirementGoalDate);
   const when = hasGoal
-    ? "Position at retirement is today's dollars, the balance entering that month."
+    ? "Position at retirement is the balance entering that month. The first figure is future dollars — your return, compounded. In parentheses is today's dollars, after inflation. A return equal to inflation holds its buying power."
     : "Set a retirement goal date in Family to see the balance there.";
   return {
     intro: "",
@@ -589,7 +589,10 @@ function accountTable(plan: Plan, sim: SimResult, note: string): BriefTableSpec 
         p.kind === "annuity" && (p.costBasis ?? 0) > 0
           ? ` (invested ${usd(p.costBasis ?? 0)})`
           : "";
-      const later = hasGoal ? usd(at.get(p.id)?.real ?? p.currentValue) : "—";
+      const bal = at.get(p.id);
+      const nominal = bal?.nominal ?? p.currentValue;
+      const real = bal?.real ?? p.currentValue;
+      const later = hasGoal ? `${usd(nominal)} (${usd(real)} today)` : "—";
       return [`${p.name.trim() || p.kind}`, `${usd(p.currentValue)}${invested}`, later];
     }),
     logos: plan.portfolios.map((p) => ({
