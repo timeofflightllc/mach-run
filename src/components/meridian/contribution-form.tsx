@@ -26,6 +26,8 @@ import type { ContributionRule, Plan } from "@/lib/plan/types";
 
 const MATCH_PCTS = Array.from({ length: 21 }, (_, i) => i * 5);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const summaryGrid =
+  "grid-cols-[minmax(0,1.15fr)_minmax(0,1.25fr)_8.75rem_12rem_4.75rem_auto] items-center gap-x-3";
 const bandField = "w-[9.5rem] shrink-0";
 const bandControl = "h-10 max-w-none";
 
@@ -38,13 +40,13 @@ function accountLabel(plan: Plan, rule: ContributionRule): string {
   return dest?.name.trim() || "Account";
 }
 
-function summaryAmount(plan: Plan, rule: ContributionRule): string {
+function summaryAmount(plan: Plan, rule: ContributionRule): { main: string; note: string } {
   if (rule.amountMode === "percent") {
     const inc = plan.incomes.find((s) => s.id === rule.percentOfIncomeId);
     const name = inc?.name.trim() || "that income";
-    return `${rule.percentOfIncome ?? 0}% of ${name}`;
+    return { main: `${rule.percentOfIncome ?? 0}%`, note: `of ${name}` };
   }
-  return `${usd(rule.monthlyAmount)}/mo`;
+  return { main: `${usd(rule.monthlyAmount)}/mo`, note: "" };
 }
 
 function shortDate(iso: string | null | undefined): string {
@@ -183,6 +185,16 @@ export function ContributionForm() {
         </p>
       </div>
       <ul className="flex flex-col gap-2">
+        {rows.length > 0 ? (
+          <li className={`hidden px-3 text-[0.7rem] font-medium uppercase tracking-[0.14em] text-subtle @min-[46rem]:grid ${summaryGrid}`}>
+            <span>Name</span>
+            <span>Account</span>
+            <span className="text-right">Amount</span>
+            <span>When</span>
+            <span>Match</span>
+            <span />
+          </li>
+        ) : null}
         {rows.map((c) => {
           const dest = plan.portfolios.find((p) => p.id === c.portfolioId);
           const workplace = dest ? isWorkplace(dest.kind) : false;
@@ -206,6 +218,7 @@ export function ContributionForm() {
           const open = openId === c.id;
           const advisory = advisories.find((row) => row.cardId === `card-contributions-${c.id}`);
           const income = plan.incomes.find((s) => s.id === c.percentOfIncomeId);
+          const amount = summaryAmount(plan, c);
           return (
             <li
               key={c.id}
@@ -418,11 +431,11 @@ export function ContributionForm() {
                 inert={open}
               >
                 <div className="min-h-0 overflow-hidden">
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 @min-[46rem]:hidden">
                     <p className="min-w-0 flex-1 truncate text-sm text-fg">
                       <span className="font-medium">{c.label.trim() || "Contribution"}</span>
                       <span className="text-muted"> · {accountLabel(plan, c)}</span>
-                      <span className="text-muted"> · {summaryAmount(plan, c)}</span>
+                      <span className="text-muted"> · {amount.note ? `${amount.main} ${amount.note}` : amount.main}</span>
                       <span className="text-muted">
                         {" "}
                         · {shortDate(c.startDate)} → {c.endDate ? shortDate(c.endDate) : "ongoing"}
@@ -445,6 +458,38 @@ export function ContributionForm() {
                     >
                       Edit
                     </button>
+                  </div>
+                  <div className={`hidden text-sm @min-[46rem]:grid ${summaryGrid}`}>
+                    <span className="truncate font-medium text-fg">{c.label.trim() || "Contribution"}</span>
+                    <span className="truncate text-muted">{accountLabel(plan, c)}</span>
+                    <span className="text-right tabular-nums text-fg">
+                      <span className="block">{amount.main}</span>
+                      {amount.note ? (
+                        <span className="block truncate text-xs text-muted">{amount.note}</span>
+                      ) : null}
+                    </span>
+                    <span className="whitespace-nowrap tabular-nums text-muted">
+                      {shortDate(c.startDate)} → {c.endDate ? shortDate(c.endDate) : "ongoing"}
+                    </span>
+                    <span className="tabular-nums text-muted">
+                      {c.employerMatch ? `${c.employerMatchPct ?? 0}%` : "—"}
+                    </span>
+                    <span className="flex items-center justify-end gap-3">
+                      <button
+                        type="button"
+                        className="text-xs text-muted hover:text-negative"
+                        onClick={() => removeRule(c.id)}
+                      >
+                        Remove
+                      </button>
+                      <button
+                        type="button"
+                        className="font-medium text-fg"
+                        onClick={() => beginEdit(c.id)}
+                      >
+                        Edit
+                      </button>
+                    </span>
                   </div>
                   {!open && advisory ? (
                     <div className="mt-2">
