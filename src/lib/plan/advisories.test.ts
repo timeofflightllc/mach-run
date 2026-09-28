@@ -143,7 +143,47 @@ test("a contribution larger than income minus taxes minus spending is named on t
   ];
   const cash = openAdvisories(plan).filter((row) => row.kind === "cash");
   assert.equal(cash.length, 1);
-  assert.match(cash[0].body, /2026/);
-  assert.match(cash[0].body, /Too much|asked to invest/);
+  assert.match(cash[0].body, /\$2,000 a month, \$24,000 for the year/);
   assert.equal(cash[0].cardId, "card-contributions-c");
+});
+
+test("a November start counts November and December, not one month of $5,000", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-01-01";
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultReturnPct = 0;
+  plan.assumptions.defaultColaPct = 0;
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.primary.birthDate = "1979-01-01";
+  plan.assumptions.projectionEndAge = 51;
+  plan.incomes = [];
+  plan.spending = [];
+  plan.portfolios = [
+    {
+      id: "t",
+      name: "Fidelity Non Qualified",
+      kind: "taxable",
+      owner: "primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c",
+      label: "Non Qualified post BGS",
+      portfolioId: "t",
+      monthlyAmount: 5000,
+      startDate: "2029-11-01",
+      endDate: "2040-11-25",
+    },
+  ];
+  const cash = openAdvisories(plan).find((row) => row.kind === "cash");
+  assert.ok(cash);
+  assert.match(cash.body, /November and December 2029/);
+  assert.match(cash.body, /\$5,000 a month, \$10,000 for those two months/);
+  assert.doesNotMatch(cash.body, /asked to invest \$5,000/);
 });

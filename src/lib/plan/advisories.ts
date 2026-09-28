@@ -160,35 +160,40 @@ function cashAdvisories(plan: Plan): Advisory[] {
     if (asked > Math.max(0, leftover) + 1) shortDates.add(date);
   }
 
-  const byRule = new Map<string, Map<number, { asked: number; got: number }>>();
+  const byRule = new Map<string, MonthHit[]>();
   for (const row of rows) {
-    if (!shortDates.has(row.date)) continue;
-    if (row.planned <= row.invested + 0.5) continue;
-    const year = Number(row.date.slice(0, 4));
-    let years = byRule.get(row.ruleId);
-    if (!years) {
-      years = new Map();
-      byRule.set(row.ruleId, years);
-    }
-    const bucket = years.get(year) ?? { asked: 0, got: 0 };
-    bucket.asked += row.planned;
-    bucket.got += row.invested;
-    years.set(year, bucket);
+    if (row.planned <= 0.5) continue;
+    const list = byRule.get(row.ruleId) ?? [];
+    list.push({
+      date: row.date,
+      asked: row.planned,
+      got: row.invested,
+      short: shortDates.has(row.date) && row.planned > row.invested + 0.5,
+    });
+    byRule.set(row.ruleId, list);
   }
 
   const out: Advisory[] = [];
   plan.contributions.forEach((rule, index) => {
-    const years = byRule.get(rule.id);
-    if (!years) return;
-    const ordered = [...years.entries()].sort((a, b) => a[0] - b[0]);
-    const first = ordered.find(([, bucket]) => bucket.asked > bucket.got + 1);
-    if (!first) return;
-    const [year, bucket] = first;
-    const later = ordered.filter(([y, row]) => y !== year && row.asked > row.got + 1).length;
+    const hits = byRule.get(rule.id);
+    if (!hits?.some((hit) => hit.short)) return;
+    const byYear = new Map<number, MonthHit[]>();
+    for (const hit of hits) {
+      const year = Number(hit.date.slice(0, 4));
+      const list = byYear.get(year) ?? [];
+      list.push(hit);
+      byYear.set(year, list);
+    }
+    const years = [...byYear.entries()].sort((a, b) => a[0] - b[0]);
+    const firstIndex = years.findIndex(([, list]) => list.some((hit) => hit.short));
+    if (firstIndex < 0) return;
+    const [year, list] = years[firstIndex];
+    const later = years
+      .slice(firstIndex + 1)
+      .filter(([, row]) => row.some((hit) => hit.short)).length;
     const win = contributionWindow(plan, rule);
     const name = rule.label.trim() || `Contribution ${index + 1}`;
-    const again =
-      later === 0 ? "" : ` This also happens in ${later} later ${later === 1 ? "year" : "years"}.`;
+    const shown = list.reduce((sum, hit) => sum + hit.asked, 0);
     out.push({
       id: `cash:${rule.id}`,
       cardId: `card-contributions-${rule.id}`,
@@ -203,15 +208,86 @@ function cashAdvisories(plan: Plan): Advisory[] {
         rule.percentOfIncomeId ?? "",
         win.start,
         win.end ?? "",
-        Math.round(bucket.asked),
-        Math.round(bucket.got),
+        year,
+        Math.round(shown),
+        list.filter((hit) => hit.short).length,
       ].join("|"),
-      body: `In ${year} you asked to invest ${usd(bucket.asked)}. ${usd(bucket.got)} of that will be invested. The rest is more than income minus taxes minus spending, after the contributions above this one.${again}`,
+      body: cashSentence(year, list, later),
       keep: "Keep it",
       endOther: null,
     });
   });
   return out;
+}
+
+interface MonthHit {
+  date: string;
+  asked: number;
+  got: number;
+  short: boolean;
+}
+
+function sumHits(hits: MonthHit[], key: "asked" | "got"): number {
+  return hits.reduce((sum, hit) => sum + hit[key], 0);
+}
+
+function monthSpan(hits: MonthHit[]): string {
+  const labels = [...hits]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((hit) => ({
+      year: Number(hit.date.slice(0, 4)),
+      month: Number(hit.date.slice(5, 7)),
+      name: format(monthStart(hit.date), "MMMM"),
+    }));
+  if (!labels.length) return "";
+  if (labels.length === 1) return `${labels[0].name} ${labels[0].year}`;
+  const sameYear = labels.every((label) => label.year === labels[0].year);
+  const contiguous = labels.every(
+    (label, index) => index === 0 || label.month === labels[index - 1].month + 1,
+  );
+  if (sameYear && labels.length === 2) {
+    return `${labels[0].name} and ${labels[1].name} ${labels[0].year}`;
+  }
+  if (sameYear && contiguous) {
+    return `${labels[0].name} through ${labels[labels.length - 1].name} ${labels[0].year}`;
+  }
+  if (sameYear) {
+    return `${labels.map((label) => label.name).join(", ")} ${labels[0].year}`;
+  }
+  return labels.map((label) => `${label.name} ${label.year}`).join(", ");
+}
+
+function cashSentence(year: number, hits: MonthHit[], laterYears: number): string {
+  const ordered = [...hits].sort((a, b) => a.date.localeCompare(b.date));
+  const short = ordered.filter((hit) => hit.short);
+  const covered = ordered.filter((hit) => !hit.short);
+  const again =
+    laterYears === 0
+      ? ""
+      : ` The same shortfall shows up in ${laterYears} later ${laterYears === 1 ? "year" : "years"}.`;
+  const reason =
+    "The rest is more than income minus taxes minus spending, after the contributions above this one.";
+  if (!covered.length) {
+    const asked = sumHits(ordered, "asked");
+    const got = sumHits(ordered, "got");
+    const monthly = ordered[0]?.asked ?? 0;
+    const flat = ordered.every((hit) => Math.abs(hit.asked - monthly) < 1);
+    const count = ordered.length;
+    if (flat && count === 12) {
+      return `In ${year} this is ${usd(monthly)} a month, ${usd(asked)} for the year. ${usd(got)} of that will be invested. ${reason}${again}`;
+    }
+    if (flat && count === 1) {
+      return `${monthSpan(ordered)} asks for ${usd(asked)}. ${usd(got)} of that will be invested. ${reason}${again}`;
+    }
+    if (flat) {
+      const unit = count === 2 ? "those two months" : `those ${count} months`;
+      return `${monthSpan(ordered)}: ${usd(monthly)} a month, ${usd(asked)} for ${unit}. ${usd(got)} of that will be invested. ${reason}${again}`;
+    }
+    return `${monthSpan(ordered)}: ${usd(asked)} asked, ${usd(got)} invested. ${reason}${again}`;
+  }
+  const missedAsked = sumHits(short, "asked");
+  const missedGot = sumHits(short, "got");
+  return `${monthSpan(covered)} will be invested (${usd(sumHits(covered, "got"))}). ${monthSpan(short)} asks for ${usd(missedAsked)} and ${usd(missedGot)} of that will be invested. ${reason}${again}`;
 }
 
 let cachedKey = "";
