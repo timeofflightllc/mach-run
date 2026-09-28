@@ -9,7 +9,7 @@ import {
   TextInput,
 } from "@/components/ui/field";
 import { newId, usePlanStore } from "@/lib/plan/store";
-import { monthAfter } from "@/lib/plan/dates";
+import { blankEndLabel, monthAfter } from "@/lib/plan/dates";
 import type { SpendingPhase } from "@/lib/plan/types";
 import { AdvisoryNote, useOpenAdvisories } from "@/components/meridian/advisory-note";
 import type { Advisory } from "@/lib/plan/advisories";
@@ -139,7 +139,7 @@ function SpendingRow({
             ) : null}
           </div>
         </Field>
-        <Field label="End (blank = open)">
+        <Field label={blankEndLabel(plan.primary.birthDate, plan.assumptions.projectionEndAge)}>
           <DateInput
             value={s.endDate}
             clearable

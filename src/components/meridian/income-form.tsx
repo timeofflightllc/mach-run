@@ -14,7 +14,7 @@ import {
 import type { IncomeKind, IncomeStream, TaxTreatment } from "@/lib/plan/types";
 import { newId, usePlanStore } from "@/lib/plan/store";
 import { ssBenefitFromPia, ssBirthFor, ssScheduleDates } from "@/lib/plan/social-security";
-import { monthAfter } from "@/lib/plan/dates";
+import { blankEndLabel, monthAfter } from "@/lib/plan/dates";
 import { usd } from "@/lib/plan/format";
 import { VaKids } from "@/components/meridian/va-kids";
 import { AdvisoryNote, useOpenAdvisories } from "@/components/meridian/advisory-note";
@@ -372,7 +372,7 @@ function IncomeRow({
             ) : null}
           </div>
         </Field>
-        <Field label="End (blank = ongoing)">
+        <Field label={blankEndLabel(plan.primary.birthDate, plan.assumptions.projectionEndAge)}>
           <DateInput
             value={s.endDate}
             clearable

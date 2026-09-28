@@ -11,6 +11,7 @@ import {
   TextInput,
 } from "@/components/ui/field";
 import { usd } from "@/lib/plan/format";
+import { blankEndLabel, formatMonthYear, projectionEndMonth } from "@/lib/plan/dates";
 import { newId, usePlanStore } from "@/lib/plan/store";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
 import { ConfirmRemove } from "@/components/meridian/confirm-remove";
@@ -340,7 +341,7 @@ export function ContributionForm() {
                             onValue={(v) => updateContribution(c.id, { startDate: v })}
                           />
                         </Field>
-                        <Field label="End (blank = open)" className="shrink-0">
+                        <Field label={blankEndLabel(plan.primary.birthDate, plan.assumptions.projectionEndAge)} className="shrink-0">
                           <DateInput
                             value={c.endDate}
                             clearable
@@ -423,7 +424,7 @@ export function ContributionForm() {
                     {c.amountMode === "percent" ? (
                       <p className="basis-full text-xs leading-relaxed text-subtle">
                         {income
-                          ? `About ${usd(emp, true)}/mo at today’s amount of that income. Follows ${income.name.trim() || "that income"}: ${income.startDate.slice(0, 7)} → ${income.endDate ? income.endDate.slice(0, 7) : "ongoing"}. Dates and employer match follow that paycheck — when it ends, this contribution and the match end.`
+                          ? `About ${usd(emp, true)}/mo at today’s amount of that income. Follows ${income.name.trim() || "that income"}: ${formatMonthYear(income.startDate)} → ${income.endDate ? formatMonthYear(income.endDate) : projectionEndMonth(plan.primary.birthDate, plan.assumptions.projectionEndAge)}. Dates and employer match follow that paycheck — when it ends, this contribution and the match end.`
                           : "Pick an income — start, end, and match will follow that paycheck automatically."}
                       </p>
                     ) : null}
@@ -452,7 +453,7 @@ export function ContributionForm() {
                       <span className="text-muted" title={amount.title}> · {amount.main}</span>
                       <span className="text-muted">
                         {" "}
-                        · {shortDate(c.startDate)} → {c.endDate ? shortDate(c.endDate) : "ongoing"}
+                        · {shortDate(c.startDate)} → {c.endDate ? shortDate(c.endDate) : projectionEndMonth(plan.primary.birthDate, plan.assumptions.projectionEndAge)}
                       </span>
                       {c.employerMatch ? (
                         <span className="text-muted"> · {c.employerMatchPct ?? 0}% match</span>
@@ -491,7 +492,7 @@ export function ContributionForm() {
                       {amount.main}
                     </span>
                     <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-muted">
-                      {shortDate(c.startDate)} → {c.endDate ? shortDate(c.endDate) : "ongoing"}
+                      {shortDate(c.startDate)} → {c.endDate ? shortDate(c.endDate) : projectionEndMonth(plan.primary.birthDate, plan.assumptions.projectionEndAge)}
                     </span>
                     <span className="min-w-0 truncate tabular-nums text-muted">
                       {c.employerMatch ? `${c.employerMatchPct ?? 0}%` : "—"}

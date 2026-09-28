@@ -114,6 +114,19 @@ export function dateAtAge(birthIso: string, age: number): Date {
   return addYears(parseDate(birthIso), age);
 }
 
+/** Month a blank end runs through: primary birthday plus the Family age. */
+export function projectionEndMonth(birthIso: string | null | undefined, age: number): string {
+  if (birthIso && validIso(birthIso) && Number.isFinite(age)) {
+    return formatMonthYear(iso(dateAtAge(birthIso, age)));
+  }
+  if (Number.isFinite(age) && age > 0) return `age ${age}`;
+  return "plan age";
+}
+
+export function blankEndLabel(birthIso: string | null | undefined, age: number): string {
+  return `End (blank = ${projectionEndMonth(birthIso, age)})`;
+}
+
 export function inRange(
   at: Date,
   startIso: string,

@@ -1,4 +1,4 @@
-import { ageYears, dateAtAge, formatMonthYear, iso, monthStart, validIso, yearlyRateToMonthly } from "./dates.ts";
+import { ageYears, dateAtAge, formatMonthYear, monthStart, projectionEndMonth, validIso, yearlyRateToMonthly } from "./dates.ts";
 import {
   monthlyIncomeAt,
   representativeAnnualIncome,
@@ -292,12 +292,7 @@ function bottomLine(opts: {
 
 /** Blank income end = the month the primary reaches Project through primary age. */
 function horizonMonth(plan: Plan): string {
-  const age = plan.assumptions.projectionEndAge;
-  const birth = plan.primary.birthDate;
-  if (validIso(birth) && Number.isFinite(age)) {
-    return formatMonthYear(iso(dateAtAge(birth, age)));
-  }
-  return Number.isFinite(age) ? `age ${age}` : "plan end";
+  return projectionEndMonth(plan.primary.birthDate, plan.assumptions.projectionEndAge);
 }
 
 export function buildPeerBrief(
