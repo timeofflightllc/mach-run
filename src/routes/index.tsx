@@ -437,12 +437,13 @@ function Home() {
     }
   }
 
-  const familyPane = pane("family", "flex flex-col gap-3");
-  const assetsPane = pane("assets", "flex flex-col gap-3");
-  const liabilitiesPane = pane("liabilities", "flex flex-col gap-3");
-  const incomePane = pane("income", "flex flex-col gap-3");
-  const spendingPane = pane("spending", "flex flex-col gap-3");
-  const contributionsPane = pane("contributions", "flex flex-col gap-3");
+  const inputPane = "mx-auto flex w-full max-w-6xl flex-col gap-3 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]";
+  const familyPane = pane("family", inputPane);
+  const assetsPane = pane("assets", inputPane);
+  const liabilitiesPane = pane("liabilities", inputPane);
+  const incomePane = pane("income", inputPane);
+  const spendingPane = pane("spending", inputPane);
+  const contributionsPane = pane("contributions", inputPane);
   const actPane = pane("act", "flex min-w-0 flex-col gap-4");
 
   const showBack = shownIndex > 0;
