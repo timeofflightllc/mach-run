@@ -232,3 +232,102 @@ test("workplace employee cap follows the primary, and match is outside it", () =
   expectYear(2039, 35750, true);
   expectYear(2042, 35750, true);
 });
+
+test("two capped Roth IRAs under 50 each reach 7500", () => {
+  const plan = household();
+  plan.portfolios = [
+    roth("port-matt", "Matt Roth IRA - AMS", "Joint"),
+    roth("port-sarah", "Sarah Roth IRA - AMS", "Joint"),
+  ];
+  plan.contributions = [
+    {
+      id: "c-matt",
+      label: "Matt Roth",
+      portfolioId: "port-matt",
+      monthlyAmount: 625,
+      startDate: "2026-01-01",
+      endDate: null,
+      capToIrsLimit: true,
+    },
+    {
+      id: "c-sarah",
+      label: "Sarah Roth",
+      portfolioId: "port-sarah",
+      monthlyAmount: 625,
+      startDate: "2026-01-01",
+      endDate: null,
+      capToIrsLimit: true,
+    },
+  ];
+  const sim = simulate(plan, { audit: true });
+  near(invested(sim.audit, "c-matt", 2027), 7500, "matt");
+  near(invested(sim.audit, "c-sarah", 2027), 7500, "sarah");
+  for (const row of rows(sim.audit, "c-sarah", 2027)) {
+    assert.equal(row.irsLimit, 7500);
+    assert.equal(row.catchUp, false);
+  }
+});
+
+test("partial room pays the remainder, then later months are zero", () => {
+  const plan = household();
+  plan.portfolios = [roth("port-sarah", "Sarah Roth IRA - AMS", "Joint")];
+  plan.contributions = [
+    {
+      id: "c-fill",
+      label: "Sarah fill",
+      portfolioId: "port-sarah",
+      monthlyAmount: 8125,
+      startDate: "2036-01-01",
+      endDate: "2036-01-01",
+      capToIrsLimit: true,
+    },
+    {
+      id: "c-sarah",
+      label: "Sarah Roth",
+      portfolioId: "port-sarah",
+      monthlyAmount: 625,
+      startDate: "2036-01-01",
+      endDate: "2036-12-01",
+      capToIrsLimit: true,
+    },
+  ];
+  const sim = simulate(plan, { audit: true });
+  const jan = rows(sim.audit, "c-sarah", 2036).find((row) => row.date === "2036-01-01");
+  assert.ok(jan);
+  assert.equal(jan.irsLimit, 8600);
+  near(jan.invested, 475, "jan remainder");
+  for (const row of rows(sim.audit, "c-sarah", 2036)) {
+    if (row.date === "2036-01-01") continue;
+    near(row.invested, 0, row.date);
+  }
+});
+
+test("short leftover funds the first rule only and does not withdraw to finish the rest", () => {
+  const plan = household();
+  plan.incomes[0].monthlyAmount = 1200;
+  plan.spending[0].monthlyAmount = 1000;
+  plan.portfolios = [
+    roth("a", "Cash A", "primary"),
+    roth("b", "Cash B", "primary"),
+    roth("c", "Cash C", "primary"),
+  ];
+  plan.contributions = ["a", "b", "c"].map((id) => ({
+    id,
+    label: id,
+    portfolioId: id,
+    monthlyAmount: 625,
+    startDate: "2027-01-01",
+    endDate: "2027-01-01",
+    capToIrsLimit: false,
+  }));
+  const sim = simulate(plan, { audit: true });
+  const month = sim.months.find((row) => row.date === "2027-01-01");
+  assert.ok(month);
+  near(month.surplus, 200, "leftover");
+  near(rows(sim.audit, "a", 2027)[0]?.invested ?? -1, 200, "first");
+  near(rows(sim.audit, "b", 2027)[0]?.invested ?? -1, 0, "second");
+  near(rows(sim.audit, "c", 2027)[0]?.invested ?? -1, 0, "third");
+  near(month.detail?.unallocatedSpent ?? -1, 0, "unallocated");
+  near(month.withdrawals, 0, "withdrawals");
+});
+
