@@ -17,7 +17,7 @@ export function SpendingForm() {
   const addSpending = usePlanStore((s) => s.addSpending);
 
   return (
-    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4">
+    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
       <p className="text-sm text-muted">
         Phases are in today's dollars and inflate with the assumption rate.
         Overlapping phases add together. Add a second phase when spending steps
