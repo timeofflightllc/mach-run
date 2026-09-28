@@ -101,6 +101,15 @@ export function ensurePlan(plan: Plan): Plan {
     startDate: coerceIsoDate(p.startDate) || p.startDate,
     endDate: p.endDate ? coerceIsoDate(p.endDate) || p.endDate : null,
   }));
+  next.confirmations = Array.isArray(plan.confirmations)
+    ? plan.confirmations.filter(
+        (row) =>
+          row &&
+          typeof row.id === "string" &&
+          row.id.length > 0 &&
+          typeof row.fingerprint === "string",
+      )
+    : [];
   const ids = new Set(next.portfolios.map((p) => p.id));
   if (next.assumptions.sweepPortfolioId && !ids.has(next.assumptions.sweepPortfolioId)) {
     next.assumptions = { ...next.assumptions, sweepPortfolioId: null };

@@ -1,10 +1,11 @@
 import { cashShortYears } from "@/lib/plan/cash-short";
+import { cashAdvisoryStillOpen } from "@/components/meridian/advisory-note";
 import { usd } from "@/lib/plan/format";
-import type { SimResult } from "@/lib/plan/types";
+import type { Plan, SimResult } from "@/lib/plan/types";
 
-export function CashShortNotice({ sim }: { sim: SimResult }) {
+export function CashShortNotice({ sim, plan }: { sim: SimResult; plan: Plan }) {
   const rows = cashShortYears(sim);
-  if (!rows.length) return null;
+  if (!rows.length || !cashAdvisoryStillOpen(plan)) return null;
   const missed = rows.reduce((sum, row) => sum + row.missed, 0);
   return (
     <div
@@ -18,9 +19,9 @@ export function CashShortNotice({ sim }: { sim: SimResult }) {
         MACH RUN did not invest the full contribution.
       </p>
       <p className="mt-1">
-        You asked to invest {usd(missed)} more than the paycheck had left after
-        tax and spending. MACH RUN invested only what was left. It will not take
-        money out of your accounts to finish a contribution. Typing a bigger
+        You asked to invest {usd(missed)} more than income minus taxes minus
+        spending. MACH RUN invested only what was left. It will not take money
+        out of your accounts to finish a contribution. Typing a bigger
         contribution does not create the cash.
       </p>
       <div className="mt-3 overflow-x-auto">
@@ -29,7 +30,7 @@ export function CashShortNotice({ sim }: { sim: SimResult }) {
             <tr className="text-xs uppercase tracking-wide text-[#e8c547]">
               <th className="py-1 pr-3 font-medium">Year</th>
               <th className="py-1 pr-3 text-right font-medium">You asked to invest</th>
-              <th className="py-1 pr-3 text-right font-medium">Left after tax and spending</th>
+              <th className="py-1 pr-3 text-right font-medium">Leftover after tax and spending</th>
               <th className="py-1 text-right font-medium">Not invested</th>
             </tr>
           </thead>

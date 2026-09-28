@@ -11,10 +11,13 @@ import {
 import { newId, usePlanStore } from "@/lib/plan/store";
 import { monthAfter } from "@/lib/plan/dates";
 import type { SpendingPhase } from "@/lib/plan/types";
+import { AdvisoryNote, useOpenAdvisories } from "@/components/meridian/advisory-note";
+import type { Advisory } from "@/lib/plan/advisories";
 
 export function SpendingForm() {
   const plan = usePlanStore((s) => s.plan);
   const addSpending = usePlanStore((s) => s.addSpending);
+  const advisories = useOpenAdvisories();
 
   return (
     <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
@@ -25,7 +28,12 @@ export function SpendingForm() {
       </p>
       <ul className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
         {plan.spending.map((s, i) => (
-          <SpendingRow key={s.id} phase={s} index={i} />
+          <SpendingRow
+            key={s.id}
+            phase={s}
+            index={i}
+            advisory={advisories.find((row) => row.cardId === `card-spending-${s.id}`)}
+          />
         ))}
       </ul>
       <GhostButton
@@ -46,7 +54,15 @@ export function SpendingForm() {
   );
 }
 
-function SpendingRow({ phase: s, index: i }: { phase: SpendingPhase; index: number }) {
+function SpendingRow({
+  phase: s,
+  index: i,
+  advisory,
+}: {
+  phase: SpendingPhase;
+  index: number;
+  advisory?: Advisory;
+}) {
   const plan = usePlanStore((s) => s.plan);
   const updateSpending = usePlanStore((s) => s.updateSpending);
   const removeSpending = usePlanStore((s) => s.removeSpending);
@@ -65,7 +81,10 @@ function SpendingRow({ phase: s, index: i }: { phase: SpendingPhase; index: numb
   }, [s.startDayAfterPrevious, s.startDate, s.id, monthAfterPrevious, updateSpending]);
 
   return (
-    <li className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
+    <li
+      id={`card-spending-${s.id}`}
+      className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
+    >
       <div className="mb-2 flex items-center gap-2">
         <TextInput
           value={s.label}
@@ -127,6 +146,7 @@ function SpendingRow({ phase: s, index: i }: { phase: SpendingPhase; index: numb
             }
           />
         </Field>
+        <AdvisoryNote advisory={advisory} />
       </div>
     </li>
   );

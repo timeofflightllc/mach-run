@@ -202,6 +202,12 @@ export interface Assumptions {
   nestEggGoal: number | null;
 }
 
+/** A kept answer on an overlap or a contribution the month cannot fund. */
+export interface PlanConfirmation {
+  id: string;
+  fingerprint: string;
+}
+
 export interface Plan {
   primary: Person;
   spouse: Person;
@@ -213,6 +219,8 @@ export interface Plan {
   contributions: ContributionRule[];
   incomes: IncomeStream[];
   spending: SpendingPhase[];
+  /** Kept answers. A changed amount or date asks again. */
+  confirmations?: PlanConfirmation[];
 }
 
 export interface LedgerLine {

@@ -201,6 +201,18 @@ export function PortfolioForm() {
                   onValue={(n) => updatePortfolio(p.id, { returnPct: n })}
                 />
               </Field>
+              {(p.returnPct ?? plan.assumptions.defaultReturnPct) === 0 &&
+              p.currentValue > 0 ? (
+                <p className="text-xs leading-relaxed text-[#5c4a18]">
+                  This account has a balance and a 0% return. It will not grow.
+                </p>
+              ) : null}
+              {(p.returnPct ?? plan.assumptions.defaultReturnPct) > 12 ? (
+                <p className="text-xs leading-relaxed text-[#5c4a18]">
+                  A return above 12% is high. MACH RUN will use the number you
+                  typed, but double-check it.
+                </p>
+              ) : null}
               <Field label="Account owner">
                 <SelectInput
                   value={normalizeOwner(p.owner)}

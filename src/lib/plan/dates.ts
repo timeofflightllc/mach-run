@@ -68,6 +68,12 @@ export function monthAfter(endIso: string | null | undefined): string {
   return iso(addMonths(monthStart(endIso), 1));
 }
 
+/** Last month before `startIso`. Empty if the date is not usable. */
+export function monthBefore(startIso: string | null | undefined): string {
+  if (!startIso || !validIso(startIso)) return "";
+  return iso(addMonths(monthStart(startIso), -1));
+}
+
 /** Local calendar date. A new MACH RUN starts here. */
 export function todayIso(): string {
   return iso(new Date());

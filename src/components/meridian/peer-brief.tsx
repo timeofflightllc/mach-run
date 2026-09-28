@@ -188,9 +188,9 @@ export function PeerBriefCard({
       <p className="mt-3 font-display text-xl font-medium leading-snug text-fg">
         {egg ? <NestEggHeadline egg={egg} /> : brief.headline}
       </p>
-      {sim ? (
+      {sim && plan ? (
         <div className="mt-3">
-          <CashShortNotice sim={sim} />
+          <CashShortNotice sim={sim} plan={plan} />
         </div>
       ) : null}
       <div className="mt-3 flex flex-col gap-4 text-sm leading-relaxed text-muted">

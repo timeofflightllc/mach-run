@@ -13,6 +13,7 @@ import {
 import { usd } from "@/lib/plan/format";
 import { newId, usePlanStore } from "@/lib/plan/store";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
+import { AdvisoryNote, useOpenAdvisories } from "@/components/meridian/advisory-note";
 import { atContributionCap, useEntitlement } from "@/lib/billing/use-entitlement";
 import {
   activeEmployerMatchMonthly,
@@ -36,6 +37,7 @@ export function ContributionForm() {
   const removeContribution = usePlanStore((s) => s.removeContribution);
   const ent = useEntitlement();
   const capped = atContributionCap(plan.contributions.length, ent);
+  const advisories = useOpenAdvisories();
   const [needAccount, setNeedAccount] = useState(false);
 
   useEffect(() => {
@@ -100,6 +102,7 @@ export function ContributionForm() {
           return (
             <li
               key={c.id}
+              id={`card-contributions-${c.id}`}
               className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
             >
               <div className="mb-2 flex items-center gap-2">
@@ -309,6 +312,11 @@ export function ContributionForm() {
                     Set a retirement goal date in Family first.
                   </p>
                 ) : null}
+                <AdvisoryNote
+                  advisory={advisories.find(
+                    (row) => row.cardId === `card-contributions-${c.id}`,
+                  )}
+                />
               </div>
             </li>
           );

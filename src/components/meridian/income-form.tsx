@@ -17,6 +17,8 @@ import { ssBenefitFromPia, ssBirthFor, ssScheduleDates } from "@/lib/plan/social
 import { monthAfter } from "@/lib/plan/dates";
 import { usd } from "@/lib/plan/format";
 import { VaKids } from "@/components/meridian/va-kids";
+import { AdvisoryNote, useOpenAdvisories } from "@/components/meridian/advisory-note";
+import type { Advisory } from "@/lib/plan/advisories";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
 import { atIncomeCap, useEntitlement } from "@/lib/billing/use-entitlement";
 
@@ -43,6 +45,7 @@ export function IncomeForm() {
   const addIncome = usePlanStore((s) => s.addIncome);
   const ent = useEntitlement();
   const capped = atIncomeCap(plan.incomes.length, ent);
+  const advisories = useOpenAdvisories();
 
   return (
     <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
@@ -55,7 +58,12 @@ export function IncomeForm() {
       </p>
       <ul className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
         {plan.incomes.map((s, i) => (
-          <IncomeRow key={s.id} stream={s} index={i} />
+          <IncomeRow
+            key={s.id}
+            stream={s}
+            index={i}
+            advisory={advisories.find((row) => row.cardId === `card-income-${s.id}`)}
+          />
         ))}
       </ul>
       {capped ? (
@@ -84,7 +92,15 @@ export function IncomeForm() {
   );
 }
 
-function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: number }) {
+function IncomeRow({
+  stream: s,
+  index: i,
+  advisory,
+}: {
+  stream: IncomeStream;
+  index: number;
+  advisory?: Advisory;
+}) {
   const plan = usePlanStore((s) => s.plan);
   const updateIncome = usePlanStore((s) => s.updateIncome);
   const removeIncome = usePlanStore((s) => s.removeIncome);
@@ -198,7 +214,10 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
   }
 
   return (
-    <li className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
+    <li
+      id={`card-income-${s.id}`}
+      className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
+    >
       <div className="mb-2 flex items-center gap-2">
         <span className="shrink-0 text-xs font-medium uppercase tracking-[0.16em] text-subtle">
           Income {i + 1}
@@ -394,6 +413,7 @@ function IncomeRow({ stream: s, index: i }: { stream: IncomeStream; index: numbe
           />
         </Field>
         {s.kind === "va" ? <VaKids stream={s} /> : null}
+        <AdvisoryNote advisory={advisory} />
       </div>
     </li>
   );

@@ -428,7 +428,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
       </div>
       {sim.fundingGaps.length ? (
         <div className="border-t border-border px-4 py-3">
-          <CashShortNotice sim={sim} />
+          <CashShortNotice sim={sim} plan={plan} />
         </div>
       ) : null}
       <p className="border-t border-border px-4 py-3 text-xs text-subtle">

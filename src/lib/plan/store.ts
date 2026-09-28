@@ -37,6 +37,7 @@ interface PlanState {
   updateSpending: (id: string, patch: Partial<SpendingPhase>) => void;
   addSpending: (row: SpendingPhase) => void;
   removeSpending: (id: string) => void;
+  confirmAdvisory: (id: string, fingerprint: string) => void;
   reset: () => void;
 }
 
@@ -172,6 +173,14 @@ export const usePlanStore = create<PlanState>()(
           edit((plan) => ({
             ...plan,
             spending: plan.spending.filter((c) => c.id !== id),
+          })),
+        confirmAdvisory: (id, fingerprint) =>
+          edit((plan) => ({
+            ...plan,
+            confirmations: [
+              ...(plan.confirmations ?? []).filter((row) => row.id !== id),
+              { id, fingerprint },
+            ],
           })),
         reset: () => set({ plan: createDefaultPlan() }),
       };

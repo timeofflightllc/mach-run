@@ -4,6 +4,7 @@ import { AuthSlot } from "@/components/meridian/auth-slot";
 import { ProfileSwitcher } from "@/components/meridian/profile-switcher";
 import { MACH_RESET_BASELINE } from "@/components/meridian/account-menu";
 import { CalculateButton } from "@/components/meridian/calculate-button";
+import { AdvisoryStrip } from "@/components/meridian/advisory-note";
 import { CashChart, NetWorthChart, WealthChart } from "@/components/meridian/charts";
 import { Pinnable, useChartPins } from "@/components/meridian/chart-pin";
 import { ContributionForm } from "@/components/meridian/contribution-form";
@@ -849,6 +850,18 @@ function Home() {
           {runError ? (
             <p className="text-sm text-[#e8c547]">{runError}</p>
           ) : null}
+          <AdvisoryStrip
+            onOpen={(next, cardId) => {
+              const current = motionRef.current?.to ?? step;
+              if (next !== current) goStep(next);
+              window.setTimeout(() => {
+                document.getElementById(cardId)?.scrollIntoView({
+                  behavior: "smooth",
+                  block: "center",
+                });
+              }, next === current ? 0 : 400);
+            }}
+          />
           {holding ? (
             <div className="flex min-h-[70svh] flex-col items-center justify-center rounded-xl bg-surface px-5 py-10 text-center shadow-[0_0_0_1px_var(--color-border)]">
               <img
