@@ -120,6 +120,25 @@ function monthsInSpan(sim: SimResult, asOfDate: string, years: 5 | 10): MonthSna
   return monthsFromYears(yearsInView(sim, asOfDate, years), years);
 }
 
+function formatCashTip(t: string | number, span: ChartSpan): string {
+  if (span !== 10) return formatAxisTick(t, span);
+  const [y, q] = String(t).split("-");
+  const range: Record<string, string> = {
+    Q1: "Jan–Mar",
+    Q2: "Apr–Jun",
+    Q3: "Jul–Sep",
+    Q4: "Oct–Dec",
+  };
+  return `${q} ${y} · ${range[q] ?? "quarter"} · scaled to a year`;
+}
+
+function formatCashTick(t: string | number): string {
+  const [y, q] = String(t).split("-");
+  if (q === "Q1") return `Q1 ${y.slice(2)}`;
+  if (q === "Q4") return "Q4";
+  return "";
+}
+
 function formatAxisTick(t: string | number, span: ChartSpan): string {
   if (span === 20 || span === "horizon") return String(t);
   const raw = String(t);
@@ -245,12 +264,13 @@ function cashPoints(plan: Plan, sim: SimResult, span: ChartSpan): CashPoint[] {
     }
     return [...buckets.entries()].map(([t, arr]) => {
       const sum = (fn: (m: MonthSnapshot) => number) => arr.reduce((s, m) => s + fn(m), 0);
+      const scale = 12 / arr.length;
       return {
         t,
-        income: Math.round(sum((m) => deflate(m.year, m.month, m.income)) * 4),
-        spending: Math.round(sum((m) => deflate(m.year, m.month, m.spending)) * 4),
-        guaranteed: Math.round(sum((m) => deflate(m.year, m.month, m.guaranteed)) * 4),
-        contributions: Math.round(sum((m) => deflate(m.year, m.month, m.contributions)) * 4),
+        income: Math.round(sum((m) => deflate(m.year, m.month, m.income)) * scale),
+        spending: Math.round(sum((m) => deflate(m.year, m.month, m.spending)) * scale),
+        guaranteed: Math.round(sum((m) => deflate(m.year, m.month, m.guaranteed)) * scale),
+        contributions: Math.round(sum((m) => deflate(m.year, m.month, m.contributions)) * scale),
       };
     });
   }
@@ -460,9 +480,11 @@ export function CashChart({
         line) is pension, other retirement income, military retired pay, VA, and
         Social Security. Salary, bonus, allowance, and other income are earned —
         they drop off when that stage ends.
-        {span === 5 || span === 10
-          ? " Values stay annualized so the scale matches the longer views."
-          : ""}
+        {span === 10
+          ? " 10-year: each point is one quarter, times 4. Q1 is Jan–Mar. Q4 is Oct–Dec. A pay change shows in the quarter it happens."
+          : span === 5
+            ? " Each point is one month, times 12, so the scale matches the yearly views."
+            : ""}
       </p>
       <ChartSpanBar
         span={span}
@@ -477,11 +499,11 @@ export function CashChart({
             <CartesianGrid stroke={gridStroke} vertical={false} />
             <XAxis
               dataKey="t"
-              tickFormatter={(t) => formatAxisTick(t, span)}
+              tickFormatter={(t) => (span === 10 ? formatCashTick(t) : formatAxisTick(t, span))}
               tick={{ fill: tickFill, fontSize: 11 }}
               tickLine={false}
               axisLine={{ stroke: gridStroke }}
-              interval={x.interval}
+              interval={span === 10 ? 0 : x.interval}
               minTickGap={x.minTickGap}
               angle={x.angle}
               textAnchor={x.textAnchor}
@@ -496,14 +518,14 @@ export function CashChart({
             />
             <Tooltip
               formatter={formatTip}
-              labelFormatter={(t) => formatAxisTick(t as string | number, span)}
+              labelFormatter={(t) => formatCashTip(t as string | number, span)}
               contentStyle={tooltipStyle}
               labelStyle={{ color: "#1a2330" }}
               itemStyle={{ color: "#4b5b6e" }}
             />
             <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
             <Area
-              type="monotone"
+              type={span === 10 ? "stepAfter" : "monotone"}
               dataKey="income"
               name="Income"
               stroke="var(--color-positive)"
@@ -513,7 +535,7 @@ export function CashChart({
               isAnimationActive={false}
             />
             <Line
-              type="monotone"
+              type={span === 10 ? "stepAfter" : "monotone"}
               dataKey="spending"
               name="Spending"
               stroke="var(--color-negative)"
@@ -522,7 +544,7 @@ export function CashChart({
               isAnimationActive={false}
             />
             <Line
-              type="monotone"
+              type={span === 10 ? "stepAfter" : "monotone"}
               dataKey="contributions"
               name="Contributions"
               stroke="#1a2330"
@@ -531,7 +553,7 @@ export function CashChart({
               isAnimationActive={false}
             />
             <Line
-              type="monotone"
+              type={span === 10 ? "stepAfter" : "monotone"}
               dataKey="guaranteed"
               name="Guaranteed (pension / VA / SS)"
               stroke="var(--color-accent)"

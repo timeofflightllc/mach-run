@@ -44,6 +44,17 @@ import { WelcomeEmailPreviewOverlay } from "@/components/meridian/welcome-email-
 import { EmailVerifyBanner } from "@/components/meridian/email-verify-banner";
 import { GhostButton, PrimaryButton } from "@/components/ui/field";
 
+/** Charts need the months. Drop the ledger detail so the run stays light. */
+function simForCharts(sim: SimResult): SimResult {
+  return {
+    ...sim,
+    months: sim.months.map((month) => {
+      const { detail: _detail, ...rest } = month;
+      return rest;
+    }),
+  };
+}
+
 function NavButton({
   kind,
   onPress,
@@ -305,7 +316,7 @@ function Home() {
         next[key] = {
           id: row.id,
           plan: row.plan,
-          sim: { ...sim, months: [] },
+          sim: simForCharts(sim),
           brief: buildPeerBrief(row.plan, sim, { expanded: false }),
         };
       } catch {
@@ -485,7 +496,7 @@ function Home() {
       const nextRun = {
         id: runId,
         plan: snapshot,
-        sim: { ...nextSim, months: [] },
+        sim: simForCharts(nextSim),
         brief,
       };
       holdGen.current += 1;
