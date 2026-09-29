@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ConfirmRemove } from "@/components/meridian/confirm-remove";
 import {
@@ -7,6 +7,7 @@ import {
 } from "@/components/meridian/institution-field";
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import {
+  DangerButton,
   Field,
   GhostButton,
   MonthInput,
@@ -204,6 +205,18 @@ function LiabilityRow({
               <PrimaryButton className="h-10 self-end" onClick={onSave}>
                 Save liability
               </PrimaryButton>
+              <div className="flex items-end justify-end">
+                <DangerButton
+                  aria-label={`Remove ${l.name || "liability"}`}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    onRemove();
+                  }}
+                >
+                  <Trash2 className="size-4" />
+                </DangerButton>
+              </div>
             </div>
             <div
               className="rounded-lg px-3 py-3"
