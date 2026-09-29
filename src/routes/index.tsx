@@ -25,6 +25,7 @@ import { GuestOnly } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { simulate } from "@/lib/plan/engine";
 import { buildPeerBrief, type PeerBrief } from "@/lib/plan/peers";
+import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import { usePlanStore } from "@/lib/plan/store";
 import { MACH_PROFILE_REMOVED, useProfileStore } from "@/lib/plan/profile-store";
 import { useCloudPlan } from "@/lib/plan/use-cloud-plan";
@@ -200,6 +201,7 @@ function ActPhase() {
 
 function Home() {
   const plan = usePlanStore((s) => s.plan);
+  const copy = usePlannerCopy();
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
   const { status: saveStatus, saveNow } = useCloudPlan();
   const { user, isPending } = useCurrentUserState();
@@ -725,7 +727,7 @@ function Home() {
             <PhaseLabel id="ooda-observe" label="Observe" />
             <Section
               title="Family"
-              hint="Who is in the household, and when you want to retire."
+              hint={copy.familyHint}
               pinned
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
             >
@@ -746,7 +748,7 @@ function Home() {
             <PhaseLabel id="ooda-observe-assets" label="Observe" />
             <Section
               title="Accounts - Assets"
-              hint="The accounts you have today, and what each one is worth."
+              hint={copy.assetsHint}
               pinned
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
             >
@@ -767,7 +769,7 @@ function Home() {
             <PhaseLabel id="ooda-observe-liabilities" label="Observe" />
             <Section
               title="Accounts - Liabilities"
-              hint="What you owe, apart from a mortgage already on a house."
+              hint={copy.liabilitiesHint}
               pinned
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
             >
@@ -788,7 +790,7 @@ function Home() {
             <PhaseLabel id="ooda-orient" label="Orient" />
             <Section
               title="Income"
-              hint="Each paycheck, what kind it is, and how long it lasts."
+              hint={copy.incomeHint}
               pinned
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
             >
@@ -809,7 +811,7 @@ function Home() {
             <PhaseLabel id="ooda-orient-spending" label="Orient" />
             <Section
               title="Spending"
-              hint="What the household spends in a normal month."
+              hint={copy.spendingHint}
               pinned
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
             >
@@ -830,7 +832,7 @@ function Home() {
             <PhaseLabel id="ooda-decide" label="Decide" />
             <Section
               title="Contributions"
-              hint="How much goes into which account, and when it stops."
+              hint={copy.contributionsHint}
               pinned
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
             >

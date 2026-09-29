@@ -20,6 +20,12 @@ import {
   serializeFooterCopy,
 } from "@/lib/site-copy/footer-copy";
 import {
+  DEFAULT_PLANNER_COPY,
+  parsePlannerCopy,
+  serializePlannerCopy,
+  type PlannerCopy,
+} from "@/lib/site-copy/planner-copy";
+import {
   bulletsFromText,
   bulletsToText,
   DEFAULT_PRICING_COPY,
@@ -37,6 +43,7 @@ const PAGE_LABEL: Record<SitePageSlug, string> = {
   announcements: "Updates (header)",
   pricing: "Pricing",
   footer: "Footer content",
+  planner: "Calculator",
 };
 
 function Area({
@@ -176,6 +183,68 @@ function PricingFields({
   );
 }
 
+function PlannerFields({
+  value,
+  onChange,
+}: {
+  value: PlannerCopy;
+  onChange: (next: PlannerCopy) => void;
+}) {
+  const set = (patch: Partial<PlannerCopy>) => onChange({ ...value, ...patch });
+  const blocks: { hint: keyof PlannerCopy; body?: keyof PlannerCopy; title: string; note?: string }[] = [
+    { title: "Observe — Family", hint: "familyHint" },
+    {
+      title: "Observe — Accounts - Assets",
+      hint: "assetsHint",
+      body: "assetsBody",
+      note: "Leave {spendable}, {net}, and {return} where the live numbers go.",
+    },
+    { title: "Observe — Accounts - Liabilities", hint: "liabilitiesHint", body: "liabilitiesBody" },
+    { title: "Orient — Income", hint: "incomeHint", body: "incomeBody" },
+    { title: "Orient — Spending", hint: "spendingHint", body: "spendingBody" },
+    {
+      title: "Decide — Contributions",
+      hint: "contributionsHint",
+      note: "The employer-match dollar sentence is added automatically after paragraph 2.",
+    },
+  ];
+  return (
+    <div className="mt-4 space-y-6">
+      <p className="text-sm text-muted">
+        Section title stays in the app. The short line is under the title. The longer box is the instruction under it.
+      </p>
+      {blocks.map((block) => (
+        <div key={block.title} className="space-y-3 border-t border-border pt-4">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-subtle">{block.title}</p>
+          <Field label="Line under the title">
+            <TextInput value={value[block.hint]} onChange={(e) => set({ [block.hint]: e.target.value })} />
+          </Field>
+          {block.body ? (
+            <Field label="Instructions">
+              <Area rows={4} value={value[block.body]} onChange={(next) => set({ [block.body!]: next })} />
+            </Field>
+          ) : null}
+          {block.note ? <p className="text-xs text-muted">{block.note}</p> : null}
+        </div>
+      ))}
+      <div className="space-y-3 border-t border-border pt-4">
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-subtle">
+          Decide — Contributions, three paragraphs
+        </p>
+        <Field label="Paragraph 1">
+          <Area rows={3} value={value.contributionsP1} onChange={(contributionsP1) => set({ contributionsP1 })} />
+        </Field>
+        <Field label="Paragraph 2">
+          <Area rows={3} value={value.contributionsP2} onChange={(contributionsP2) => set({ contributionsP2 })} />
+        </Field>
+        <Field label="Paragraph 3">
+          <Area rows={3} value={value.contributionsP3} onChange={(contributionsP3) => set({ contributionsP3 })} />
+        </Field>
+      </div>
+    </div>
+  );
+}
+
 function FooterFields({
   value,
   onChange,
@@ -241,6 +310,7 @@ export function SiteCopyDesk() {
   const [draft, setDraft] = useState<SitePage | null>(null);
   const [pricing, setPricing] = useState<PricingCopy>(DEFAULT_PRICING_COPY);
   const [footer, setFooter] = useState<FooterCopy>(DEFAULT_FOOTER_COPY);
+  const [planner, setPlanner] = useState<PlannerCopy>(DEFAULT_PLANNER_COPY);
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [fresh, setFresh] = useState({
@@ -274,12 +344,20 @@ export function SiteCopyDesk() {
   useEffect(() => {
     if (draft?.slug === "pricing") setPricing(parsePricingCopy(draft.body));
     if (draft?.slug === "footer") setFooter(parseFooterCopy(draft.body));
+    if (draft?.slug === "planner") setPlanner(parsePlannerCopy(draft.body));
   }, [draft]);
 
   function onPricingChange(next: PricingCopy) {
     setPricing(next);
     setDraft((d) =>
       d ? { ...d, title: "Pricing", kicker: "", body: serializePricingCopy(next) } : d,
+    );
+  }
+
+  function onPlannerChange(next: PlannerCopy) {
+    setPlanner(next);
+    setDraft((d) =>
+      d ? { ...d, title: "Calculator", kicker: "", body: serializePlannerCopy(next) } : d,
     );
   }
 
@@ -300,7 +378,9 @@ export function SiteCopyDesk() {
           ? { ...draft, title: "Pricing", kicker: "", body: serializePricingCopy(pricing) }
           : draft.slug === "footer"
             ? { ...draft, title: "Footer content", kicker: "", body: serializeFooterCopy(footer) }
-            : draft;
+            : draft.slug === "planner"
+              ? { ...draft, title: "Calculator", kicker: "", body: serializePlannerCopy(planner) }
+              : draft;
       const r = await saveOpsSitePageFn({ data: payload });
       setStatus(r.ok ? `${PAGE_LABEL[draft.slug]} saved.` : r.error ?? "Save failed.");
       if (r.ok) await reload();
@@ -351,6 +431,7 @@ export function SiteCopyDesk() {
 
   const pricingOpen = slug === "pricing";
   const footerOpen = slug === "footer";
+  const plannerOpen = slug === "planner";
 
   return (
     <div className="space-y-6">
@@ -361,7 +442,9 @@ export function SiteCopyDesk() {
             ? "Pricing cards, hero, and bullets. One line per bullet."
             : footerOpen
               ? "Public footer words. Layout and links stay in code."
-              : "About, The Method, FAQ, Contact intro, Privacy, Legal, and the Updates header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
+              : plannerOpen
+                ? "Lines under Family, Accounts, Income, Spending, and Contributions."
+                : "About, The Method, FAQ, Contact intro, Privacy, Legal, and the Updates header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
         </p>
         <div className="mt-3 inline-flex flex-wrap rounded-lg bg-elevated p-1">
           {SITE_PAGE_SLUGS.map((id) => (
@@ -393,6 +476,15 @@ export function SiteCopyDesk() {
             <div className="mt-4">
               <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
                 Save Footer content
+              </PrimaryButton>
+            </div>
+          </>
+        ) : draft && plannerOpen ? (
+          <>
+            <PlannerFields value={planner} onChange={onPlannerChange} />
+            <div className="mt-4">
+              <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
+                Save Calculator
               </PrimaryButton>
             </div>
           </>

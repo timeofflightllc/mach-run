@@ -16,6 +16,7 @@ import { newId, usePlanStore } from "@/lib/plan/store";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
 import { ConfirmRemove } from "@/components/meridian/confirm-remove";
 import { AdvisoryNote, useOpenAdvisories } from "@/components/meridian/advisory-note";
+import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import { atContributionCap, useEntitlement } from "@/lib/billing/use-entitlement";
 import {
   activeEmployerMatchMonthly,
@@ -90,6 +91,7 @@ export function ContributionForm() {
   const ent = useEntitlement();
   const capped = atContributionCap(plan.contributions.length, ent);
   const advisories = useOpenAdvisories();
+  const copy = usePlannerCopy();
   const [needAccount, setNeedAccount] = useState(false);
   const [openId, setOpenId] = useState<string | null>(null);
   const [pendingRemove, setPendingRemove] = useState<string | null>(null);
@@ -183,20 +185,14 @@ export function ContributionForm() {
   return (
     <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
       <div className="flex flex-col gap-3 text-sm text-muted">
-        <p>
-          Tell MACH RUN how much to put into which account, and when. It only
-          invests what’s left after taxes and spending — it will not invent extra
-          cash — so ensure your income and spending is accurate.
-        </p>
-        <p>
-          If your 401(k) or TSP has a company match, select that below. That match
-          is free money on top, not from your paycheck.
-          {matchLine}
-        </p>
-        <p>
-          Tax-qualified accounts are funded first when the paycheck cannot cover
-          every contribution.
-        </p>
+        {copy.contributionsP1.trim() ? <p className="whitespace-pre-wrap">{copy.contributionsP1}</p> : null}
+        {copy.contributionsP2.trim() || matchLine ? (
+          <p className="whitespace-pre-wrap">
+            {copy.contributionsP2}
+            {matchLine}
+          </p>
+        ) : null}
+        {copy.contributionsP3.trim() ? <p className="whitespace-pre-wrap">{copy.contributionsP3}</p> : null}
       </div>
       <ul className="flex flex-col gap-2">
         {rows.length > 0 ? (

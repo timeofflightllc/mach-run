@@ -23,6 +23,7 @@ import {
   InstitutionInput,
   InstitutionMark,
 } from "@/components/meridian/institution-field";
+import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 
 const KINDS: { value: LiabilityKind; label: string }[] = [
   { value: "car", label: "Car loan" },
@@ -40,14 +41,13 @@ export function LiabilityForm() {
   const removeLiability = usePlanStore((s) => s.removeLiability);
   const asOf = plan.assumptions.asOfDate;
   const owners = familyOwnerOptions(plan, "taxable");
+  const copy = usePlannerCopy();
 
   return (
     <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
-      <p className="text-sm text-muted">
-        Car, student, HELOC, personal, credit card. Remaining principal comes
-        off net worth. House mortgages stay on the real estate account above —
-        do not enter those here.
-      </p>
+      {copy.liabilitiesBody.trim() ? (
+        <p className="whitespace-pre-wrap text-sm text-muted">{copy.liabilitiesBody}</p>
+      ) : null}
       <ul className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
         {(plan.liabilities ?? []).map((l) => {
           const remaining = remainingLiability(l, asOf);

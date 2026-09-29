@@ -12,20 +12,20 @@ import { newId, usePlanStore } from "@/lib/plan/store";
 import { blankEndLabel, monthAfter } from "@/lib/plan/dates";
 import type { SpendingPhase } from "@/lib/plan/types";
 import { AdvisoryNote, useOpenAdvisories } from "@/components/meridian/advisory-note";
+import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import type { Advisory } from "@/lib/plan/advisories";
 
 export function SpendingForm() {
   const plan = usePlanStore((s) => s.plan);
   const addSpending = usePlanStore((s) => s.addSpending);
   const advisories = useOpenAdvisories();
+  const copy = usePlannerCopy();
 
   return (
     <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
-      <p className="text-sm text-muted">
-        Phases are in today's dollars and inflate with the assumption rate.
-        Overlapping phases add together. Add a second phase when spending steps
-        up or down.
-      </p>
+      {copy.spendingBody.trim() ? (
+        <p className="whitespace-pre-wrap text-sm text-muted">{copy.spendingBody}</p>
+      ) : null}
       <ul className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
         {plan.spending.map((s, i) => (
           <SpendingRow

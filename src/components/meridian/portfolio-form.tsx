@@ -30,6 +30,8 @@ import {
   InstitutionMark,
 } from "@/components/meridian/institution-field";
 import { atAccountCap, useEntitlement } from "@/lib/billing/use-entitlement";
+import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
+import { fillPlanner } from "@/lib/site-copy/planner-copy";
 import {
   familyOwnerOptions,
   isTaxQualified,
@@ -85,15 +87,19 @@ export function PortfolioForm() {
     .filter((p) => p.spendable)
     .reduce((s, p) => s + p.currentValue, 0);
   const net = startingNetWorth(plan);
+  const copy = usePlannerCopy();
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
-      <p className="text-sm text-muted">
-        Spendable (retirement) {usd(spendable)} · Net worth {usd(net)}. These
-        accounts are the only ones Orient can sweep into and Decide can
-        contribute to. Per-account return blank uses the global{" "}
-        {plan.assumptions.defaultReturnPct}% nominal.
-      </p>
+      {copy.assetsBody.trim() ? (
+        <p className="whitespace-pre-wrap text-sm text-muted">
+          {fillPlanner(copy.assetsBody, {
+            spendable: usd(spendable),
+            net: usd(net),
+            return: String(plan.assumptions.defaultReturnPct),
+          })}
+        </p>
+      ) : null}
       <ul className="flex flex-col gap-3">
         {plan.portfolios.map((p) => (
           <AccountTile

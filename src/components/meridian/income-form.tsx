@@ -20,6 +20,7 @@ import { VaKids } from "@/components/meridian/va-kids";
 import { AdvisoryNote, useOpenAdvisories } from "@/components/meridian/advisory-note";
 import type { Advisory } from "@/lib/plan/advisories";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
+import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import { atIncomeCap, useEntitlement } from "@/lib/billing/use-entitlement";
 
 const KINDS: { value: IncomeKind; label: string }[] = [
@@ -46,16 +47,13 @@ export function IncomeForm() {
   const ent = useEntitlement();
   const capped = atIncomeCap(plan.incomes.length, ent);
   const advisories = useOpenAdvisories();
+  const copy = usePlannerCopy();
 
   return (
     <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
-      <p className="text-sm text-muted">
-        Each block is one paycheck over a specific stretch of time. Name it, set
-        the monthly amount, set start and end. Tell MACH RUN what kind of income
-        it is — earned (salary, bonus, other income) or guaranteed (pension,
-        military retired pay, VA, Social Security, other retirement). Blank end
-        date = it keeps paying indefinitely.
-      </p>
+      {copy.incomeBody.trim() ? (
+        <p className="whitespace-pre-wrap text-sm text-muted">{copy.incomeBody}</p>
+      ) : null}
       <ul className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
         {plan.incomes.map((s, i) => (
           <IncomeRow

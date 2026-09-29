@@ -1,5 +1,6 @@
 import { ANNOUNCEMENTS } from "@/lib/announcements";
 import { DEFAULT_FOOTER_COPY, serializeFooterCopy } from "./footer-copy";
+import { DEFAULT_PLANNER_COPY, serializePlannerCopy } from "./planner-copy";
 import { DEFAULT_PRICING_COPY, serializePricingCopy } from "./pricing-copy";
 import type { SiteAnnouncement, SitePage } from "./types";
 
@@ -248,6 +249,12 @@ If this policy changes in a material way, we will update this page and the date 
     title: "Footer content",
     kicker: "",
     body: serializeFooterCopy(DEFAULT_FOOTER_COPY),
+  },
+  {
+    slug: "planner",
+    title: "Calculator",
+    kicker: "",
+    body: serializePlannerCopy(DEFAULT_PLANNER_COPY),
   },
 ];
 

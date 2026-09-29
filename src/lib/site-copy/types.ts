@@ -8,6 +8,7 @@ export const SITE_PAGE_SLUGS = [
   "announcements",
   "pricing",
   "footer",
+  "planner",
 ] as const;
 export type SitePageSlug = (typeof SITE_PAGE_SLUGS)[number];
 
