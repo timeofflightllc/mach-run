@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { SavedAt } from "@/components/ops/saved-at";
 import { Field, GhostButton, PrimaryButton, SelectInput, TextInput } from "@/components/ui/field";
 import { listOpsRoster, loadOpsMailDraftFn, saveOpsMailDraftFn, sendOpsDeskMailFn } from "@/lib/ops/api";
 import {
@@ -48,6 +49,7 @@ export function DeskMail({
   const [busy, setBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [statusLine, setStatusLine] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [findQ, setFindQ] = useState("");
   const [findHits, setFindHits] = useState<OpsRosterRow[]>([]);
   const [listOpen, setListOpen] = useState(false);
@@ -140,7 +142,8 @@ export function DeskMail({
         setStatusLine(r.error);
         return;
       }
-      setStatusLine("Draft saved. Nobody was emailed.");
+      setSavedAt(new Date());
+      setStatusLine("Nobody was emailed.");
     } catch {
       setStatusLine("Could not save the draft.");
     } finally {
@@ -360,10 +363,11 @@ export function DeskMail({
           spellCheck={false}
         />
       </Field>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap items-center gap-3">
         <GhostButton type="button" disabled={busy || saving} onClick={() => void saveDraft()}>
           {saving ? "Saving…" : "Save draft"}
         </GhostButton>
+        <SavedAt at={savedAt} />
         <PrimaryButton type="button" disabled={busy || saving || !people.length} onClick={() => void send()}>
           {busy ? "Sending…" : toLine}
         </PrimaryButton>

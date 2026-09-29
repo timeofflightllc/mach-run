@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SavedAt } from "@/components/ops/saved-at";
 import { Field, GhostButton, PrimaryButton, TextArea, TextInput } from "@/components/ui/field";
 import { listOpsEmailCopyFn, saveOpsEmailCopyFn, sendOpsEmailTestFn } from "@/lib/ops/api";
 
@@ -16,6 +17,7 @@ type Row = {
 export function EmailCopyDesk() {
   const [rows, setRows] = useState<Row[]>([]);
   const [status, setStatus] = useState<Record<string, string | null>>({});
+  const [savedAt, setSavedAt] = useState<Record<string, Date>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
 
@@ -48,9 +50,10 @@ export function EmailCopyDesk() {
         return;
       }
       const cleared = !row.subject.trim() && !row.body.trim();
+      setSavedAt((prev) => ({ ...prev, [row.kind]: new Date() }));
       setStatus((s) => ({
         ...s,
-        [row.kind]: cleared ? "Back to the built-in email." : "Saved. Nobody was emailed.",
+        [row.kind]: cleared ? "Back to the built-in email." : "Nobody was emailed.",
       }));
       await reload();
     } catch {
@@ -130,10 +133,11 @@ export function EmailCopyDesk() {
                 : ""}
               {row.kind === "first_flight" ? " A line of numbered steps stays a checklist." : ""}
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap items-center gap-3">
               <PrimaryButton disabled={busy !== null} onClick={() => void save(row)}>
                 {busy === row.kind + ":save" ? "Saving…" : "Save"}
               </PrimaryButton>
+              <SavedAt at={savedAt[row.kind]} />
               <GhostButton disabled={busy !== null} onClick={() => void sendTest(row)}>
                 {busy === row.kind + ":test" ? "Sending…" : "Send test"}
               </GhostButton>

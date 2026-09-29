@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SavedAt } from "@/components/ops/saved-at";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import {
   deleteOpsAnnouncementFn,
@@ -312,6 +313,7 @@ export function SiteCopyDesk() {
   const [footer, setFooter] = useState<FooterCopy>(DEFAULT_FOOTER_COPY);
   const [planner, setPlanner] = useState<PlannerCopy>(DEFAULT_PLANNER_COPY);
   const [status, setStatus] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<Partial<Record<SitePageSlug | string, Date>>>({});
   const [busy, setBusy] = useState(false);
   const [fresh, setFresh] = useState({
     at: new Date().toISOString().slice(0, 10),
@@ -382,8 +384,13 @@ export function SiteCopyDesk() {
               ? { ...draft, title: "Calculator", kicker: "", body: serializePlannerCopy(planner) }
               : draft;
       const r = await saveOpsSitePageFn({ data: payload });
-      setStatus(r.ok ? `${PAGE_LABEL[draft.slug]} saved.` : r.error ?? "Save failed.");
-      if (r.ok) await reload();
+      if (r.ok) {
+        setSavedAt((prev) => ({ ...prev, [draft.slug]: new Date() }));
+        setStatus(null);
+        await reload();
+      } else {
+        setStatus(r.error ?? "Save failed.");
+      }
     } finally {
       setBusy(false);
     }
@@ -394,8 +401,13 @@ export function SiteCopyDesk() {
     setStatus(null);
     try {
       const r = await saveOpsAnnouncementFn({ data: item });
-      setStatus(r.ok ? "Feature saved." : r.error ?? "Save failed.");
-      if (r.ok) await reload();
+      if (r.ok) {
+        if (item.id) setSavedAt((prev) => ({ ...prev, [item.id]: new Date() }));
+        setStatus(item.id ? null : "Feature added.");
+        await reload();
+      } else {
+        setStatus(r.error ?? "Save failed.");
+      }
     } finally {
       setBusy(false);
     }
@@ -464,28 +476,31 @@ export function SiteCopyDesk() {
         {draft && pricingOpen ? (
           <>
             <PricingFields value={pricing} onChange={onPricingChange} />
-            <div className="mt-4">
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
                 Save Pricing
               </PrimaryButton>
+              <SavedAt at={savedAt[slug]} />
             </div>
           </>
         ) : draft && footerOpen ? (
           <>
             <FooterFields value={footer} onChange={onFooterChange} />
-            <div className="mt-4">
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
                 Save Footer content
               </PrimaryButton>
+              <SavedAt at={savedAt[slug]} />
             </div>
           </>
         ) : draft && plannerOpen ? (
           <>
             <PlannerFields value={planner} onChange={onPlannerChange} />
-            <div className="mt-4">
+            <div className="mt-4 flex flex-wrap items-center gap-3">
               <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
                 Save Calculator
               </PrimaryButton>
+              <SavedAt at={savedAt[slug]} />
             </div>
           </>
         ) : draft ? (
@@ -510,9 +525,12 @@ export function SiteCopyDesk() {
                 className="w-full min-w-0 rounded-lg border border-border bg-elevated px-3 py-2 text-sm text-fg outline-none"
               />
             </Field>
-            <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
-              Save {PAGE_LABEL[draft.slug]}
-            </PrimaryButton>
+            <div className="flex flex-wrap items-center gap-3">
+              <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
+                Save {PAGE_LABEL[draft.slug]}
+              </PrimaryButton>
+              <SavedAt at={savedAt[slug]} />
+            </div>
           </div>
         ) : null}
       </section>
@@ -588,7 +606,7 @@ export function SiteCopyDesk() {
                   />
                 </Field>
               </div>
-              <div className="mt-2 flex flex-wrap gap-2">
+              <div className="mt-2 flex flex-wrap items-center gap-3">
                 <button
                   type="button"
                   disabled={busy}
@@ -597,6 +615,7 @@ export function SiteCopyDesk() {
                 >
                   Save
                 </button>
+                <SavedAt at={savedAt[item.id]} />
                 <button
                   type="button"
                   disabled={busy}

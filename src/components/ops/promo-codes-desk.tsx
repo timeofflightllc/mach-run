@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { SavedAt } from "@/components/ops/saved-at";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import { listOpsPromosFn, saveOpsPromoFn, setOpsPromoActiveFn } from "@/lib/ops/api";
 import {
@@ -25,6 +26,7 @@ export function PromoCodesDesk() {
   const [rows, setRows] = useState<PromoRecord[]>([]);
   const [draft, setDraft] = useState(EMPTY);
   const [status, setStatus] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function reload() {
@@ -70,6 +72,7 @@ export function PromoCodesDesk() {
         setStatus(r.error);
         return;
       }
+      setSavedAt(new Date());
       setStatus(`${r.promo.code} is live.`);
       setDraft(EMPTY);
       await reload();
@@ -204,10 +207,11 @@ export function PromoCodesDesk() {
             ))}
           </div>
         </div>
-        <div className="mt-4">
+        <div className="mt-4 flex flex-wrap items-center gap-3">
           <PrimaryButton type="button" disabled={busy} onClick={() => void save()}>
             {busy ? "Saving…" : "Save code"}
           </PrimaryButton>
+          <SavedAt at={savedAt} />
         </div>
         {status ? <p className="mt-3 text-sm text-muted">{status}</p> : null}
       </div>
