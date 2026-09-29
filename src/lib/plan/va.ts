@@ -1,4 +1,4 @@
-import { ageYears, monthStart, validIso } from "./dates.ts";
+import { monthStart, validIso } from "./dates.ts";
 import type { Child, IncomeStream, Plan } from "./types.ts";
 import { VA_RATES_2026, isVaRating, type VaRating } from "./va-rates.ts";
 
@@ -6,7 +6,15 @@ export { VA_RATES_2026, VA_RATINGS, isVaRating } from "./va-rates.ts";
 export type { VaRating } from "./va-rates.ts";
 
 export function childrenUnder18(children: Child[], at: Date): Child[] {
-  return children.filter((c) => validIso(c.birthDate) && ageYears(c.birthDate, at) < 18);
+  const atKey = at.getFullYear() * 12 + at.getMonth();
+  return children.filter((c) => {
+    if (!validIso(c.birthDate)) return false;
+    const year = Number(c.birthDate.slice(0, 4));
+    const month = Number(c.birthDate.slice(5, 7));
+    if (!year || !month) return false;
+    const turns18 = (year + 18) * 12 + (month - 1);
+    return atKey < turns18;
+  });
 }
 
 export function vaHasSpouse(plan: Plan, stream: IncomeStream): boolean {

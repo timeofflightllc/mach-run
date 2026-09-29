@@ -233,6 +233,46 @@ test("workplace employee cap follows the primary, and match is outside it", () =
   expectYear(2042, 35750, true);
 });
 
+test("a Joint 401k with no name still uses the primary age for catch-up", () => {
+  const plan = household();
+  plan.portfolios = [
+    {
+      id: "port-k",
+      name: "Boeing 401k Roth",
+      kind: "401k_roth",
+      owner: "Joint",
+      currentValue: 1000,
+      returnPct: 0,
+      taxBucket: "roth",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c-k",
+      label: "Boeing deferral",
+      portfolioId: "port-k",
+      monthlyAmount: 4000,
+      startDate: "2026-01-01",
+      endDate: null,
+      capToIrsLimit: true,
+    },
+  ];
+  const sim = simulate(plan, { audit: true });
+  const expectYear = (year: number, cap: number, catchUp: boolean) => {
+    near(invested(sim.audit, "c-k", year), cap, `employee ${year}`);
+    for (const row of rows(sim.audit, "c-k", year)) {
+      assert.equal(row.irsLimit, cap, row.date);
+      assert.equal(row.catchUp, catchUp, row.date);
+    }
+  };
+  expectYear(2027, 24500, false);
+  expectYear(2029, 32500, true);
+  expectYear(2039, 35750, true);
+  expectYear(2044, 32500, true);
+});
+
 test("two capped Roth IRAs under 50 each reach 7500", () => {
   const plan = household();
   plan.portfolios = [

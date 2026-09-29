@@ -479,10 +479,14 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
       let catchUp = false;
       let irs: { key: string; limit: number } | null = null;
       if (rule.capToIrsLimit && dest && cls) {
+        let capPerson = person;
+        if (!capPerson && cls === "workplace") {
+          capPerson = /spouse/i.test(dest.owner ?? "") ? "spouse" : "primary";
+        }
         const birth =
-          person === "spouse"
+          capPerson === "spouse"
             ? plan.spouse.birthDate
-            : person === "primary"
+            : capPerson === "primary"
               ? plan.primary.birthDate
               : "";
         const age = validIso(birth) ? ageInCalendarYear(birth, cursor.getFullYear()) : 0;
@@ -492,8 +496,8 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
         const ytdKey =
           cls === "trump"
             ? `${cursor.getFullYear()}|${rule.portfolioId}|trump`
-            : person
-              ? `${cursor.getFullYear()}|${person}|${cls}`
+            : capPerson
+              ? `${cursor.getFullYear()}|${capPerson}|${cls}`
               : `${cursor.getFullYear()}|unresolved|${rule.portfolioId}|${cls}`;
         irs = { key: ytdKey, limit: cap };
       }

@@ -71,6 +71,39 @@ test("rating + kids steps down to veteran+spouse as each child turns 18", () => 
   near(sep?.income ?? 0, 4318.99 + 109.11, 0.05);
 });
 
+test("VA steps down in the birthday month, not the month after", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-08-01";
+  plan.assumptions.inflationPct = 0;
+  plan.spouse = { name: "Spouse", birthDate: "1982-01-01" };
+  plan.children = [
+    { id: "matthew", name: "Matthew", birthDate: "2014-06-16" },
+    { id: "warren", name: "Warren", birthDate: "2016-01-02" },
+    { id: "sybil", name: "Sybil", birthDate: "2017-09-13" },
+  ];
+  const stream: IncomeStream = {
+    id: "va",
+    name: "VA",
+    kind: "va",
+    monthlyAmount: 0,
+    startDate: "2026-08-01",
+    endDate: null,
+    colaPct: 0,
+    taxTreatment: "tax_free",
+    person: "primary",
+    vaRatingPct: 100,
+    vaSpouseDependent: true,
+  };
+  const three = 4318.99 + 2 * 109.11;
+  const two = 4318.99 + 109.11;
+  near(vaPayTodayDollars(plan, stream, monthStart("2032-05-01")), three);
+  near(vaPayTodayDollars(plan, stream, monthStart("2032-06-01")), two);
+  near(vaPayTodayDollars(plan, stream, monthStart("2033-12-01")), two);
+  near(vaPayTodayDollars(plan, stream, monthStart("2034-01-01")), 4318.99);
+  near(vaPayTodayDollars(plan, stream, monthStart("2035-08-01")), 4318.99);
+  near(vaPayTodayDollars(plan, stream, monthStart("2035-09-01")), 4158.17);
+});
+
 test("no rating and no typed amount pays nothing", () => {
   const plan = createDefaultPlan();
   const stream: IncomeStream = {
