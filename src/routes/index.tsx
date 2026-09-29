@@ -978,7 +978,7 @@ function Home() {
           )}
         </div>
         </div>
-        <div className="flex items-center justify-between gap-3">
+        <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-8">
           {shownIndex > 0 ? (
             <NavButton kind="back" onPress={() => goStep(route[shownIndex - 1].id)}>
               Back
