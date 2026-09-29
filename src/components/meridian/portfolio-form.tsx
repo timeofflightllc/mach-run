@@ -9,6 +9,7 @@ import {
   NumberInput,
   MonthYearMoney,
   MoneyInput,
+  PrimaryButton,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
@@ -61,13 +62,13 @@ const BUCKETS: { value: TaxBucket; label: string }[] = [
   { value: "none", label: "None" },
 ];
 
-const slot = "w-56 max-w-full shrink-0";
+const slot = "w-[12.5rem] max-w-full shrink-0";
 const slotName = "w-[10rem] max-w-full shrink-0";
-const slotType = "w-[12.25rem] max-w-full shrink-0";
+const slotType = "w-[11.5rem] max-w-full shrink-0";
 const slotTax = "w-[7.75rem] max-w-full shrink-0";
-const slotReturn = "w-[4.75rem] max-w-full shrink-0";
-const slotValue = "w-[9rem] max-w-full shrink-0";
-const slotOwner = "w-[9.25rem] max-w-full shrink-0";
+const slotReturn = "w-[6.5rem] max-w-full shrink-0";
+const slotValue = "w-[8rem] max-w-full shrink-0";
+const slotOwner = "w-[8rem] max-w-full shrink-0";
 const control = "h-10 max-w-full";
 
 export function PortfolioForm() {
@@ -76,6 +77,7 @@ export function PortfolioForm() {
   const addPortfolio = usePlanStore((s) => s.addPortfolio);
   const removePortfolio = usePlanStore((s) => s.removePortfolio);
   const [pendingRemove, setPendingRemove] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const ent = useEntitlement();
   const capped = atAccountCap(plan.portfolios.length, ent);
 
@@ -98,6 +100,9 @@ export function PortfolioForm() {
             key={p.id}
             plan={plan}
             portfolio={p}
+            open={openId === p.id}
+            onEdit={() => setOpenId(p.id)}
+            onSave={() => setOpenId(null)}
             onChange={(patch) => updatePortfolio(p.id, patch)}
             onRemove={() => setPendingRemove(p.id)}
           />
@@ -107,9 +112,10 @@ export function PortfolioForm() {
         <UpgradeNudge kind="accounts" />
       ) : (
         <GhostButton
-          onClick={() =>
+          onClick={() => {
+            const id = newId("port");
             addPortfolio({
-              id: newId("port"),
+              id,
               name: "",
               kind: "taxable",
               owner: "primary",
@@ -120,8 +126,9 @@ export function PortfolioForm() {
               includeInNetWorth: true,
               institutionId: null,
               institutionName: "",
-            })
-          }
+            });
+            setOpenId(id);
+          }}
         >
           <Plus className="size-4" />
           Add account
@@ -133,6 +140,7 @@ export function PortfolioForm() {
           body="Are you sure you want to remove this account? This cannot be undone."
           onCancel={() => setPendingRemove(null)}
           onConfirm={() => {
+            if (openId === pendingRemove) setOpenId(null);
             removePortfolio(pendingRemove);
             setPendingRemove(null);
           }}
@@ -145,11 +153,17 @@ export function PortfolioForm() {
 function AccountTile({
   plan,
   portfolio: p,
+  open,
+  onEdit,
+  onSave,
   onChange,
   onRemove,
 }: {
   plan: Plan;
   portfolio: Portfolio;
+  open: boolean;
+  onEdit: () => void;
+  onSave: () => void;
   onChange: (patch: Partial<Portfolio>) => void;
   onRemove: () => void;
 }) {
@@ -267,6 +281,11 @@ function AccountTile({
       </SelectInput>
     </Field>
   );
+  const save = (
+    <PrimaryButton className="h-10 self-end" onClick={onSave}>
+      Save account
+    </PrimaryButton>
+  );
   const remove = (
     <div className="flex items-end justify-end">
       <DangerButton
@@ -303,36 +322,113 @@ function AccountTile({
     ) : null;
 
   const line = (cells: (ReactNode | null)[]) => (
-    <div className="flex flex-wrap items-end justify-start gap-x-3 gap-y-2">{cells}</div>
+    <div className="flex flex-wrap items-end justify-start gap-x-2 gap-y-2">{cells}</div>
   );
 
   return (
-    <li className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
-      <div className="flex flex-col gap-3">
-        {line([
-          institution,
-          name,
-          accountType(),
-          tax,
-          returns,
-          value,
-          include,
-          owner,
-          remove,
-        ])}
-        {invested}
-        {warn}
+    <li className="rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
+      <div
+        className="grid transition-[grid-template-rows] duration-300 ease-out"
+        style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
+        inert={!open}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="flex flex-col gap-3 pb-1">
+            {line([
+              institution,
+              name,
+              accountType(),
+              tax,
+              returns,
+              value,
+              include,
+              owner,
+              save,
+              remove,
+            ])}
+            {invested}
+            {warn}
+            {p.kind === "real_estate" ? (
+              <RealEstateMortgage
+                portfolioId={p.id}
+                asOf={plan.assumptions.asOfDate}
+                propertyValue={p.currentValue}
+                mortgage={p.mortgage ?? emptyMortgage()}
+                onChange={(mortgage) => onChange({ mortgage })}
+              />
+            ) : null}
+          </div>
+        </div>
       </div>
-      {p.kind === "real_estate" ? (
-        <RealEstateMortgage
-          portfolioId={p.id}
-          asOf={plan.assumptions.asOfDate}
-          propertyValue={p.currentValue}
-          mortgage={p.mortgage ?? emptyMortgage()}
-          onChange={(mortgage) => onChange({ mortgage })}
-        />
-      ) : null}
+      <div
+        className="grid transition-[grid-template-rows] duration-300 ease-out"
+        style={{ gridTemplateRows: open ? "0fr" : "1fr" }}
+        inert={open}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <AccountSummary plan={plan} portfolio={p} onEdit={onEdit} onRemove={onRemove} />
+        </div>
+      </div>
     </li>
+  );
+}
+
+function AccountSummary({
+  plan,
+  portfolio: p,
+  onEdit,
+  onRemove,
+}: {
+  plan: Plan;
+  portfolio: Portfolio;
+  onEdit: () => void;
+  onRemove: () => void;
+}) {
+  const kind = KIND_LABELS.find((k) => k.value === p.kind)?.label ?? p.kind;
+  const tax = BUCKETS.find((k) => k.value === p.taxBucket)?.label ?? p.taxBucket;
+  const owner =
+    familyOwnerOptions(plan, p.kind).find((o) => o.value === normalizeOwner(p.owner))?.label ??
+    "You (primary)";
+  const flags = [
+    p.spendable ? "Spendable" : null,
+    p.includeInNetWorth ? "Net worth" : null,
+  ].filter(Boolean);
+  const mortgage =
+    p.kind === "real_estate" && mortgageAssociated(p.mortgage) ? "mortgage" : null;
+  return (
+    <div className="flex items-center gap-3">
+      <p className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-sm text-fg">
+        {p.kind === "real_estate" ? null : (
+          <InstitutionMark
+            institutionId={p.institutionId ?? null}
+            institutionName={p.institutionName ?? ""}
+            size={18}
+          />
+        )}
+        <span className="min-w-0 truncate">
+          <span className="font-medium">{p.name.trim() || "Account"}</span>
+          <span className="text-muted"> · {kind}</span>
+          <span className="text-muted"> · {tax}</span>
+          <span className="text-muted"> · {usd(p.currentValue)}</span>
+          <span className="text-muted"> · {flags.length ? flags.join(", ") : "Excluded"}</span>
+          <span className="text-muted"> · {owner}</span>
+          {mortgage ? <span className="text-muted"> · {mortgage}</span> : null}
+        </span>
+      </p>
+      <button type="button" className="shrink-0 text-sm font-medium text-fg" onClick={onEdit}>
+        Edit
+      </button>
+      <DangerButton
+        aria-label={`Remove ${p.name || "account"}`}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onRemove();
+        }}
+      >
+        <Trash2 className="size-4" />
+      </DangerButton>
+    </div>
   );
 }
 
