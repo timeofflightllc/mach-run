@@ -14,7 +14,7 @@ import {
 import type { IncomeKind, IncomeStream, Plan, TaxTreatment } from "@/lib/plan/types";
 import { newId, usePlanStore } from "@/lib/plan/store";
 import { ssBenefitFromPia, ssBirthFor, ssScheduleDates } from "@/lib/plan/social-security";
-import { blankEndLabel, monthAfter, monthStart, projectionEndMonth } from "@/lib/plan/dates";
+import { blankEndLabel, dateAtAge, iso, monthAfter, monthStart, projectionEndMonth, validIso } from "@/lib/plan/dates";
 import { usd } from "@/lib/plan/format";
 import { vaPayTodayDollars } from "@/lib/plan/va";
 import { VaKids } from "@/components/meridian/va-kids";
@@ -82,17 +82,26 @@ function amountLabel(plan: Plan, stream: IncomeStream): string {
   return `${usd(stream.monthlyAmount)}/mo`;
 }
 
-function endKey(stream: IncomeStream): string {
-  return stream.endDate || "9999-12";
+function monthKey(value: string | null | undefined): string {
+  const match = /^(\d{4})-(\d{2})/.exec(value ?? "");
+  return match ? `${match[1]}-${match[2]}` : "9999-12";
 }
 
-function sortedIncomes(incomes: IncomeStream[]): IncomeStream[] {
+function endSortKey(plan: Plan, stream: IncomeStream): string {
+  if (stream.endDate) return monthKey(stream.endDate);
+  const birth = plan.primary.birthDate;
+  const age = plan.assumptions.projectionEndAge;
+  if (birth && validIso(birth) && Number.isFinite(age)) return monthKey(iso(dateAtAge(birth, age)));
+  return "9999-12";
+}
+
+function sortedIncomes(plan: Plan, incomes: IncomeStream[]): IncomeStream[] {
   return incomes
     .map((stream, index) => ({ stream, index }))
     .sort((a, b) => {
-      const byStart = (a.stream.startDate || "").localeCompare(b.stream.startDate || "");
+      const byStart = monthKey(a.stream.startDate).localeCompare(monthKey(b.stream.startDate));
       if (byStart !== 0) return byStart;
-      const byEnd = endKey(a.stream).localeCompare(endKey(b.stream));
+      const byEnd = endSortKey(plan, a.stream).localeCompare(endSortKey(plan, b.stream));
       if (byEnd !== 0) return byEnd;
       return a.index - b.index;
     })
@@ -128,7 +137,7 @@ export function IncomeForm() {
       }
       return kept;
     }
-    return sortedIncomes(plan.incomes).map((stream) => stream.id);
+    return sortedIncomes(plan, plan.incomes).map((stream) => stream.id);
   }
 
   function holdOrder() {
@@ -141,7 +150,7 @@ export function IncomeForm() {
       sortTimer.current = null;
       setFrozen(null);
       const live = usePlanStore.getState().plan;
-      const next = sortedIncomes(live.incomes);
+      const next = sortedIncomes(live, live.incomes);
       const same = next.every((row, index) => row.id === live.incomes[index]?.id);
       if (!same) usePlanStore.getState().setPlan({ ...live, incomes: next });
     }, 320);
@@ -192,7 +201,7 @@ export function IncomeForm() {
         <GhostButton
           onClick={() => {
             const id = newId("inc");
-            const base = frozen ?? sortedIncomes(plan.incomes).map((stream) => stream.id);
+            const base = frozen ?? sortedIncomes(plan, plan.incomes).map((stream) => stream.id);
             setFrozen([...base, id]);
             addIncome({
               id,
