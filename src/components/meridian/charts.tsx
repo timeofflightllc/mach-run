@@ -132,13 +132,6 @@ function formatCashTip(t: string | number, span: ChartSpan): string {
   return `${q} ${y} · ${range[q] ?? "quarter"} · scaled to a year`;
 }
 
-function formatCashTick(t: string | number): string {
-  const [y, q] = String(t).split("-");
-  if (q === "Q1") return `Q1 ${y.slice(2)}`;
-  if (q === "Q4") return "Q4";
-  return "";
-}
-
 function formatAxisTick(t: string | number, span: ChartSpan): string {
   if (span === 20 || span === "horizon") return String(t);
   const raw = String(t);
@@ -481,7 +474,7 @@ export function CashChart({
         Social Security. Salary, bonus, allowance, and other income are earned —
         they drop off when that stage ends.
         {span === 10
-          ? " 10-year: each point is one quarter, times 4. Q1 is Jan–Mar. Q4 is Oct–Dec. A pay change shows in the quarter it happens."
+          ? " Each point is one quarter, scaled to a year. Hover a point for the months."
           : span === 5
             ? " Each point is one month, times 12, so the scale matches the yearly views."
             : ""}
@@ -499,11 +492,11 @@ export function CashChart({
             <CartesianGrid stroke={gridStroke} vertical={false} />
             <XAxis
               dataKey="t"
-              tickFormatter={(t) => (span === 10 ? formatCashTick(t) : formatAxisTick(t, span))}
+              tickFormatter={(t) => formatAxisTick(t, span)}
               tick={{ fill: tickFill, fontSize: 11 }}
               tickLine={false}
               axisLine={{ stroke: gridStroke }}
-              interval={span === 10 ? 0 : x.interval}
+              interval={x.interval}
               minTickGap={x.minTickGap}
               angle={x.angle}
               textAnchor={x.textAnchor}
@@ -525,7 +518,7 @@ export function CashChart({
             />
             <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
             <Area
-              type={span === 10 ? "stepAfter" : "monotone"}
+              type="monotone"
               dataKey="income"
               name="Income"
               stroke="var(--color-positive)"
@@ -535,7 +528,7 @@ export function CashChart({
               isAnimationActive={false}
             />
             <Line
-              type={span === 10 ? "stepAfter" : "monotone"}
+              type="monotone"
               dataKey="spending"
               name="Spending"
               stroke="var(--color-negative)"
@@ -544,7 +537,7 @@ export function CashChart({
               isAnimationActive={false}
             />
             <Line
-              type={span === 10 ? "stepAfter" : "monotone"}
+              type="monotone"
               dataKey="contributions"
               name="Contributions"
               stroke="#1a2330"
@@ -553,7 +546,7 @@ export function CashChart({
               isAnimationActive={false}
             />
             <Line
-              type={span === 10 ? "stepAfter" : "monotone"}
+              type="monotone"
               dataKey="guaranteed"
               name="Guaranteed (pension / VA / SS)"
               stroke="var(--color-accent)"
