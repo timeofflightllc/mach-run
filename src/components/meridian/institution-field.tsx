@@ -99,7 +99,7 @@ export function InstitutionInput({
         aria-controls={listId}
         aria-autocomplete="list"
         autoComplete="off"
-        placeholder="Fidelity, Navy Federal, Chase…"
+        placeholder="Name of financial institution..."
         className="max-w-none"
         onFocus={() => {
           focused.current = true;

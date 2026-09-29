@@ -17,9 +17,6 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as LegalRouteImport } from './routes/legal'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as LogoDraftsRouteImport } from './routes/logo-drafts'
-import { Route as LookRouteImport } from './routes/look'
-import { Route as LookARouteImport } from './routes/look-a'
 import { Route as MethodRouteImport } from './routes/method'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -67,21 +64,6 @@ const LegalRoute = LegalRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LogoDraftsRoute = LogoDraftsRouteImport.update({
-  id: '/logo-drafts',
-  path: '/logo-drafts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LookRoute = LookRouteImport.update({
-  id: '/look',
-  path: '/look',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LookARoute = LookARouteImport.update({
-  id: '/look-a',
-  path: '/look-a',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MethodRoute = MethodRouteImport.update({
@@ -134,9 +116,6 @@ export interface FileRoutesByFullPath {
   '/faq': typeof FaqRoute
   '/legal': typeof LegalRoute
   '/login': typeof LoginRoute
-  '/logo-drafts': typeof LogoDraftsRoute
-  '/look': typeof LookRoute
-  '/look-a': typeof LookARoute
   '/method': typeof MethodRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -155,9 +134,6 @@ export interface FileRoutesByTo {
   '/faq': typeof FaqRoute
   '/legal': typeof LegalRoute
   '/login': typeof LoginRoute
-  '/logo-drafts': typeof LogoDraftsRoute
-  '/look': typeof LookRoute
-  '/look-a': typeof LookARoute
   '/method': typeof MethodRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -177,9 +153,6 @@ export interface FileRoutesById {
   '/faq': typeof FaqRoute
   '/legal': typeof LegalRoute
   '/login': typeof LoginRoute
-  '/logo-drafts': typeof LogoDraftsRoute
-  '/look': typeof LookRoute
-  '/look-a': typeof LookARoute
   '/method': typeof MethodRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
@@ -200,9 +173,6 @@ export interface FileRouteTypes {
     | '/faq'
     | '/legal'
     | '/login'
-    | '/logo-drafts'
-    | '/look'
-    | '/look-a'
     | '/method'
     | '/pricing'
     | '/privacy'
@@ -221,9 +191,6 @@ export interface FileRouteTypes {
     | '/faq'
     | '/legal'
     | '/login'
-    | '/logo-drafts'
-    | '/look'
-    | '/look-a'
     | '/method'
     | '/pricing'
     | '/privacy'
@@ -242,9 +209,6 @@ export interface FileRouteTypes {
     | '/faq'
     | '/legal'
     | '/login'
-    | '/logo-drafts'
-    | '/look'
-    | '/look-a'
     | '/method'
     | '/pricing'
     | '/privacy'
@@ -264,9 +228,6 @@ export interface RootRouteChildren {
   FaqRoute: typeof FaqRoute
   LegalRoute: typeof LegalRoute
   LoginRoute: typeof LoginRoute
-  LogoDraftsRoute: typeof LogoDraftsRoute
-  LookRoute: typeof LookRoute
-  LookARoute: typeof LookARoute
   MethodRoute: typeof MethodRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -333,27 +294,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/logo-drafts': {
-      id: '/logo-drafts'
-      path: '/logo-drafts'
-      fullPath: '/logo-drafts'
-      preLoaderRoute: typeof LogoDraftsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/look': {
-      id: '/look'
-      path: '/look'
-      fullPath: '/look'
-      preLoaderRoute: typeof LookRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/look-a': {
-      id: '/look-a'
-      path: '/look-a'
-      fullPath: '/look-a'
-      preLoaderRoute: typeof LookARouteImport
       parentRoute: typeof rootRouteImport
     }
     '/method': {
@@ -424,9 +364,6 @@ const rootRouteChildren: RootRouteChildren = {
   FaqRoute: FaqRoute,
   LegalRoute: LegalRoute,
   LoginRoute: LoginRoute,
-  LogoDraftsRoute: LogoDraftsRoute,
-  LookRoute: LookRoute,
-  LookARoute: LookARoute,
   MethodRoute: MethodRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,

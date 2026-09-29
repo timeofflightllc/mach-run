@@ -155,16 +155,18 @@ export function MonthYearMoney({
   monthLabel,
   yearLabel,
   compact,
+  fieldClassName,
 }: {
   monthly: number;
   onMonthly: (monthly: number) => void;
   monthLabel: string;
   yearLabel: string;
   compact?: boolean;
+  fieldClassName?: string;
 }) {
   const month = roundCents(monthly);
   const year = yearFromMonthly(month);
-  const fieldClass = compact ? "w-[8.75rem]" : "min-w-[9.5rem] flex-1";
+  const fieldClass = fieldClassName ?? (compact ? "w-[8.75rem]" : "min-w-[9.5rem] flex-1");
   return (
     <div className="flex min-w-0 flex-wrap items-end gap-x-3 gap-y-2">
       <Field label={monthLabel} className={fieldClass}>

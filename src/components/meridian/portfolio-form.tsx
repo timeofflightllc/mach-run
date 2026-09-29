@@ -1,5 +1,5 @@
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { ConfirmRemove } from "@/components/meridian/confirm-remove";
 import {
   DangerButton,
@@ -12,7 +12,7 @@ import {
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
-import type { AccountKind, Mortgage, TaxBucket } from "@/lib/plan/types";
+import type { AccountKind, Mortgage, Plan, Portfolio, TaxBucket } from "@/lib/plan/types";
 import { newId, usePlanStore } from "@/lib/plan/store";
 import { usd } from "@/lib/plan/format";
 import { startingNetWorth } from "@/lib/plan/engine";
@@ -61,6 +61,15 @@ const BUCKETS: { value: TaxBucket; label: string }[] = [
   { value: "none", label: "None" },
 ];
 
+const slot = "w-56 max-w-full shrink-0";
+const slotName = "w-[10rem] max-w-full shrink-0";
+const slotType = "w-[12.25rem] max-w-full shrink-0";
+const slotTax = "w-[7.75rem] max-w-full shrink-0";
+const slotReturn = "w-[4.75rem] max-w-full shrink-0";
+const slotValue = "w-[9rem] max-w-full shrink-0";
+const slotOwner = "w-[9.25rem] max-w-full shrink-0";
+const control = "h-10 max-w-full";
+
 export function PortfolioForm() {
   const plan = usePlanStore((s) => s.plan);
   const updatePortfolio = usePlanStore((s) => s.updatePortfolio);
@@ -76,182 +85,22 @@ export function PortfolioForm() {
   const net = startingNetWorth(plan);
 
   return (
-    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
       <p className="text-sm text-muted">
         Spendable (retirement) {usd(spendable)} · Net worth {usd(net)}. These
         accounts are the only ones Orient can sweep into and Decide can
         contribute to. Per-account return blank uses the global{" "}
         {plan.assumptions.defaultReturnPct}% nominal.
       </p>
-      <ul className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
+      <ul className="flex flex-col gap-3">
         {plan.portfolios.map((p) => (
-          <li
+          <AccountTile
             key={p.id}
-            className="@container rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
-          >
-            {p.kind !== "real_estate" ? (
-              <div className="mb-2">
-                <Field label="Institution">
-                  <InstitutionInput
-                    institutionId={p.institutionId ?? null}
-                    institutionName={p.institutionName ?? ""}
-                    onChange={(next) => updatePortfolio(p.id, next)}
-                  />
-                </Field>
-              </div>
-            ) : null}
-            <div className="mb-2 flex items-center gap-2">
-              {p.kind !== "real_estate" ? (
-                <InstitutionMark
-                  institutionId={p.institutionId ?? null}
-                  institutionName={p.institutionName ?? ""}
-                />
-              ) : null}
-              <TextInput
-                value={p.name}
-                replaceSeed="New account"
-                placeholder="Name this account"
-                onChange={(e) => updatePortfolio(p.id, { name: e.target.value })}
-                className="h-10"
-              />
-              <DangerButton
-                aria-label={`Remove ${p.name || "account"}`}
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  setPendingRemove(p.id);
-                }}
-              >
-                <Trash2 className="size-4" />
-              </DangerButton>
-            </div>
-            <div className="grid grid-cols-1 gap-2 @min-[28rem]:grid-cols-2">
-              <Field label="Account Type">
-                <SelectInput
-                  value={p.kind}
-                  onChange={(e) => {
-                    const kind = e.target.value as AccountKind;
-                    const row = KIND_LABELS.find((k) => k.value === kind);
-                    updatePortfolio(p.id, {
-                      kind,
-                      ...(row ? { taxBucket: row.bucket } : {}),
-                      ...(kind === "real_estate"
-                        ? { mortgage: p.mortgage ?? emptyMortgage(), spendable: false }
-                        : {}),
-                      ...(isTaxQualified(kind) && normalizeOwner(p.owner) === "joint"
-                        ? { owner: "primary" }
-                        : {}),
-                    });
-                  }}
-                >
-                  {KIND_LABELS.map((k) => (
-                    <option key={k.value} value={k.value}>
-                      {k.label}
-                    </option>
-                  ))}
-                </SelectInput>
-              </Field>
-              <Field label="Tax bucket">
-                <SelectInput
-                  value={p.taxBucket}
-                  onChange={(e) =>
-                    updatePortfolio(p.id, { taxBucket: e.target.value as TaxBucket })
-                  }
-                >
-                  {BUCKETS.map((k) => (
-                    <option key={k.value} value={k.value}>
-                      {k.label}
-                    </option>
-                  ))}
-                </SelectInput>
-              </Field>
-              <Field label="Flags">
-                <div className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
-                  <label className="flex items-center gap-1.5">
-                    <input
-                      type="checkbox"
-                      checked={p.spendable}
-                      onChange={(e) =>
-                        updatePortfolio(p.id, { spendable: e.target.checked })
-                      }
-                    />
-                    Spendable
-                  </label>
-                  <label className="flex items-center gap-1.5">
-                    <input
-                      type="checkbox"
-                      checked={p.includeInNetWorth}
-                      onChange={(e) =>
-                        updatePortfolio(p.id, { includeInNetWorth: e.target.checked })
-                      }
-                    />
-                    Net Worth
-                  </label>
-                </div>
-              </Field>
-              <Field label="Value">
-                <MoneyInput
-                  min={0}
-                  value={Math.round(p.currentValue * 100) / 100}
-                  onValue={(n) => updatePortfolio(p.id, { currentValue: n })}
-                />
-              </Field>
-              {p.kind === "annuity" ? (
-                <Field
-                  label="Amount invested"
-                  hint="Premiums paid — cost basis. Earnings come out first and are ordinary income; basis comes out tax-free."
-                >
-                  <MoneyInput
-                    min={0}
-                    value={Math.round((p.costBasis ?? 0) * 100) / 100}
-                    onValue={(n) => updatePortfolio(p.id, { costBasis: n })}
-                  />
-                </Field>
-              ) : null}
-              <Field label="Return %">
-                <NumberInput
-                  step={0.1}
-                  value={p.returnPct ?? plan.assumptions.defaultReturnPct}
-                  onValue={(n) => updatePortfolio(p.id, { returnPct: n })}
-                />
-              </Field>
-              {(p.returnPct ?? plan.assumptions.defaultReturnPct) === 0 &&
-              p.currentValue > 0 ? (
-                <p className="text-xs leading-relaxed text-[#5c4a18]">
-                  This account has a balance and a 0% return. It will not grow.
-                </p>
-              ) : null}
-              {(p.returnPct ?? plan.assumptions.defaultReturnPct) > 12 ? (
-                <p className="text-xs leading-relaxed text-[#5c4a18]">
-                  A return above 12% is high. MACH RUN will use the number you
-                  typed, but double-check it.
-                </p>
-              ) : null}
-              <Field label="Account owner">
-                <SelectInput
-                  value={normalizeOwner(p.owner)}
-                  onChange={(e) =>
-                    updatePortfolio(p.id, { owner: e.target.value })
-                  }
-                >
-                  {familyOwnerOptions(plan, p.kind).map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </SelectInput>
-              </Field>
-            </div>
-            {p.kind === "real_estate" ? (
-              <RealEstateMortgage
-                portfolioId={p.id}
-                asOf={plan.assumptions.asOfDate}
-                propertyValue={p.currentValue}
-                mortgage={p.mortgage ?? emptyMortgage()}
-                onChange={(mortgage) => updatePortfolio(p.id, { mortgage })}
-              />
-            ) : null}
-          </li>
+            plan={plan}
+            portfolio={p}
+            onChange={(patch) => updatePortfolio(p.id, patch)}
+            onRemove={() => setPendingRemove(p.id)}
+          />
         ))}
       </ul>
       {capped ? (
@@ -290,6 +139,200 @@ export function PortfolioForm() {
         />
       ) : null}
     </div>
+  );
+}
+
+function AccountTile({
+  plan,
+  portfolio: p,
+  onChange,
+  onRemove,
+}: {
+  plan: Plan;
+  portfolio: Portfolio;
+  onChange: (patch: Partial<Portfolio>) => void;
+  onRemove: () => void;
+}) {
+  const rate = p.returnPct ?? plan.assumptions.defaultReturnPct;
+  const setKind = (kind: AccountKind) => {
+    const row = KIND_LABELS.find((k) => k.value === kind);
+    onChange({
+      kind,
+      ...(row ? { taxBucket: row.bucket } : {}),
+      ...(kind === "real_estate"
+        ? { mortgage: p.mortgage ?? emptyMortgage(), spendable: false }
+        : {}),
+      ...(isTaxQualified(kind) && normalizeOwner(p.owner) === "joint"
+        ? { owner: "primary" }
+        : {}),
+    });
+  };
+
+  const institution =
+    p.kind === "real_estate" ? null : (
+      <Field label="Institution" className={slot}>
+        <InstitutionInput
+          institutionId={p.institutionId ?? null}
+          institutionName={p.institutionName ?? ""}
+          onChange={(next) => onChange(next)}
+        />
+      </Field>
+    );
+  const name = (
+    <Field label="Account name" className={slotName}>
+      <TextInput
+        value={p.name}
+        replaceSeed="New account"
+        placeholder="Name this account"
+        onChange={(e) => onChange({ name: e.target.value })}
+        className={control}
+      />
+    </Field>
+  );
+  const accountType = () => (
+    <Field label="Account type" className={slotType}>
+      <SelectInput value={p.kind} className={control} onChange={(e) => setKind(e.target.value as AccountKind)}>
+        {KIND_LABELS.map((k) => (
+          <option key={k.value} value={k.value}>
+            {k.label}
+          </option>
+        ))}
+      </SelectInput>
+    </Field>
+  );
+  const tax = (
+    <Field label="Tax category" className={slotTax}>
+      <SelectInput
+        value={p.taxBucket}
+        className={control}
+        onChange={(e) => onChange({ taxBucket: e.target.value as TaxBucket })}
+      >
+        {BUCKETS.map((k) => (
+          <option key={k.value} value={k.value}>
+            {k.label}
+          </option>
+        ))}
+      </SelectInput>
+    </Field>
+  );
+  const returns = (
+    <Field label="Rate of return (%)" className={slotReturn}>
+      <NumberInput step={0.1} value={rate} className={control} onValue={(n) => onChange({ returnPct: n })} />
+    </Field>
+  );
+  const value = (
+    <Field label="Account value" className={slotValue}>
+      <MoneyInput
+        min={0}
+        className={control}
+        value={Math.round(p.currentValue * 100) / 100}
+        onValue={(n) => onChange({ currentValue: n })}
+      />
+    </Field>
+  );
+  const include = (
+    <Field label="Include in" className="w-auto shrink-0">
+      <div className="flex h-10 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fg">
+        <label className="flex items-center gap-1.5">
+          <input
+            type="checkbox"
+            checked={p.spendable}
+            onChange={(e) => onChange({ spendable: e.target.checked })}
+          />
+          Spendable
+        </label>
+        <label className="flex items-center gap-1.5">
+          <input
+            type="checkbox"
+            checked={p.includeInNetWorth}
+            onChange={(e) => onChange({ includeInNetWorth: e.target.checked })}
+          />
+          Net worth
+        </label>
+      </div>
+    </Field>
+  );
+  const owner = (
+    <Field label="Account owner" className={slotOwner}>
+      <SelectInput
+        value={normalizeOwner(p.owner)}
+        className={control}
+        onChange={(e) => onChange({ owner: e.target.value })}
+      >
+        {familyOwnerOptions(plan, p.kind).map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </SelectInput>
+    </Field>
+  );
+  const remove = (
+    <div className="flex items-end justify-end">
+      <DangerButton
+        aria-label={`Remove ${p.name || "account"}`}
+        onClick={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          onRemove();
+        }}
+      >
+        <Trash2 className="size-4" />
+      </DangerButton>
+    </div>
+  );
+  const warn =
+    rate === 0 && p.currentValue > 0 ? (
+      <p className="text-xs leading-relaxed text-[#5c4a18]">
+        This account has a balance and a 0% return. It will not grow.
+      </p>
+    ) : rate > 12 ? (
+      <p className="text-xs leading-relaxed text-[#5c4a18]">
+        A return above 12% is high. MACH RUN will use the number you typed, but double-check it.
+      </p>
+    ) : null;
+  const invested =
+    p.kind === "annuity" ? (
+      <Field label="Amount invested" className={slot} hint="Premiums paid — cost basis. Earnings come out first and are ordinary income; basis comes out tax-free.">
+        <MoneyInput
+          min={0}
+          value={Math.round((p.costBasis ?? 0) * 100) / 100}
+          onValue={(n) => onChange({ costBasis: n })}
+        />
+      </Field>
+    ) : null;
+
+  const line = (cells: (ReactNode | null)[]) => (
+    <div className="flex flex-wrap items-end justify-start gap-x-3 gap-y-2">{cells}</div>
+  );
+
+  return (
+    <li className="rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
+      <div className="flex flex-col gap-3">
+        {line([
+          institution,
+          name,
+          accountType(),
+          tax,
+          returns,
+          value,
+          include,
+          owner,
+          remove,
+        ])}
+        {invested}
+        {warn}
+      </div>
+      {p.kind === "real_estate" ? (
+        <RealEstateMortgage
+          portfolioId={p.id}
+          asOf={plan.assumptions.asOfDate}
+          propertyValue={p.currentValue}
+          mortgage={p.mortgage ?? emptyMortgage()}
+          onChange={(mortgage) => onChange({ mortgage })}
+        />
+      ) : null}
+    </li>
   );
 }
 
@@ -341,15 +384,6 @@ function RealEstateMortgage({
             boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 35%, transparent)",
           }}
         >
-          <div className="mb-2">
-            <Field label="Institution">
-              <InstitutionInput
-                institutionId={mortgage.institutionId ?? null}
-                institutionName={mortgage.institutionName ?? ""}
-                onChange={(next) => patch(next)}
-              />
-            </Field>
-          </div>
           <div className="flex items-center gap-2">
             <InstitutionMark
               institutionId={mortgage.institutionId ?? null}
@@ -361,53 +395,58 @@ function RealEstateMortgage({
           </div>
           <p className="mt-1 text-xs leading-relaxed text-[#5c4a18]">
             Remaining principal is subtracted from net worth. Property value still
-            grows at the return above. Check the box only if this P&I is not
-            already in Spending.
+            grows at the return above. Do not include the P&I amount inputted below in Spending.
           </p>
-          <div className="mt-3 flex flex-col gap-2">
-            <Field label="Origination (month/year)">
+          <div className="mt-3 flex flex-wrap items-end gap-x-3 gap-y-2">
+            <Field label="Institution" className={slot}>
+              <InstitutionInput
+                institutionId={mortgage.institutionId ?? null}
+                institutionName={mortgage.institutionName ?? ""}
+                onChange={(next) => patch(next)}
+              />
+            </Field>
+            <Field label="Origination (month/year)" className="w-auto shrink-0">
               <MonthInput
                 value={mortgage.originationDate}
                 onValue={(v) => patch({ originationDate: v })}
               />
             </Field>
-            <div className="flex flex-wrap items-end gap-x-3 gap-y-2">
-              <Field label="APR (%)" className="w-[8.75rem]">
-                <NumberInput
-                  min={0}
-                  max={25}
-                  step={0.125}
-                  value={mortgage.aprPct}
-                  onValue={(n) => patch({ aprPct: n })}
-                />
-              </Field>
-              <MonthYearMoney
-                compact
-                monthLabel="P&I / month"
-                yearLabel="P&I / year"
-                monthly={mortgage.monthlyPi || 0}
-                onMonthly={(n) => patch({ monthlyPi: n })}
+            <Field label="APR (%)" className="w-[5rem] shrink-0">
+              <NumberInput
+                min={0}
+                max={25}
+                step={0.125}
+                value={mortgage.aprPct}
+                onValue={(n) => patch({ aprPct: n })}
               />
-              <Field label="Length (years)" className="w-[8.75rem]">
-                <NumberInput
-                  min={1}
-                  max={50}
-                  step={1}
-                  value={mortgage.termYears}
-                  onValue={(n) => patch({ termYears: n })}
+            </Field>
+            <MonthYearMoney
+              compact
+              fieldClassName="w-[6.75rem] shrink-0"
+              monthLabel="P&I / month"
+              yearLabel="P&I / year"
+              monthly={mortgage.monthlyPi || 0}
+              onMonthly={(n) => patch({ monthlyPi: n })}
+            />
+            <Field label="Length (years)" className="w-[6.25rem] shrink-0">
+              <NumberInput
+                min={1}
+                max={50}
+                step={1}
+                value={mortgage.termYears}
+                onValue={(n) => patch({ termYears: n })}
+              />
+            </Field>
+            <Field label="In spending" className="w-auto shrink-0">
+              <label className="flex h-10 items-center gap-2 text-xs text-[#5c4a18]">
+                <input
+                  type="checkbox"
+                  checked={Boolean(mortgage.includeInSpending)}
+                  onChange={(e) => patch({ includeInSpending: e.target.checked })}
                 />
-              </Field>
-              <Field label="In spending">
-                <label className="flex min-h-11 items-center gap-2 text-xs text-[#5c4a18]">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(mortgage.includeInSpending)}
-                    onChange={(e) => patch({ includeInSpending: e.target.checked })}
-                  />
-                  Include this P&I in spending
-                </label>
-              </Field>
-            </div>
+                Yes
+              </label>
+            </Field>
           </div>
           {hasLoan ? (
             <p className="mt-3 text-xs leading-relaxed text-[#5c4a18]">
