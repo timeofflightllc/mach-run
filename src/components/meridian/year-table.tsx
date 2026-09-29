@@ -98,7 +98,9 @@ type LedgerTip = {
     | "year"
     | "age"
     | "income"
+    | "takehome"
     | "tax"
+    | "leftover"
     | "spend"
     | "saved"
     | "drawn"
@@ -265,7 +267,9 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
       "spouseAge",
       "income",
       "tax",
+      "takeHome",
       "spending",
+      "leftover",
       "contributions",
       "plannedContributions",
       "irsCut",
@@ -285,7 +289,9 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
         y.spouseAge,
         y.income.toFixed(2),
         y.tax.toFixed(2),
+        (y.income - y.tax).toFixed(2),
         y.spending.toFixed(2),
+        (y.income - y.tax - y.spending).toFixed(2),
         y.contributions.toFixed(2),
         y.plannedContributions.toFixed(2),
         (y.irsCut ?? 0).toFixed(2),
@@ -432,7 +438,8 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
         </div>
       ) : null}
       <p className="border-t border-border px-4 py-3 text-xs text-subtle">
-        Identity: income + drawn = tax + spend + saved. Hover an income amount
+        Identity: income + drawn = tax + spend + saved. Take-home is income
+        minus tax. Leftover is take-home minus spend. Hover an income amount
         for the mix. Hover{" "}
         <span className="font-bold text-negative">CAPPED</span> when a year is
         marked.
@@ -450,7 +457,9 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                   ["Age", "px-3 py-2 font-medium"],
                   ["Income", "px-3 py-2 font-medium"],
                   ["Tax", "px-3 py-2 font-medium"],
+                  ["Take-home", "px-3 py-2 font-medium"],
                   ["Spend", "px-3 py-2 font-medium"],
+                  ["Leftover", "px-3 py-2 font-medium"],
                   ["Saved", "px-3 py-2 font-medium"],
                   ["Drawn", "px-3 py-2 font-medium"],
                   ["A.I.R.", "px-3 py-2 font-medium"],
@@ -539,7 +548,23 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                     {hoverNumber(y.year, "tax", "text-muted", usd(flow(y.tax, y.year)))}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2">
+                    {hoverNumber(
+                      y.year,
+                      "takehome",
+                      "text-fg",
+                      usd(flow(y.income - y.tax, y.year)),
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2">
                     {hoverNumber(y.year, "spend", "text-fg", usd(flow(y.spending, y.year)))}
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2">
+                    {hoverNumber(
+                      y.year,
+                      "leftover",
+                      y.income - y.tax - y.spending < -0.5 ? "text-negative" : "text-fg",
+                      usd(flow(y.income - y.tax - y.spending, y.year)),
+                    )}
                   </td>
                   <td className="whitespace-nowrap px-3 py-2">
                     {hoverNumber(
@@ -714,6 +739,19 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           note={`Each month, taxable income times the Family tax rate of ${taxRate}%. Ordinary income is taxed in full. Social Security uses the ${plan.assumptions.ssTaxablePct}% taxable share${ssBenefit > 0.5 ? ` of ${usd(scaleTip(ssBenefit))} in benefits` : ""}. Tax-free income is left out. Required minimum distributions are taxed as ordinary income. ${dollarsNote()}`}
         />
       ) : null}
+      {tip && yearRow && tip.mode === "takehome" ? (
+        <LinesTip
+          x={tip.x}
+          y={tip.y}
+          title={`${tip.year} take-home`}
+          rows={[
+            { label: "Income", amount: flow(yearRow.income, yearRow.year) },
+            { label: "Tax", amount: flow(yearRow.tax, yearRow.year) },
+          ]}
+          total={flow(yearRow.income - yearRow.tax, yearRow.year)}
+          note={`Income minus tax. Tax-free pay stays in. Employer match is inside Income and was never in the paycheck${yearRow.employerMatch > 0.5 ? ` (${usd(flow(yearRow.employerMatch, yearRow.year))} this year)` : ""}. ${dollarsNote()}`}
+        />
+      ) : null}
       {tip && yearRow && tip.mode === "spend" ? (
         <LinesTip
           x={tip.x}
@@ -722,6 +760,19 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           rows={spendRows}
           total={flow(yearRow.spending, yearRow.year)}
           note={`Spending you typed, raised with inflation from the as-of date, plus mortgage and loan payments you marked to include. If Sweep surplus into is blank, leftover paycheck is unallocated surplus and is counted as spent. It is not saved. ${dollarsNote()}`}
+        />
+      ) : null}
+      {tip && yearRow && tip.mode === "leftover" ? (
+        <LinesTip
+          x={tip.x}
+          y={tip.y}
+          title={`${tip.year} leftover`}
+          rows={[
+            { label: "Take-home", amount: flow(yearRow.income - yearRow.tax, yearRow.year) },
+            { label: "Spend", amount: flow(yearRow.spending, yearRow.year) },
+          ]}
+          total={flow(yearRow.income - yearRow.tax - yearRow.spending, yearRow.year)}
+          note={`Take-home minus spend. A negative number means draws covered the gap. If Sweep surplus into is blank, unswept cash is already inside Spend, so it is not in this column. ${dollarsNote()}`}
         />
       ) : null}
       {tip && yearRow && tip.mode === "saved" ? (
