@@ -138,6 +138,11 @@ export interface ContributionRule {
   capPerson?: "primary" | "spouse";
   /** End date tracks Family retirement goal date. */
   endAtRetirement?: boolean;
+  /**
+   * Percent of an income only. Stops this contribution before that paycheck ends.
+   * Blank follows the income. Does not change the income.
+   */
+  stopDate?: string | null;
 }
 
 export interface IncomeStream {

@@ -296,6 +296,7 @@ function CashBody({
     percentOfIncome?: number;
     startDate?: string;
     endDate?: string | null;
+    stopDate?: string | null;
     endAtRetirement?: boolean;
     endWithStageId?: undefined;
   }) => void;
@@ -306,6 +307,7 @@ function CashBody({
   const [percent, setPercent] = useState(detail.kind === "cash" ? (detail.percent ?? 0) : 0);
   const [start, setStart] = useState(detail.kind === "cash" ? detail.start : "");
   const [end, setEnd] = useState<string | null>(detail.kind === "cash" ? detail.end : null);
+  const [stop, setStop] = useState<string | null>(detail.kind === "cash" ? detail.stopDate : null);
   if (detail.kind !== "cash") return null;
   const firstShort = detail.months.find((month) => month.short);
   const stopAfter = firstShort ? monthBefore(firstShort.date) : "";
@@ -320,6 +322,20 @@ function CashBody({
     detail.laterYears > 0
       ? ` The same thing happens in ${detail.laterYears} later ${detail.laterYears === 1 ? "year" : "years"}.`
       : "";
+  const paycheck = detail.incomeName || "That paycheck";
+  function commitStop(endOn: string) {
+    if (detail.mode === "percent") {
+      onSave({ percentOfIncome: percent, stopDate: endOn });
+      return;
+    }
+    onSave({
+      monthlyAmount: amount,
+      startDate: start,
+      endDate: endOn,
+      endAtRetirement: false,
+      endWithStageId: undefined,
+    });
+  }
   return (
     <div className="mt-3 space-y-4">
       <p className="text-sm leading-relaxed text-fg">
@@ -369,9 +385,9 @@ function CashBody({
           </Field>
         )}
         {detail.mode === "percent" ? (
-          <p className="text-sm leading-relaxed text-muted sm:col-span-2">
-            The dates follow {detail.incomeName || "that paycheck"}. Change the start or end on the income card.
-          </p>
+          <Field label="Stop this contribution">
+            <MonthInput value={stop} clearable onValue={(next) => setStop(next || null)} />
+          </Field>
         ) : (
           <>
             <Field label="Start">
@@ -383,13 +399,18 @@ function CashBody({
           </>
         )}
       </div>
+      {detail.mode === "percent" ? (
+        <p className="text-sm leading-relaxed text-muted">
+          {paycheck} keeps paying. Blank means this contribution stops when that paycheck stops.
+        </p>
+      ) : null}
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
           className="h-9 rounded-lg bg-[#e8c547] px-3 text-sm font-medium text-[#1a1404]"
           onClick={() => {
             if (detail.mode === "percent") {
-              onSave({ percentOfIncome: percent });
+              onSave({ percentOfIncome: percent, stopDate: stop || null });
               return;
             }
             onSave({
@@ -414,7 +435,7 @@ function CashBody({
           <button
             type="button"
             className="h-9 rounded-lg px-3 text-sm font-medium text-fg"
-            onClick={() => setEnd(stopAfter)}
+            onClick={() => commitStop(stopAfter)}
           >
             Stop after {monthLabel(stopAfter)}
           </button>

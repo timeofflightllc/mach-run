@@ -101,6 +101,7 @@ export function ensurePlan(plan: Plan): Plan {
     capToIrsLimit: Boolean(c.capToIrsLimit),
     startDate: coerceIsoDate(c.startDate) || c.startDate,
     endDate: c.endDate ? coerceIsoDate(c.endDate) || c.endDate : null,
+    stopDate: c.stopDate ? coerceIsoDate(c.stopDate) || c.stopDate : null,
   }));
   next.spending = next.spending.map((p) => ({
     ...p,

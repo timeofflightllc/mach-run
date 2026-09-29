@@ -127,6 +127,18 @@ export function blankEndLabel(birthIso: string | null | undefined, age: number):
   return `End (blank = ${projectionEndMonth(birthIso, age)})`;
 }
 
+/** Earlier month-end. A blank side stays open, so the dated side wins. */
+export function earlierEnd(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): string | null {
+  const left = a && validIso(a) ? a : null;
+  const right = b && validIso(b) ? b : null;
+  if (!left) return right;
+  if (!right) return left;
+  return left.slice(0, 7) <= right.slice(0, 7) ? left : right;
+}
+
 export function inRange(
   at: Date,
   startIso: string,

@@ -1,10 +1,14 @@
-import { yearMonth } from "./dates.ts";
+import { earlierEnd, validIso, yearMonth } from "./dates.ts";
 import type { ContributionRule, Plan } from "./types.ts";
 
 function ruleWindow(plan: Plan, rule: ContributionRule): { start: string; end: string | null } {
   if (rule.amountMode === "percent" && rule.percentOfIncomeId) {
     const inc = plan.incomes.find((s) => s.id === rule.percentOfIncomeId);
-    if (inc) return { start: inc.startDate || plan.assumptions.asOfDate, end: inc.endDate };
+    if (inc) {
+      const end =
+        rule.stopDate && validIso(rule.stopDate) ? earlierEnd(inc.endDate, rule.stopDate) : inc.endDate;
+      return { start: inc.startDate || plan.assumptions.asOfDate, end };
+    }
   }
   return {
     start: rule.startDate || plan.assumptions.asOfDate,

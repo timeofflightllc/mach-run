@@ -404,6 +404,66 @@ test("percent contribution and match end when the income ends", () => {
   assert.ok(after.contributions < 1);
 });
 
+test("a percent contribution can stop before the paycheck ends", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1970-01-01";
+  plan.assumptions.asOfDate = "2026-08-01";
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultReturnPct = 0;
+  plan.incomes = [
+    {
+      id: "job",
+      name: "Post BGS",
+      kind: "salary",
+      monthlyAmount: 10000,
+      startDate: "2026-08-01",
+      endDate: "2027-08-01",
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.spending = [];
+  plan.portfolios = [
+    {
+      id: "k",
+      name: "401k",
+      kind: "401k",
+      owner: "Primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "pre_tax",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c1",
+      label: "Post BGS Match",
+      portfolioId: "k",
+      monthlyAmount: 0,
+      startDate: "2026-08-01",
+      endDate: null,
+      stopDate: "2026-12-01",
+      amountMode: "percent",
+      percentOfIncome: 10,
+      percentOfIncomeId: "job",
+      employerMatch: true,
+      employerMatchPct: 100,
+    },
+  ];
+  const result = simulate(plan);
+  const dec = result.months.find((m) => m.date.startsWith("2026-12"));
+  const jan = result.months.find((m) => m.date.startsWith("2027-01"));
+  assert.ok(dec && jan);
+  assert.ok(dec.income > 5000);
+  assert.ok(dec.contributions > 1000);
+  assert.ok(jan.income > 5000);
+  assert.ok(jan.contributions < 1);
+});
+
 test("IRS cap: $3000/mo 401k stops when $24,500 is full; match follows", () => {
   const plan = createDefaultPlan();
   plan.primary.birthDate = "1985-06-01";

@@ -5,6 +5,7 @@ import {
   Field,
   GhostButton,
   NumberInput,
+  MonthInput,
   MonthYearMoney,
   PrimaryButton,
   SelectInput,
@@ -320,6 +321,7 @@ export function ContributionForm() {
                                 percentOfIncomeId: id,
                                 startDate: inc?.startDate || c.startDate,
                                 endDate: inc ? inc.endDate : c.endDate,
+                                stopDate: null,
                               });
                             }}
                             className={bandControl}
@@ -342,7 +344,15 @@ export function ContributionForm() {
                         onMonthly={(n) => updateContribution(c.id, { monthlyAmount: n })}
                       />
                     )}
-                    {c.amountMode === "percent" ? null : (
+                    {c.amountMode === "percent" ? (
+                      <Field label="Stops" className="shrink-0">
+                        <MonthInput
+                          value={c.stopDate ?? null}
+                          clearable
+                          onValue={(v) => updateContribution(c.id, { stopDate: v || null })}
+                        />
+                      </Field>
+                    ) : (
                       <>
                         <Field label="Start" className="shrink-0">
                           <DateInput
@@ -433,8 +443,8 @@ export function ContributionForm() {
                     {c.amountMode === "percent" ? (
                       <p className="basis-full text-xs leading-relaxed text-subtle">
                         {income
-                          ? `About ${usd(emp, true)}/mo at today’s amount of that income. Follows ${income.name.trim() || "that income"}: ${formatMonthYear(income.startDate)} → ${income.endDate ? formatMonthYear(income.endDate) : projectionEndMonth(plan.primary.birthDate, plan.assumptions.projectionEndAge)}. Dates and employer match follow that paycheck — when it ends, this contribution and the match end.`
-                          : "Pick an income — start, end, and match will follow that paycheck automatically."}
+                          ? `About ${usd(emp, true)}/mo at today’s amount of ${income.name.trim() || "that income"}. Blank stop follows that paycheck (${formatMonthYear(income.startDate)} → ${income.endDate ? formatMonthYear(income.endDate) : projectionEndMonth(plan.primary.birthDate, plan.assumptions.projectionEndAge)}). A stop date ends this contribution only. The paycheck keeps paying.`
+                          : "Pick an income. This contribution follows that paycheck until you set a stop date."}
                       </p>
                     ) : null}
                     {overIrs ? (

@@ -4,6 +4,7 @@ import { vaPayTodayDollars } from "./va.ts";
 import {
   ageYears,
   dateAtAge,
+  earlierEnd,
   inRange,
   iso,
   monthStart,
@@ -121,7 +122,11 @@ export function contributionWindow(
 ): { start: string; end: string | null } {
   if (rule.amountMode === "percent" && rule.percentOfIncomeId) {
     const stream = plan.incomes.find((s) => s.id === rule.percentOfIncomeId);
-    if (stream) return streamWindow(plan, stream);
+    if (stream) {
+      const win = streamWindow(plan, stream);
+      if (!rule.stopDate || !validIso(rule.stopDate)) return win;
+      return { start: win.start, end: earlierEnd(win.end, rule.stopDate) };
+    }
   }
   const stage = findStage(plan, rule.endWithStageId);
   if (!stage) return { start: rule.startDate, end: rule.endDate };

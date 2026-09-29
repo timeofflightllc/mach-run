@@ -48,6 +48,7 @@ export type AdvisoryDetail =
       incomeName: string | null;
       start: string;
       end: string | null;
+      stopDate: string | null;
       year: number;
       laterYears: number;
       months: AdvisoryMonth[];
@@ -269,6 +270,7 @@ function cashAdvisories(plan: Plan): Advisory[] {
         rule.percentOfIncomeId ?? "",
         win.start,
         win.end ?? "",
+        rule.stopDate ?? "",
         year,
         Math.round(shown),
         list.filter((hit) => hit.short).length,
@@ -285,6 +287,7 @@ function cashAdvisories(plan: Plan): Advisory[] {
         incomeName: income?.name.trim() || null,
         start: win.start,
         end: win.end,
+        stopDate: rule.stopDate ?? null,
         year,
         laterYears: later,
         months: ordered.map((hit) => ({
