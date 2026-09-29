@@ -11,7 +11,7 @@ import {
   TextInput,
 } from "@/components/ui/field";
 import { usd } from "@/lib/plan/format";
-import { blankEndLabel, formatMonthYear, projectionEndMonth } from "@/lib/plan/dates";
+import { blankEndLabel, dateAtAge, formatMonthYear, iso, projectionEndMonth, validIso } from "@/lib/plan/dates";
 import { newId, usePlanStore } from "@/lib/plan/store";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
 import { ConfirmRemove } from "@/components/meridian/confirm-remove";
@@ -70,14 +70,27 @@ function shortDate(iso: string | null | undefined): string {
   return `${MONTHS[Number(match[2]) - 1] ?? match[2]} ${match[1]}`;
 }
 
+function monthKey(value: string | null | undefined): string {
+  const match = /^(\d{4})-(\d{2})/.exec(value ?? "");
+  return match ? `${match[1]}-${match[2]}` : "9999-12";
+}
+
+function endSortKey(plan: Plan, rule: ContributionRule): string {
+  if (rule.endDate) return monthKey(rule.endDate);
+  const birth = plan.primary.birthDate;
+  const age = plan.assumptions.projectionEndAge;
+  if (birth && validIso(birth) && Number.isFinite(age)) return monthKey(iso(dateAtAge(birth, age)));
+  return "9999-12";
+}
+
 function sortedIds(plan: Plan): string[] {
   return plan.contributions
     .map((rule, index) => ({ rule, index }))
     .sort((a, b) => {
-      const byDate = a.rule.startDate.localeCompare(b.rule.startDate);
-      if (byDate !== 0) return byDate;
-      const byAccount = accountLabel(plan, a.rule).localeCompare(accountLabel(plan, b.rule));
-      if (byAccount !== 0) return byAccount;
+      const byStart = monthKey(a.rule.startDate).localeCompare(monthKey(b.rule.startDate));
+      if (byStart !== 0) return byStart;
+      const byEnd = endSortKey(plan, a.rule).localeCompare(endSortKey(plan, b.rule));
+      if (byEnd !== 0) return byEnd;
       return a.index - b.index;
     })
     .map((row) => row.rule.id);
