@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Plus } from "lucide-react";
 import {
   DateInput,
@@ -82,6 +82,23 @@ function amountLabel(plan: Plan, stream: IncomeStream): string {
   return `${usd(stream.monthlyAmount)}/mo`;
 }
 
+function endKey(stream: IncomeStream): string {
+  return stream.endDate || "9999-12";
+}
+
+function sortedIncomes(incomes: IncomeStream[]): IncomeStream[] {
+  return incomes
+    .map((stream, index) => ({ stream, index }))
+    .sort((a, b) => {
+      const byStart = (a.stream.startDate || "").localeCompare(b.stream.startDate || "");
+      if (byStart !== 0) return byStart;
+      const byEnd = endKey(a.stream).localeCompare(endKey(b.stream));
+      if (byEnd !== 0) return byEnd;
+      return a.index - b.index;
+    })
+    .map((row) => row.stream);
+}
+
 export function IncomeForm() {
   const plan = usePlanStore((s) => s.plan);
   const addIncome = usePlanStore((s) => s.addIncome);
@@ -92,6 +109,47 @@ export function IncomeForm() {
   const copy = usePlannerCopy();
   const [openId, setOpenId] = useState<string | null>(null);
   const [pendingRemove, setPendingRemove] = useState<string | null>(null);
+  const [frozen, setFrozen] = useState<string[] | null>(null);
+  const sortTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (sortTimer.current != null) window.clearTimeout(sortTimer.current);
+    };
+  }, []);
+
+  function orderedIds(): string[] {
+    const live = plan.incomes.map((stream) => stream.id);
+    const have = new Set(live);
+    if (frozen) {
+      const kept = frozen.filter((id) => have.has(id));
+      for (const id of live) {
+        if (!kept.includes(id)) kept.push(id);
+      }
+      return kept;
+    }
+    return sortedIncomes(plan.incomes).map((stream) => stream.id);
+  }
+
+  function holdOrder() {
+    setFrozen((current) => current ?? orderedIds());
+  }
+
+  function releaseOrder() {
+    if (sortTimer.current != null) window.clearTimeout(sortTimer.current);
+    sortTimer.current = window.setTimeout(() => {
+      sortTimer.current = null;
+      setFrozen(null);
+      const live = usePlanStore.getState().plan;
+      const next = sortedIncomes(live.incomes);
+      const same = next.every((row, index) => row.id === live.incomes[index]?.id);
+      if (!same) usePlanStore.getState().setPlan({ ...live, incomes: next });
+    }, 320);
+  }
+
+  const rows = orderedIds()
+    .map((id) => plan.incomes.find((stream) => stream.id === id))
+    .filter((stream): stream is IncomeStream => Boolean(stream));
 
   return (
     <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
@@ -99,7 +157,7 @@ export function IncomeForm() {
         <p className="whitespace-pre-wrap text-sm text-muted">{copy.incomeBody}</p>
       ) : null}
       <ul className="flex flex-col gap-2">
-        {plan.incomes.length > 0 ? (
+        {rows.length > 0 ? (
           <li className={`hidden px-3 text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid ${summaryGrid}`}>
             <span className="min-w-0">Name</span>
             <span className="min-w-0">Kind</span>
@@ -109,15 +167,21 @@ export function IncomeForm() {
             <span />
           </li>
         ) : null}
-        {plan.incomes.map((stream, index) => (
+        {rows.map((stream, index) => (
           <IncomeRow
             key={stream.id}
             stream={stream}
             index={index}
             open={openId === stream.id}
             advisory={advisories.find((row) => row.cardId === `card-income-${stream.id}`)}
-            onEdit={() => setOpenId(stream.id)}
-            onSave={() => setOpenId(null)}
+            onEdit={() => {
+              holdOrder();
+              setOpenId(stream.id);
+            }}
+            onSave={() => {
+              setOpenId(null);
+              releaseOrder();
+            }}
             onRemove={() => setPendingRemove(stream.id)}
           />
         ))}
@@ -128,6 +192,8 @@ export function IncomeForm() {
         <GhostButton
           onClick={() => {
             const id = newId("inc");
+            const base = frozen ?? sortedIncomes(plan.incomes).map((stream) => stream.id);
+            setFrozen([...base, id]);
             addIncome({
               id,
               name: "",
@@ -153,7 +219,11 @@ export function IncomeForm() {
           onCancel={() => setPendingRemove(null)}
           onConfirm={() => {
             removeIncome(pendingRemove);
-            if (openId === pendingRemove) setOpenId(null);
+            setFrozen((current) => current?.filter((id) => id !== pendingRemove) ?? null);
+            if (openId === pendingRemove) {
+              setOpenId(null);
+              releaseOrder();
+            }
             setPendingRemove(null);
           }}
         />
