@@ -402,7 +402,8 @@ export function SiteCopyDesk() {
     try {
       const r = await saveOpsAnnouncementFn({ data: item });
       if (r.ok) {
-        if (item.id) setSavedAt((prev) => ({ ...prev, [item.id]: new Date() }));
+        const key = item.id || "new-feature";
+        setSavedAt((prev) => ({ ...prev, [key]: new Date() }));
         setStatus(item.id ? null : "Feature added.");
         await reload();
       } else {
@@ -561,10 +562,11 @@ export function SiteCopyDesk() {
             />
           </Field>
         </div>
-        <div className="mt-3">
+        <div className="mt-3 flex flex-wrap items-center gap-3">
           <PrimaryButton type="button" disabled={busy} onClick={() => void addNote()}>
             Add feature
           </PrimaryButton>
+          <SavedAt at={savedAt["new-feature"]} />
         </div>
 
         <ul className="mt-5 space-y-4">

@@ -27,6 +27,7 @@ export function PromoCodesDesk() {
   const [draft, setDraft] = useState(EMPTY);
   const [status, setStatus] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [rowSavedAt, setRowSavedAt] = useState<Record<string, Date>>({});
   const [busy, setBusy] = useState(false);
 
   async function reload() {
@@ -87,7 +88,10 @@ export function PromoCodesDesk() {
     try {
       const r = await setOpsPromoActiveFn({ data: { code, active } });
       setStatus(r.ok ? (active ? `${code} is on.` : `${code} is off.`) : r.error);
-      if (r.ok) await reload();
+      if (r.ok) {
+        setRowSavedAt((prev) => ({ ...prev, [code]: new Date() }));
+        await reload();
+      }
     } finally {
       setBusy(false);
     }
@@ -270,6 +274,7 @@ export function PromoCodesDesk() {
                     >
                       {row.active ? "Turn off" : "Turn on"}
                     </button>
+                    <SavedAt at={rowSavedAt[row.code]} />
                   </>
                 )}
               </div>

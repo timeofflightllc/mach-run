@@ -6,6 +6,7 @@ import { OpsDeleteAccount } from "@/components/ops/ops-delete-account";
 import { PromoCodesDesk } from "@/components/ops/promo-codes-desk";
 import { DeskMail } from "@/components/ops/desk-mail";
 import { EmailCopyDesk } from "@/components/ops/email-copy-desk";
+import { SavedAt } from "@/components/ops/saved-at";
 import { useEffect, useMemo, useState } from "react";
 import { Field, SelectInput, TextInput } from "@/components/ui/field";
 import {
@@ -468,6 +469,7 @@ function PersonPane({
   const [cancelWhen, setCancelWhen] = useState<"period_end" | "now">("period_end");
   const [cancelNote, setCancelNote] = useState("");
   const [busy, setBusy] = useState<"pkg" | "comp" | "cancel" | null>(null);
+  const [savedAt, setSavedAt] = useState<Partial<Record<"pkg" | "comp" | "cancel", Date>>>({});
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [personLog, setPersonLog] = useState<OpsAdminEvent[]>([]);
@@ -514,6 +516,7 @@ function PersonPane({
     try {
       const result = await work();
       if (result.ok) {
+        setSavedAt((prev) => ({ ...prev, [kind]: new Date() }));
         setMsg(result.message ?? "Done.");
         onDone();
       } else {
@@ -664,6 +667,7 @@ function PersonPane({
           <Field label="Note (optional)">
             <TextInput value={pkgNote} onChange={(e) => setPkgNote(e.target.value)} />
           </Field>
+          <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             disabled={busy !== null}
@@ -695,6 +699,8 @@ function PersonPane({
           >
             {busy === "pkg" ? "Saving…" : "Set package"}
           </button>
+          <SavedAt at={savedAt.pkg} />
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -723,6 +729,7 @@ function PersonPane({
           <Field label="Note (required)">
             <TextInput value={compNote} onChange={(e) => setCompNote(e.target.value)} />
           </Field>
+          <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             disabled={busy !== null}
@@ -746,6 +753,8 @@ function PersonPane({
           >
             {busy === "comp" ? "Saving…" : "Comp time"}
           </button>
+          <SavedAt at={savedAt.comp} />
+          </div>
         </div>
 
         <div className="space-y-3">
@@ -764,6 +773,7 @@ function PersonPane({
           <Field label="Note (optional)">
             <TextInput value={cancelNote} onChange={(e) => setCancelNote(e.target.value)} />
           </Field>
+          <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             disabled={busy !== null}
@@ -786,6 +796,8 @@ function PersonPane({
           >
             {busy === "cancel" ? "Saving…" : "Cancel subscription"}
           </button>
+          <SavedAt at={savedAt.cancel} />
+          </div>
         </div>
       </div>
 
