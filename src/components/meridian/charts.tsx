@@ -129,7 +129,7 @@ function formatCashTip(t: string | number, span: ChartSpan): string {
     Q3: "Jul–Sep",
     Q4: "Oct–Dec",
   };
-  return `${q} ${y} · ${range[q] ?? "quarter"} · scaled to a year`;
+  return `${q} ${y} · ${range[q] ?? "quarter"}`;
 }
 
 function formatAxisTick(t: string | number, span: ChartSpan): string {
@@ -474,7 +474,7 @@ export function CashChart({
         Social Security. Salary, bonus, allowance, and other income are earned —
         they drop off when that stage ends.
         {span === 10
-          ? " Each point is one quarter, scaled to a year. Hover a point for the months."
+          ? " Each point is one quarter. Hover a point for the months."
           : span === 5
             ? " Each point is one month, times 12, so the scale matches the yearly views."
             : ""}
