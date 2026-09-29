@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import {
+  DangerButton,
   DateInput,
   Field,
   GhostButton,
@@ -516,6 +517,18 @@ function IncomeRow({
             <PrimaryButton className="h-10 self-end" onClick={onSave}>
               Save income
             </PrimaryButton>
+            <div className="flex items-end justify-end">
+              <DangerButton
+                aria-label={`Remove ${s.name || "income"}`}
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  onRemove();
+                }}
+              >
+                <Trash2 className="size-4" />
+              </DangerButton>
+            </div>
             {s.kind === "ss" ? (
               <p className="basis-full text-xs leading-relaxed text-subtle">
                 Primary and spouse come from Family. Other is anyone else in the household.
