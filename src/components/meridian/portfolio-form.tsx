@@ -54,7 +54,12 @@ const KIND_LABELS: { value: AccountKind; label: string; bucket: TaxBucket }[] = 
   { value: "other", label: "Other", bucket: "none" },
 ];
 
-const BUCKETS: TaxBucket[] = ["roth", "pre_tax", "taxable", "none"];
+const BUCKETS: { value: TaxBucket; label: string }[] = [
+  { value: "roth", label: "Roth" },
+  { value: "pre_tax", label: "Pre-tax" },
+  { value: "taxable", label: "Taxable" },
+  { value: "none", label: "None" },
+];
 
 export function PortfolioForm() {
   const plan = usePlanStore((s) => s.plan);
@@ -154,8 +159,8 @@ export function PortfolioForm() {
                   }
                 >
                   {BUCKETS.map((k) => (
-                    <option key={k} value={k}>
-                      {k}
+                    <option key={k.value} value={k.value}>
+                      {k.label}
                     </option>
                   ))}
                 </SelectInput>
