@@ -528,12 +528,12 @@ export function buildPeerBrief(
 
   if (sim.depletedAge != null) {
     add(
-      "Runway",
+      "Your Runway - how long your spendable money lasts",
       `The MACH Run runs out of spendable at age ${sim.depletedAge} (${sim.depletedYear}). That's useful information, not a verdict. A little more saving, a little less spending, or a longer paycheck can move that date. You've got levers.`,
     );
   } else if (annualIncome > 0 || netWorth > 0) {
     add(
-      "Runway",
+      "Your Runway - how long your spendable money lasts",
       `On the numbers you typed, spendable lasts through age ${plan.assumptions.projectionEndAge}. That's the MACH RUN engine talking, not a guarantee — and it's a strong place to be. Markets can still wobble; the plan you built is the buffer.`,
     );
   }
