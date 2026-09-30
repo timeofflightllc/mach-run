@@ -269,30 +269,39 @@ export function PeerBriefCard({
         ) : null}
       </div>
       {annuityCopy ? (
-        <details className="mt-4 rounded-lg bg-bg px-4 py-3 shadow-[0_0_0_1px_var(--color-border)]">
-          <summary className="cursor-pointer text-sm font-medium text-fg">
-            View guaranteed-paycheck equivalent (estimate)
-          </summary>
-          <div className="mt-3 space-y-2 text-sm leading-relaxed text-muted">
-            <p className="font-semibold text-fg">{annuityCopy.title}</p>
-            <BriefTable
-              intro={annuityCopy.intro}
-              note={annuityCopy.note}
-              headers={[
-                { label: "Income" },
-                { label: "When", nowrap: true },
-                { label: "Lump sum today", align: "right", nowrap: true },
-                { label: "Running total", align: "right", nowrap: true },
-              ]}
-              rows={annuityCopy.rows.map((r) => [r.name, r.when, r.amount, r.running])}
-              footer={
-                annuityCopy.rows.length > 1
-                  ? ["All together", "", "", annuityCopy.total]
-                  : undefined
-              }
-            />
-          </div>
-        </details>
+        <div className="mt-4">
+          <p className="font-semibold text-fg">Guaranteed paycheck equivalent</p>
+          <p className="mt-1 text-sm leading-relaxed text-muted">
+            If you have a U.S. government retirement paycheck, such as military
+            retired pay, VA compensation, Social Security, or a federal civilian
+            pension, it can be useful to see the estimated annuity value of that
+            near-zero-risk income. This is for informational and educational
+            purposes only.
+          </p>
+          <details className="mt-1 rounded-lg bg-bg px-4 py-3 shadow-[0_0_0_1px_var(--color-border)]">
+            <summary className="cursor-pointer text-sm font-medium text-fg">
+              View guaranteed-paycheck equivalent (estimate)
+            </summary>
+            <div className="mt-3 space-y-2 text-sm leading-relaxed text-muted">
+              <BriefTable
+                intro={annuityCopy.intro}
+                note={annuityCopy.note}
+                headers={[
+                  { label: "Income" },
+                  { label: "When", nowrap: true },
+                  { label: "Lump sum today", align: "right", nowrap: true },
+                  { label: "Running total", align: "right", nowrap: true },
+                ]}
+                rows={annuityCopy.rows.map((r) => [r.name, r.when, r.amount, r.running])}
+                footer={
+                  annuityCopy.rows.length > 1
+                    ? ["All together", "", "", annuityCopy.total]
+                    : undefined
+                }
+              />
+            </div>
+          </details>
+        </div>
       ) : null}
       {clipped ? (
         <div className="mt-4 flex flex-col items-center gap-2 border-t border-border pt-4 text-center">
