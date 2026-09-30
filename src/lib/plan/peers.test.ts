@@ -489,6 +489,54 @@ test("debt section scores the ratio at retirement against today", () => {
   assert.match(unset, /Set a retirement goal date in Family/);
 });
 
+test("debt at retirement names the statement balance and today's dollars", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1976-01-01";
+  plan.assumptions.asOfDate = "2026-08-01";
+  plan.assumptions.inflationPct = 3;
+  plan.assumptions.retirementGoalDate = "2040-11-01";
+  plan.assumptions.projectionEndAge = 95;
+  plan.incomes = [];
+  plan.spending = [];
+  plan.portfolios = [
+    {
+      id: "house",
+      name: "Shire Lane Home",
+      kind: "real_estate",
+      owner: "joint",
+      currentValue: 500_000,
+      returnPct: 3,
+      taxBucket: "none",
+      spendable: false,
+      includeInNetWorth: true,
+      mortgage: {
+        originationDate: "2021-04-01",
+        aprPct: 3,
+        monthlyPi: 2000,
+        termYears: 30,
+        includeInSpending: true,
+        associated: true,
+        institutionName: "Rocket Mortgage",
+      },
+    },
+  ];
+  const text = debtSentence(plan, simulate(plan)) ?? "";
+  const loan = text.match(
+    /about \$([0-9,]+) in future dollars \(\$([0-9,]+) in today's dollars\) will still be on it\./,
+  );
+  assert.ok(loan, text);
+  const statement = Number(loan[1].replace(/,/g, ""));
+  const today = Number(loan[2].replace(/,/g, ""));
+  assert.ok(statement > today);
+  assert.match(text, /Individual loan\./);
+  assert.match(text, /All loans combined\. With one loan on this run, this is that same balance\./);
+  assert.match(text, /that combined balance is about [0-9.]+% of your assets in today's dollars/);
+  assert.doesNotMatch(
+    text,
+    new RegExp(`debt is \\$${loan[1]} in future dollars`),
+  );
+});
+
 test("OODA paychecks sort by start date and print month then year", () => {
   const plan = createDefaultPlan();
   plan.primary.birthDate = "1976-01-01";
