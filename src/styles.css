@@ -188,6 +188,78 @@
   animation: mach-run-pulse 1.15s ease-in-out infinite;
 }
 
+.mach-orbit {
+  position: relative;
+  width: min(20rem, 100%);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+}
+
+.mach-orbit-logo {
+  position: relative;
+  z-index: 1;
+  width: 72%;
+  height: auto;
+}
+
+.mach-orbit-ring,
+.mach-comet {
+  position: absolute;
+  inset: 2%;
+  border-radius: 999px;
+}
+
+.mach-orbit-ring {
+  box-shadow: 0 0 0 1.5px rgba(74, 96, 112, 0.55);
+  animation: mach-run-pulse 1.15s ease-in-out infinite;
+}
+
+.mach-comet {
+  animation: mach-comet-spin 2.4s linear infinite;
+}
+
+.mach-comet-arc {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(
+    from 0deg,
+    rgba(255, 255, 255, 0) 0deg,
+    rgba(255, 255, 255, 0) 268deg,
+    rgba(90, 112, 128, 0.08) 286deg,
+    rgba(120, 146, 164, 0.45) 322deg,
+    rgba(214, 226, 234, 0.92) 348deg,
+    rgba(255, 255, 255, 1) 357deg,
+    rgba(255, 255, 255, 0) 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 5px));
+  animation: mach-run-pulse 1.15s ease-in-out infinite;
+}
+
+.mach-comet-head {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  margin-top: -7px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow:
+    0 0 8px 3px rgba(232, 240, 246, 0.95),
+    0 0 16px 6px rgba(90, 116, 136, 0.55);
+  animation: mach-run-pulse 1.15s ease-in-out infinite;
+}
+
+@keyframes mach-comet-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .mach-run-dots {
   display: inline-block;
   width: 1.7em;
@@ -212,7 +284,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mach-run-pulse {
+  .mach-run-pulse,
+  .mach-orbit-ring,
+  .mach-comet,
+  .mach-comet-arc,
+  .mach-comet-head {
     animation: none;
   }
   .mach-run-dots::after {

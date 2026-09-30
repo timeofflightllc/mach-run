@@ -21,6 +21,7 @@ import { SpendingForm } from "@/components/meridian/spending-form";
 import { Verdict } from "@/components/meridian/verdict";
 import { YearTable } from "@/components/meridian/year-table";
 import { MachFooter, BrandLockup } from "@/components/meridian/mach-mark";
+import { MachOrbit } from "@/components/meridian/mach-orbit";
 import { GuestOnly } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { simulate } from "@/lib/plan/engine";
@@ -877,13 +878,7 @@ function Home() {
           />
           {holding ? (
             <div className="flex min-h-[70svh] flex-col items-center justify-center rounded-xl bg-surface px-5 py-10 text-center shadow-[0_0_0_1px_var(--color-border)]">
-              <img
-                src="/brand/mach-run-logo.jpg?v=21"
-                alt=""
-                width={1257}
-                height={428}
-                className="mach-run-pulse w-[16rem] max-w-full"
-              />
+              <MachOrbit />
               <p className="mt-6 font-display text-2xl text-fg" aria-label="MACH RUN in progress.">
                 MACH RUN in progress<span className="mach-run-dots" aria-hidden="true" />
               </p>
