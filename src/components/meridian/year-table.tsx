@@ -192,10 +192,12 @@ function LinesTip({
   );
 }
 
-function tipPoint(e: { clientX: number; clientY: number }): { x: number; y: number } {
+function tipPoint(
+  e: { clientX: number; clientY: number },
+  height = 200,
+): { x: number; y: number } {
   const pad = 14;
   const width = 320;
-  const height = 200;
   let x = e.clientX + pad;
   let y = e.clientY + pad;
   if (x + width > window.innerWidth - 8) x = e.clientX - width - pad;
@@ -209,6 +211,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
   const asOfYear = Number(plan.assumptions.asOfDate.slice(0, 4));
   const [tip, setTip] = useState<LedgerTip | null>(null);
   const [airTip, setAirTip] = useState<{ x: number; y: number } | null>(null);
+  const [drawnTip, setDrawnTip] = useState<{ x: number; y: number } | null>(null);
   const [auditAllowed, setAuditAllowed] = useState(false);
   const capsByYear = new Map<number, YearCap[]>();
   for (const cap of sim.yearCaps ?? []) {
@@ -487,7 +490,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
       <p className="border-t border-border px-4 py-3 text-xs text-subtle">
         Identity: income + drawn = tax + spend + saved. Take-home is income
         minus tax. Leftover is take-home minus spend. Hover an income amount
-        for the mix. Hover{" "}
+        for the mix. Hover Drawn for where that cash comes from. Hover{" "}
         <span className="font-bold text-negative">CAPPED</span> when a year is
         marked.
       </p>
@@ -519,18 +522,26 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                   onMouseEnter={
                     label === "A.I.R."
                       ? (e) => setAirTip(tipPoint(e))
-                      : undefined
+                      : label === "Drawn"
+                        ? (e) => setDrawnTip(tipPoint(e, 280))
+                        : undefined
                   }
                   onMouseMove={
                     label === "A.I.R."
                       ? (e) => setAirTip(tipPoint(e))
-                      : undefined
+                      : label === "Drawn"
+                        ? (e) => setDrawnTip(tipPoint(e, 280))
+                        : undefined
                   }
                   onMouseLeave={
-                    label === "A.I.R." ? () => setAirTip(null) : undefined
+                    label === "A.I.R."
+                      ? () => setAirTip(null)
+                      : label === "Drawn"
+                        ? () => setDrawnTip(null)
+                        : undefined
                   }
                 >
-                  {label === "A.I.R." ? (
+                  {label === "A.I.R." || label === "Drawn" ? (
                     <span className="cursor-help underline decoration-dotted underline-offset-2">
                       {label}
                     </span>
@@ -648,6 +659,26 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           </tbody>
         </table>
       </div>
+      {drawnTip ? (
+        <div
+          role="tooltip"
+          className="pointer-events-none fixed z-[80] w-80 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-elevated px-3 py-2.5 text-left shadow-lg"
+          style={{ left: drawnTip.x, top: drawnTip.y }}
+        >
+          <p className="text-xs font-bold uppercase tracking-wider text-subtle">
+            Drawn
+          </p>
+          <p className="mt-1.5 text-sm leading-snug text-fg">
+            Money that left spendable accounts. Required minimums leave
+            pre-tax accounts first and count as income, even if spending is
+            already covered. Any gap after that is filled in the order you
+            listed the accounts: taxable first (cash, brokerage, or a
+            non-qualified annuity), then pre-tax (traditional IRA, 401(k),
+            TSP), grossed up for tax, then Roth. A house, a 529, or any
+            account not marked spendable is not used.
+          </p>
+        </div>
+      ) : null}
       {airTip ? (
         <div
           role="tooltip"
