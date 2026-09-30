@@ -64,6 +64,8 @@ export interface BriefTableSpec {
 export interface BriefSection {
   title: string;
   body: string;
+  /** Collapsed guaranteed-paycheck block. Screen and PDF follow section order. */
+  variant?: "annuity";
   columns?: {
     intro: string;
     note: string;
@@ -339,11 +341,12 @@ export function buildPeerBrief(
     annualIncome > 0 ? percentileFromKnots(annualIncome, INCOME_KNOTS) : null;
 
   const who = plan.primary.name.trim() || "This household";
+  const annuityEquivalent = guaranteedAnnuityEquivalent(plan);
   const sections: BriefSection[] = [];
   const add = (
     title: string,
     body: string,
-    extra?: Pick<BriefSection, "columns" | "table">,
+    extra?: Pick<BriefSection, "columns" | "table" | "variant">,
   ) => sections.push({ title, body, ...extra });
   const runAt = new Date().toLocaleString("en-US", {
     dateStyle: "medium",
@@ -366,7 +369,7 @@ export function buildPeerBrief(
     sections,
     paragraphs: sections.map((s) => `${s.title}: ${s.body}`),
     expanded,
-    annuityEquivalent: guaranteedAnnuityEquivalent(plan),
+    annuityEquivalent,
   });
 
   if (plan.portfolios.length === 0 && namedIncomes.length === 0) {
@@ -381,7 +384,19 @@ export function buildPeerBrief(
   const line = bottomLine({ who, age, plan, sim, savingsRatePct, nwPercentile });
   headline = line.headline;
   add("Bottom line", line.body);
-  add("This MACH Run", snapshot);
+
+  if (sim.depletedAge != null) {
+    add(
+      "Your Runway - how long your spendable money lasts",
+      `The MACH Run runs out of spendable at age ${sim.depletedAge} (${sim.depletedYear}). That's useful information, not a verdict. A little more saving, a little less spending, or a longer paycheck can move that date. You've got levers.`,
+    );
+  } else if (annualIncome > 0 || netWorth > 0) {
+    add(
+      "Your Runway - how long your spendable money lasts",
+      `On the numbers you typed, spendable lasts through age ${plan.assumptions.projectionEndAge}. That's the MACH RUN engine talking, not a guarantee — and it's a strong place to be. Markets can still wobble; the plan you built is the buffer.`,
+    );
+  }
+
   const egg = nestEggTrack(plan, sim);
   if (egg) {
     add(
@@ -392,15 +407,27 @@ export function buildPeerBrief(
     );
   }
 
-  if (age == null) {
+  const ret = sim.retirement;
+  if (ret) {
+    if (ret.now) {
+      add(
+        "Retirement landing",
+        `Retirement goal date is this month (or you're already retired), so “at retirement” is today: spendable ${usd(ret.spendableReal)} in today's dollars. Modeled income in the next twelve months is ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo).`,
+      );
+    } else {
+      const retAge =
+        age != null && validIso(ret.date)
+          ? ageYears(plan.primary.birthDate, monthStart(ret.date))
+          : null;
+      add(
+        "Retirement landing",
+        `Retirement goal is ${formatMonthYear(ret.date)}${retAge != null ? ` (age ${retAge})` : ""}. Spendable there: ${usd(ret.spendableReal)} in today's dollars. Modeled retirement income ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo) from the stages you entered.`,
+      );
+    }
+  } else {
     add(
-      "Peer rank",
-      `Observed net worth is ${usd(netWorth)}. Peer rank needs a birthday in Family. Put one in, Calculate again, and we'll place this household against U.S. families in the same age band.`,
-    );
-  } else if (nwPercentile != null && band) {
-    add(
-      "Peer rank",
-      `Peer rank: ${who} at ${age} is ${rankPhrase(nwPercentile)} on net worth. Household net worth of ${usd(netWorth)} lands in ${standing(nwPercentile)} of U.S. families age ${band.label}. Median in that band is about ${usdCompact(band.p50)}. The ${standing(90)} door is about ${usdCompact(band.p90)}.`,
+      "Retirement landing",
+      "No retirement goal date in Family yet, so MACH RUN cannot score the landing. Put a goal date in — or check Already retired — then Calculate again.",
     );
   }
 
@@ -432,21 +459,11 @@ export function buildPeerBrief(
     });
   }
 
-  if (incomePercentile != null) {
-    const gap =
-      nwPercentile != null && incomePercentile - nwPercentile >= 20
-        ? "Income is running ahead of the nest egg. That's common in high-earning years. The nice news: you have the cash flow to close the gap if you keep funding the accounts."
-        : nwPercentile != null && nwPercentile - incomePercentile >= 20
-          ? "The nest egg is already outrunning the paycheck. Compounding has been doing real work. Protect that lead."
-          : "Income and net worth are in the same neighborhood. That's a balanced household — keep feeding it.";
+  if (annuityEquivalent) {
     add(
-      "Income vs the country",
-      `Gross income on this run is about ${usd(annualIncome)} a year — ${standing(incomePercentile)} of U.S. households. ${gap}`,
-    );
-  } else {
-    add(
-      "Income vs the country",
-      "No income on the run yet, so there's no peer income comparison. Add a paycheck in Orient if one exists and Calculate again.",
+      "Guaranteed paycheck equivalent",
+      "If you have a U.S. government retirement paycheck, such as military retired pay, VA compensation, Social Security, or a federal civilian pension, it can be useful to see the estimated annuity value of that near-zero-risk income. This is for informational and educational purposes only.",
+      { variant: "annuity" },
     );
   }
 
@@ -463,44 +480,6 @@ export function buildPeerBrief(
       saveLine = `This run saves ${sr.toFixed(0)}% of gross. That's FI-pace. Outstanding discipline. Just make sure the spending figure is the real household so the victory lap is earned.`;
     }
     add("Save rate", saveLine);
-  }
-
-  if (netWorth > 0 && spendable / netWorth < 0.35) {
-    add(
-      "Spendable vs paper rich",
-      `Spendable accounts are ${usd(spendable)} of ${usd(netWorth)} net worth. The rest is illiquid — house, cars, kids' accounts. That's still wealth; it just isn't grocery money. Knowing the split is a strength.`,
-    );
-  }
-
-  add(
-    "Compounding",
-    `Spending starts at ${usd(spendingNow, true)}/mo and inflates at ${plan.assumptions.inflationPct}% a year. Accounts compound at ${plan.assumptions.defaultReturnPct}% nominal unless an account has its own rate. Spendable goes from ${usd(spendable)} now to ${usd(horizon)} at age ${plan.assumptions.projectionEndAge} in today's dollars. Time is on your side if you leave the machine running.`,
-  );
-
-  add("RMD (Required Minimum Distribution)", rmdIntro(plan, sim), { table: rmdTable(sim) });
-
-  const ret = sim.retirement;
-  if (ret) {
-    if (ret.now) {
-      add(
-        "Retirement landing",
-        `Retirement goal date is this month (or you're already retired), so “at retirement” is today: spendable ${usd(ret.spendableReal)} in today's dollars. Modeled income in the next twelve months is ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo).`,
-      );
-    } else {
-      const retAge =
-        age != null && validIso(ret.date)
-          ? ageYears(plan.primary.birthDate, monthStart(ret.date))
-          : null;
-      add(
-        "Retirement landing",
-        `Retirement goal is ${formatMonthYear(ret.date)}${retAge != null ? ` (age ${retAge})` : ""}. Spendable there: ${usd(ret.spendableReal)} in today's dollars. Modeled retirement income ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo) from the stages you entered.`,
-      );
-    }
-  } else {
-    add(
-      "Retirement landing",
-      "No retirement goal date in Family yet, so MACH RUN cannot score the landing. Put a goal date in — or check Already retired — then Calculate again.",
-    );
   }
 
   if (plan.portfolios.length) {
@@ -526,17 +505,50 @@ export function buildPeerBrief(
   const debt = debtSentence(plan, sim);
   if (debt) add("Debt", debt);
 
-  if (sim.depletedAge != null) {
+  if (netWorth > 0 && spendable / netWorth < 0.35) {
     add(
-      "Your Runway - how long your spendable money lasts",
-      `The MACH Run runs out of spendable at age ${sim.depletedAge} (${sim.depletedYear}). That's useful information, not a verdict. A little more saving, a little less spending, or a longer paycheck can move that date. You've got levers.`,
-    );
-  } else if (annualIncome > 0 || netWorth > 0) {
-    add(
-      "Your Runway - how long your spendable money lasts",
-      `On the numbers you typed, spendable lasts through age ${plan.assumptions.projectionEndAge}. That's the MACH RUN engine talking, not a guarantee — and it's a strong place to be. Markets can still wobble; the plan you built is the buffer.`,
+      "Spendable vs paper rich",
+      `Spendable accounts are ${usd(spendable)} of ${usd(netWorth)} net worth. The rest is illiquid — house, cars, kids' accounts. That's still wealth; it just isn't grocery money. Knowing the split is a strength.`,
     );
   }
+
+  add("RMD (Required Minimum Distribution)", rmdIntro(plan, sim), { table: rmdTable(sim) });
+
+  if (age == null) {
+    add(
+      "Peer rank",
+      `Observed net worth is ${usd(netWorth)}. Peer rank needs a birthday in Family. Put one in, Calculate again, and we'll place this household against U.S. families in the same age band.`,
+    );
+  } else if (nwPercentile != null && band) {
+    add(
+      "Peer rank",
+      `Peer rank: ${who} at ${age} is ${rankPhrase(nwPercentile)} on net worth. Household net worth of ${usd(netWorth)} lands in ${standing(nwPercentile)} of U.S. families age ${band.label}. Median in that band is about ${usdCompact(band.p50)}. The ${standing(90)} door is about ${usdCompact(band.p90)}.`,
+    );
+  }
+
+  if (incomePercentile != null) {
+    const gap =
+      nwPercentile != null && incomePercentile - nwPercentile >= 20
+        ? "Income is running ahead of the nest egg. That's common in high-earning years. The nice news: you have the cash flow to close the gap if you keep funding the accounts."
+        : nwPercentile != null && nwPercentile - incomePercentile >= 20
+          ? "The nest egg is already outrunning the paycheck. Compounding has been doing real work. Protect that lead."
+          : "Income and net worth are in the same neighborhood. That's a balanced household — keep feeding it.";
+    add(
+      "Income vs the country",
+      `Gross income on this run is about ${usd(annualIncome)} a year — ${standing(incomePercentile)} of U.S. households. ${gap}`,
+    );
+  } else {
+    add(
+      "Income vs the country",
+      "No income on the run yet, so there's no peer income comparison. Add a paycheck in Orient if one exists and Calculate again.",
+    );
+  }
+
+  add("This MACH Run", snapshot);
+  add(
+    "Compounding",
+    `Spending starts at ${usd(spendingNow, true)}/mo and inflates at ${plan.assumptions.inflationPct}% a year. Accounts compound at ${plan.assumptions.defaultReturnPct}% nominal unless an account has its own rate. Spendable goes from ${usd(spendable)} now to ${usd(horizon)} at age ${plan.assumptions.projectionEndAge} in today's dollars. Time is on your side if you leave the machine running.`,
+  );
 
   return pack();
 }

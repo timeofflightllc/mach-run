@@ -548,3 +548,63 @@ test("OODA paychecks sort by start date and print month then year", () => {
   assert.doesNotMatch(pay.body, /2026-08/);
 });
 
+test("analysis sections follow option A, with guaranteed paychecks after paychecks", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1976-01-01";
+  plan.assumptions.retirementGoalDate = "2036-01-01";
+  plan.assumptions.nestEggGoal = 1_000_000;
+  plan.portfolios = [
+    {
+      id: "p1",
+      name: "Brokerage",
+      kind: "taxable",
+      owner: "Joint",
+      currentValue: 100_000,
+      returnPct: null,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.incomes = [
+    {
+      id: "mil",
+      name: "Retired pay",
+      kind: "military",
+      monthlyAmount: 4_000,
+      startDate: "2036-01-01",
+      endDate: null,
+      colaPct: 2.5,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  const titles = buildPeerBrief(plan, simulate(plan), { expanded: true }).sections.map(
+    (s) => s.title,
+  );
+  const want = [
+    "Bottom line",
+    "Your Runway - how long your spendable money lasts",
+    "Nest egg goal",
+    "Retirement landing",
+    "Paychecks",
+    "Guaranteed paycheck equivalent",
+    "Accounts on this run",
+    "RMD (Required Minimum Distribution)",
+    "Peer rank",
+    "Income vs the country",
+    "This MACH Run",
+    "Compounding",
+  ];
+  for (const title of want) assert.ok(titles.includes(title), title);
+  for (let i = 1; i < want.length; i++) {
+    assert.ok(titles.indexOf(want[i - 1]) < titles.indexOf(want[i]), want[i]);
+  }
+  const guaranteed = titles.indexOf("Guaranteed paycheck equivalent");
+  assert.equal(titles[guaranteed - 1], "Paychecks");
+  assert.equal(
+    buildPeerBrief(plan, simulate(plan), { expanded: true }).sections[guaranteed]?.variant,
+    "annuity",
+  );
+});
+

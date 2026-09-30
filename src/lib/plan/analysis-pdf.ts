@@ -1,8 +1,9 @@
-import type { PeerBrief } from "./peers";
+import type { BriefSection, PeerBrief } from "./peers";
 import type { Plan, SimResult } from "./types";
 import { usd } from "./format";
 import { OODA_DISCLAIMER } from "./disclaimer";
 import { startingNetWorth, startingSpendable } from "./engine";
+import { annuityEquivalentCopy } from "./annuity-equivalent";
 
 const PAGE_W = 612;
 const PAGE_H = 792;
@@ -356,12 +357,23 @@ function buildBlocks(
     blocks.push({ kind: "rule" });
     blocks.push({ kind: "space", h: 8 });
   }
-  const sections = brief.sections?.length
+  const sections: BriefSection[] = brief.sections?.length
     ? brief.sections
     : brief.paragraphs.map((body) => ({ title: "", body }));
   for (const s of sections) {
     if (s.title) blocks.push({ kind: "title", text: s.title });
-    if (s.table?.rows.length) {
+    if (s.variant === "annuity" && brief.annuityEquivalent) {
+      const copy = annuityEquivalentCopy(brief.annuityEquivalent);
+      if (s.body) blocks.push({ kind: "body", text: s.body });
+      blocks.push({
+        kind: "table",
+        intro: copy.intro,
+        note: copy.note,
+        headers: ["Income", "When", "Lump sum today", "Running total"],
+        rows: copy.rows.map((r) => [r.name, r.when, r.amount, r.running]),
+        footer: copy.rows.length > 1 ? ["All together", "", "", copy.total] : undefined,
+      });
+    } else if (s.table?.rows.length) {
       blocks.push({
         kind: "table",
         intro: s.table.intro,

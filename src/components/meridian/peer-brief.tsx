@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { downloadAnalysisPdf } from "@/lib/plan/analysis-pdf";
-import type { BriefColumnRow, PeerBrief } from "@/lib/plan/peers";
+import type { BriefColumnRow, BriefSection, PeerBrief } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { GuestOnly, RealSignedIn } from "@/lib/auth/gates";
 import { MACH_MONTHLY_USD, hasBalanceSheet } from "@/lib/billing/limits";
@@ -185,7 +185,7 @@ export function PeerBriefCard({
 
   if (!brief) return null;
 
-  const sections = brief.sections?.length
+  const sections: BriefSection[] = brief.sections?.length
     ? brief.sections
     : brief.paragraphs.map((body) => ({ title: "", body }));
   const clipped = !brief.expanded && sections.length > 2;
@@ -228,26 +228,56 @@ export function PeerBriefCard({
       <div className="mt-3 flex flex-col gap-4 text-sm leading-relaxed text-muted">
         {visible.map((s, i) => (
           <div key={`${brief.runAt}-${i}`}>
-            {s.title ? (
-              <p className="font-semibold text-fg">{s.title}</p>
-            ) : null}
-            {s.table?.rows.length ? (
-              <BriefTable
-                intro={s.table.intro}
-                note={s.table.note}
-                headers={s.table.headers}
-                rows={s.table.rows}
-                logos={s.table.logos}
-                footer={s.table.footer}
-              />
-            ) : s.columns?.rows.length ? (
-              <PaycheckTable
-                intro={s.columns.intro}
-                note={s.columns.note}
-                rows={s.columns.rows}
-              />
+            {s.variant === "annuity" && annuityCopy ? (
+              <>
+                <p className="text-sm font-semibold text-fg">{s.title}</p>
+                <p className="mt-1">{s.body}</p>
+                <details className="mt-1 rounded-lg bg-bg px-4 py-3 shadow-[0_0_0_1px_var(--color-border)]">
+                  <summary className="cursor-pointer text-sm font-medium text-fg">
+                    View guaranteed-paycheck equivalent (estimate)
+                  </summary>
+                  <div className="mt-3 space-y-2 text-sm leading-relaxed text-muted">
+                    <BriefTable
+                      intro={annuityCopy.intro}
+                      note={annuityCopy.note}
+                      headers={[
+                        { label: "Income" },
+                        { label: "When", nowrap: true },
+                        { label: "Lump sum today", align: "right", nowrap: true },
+                        { label: "Running total", align: "right", nowrap: true },
+                      ]}
+                      rows={annuityCopy.rows.map((r) => [r.name, r.when, r.amount, r.running])}
+                      footer={
+                        annuityCopy.rows.length > 1
+                          ? ["All together", "", "", annuityCopy.total]
+                          : undefined
+                      }
+                    />
+                  </div>
+                </details>
+              </>
             ) : (
-              <BriefBody text={s.body} className={s.title ? "mt-1" : undefined} />
+              <>
+                {s.title ? <p className="font-semibold text-fg">{s.title}</p> : null}
+                {s.table?.rows.length ? (
+                  <BriefTable
+                    intro={s.table.intro}
+                    note={s.table.note}
+                    headers={s.table.headers}
+                    rows={s.table.rows}
+                    logos={s.table.logos}
+                    footer={s.table.footer}
+                  />
+                ) : s.columns?.rows.length ? (
+                  <PaycheckTable
+                    intro={s.columns.intro}
+                    note={s.columns.note}
+                    rows={s.columns.rows}
+                  />
+                ) : (
+                  <BriefBody text={s.body} className={s.title ? "mt-1" : undefined} />
+                )}
+              </>
             )}
           </div>
         ))}
@@ -268,41 +298,6 @@ export function PeerBriefCard({
           </div>
         ) : null}
       </div>
-      {annuityCopy ? (
-        <div className="mt-4">
-          <p className="font-semibold text-fg">Guaranteed paycheck equivalent</p>
-          <p className="mt-1 text-sm leading-relaxed text-muted">
-            If you have a U.S. government retirement paycheck, such as military
-            retired pay, VA compensation, Social Security, or a federal civilian
-            pension, it can be useful to see the estimated annuity value of that
-            near-zero-risk income. This is for informational and educational
-            purposes only.
-          </p>
-          <details className="mt-1 rounded-lg bg-bg px-4 py-3 shadow-[0_0_0_1px_var(--color-border)]">
-            <summary className="cursor-pointer text-sm font-medium text-fg">
-              View guaranteed-paycheck equivalent (estimate)
-            </summary>
-            <div className="mt-3 space-y-2 text-sm leading-relaxed text-muted">
-              <BriefTable
-                intro={annuityCopy.intro}
-                note={annuityCopy.note}
-                headers={[
-                  { label: "Income" },
-                  { label: "When", nowrap: true },
-                  { label: "Lump sum today", align: "right", nowrap: true },
-                  { label: "Running total", align: "right", nowrap: true },
-                ]}
-                rows={annuityCopy.rows.map((r) => [r.name, r.when, r.amount, r.running])}
-                footer={
-                  annuityCopy.rows.length > 1
-                    ? ["All together", "", "", annuityCopy.total]
-                    : undefined
-                }
-              />
-            </div>
-          </details>
-        </div>
-      ) : null}
       {clipped ? (
         <div className="mt-4 flex flex-col items-center gap-2 border-t border-border pt-4 text-center">
           <GuestOnly>
