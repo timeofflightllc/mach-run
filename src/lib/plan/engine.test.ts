@@ -238,6 +238,9 @@ test("non-qualified annuity withdrawals tax earnings before basis", () => {
   assert.ok(m0);
   assert.ok(Math.abs(m0.withdrawals - 5000) < 2);
   assert.ok(Math.abs(m0.spendableEnd - 95_000) < 2);
+  const drawn = result.years[0]?.drawnLines ?? [];
+  assert.equal(drawn[0]?.id, "ann");
+  assert.ok((drawn[0]?.amount ?? 0) > 4000);
 });
 
 test("pension and other retirement count as guaranteed cash flow", () => {

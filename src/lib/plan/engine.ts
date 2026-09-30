@@ -322,6 +322,24 @@ function savedBreakdown(months: MonthSnapshot[]): LedgerLine[] {
     .sort((a, b) => b.amount - a.amount);
 }
 
+/** One row per account. RMD and extra draws from the same account are combined. */
+function drawnBreakdown(months: MonthSnapshot[]): LedgerLine[] {
+  const map = new Map<string, LedgerLine>();
+  for (const month of months) {
+    for (const line of month.detail?.drawnLines ?? []) {
+      if (line.amount <= 0.005) continue;
+      const id = line.id.endsWith(":rmd") ? line.id.slice(0, -4) : line.id;
+      const got = map.get(id) ?? { id, label: line.label, amount: 0 };
+      got.amount += line.amount;
+      if (!line.id.endsWith(":rmd")) got.label = line.label;
+      map.set(id, got);
+    }
+  }
+  return [...map.values()]
+    .filter((row) => row.amount > 0.5)
+    .sort((a, b) => b.amount - a.amount);
+}
+
 export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
   const plan = ensurePlan(raw);
   const wantAudit = Boolean(opts?.audit);
@@ -1039,6 +1057,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
       airByKind: airPublished ? airByKind : {},
       incomeByKind,
       savedLines,
+      drawnLines: drawnBreakdown(arr),
       spendableBalances,
     });
   }

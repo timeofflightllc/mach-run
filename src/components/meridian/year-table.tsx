@@ -360,6 +360,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
       : [];
   const tipMonths = tip ? sim.months.filter((m) => m.year === tip.year) : [];
   const details = tipMonths.flatMap((m) => (m.detail ? [m.detail] : []));
+  const accountById = new Map(plan.portfolios.map((p) => [p.id, p]));
   const scaleTip = (n: number) => (yearRow ? flow(n, yearRow.year) : n);
   const taxRate = details[0]?.taxRatePct ?? plan.assumptions.ordinaryTaxRatePct;
   const ordinaryTaxable = details.reduce((s, d) => s + d.ordinaryTaxable, 0);
@@ -418,10 +419,27 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
       scaleTip,
     );
   })();
-  const drawnRows = sumLabeled(
-    details.map((d) => d.drawnLines),
-    scaleTip,
-  );
+  const drawnRows = (() => {
+    const stored = yearRow?.drawnLines ?? [];
+    if (tip?.mode === "drawn" && stored.length && yearRow) {
+      return stored
+        .filter((line) => line.amount > 0.5)
+        .map((line) => {
+          const account = accountById.get(line.id);
+          return {
+            label: account?.name.trim() || line.label,
+            amount: flow(line.amount, yearRow.year),
+            institutionId: account?.institutionId ?? null,
+            institutionName: account?.institutionName ?? "",
+          };
+        })
+        .sort((a, b) => b.amount - a.amount);
+    }
+    return sumLabeled(
+      details.map((d) => d.drawnLines),
+      scaleTip,
+    );
+  })();
   const lastDetailMonth = [...tipMonths].reverse().find((m) => m.detail);
   const spendableNominal = lastDetailMonth?.spendableEnd ?? 0;
   const spendableShown = yearRow
@@ -876,7 +894,13 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           title={`${tip.year} drawn`}
           rows={drawnRows}
           total={flow(yearRow.withdrawals, yearRow.year)}
-          note={`Cash taken out of spendable accounts. RMDs are required. Other draws cover a short paycheck. Pre-tax accounts and annuity gains can be larger than the shortfall because tax comes out of the withdrawal. ${dollarsNote()}`}
+          note={
+            drawnRows.length
+              ? `Required minimums are included with the account they came from. Pre-tax accounts and annuity gains can be larger than the shortfall because tax comes out of the withdrawal. ${dollarsNote()}`
+              : yearRow.withdrawals > 0.5
+                ? "Calculate again to see which accounts this came from."
+                : "Nothing was drawn this year."
+          }
         />
       ) : null}
       {tip && yearRow && tip.mode === "spendable" ? (

@@ -317,6 +317,8 @@ export interface YearSnapshot {
   incomeByKind: Record<string, number>;
   /** Paycheck deposits, employer match, and sweep. Adds up to contributions. */
   savedLines?: LedgerLine[];
+  /** Withdrawals by account for the year, nominal dollars. Id is the account id. */
+  drawnLines?: LedgerLine[];
   /** Spendable account balances at the end of the year, in Accounts order. Nominal dollars. */
   spendableBalances?: { id: string; amount: number }[];
 }
