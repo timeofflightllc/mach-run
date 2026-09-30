@@ -477,7 +477,7 @@ export function buildPeerBrief(
     `Spending starts at ${usd(spendingNow, true)}/mo and inflates at ${plan.assumptions.inflationPct}% a year. Accounts compound at ${plan.assumptions.defaultReturnPct}% nominal unless an account has its own rate. Spendable goes from ${usd(spendable)} now to ${usd(horizon)} at age ${plan.assumptions.projectionEndAge} in today's dollars. Time is on your side if you leave the machine running.`,
   );
 
-  add("RMDs", rmdIntro(plan, sim), { table: rmdTable(sim) });
+  add("RMD (Required Minimum Distribution)", rmdIntro(plan, sim), { table: rmdTable(sim) });
 
   const ret = sim.retirement;
   if (ret) {
@@ -915,9 +915,8 @@ function rmdTable(sim: SimResult): BriefTableSpec {
       : undefined;
   return {
     intro: rows.length
-      ? "Your accounts, not a lecture:"
+      ? "The minimum the IRS makes you withdraw from a pre-tax retirement account at a set age. MACH RUN figures it from the prior year-end balance and counts it as ordinary income. Roth IRA and Roth 401(k) have none. A traditional IRA starts at 73 or 75, depending on birth year. A 401(k) or TSP uses those same ages, but is skipped while you are still earning salary and still contributing to that account. If one is due, MACH RUN already withdraws it and shows it as income in the table below."
       : "Add a pre-tax IRA, 401(k), or TSP in Observe to see RMDs here.",
-    note: "RMD = IRS required minimum distribution. Roth IRA and Roth 401(k) have no lifetime RMD. 401(k)/TSP can skip while W-2 pay is on and you are still contributing to that account. Traditional IRA cannot. Forced withdrawals are ordinary income. This is not tax advice.",
     headers: [
       { label: "Account" },
       { label: "Owner" },
