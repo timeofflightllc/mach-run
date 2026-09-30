@@ -17,6 +17,24 @@ function Disclaimer() {
   return <p className="text-xs italic leading-relaxed text-subtle">{OODA_DISCLAIMER}</p>;
 }
 
+function BriefBody({ text, className }: { text: string; className?: string }) {
+  const parts = text.split(/\n\n+/).map((part) => part.trim()).filter(Boolean);
+  if (parts.length <= 1) {
+    return (
+      <p className={className ? `${className} whitespace-pre-line` : "whitespace-pre-line"}>{text}</p>
+    );
+  }
+  return (
+    <div className={className ? `${className} flex flex-col gap-4` : "flex flex-col gap-4"}>
+      {parts.map((part, i) => (
+        <p key={i} className="whitespace-pre-line">
+          {part}
+        </p>
+      ))}
+    </div>
+  );
+}
+
 function BriefTable({
   intro,
   note,
@@ -229,9 +247,7 @@ export function PeerBriefCard({
                 rows={s.columns.rows}
               />
             ) : (
-              <p className={s.title ? "mt-1 whitespace-pre-line" : "whitespace-pre-line"}>
-                {s.body}
-              </p>
+              <BriefBody text={s.body} className={s.title ? "mt-1" : undefined} />
             )}
           </div>
         ))}
@@ -242,9 +258,9 @@ export function PeerBriefCard({
                 {faded.title}
               </p>
             ) : null}
-            <p aria-hidden className="whitespace-pre-line">
-              {faded.body}
-            </p>
+            <div aria-hidden>
+              <BriefBody text={faded.body} />
+            </div>
             <div
               className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface from-[18%] via-surface/75 to-transparent"
               aria-hidden
