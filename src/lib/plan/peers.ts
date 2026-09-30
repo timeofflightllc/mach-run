@@ -523,7 +523,7 @@ export function buildPeerBrief(
     });
   }
 
-  const debt = debtSentence(plan);
+  const debt = debtSentence(plan, sim);
   if (debt) add("Debt", debt);
 
   if (sim.depletedAge != null) {
@@ -571,6 +571,12 @@ function balanceSheetNow(plan: Plan): { assets: number; debt: number } {
 /** SCF 2022: median leverage ratio among families that have debt. */
 const TYPICAL_DEBTOR_RATIO = 29;
 
+function ratioShown(pct: number): string {
+  return pct >= 10
+    ? String(Math.round(pct))
+    : String(Math.max(0.1, Math.round(pct * 10) / 10));
+}
+
 function debtRatioLine(plan: Plan): string {
   const { assets, debt } = balanceSheetNow(plan);
   const bench = `A typical U.S. household that carries debt owes about ${TYPICAL_DEBTOR_RATIO}% of what it owns.`;
@@ -581,7 +587,7 @@ function debtRatioLine(plan: Plan): string {
     return `These loans add up to ${usd(debt)}, and no assets are included in net worth yet, so there is no debt-to-asset ratio to compare.`;
   }
   const pct = (debt / assets) * 100;
-  const shown = pct >= 10 ? String(Math.round(pct)) : String(Math.max(0.1, Math.round(pct * 10) / 10));
+  const shown = ratioShown(pct);
   const lead = `Debt is ${usd(debt)} against ${usd(assets)} of assets on this run, about ${shown}%.`;
   const focus = dominantDebt(plan);
   if (pct < 10) {
@@ -600,6 +606,69 @@ function debtRatioLine(plan: Plan): string {
     return `${lead} ${bench} This is a large share of what you own.${focus} There is still equity, but the margin is thinner than most.`;
   }
   return `Debt is ${usd(debt)} and the assets on this run are ${usd(assets)}. The loans are larger than what you own. ${bench}${focus} This is a tight spot, not a verdict.`;
+}
+
+function retirementLanding(pct: number): string {
+  const bench = `A typical U.S. household that carries debt owes about ${TYPICAL_DEBTOR_RATIO}% of what it owns.`;
+  if (pct < 10) return `${bench} At retirement yours is a light load. That is a strong place to land.`;
+  if (pct < 20) return `${bench} You land under that. The assets are still doing the heavy work.`;
+  if (pct < 40) return `${bench} You land in that neighborhood. Fine if a house loan is most of it.`;
+  if (pct < 60) {
+    return `${bench} You land higher than that. Equity is still there, but the loans that are not the house are the ones to watch.`;
+  }
+  if (pct < 100) {
+    return `${bench} You land with a large share of what you own still pledged. There is equity, and less margin than most.`;
+  }
+  return `${bench} At retirement the loans are still larger than the assets. That is a tight landing, not a verdict.`;
+}
+
+/** Debt-to-asset on the retirement month, in today's dollars, plus how it compares with today. */
+function retirementDebtLine(plan: Plan, sim: SimResult): string {
+  const goal = plan.assumptions.retirementGoalDate;
+  if (!goal || !validIso(goal)) {
+    return "Set a retirement goal date in Family to see the debt-to-asset ratio at retirement.";
+  }
+  const asOf = plan.assumptions.asOfDate;
+  const already =
+    validIso(asOf) && monthsBetweenMonths(monthStart(goal), monthStart(asOf)) >= 0;
+  if (already) {
+    return "That retirement date is already here, so the ratio above is the one you retire with.";
+  }
+  const key = goal.slice(0, 7);
+  const month = sim.months.find((m) => m.date.slice(0, 7) === key);
+  const when = payoffMonthYear(goal);
+  if (!month) {
+    const last = sim.months[sim.months.length - 1];
+    if (!last || last.date.slice(0, 7) < key) {
+      return `The run ends before ${when}, so MACH RUN cannot score the debt-to-asset ratio on that date. Extend the projection age in Family.`;
+    }
+    return "Calculate again to score the debt-to-asset ratio at retirement.";
+  }
+  const assets = month.assetsEndReal;
+  const debt = month.liabilitiesEndReal;
+  const now = balanceSheetNow(plan);
+  const nowPct = now.assets > 1 ? (now.debt / now.assets) * 100 : null;
+  if (debt < 1 && assets > 1) {
+    const lighter =
+      nowPct != null && nowPct >= 1
+        ? ` That is lighter than the ${ratioShown(nowPct)}% you carry now.`
+        : "";
+    return `At retirement in ${when}, modeled debt is gone against ${usd(assets)} of assets, in today's dollars. The debt-to-asset ratio there is zero.${lighter} You walk in clear.`;
+  }
+  if (assets < 1) {
+    return `At retirement in ${when}, modeled debt is still ${usd(debt)} and no assets are in net worth, in today's dollars. There is still no ratio to stand on.`;
+  }
+  const pct = (debt / assets) * 100;
+  const compared =
+    nowPct == null
+      ? ""
+      : Math.abs(pct - nowPct) < 1
+        ? ` That is about the same as the ${ratioShown(nowPct)}% you carry now.`
+        : pct < nowPct
+          ? ` That is lighter than the ${ratioShown(nowPct)}% you carry now.`
+          : ` That is heavier than the ${ratioShown(nowPct)}% you carry now.`;
+  const lead = `At retirement in ${when}, debt is ${usd(debt)} against ${usd(assets)} of assets, about ${ratioShown(pct)}%, in today's dollars.`;
+  return `${lead}${compared} ${retirementLanding(pct)}`;
 }
 
 function dominantDebt(plan: Plan): string {
@@ -678,7 +747,7 @@ function loanTail(
 }
 
 /** One line per loan: who it is, what it sits on, balance now, full payoff month. */
-export function debtSentence(plan: Plan): string | null {
+export function debtSentence(plan: Plan, sim?: SimResult): string | null {
   const asOf = plan.assumptions.asOfDate;
   const retirement = plan.assumptions.retirementGoalDate;
   const hasRetirement = Boolean(retirement && validIso(retirement));
@@ -721,10 +790,13 @@ export function debtSentence(plan: Plan): string | null {
       (plan.liabilities ?? []).some((l) => l.monthlyPi > 0 && l.termYears > 0);
     if (!had) return null;
     const ratio = debtRatioLine(plan);
+    const later = sim ? retirementDebtLine(plan, sim) : "";
     if (hasRetirement && monthsBetweenMonths(monthStart(asOf), monthStart(retirement as string)) > 0) {
-      return `Modeled loans are already paid off. You reach that retirement date debt free. Well done.\n${ratio}`;
+      return [`Modeled loans are already paid off. You reach that retirement date debt free. Well done.`, ratio, later]
+        .filter(Boolean)
+        .join("\n");
     }
-    return `Modeled loans are paid off as of this MACH Run.\n${ratio}`;
+    return [`Modeled loans are paid off as of this MACH Run.`, ratio, later].filter(Boolean).join("\n");
   }
 
   if (hasRetirement && open > 0 && clearByRetirement === open) {
@@ -739,6 +811,7 @@ export function debtSentence(plan: Plan): string | null {
     );
   }
   lines.push(debtRatioLine(plan));
+  if (sim) lines.push(retirementDebtLine(plan, sim));
   return lines.join("\n");
 }
 

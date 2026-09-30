@@ -432,6 +432,63 @@ test("debt sentence praises a light debt-to-asset ratio and flags a heavy one", 
   assert.doesNotMatch(warned, /light load/);
 });
 
+test("debt section scores the ratio at retirement against today", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1976-01-01";
+  plan.assumptions.asOfDate = "2026-08-01";
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultReturnPct = 0;
+  plan.assumptions.retirementGoalDate = "2036-01-01";
+  plan.assumptions.projectionEndAge = 95;
+  plan.incomes = [];
+  plan.spending = [];
+  plan.portfolios = [
+    {
+      id: "cash",
+      name: "Savings",
+      kind: "taxable",
+      owner: "primary",
+      currentValue: 400_000,
+      returnPct: 0,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.liabilities = [
+    {
+      id: "note",
+      name: "Personal",
+      kind: "personal",
+      balance: 200_000,
+      originationDate: "2026-08-01",
+      aprPct: 0,
+      monthlyPi: 1_000,
+      termYears: 30,
+      includeInSpending: true,
+      owner: "primary",
+    },
+  ];
+  const open = debtSentence(plan, simulate(plan));
+  assert.ok(open);
+  assert.match(open, /At retirement in January 2036/);
+  assert.match(open, /in today's dollars/);
+  assert.match(open, /lighter than the 90% you carry now/);
+  assert.match(open, /large share of what you own still pledged/);
+
+  plan.liabilities[0].termYears = 2;
+  plan.liabilities[0].monthlyPi = 10_000;
+  const clear = debtSentence(plan, simulate(plan));
+  assert.ok(clear);
+  assert.match(clear, /debt-to-asset ratio there is zero/);
+  assert.match(clear, /You walk in clear/);
+
+  plan.assumptions.retirementGoalDate = null;
+  const unset = debtSentence(plan, simulate(plan));
+  assert.ok(unset);
+  assert.match(unset, /Set a retirement goal date in Family/);
+});
+
 test("OODA paychecks sort by start date and print month then year", () => {
   const plan = createDefaultPlan();
   plan.primary.birthDate = "1976-01-01";
