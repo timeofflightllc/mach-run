@@ -315,6 +315,10 @@ export interface YearSnapshot {
   airWithdrawals: number;
   airByKind: Record<string, number>;
   incomeByKind: Record<string, number>;
+  /** Paycheck deposits, employer match, and sweep. Adds up to contributions. */
+  savedLines?: LedgerLine[];
+  /** Spendable account balances at the end of the year, in Accounts order. Nominal dollars. */
+  spendableBalances?: { id: string; amount: number }[];
 }
 
 export interface FundingGap {

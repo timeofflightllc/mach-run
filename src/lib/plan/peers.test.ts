@@ -269,6 +269,7 @@ test("debt sentence names remaining principal and last payoff year", () => {
         termYears: 30,
         includeInSpending: true,
         associated: true,
+        institutionName: "Rocket Mortgage",
       },
     },
   ];
@@ -284,15 +285,19 @@ test("debt sentence names remaining principal and last payoff year", () => {
       termYears: 6,
       includeInSpending: true,
       owner: "primary",
+      institutionName: "Navy Federal",
     },
   ];
   const line = debtSentence(plan);
   assert.ok(line);
-  assert.match(line, /Remaining debt now is/);
-  assert.match(line, /Last modeled loan pays off Aug 2050/);
+  assert.match(line, /The Rocket Mortgage loan on your House is \$/);
+  assert.match(line, /It pays off August 2050/);
+  assert.match(line, /The Navy Federal car loan is \$/);
+  assert.match(line, /It pays off August 2029/);
+  assert.doesNotMatch(line, /Remaining debt now is/);
   const sim = simulate(plan);
   const brief = buildPeerBrief(plan, sim, { expanded: true });
-  assert.match(brief.paragraphs.join(" "), /Remaining debt now is/);
+  assert.match(brief.paragraphs.join("\n"), /Rocket Mortgage loan on your House/);
 });
 
 test("debt sentence is null when there are no loans", () => {

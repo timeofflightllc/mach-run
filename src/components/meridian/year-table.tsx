@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { CashShortNotice } from "@/components/meridian/cash-short-notice";
+import { InstitutionMark } from "@/components/meridian/institution-field";
 import { canDownloadInvestmentAudit } from "@/lib/ops/audit-download-api";
 import { buildInvestmentAuditCsv } from "@/lib/plan/audit-csv";
 import { simulate } from "@/lib/plan/engine";
@@ -139,7 +140,12 @@ function LinesTip({
   x: number;
   y: number;
   title: string;
-  rows: { label: string; amount: number }[];
+  rows: {
+    label: string;
+    amount: number;
+    institutionId?: string | null;
+    institutionName?: string;
+  }[];
   note?: string;
   total?: number;
 }) {
@@ -155,8 +161,17 @@ function LinesTip({
       {rows.length ? (
         <ul className="mt-1.5 space-y-1 text-sm text-fg">
           {rows.map((row, index) => (
-            <li key={`${row.label}-${index}`} className="flex justify-between gap-3">
-              <span>{row.label}</span>
+            <li key={`${row.label}-${index}`} className="flex items-center justify-between gap-3">
+              <span className="flex min-w-0 items-center gap-2">
+                {row.institutionName ? (
+                  <InstitutionMark
+                    institutionId={row.institutionId ?? null}
+                    institutionName={row.institutionName}
+                    size={22}
+                  />
+                ) : null}
+                <span className="truncate">{row.label}</span>
+              </span>
               <span className="shrink-0 tabular-nums">{usd(row.amount)}</span>
             </li>
           ))}
@@ -380,14 +395,26 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
     ]),
     scaleTip,
   );
-  const savedRows = sumLabeled(
-    details.map((d) => [
-      ...d.savedLines,
-      ...(d.sweep ? [d.sweep] : []),
-      ...d.matchLines,
-    ]),
-    scaleTip,
-  );
+  const savedRows = (() => {
+    const rolled = yearRow?.savedLines ?? [];
+    if (tip?.mode === "saved" && rolled.length) {
+      return rolled
+        .filter((line) => line.amount > 0.5)
+        .map((line) => ({
+          label: line.label,
+          amount: flow(line.amount, yearRow!.year),
+        }))
+        .sort((a, b) => b.amount - a.amount);
+    }
+    return sumLabeled(
+      details.map((d) => [
+        ...d.savedLines,
+        ...(d.sweep ? [d.sweep] : []),
+        ...d.matchLines,
+      ]),
+      scaleTip,
+    );
+  })();
   const drawnRows = sumLabeled(
     details.map((d) => d.drawnLines),
     scaleTip,
@@ -399,15 +426,35 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
       ? yearRow.endSpendableReal
       : yearRow.endSpendable
     : 0;
-  const spendableScale =
-    spendableNominal > 0.5 ? spendableShown / spendableNominal : 1;
-  const spendableRows = (lastDetailMonth?.detail?.spendableLines ?? [])
-    .filter((line) => Math.abs(line.amount) > 0.5)
-    .map((line) => ({
-      label: line.label,
-      amount: line.amount * spendableScale,
-    }))
-    .sort((a, b) => b.amount - a.amount);
+  const spendableOrder = new Map(plan.portfolios.map((p, index) => [p.id, index]));
+  const spendableById = new Map(plan.portfolios.map((p) => [p.id, p]));
+  const spendableRows = (() => {
+    const stored = yearRow?.spendableBalances ?? [];
+    if (tip?.mode === "spendable" && stored.length && yearRow) {
+      const scale =
+        yearRow.endSpendable > 0.5 ? spendableShown / yearRow.endSpendable : 1;
+      return [...stored]
+        .sort(
+          (a, b) =>
+            (spendableOrder.get(a.id) ?? 999) - (spendableOrder.get(b.id) ?? 999),
+        )
+        .map((line) => {
+          const account = spendableById.get(line.id);
+          return {
+            label: account?.name.trim() || "Account",
+            amount: line.amount * scale,
+            institutionId: account?.institutionId ?? null,
+            institutionName: account?.institutionName ?? "",
+          };
+        });
+    }
+    return (lastDetailMonth?.detail?.spendableLines ?? [])
+      .filter((line) => Math.abs(line.amount) > 0.5)
+      .map((line) => ({
+        label: line.label,
+        amount: line.amount * (spendableNominal > 0.5 ? spendableShown / spendableNominal : 1),
+      }));
+  })();
 
   return (
     <div className="rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
@@ -782,7 +829,13 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           title={`${tip.year} saved`}
           rows={savedRows}
           total={flow(yearRow.contributions, yearRow.year)}
-          note={`Dollars actually deposited, plus employer match. Match is not taken from the paycheck, and it is also counted in Income. Sweep is leftover cash sent to the account you picked.${yearRow.irsCut > 0.5 ? ` The IRS cap held back ${usd(flow(yearRow.irsCut, yearRow.year))}.` : ""} ${dollarsNote()}`}
+          note={
+            savedRows.length
+              ? `${yearRow.irsCut > 0.5 ? `The IRS cap held back ${usd(flow(yearRow.irsCut, yearRow.year))}. ` : ""}${dollarsNote()}`
+              : yearRow.contributions > 0.5
+                ? "Calculate again to see what was deposited this year."
+                : "Nothing was deposited this year."
+          }
         />
       ) : null}
       {tip && yearRow && tip.mode === "drawn" ? (
@@ -802,7 +855,13 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           title={`${tip.year} spendable`}
           rows={spendableRows}
           total={real ? yearRow.endSpendableReal : yearRow.endSpendable}
-          note={`Ending balance of accounts marked spendable. This is not net worth. ${dollarsNote()}`}
+          note={
+            spendableRows.length
+              ? dollarsNote()
+              : spendableShown > 0.5
+                ? "Calculate again to see each spendable account."
+                : "No spendable balance at the end of this year."
+          }
         />
       ) : null}
     </div>

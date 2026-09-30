@@ -462,6 +462,17 @@ test("a percent contribution can stop before the paycheck ends", () => {
   assert.ok(dec.contributions > 1000);
   assert.ok(jan.income > 5000);
   assert.ok(jan.contributions < 1);
+  const y2026 = result.years.find((y) => y.year === 2026);
+  assert.ok(y2026);
+  const saved = y2026.savedLines ?? [];
+  assert.match(saved.map((line) => line.label).join(" "), /Post BGS Match into 401k/);
+  assert.match(saved.map((line) => line.label).join(" "), /401k employer match/);
+  const savedTotal = saved.reduce((sum, line) => sum + line.amount, 0);
+  assert.ok(Math.abs(savedTotal - y2026.contributions) < 1);
+  const balances = y2026.spendableBalances ?? [];
+  assert.equal(balances.length, 1);
+  assert.equal(balances[0]?.id, "k");
+  assert.ok(Math.abs((balances[0]?.amount ?? 0) - y2026.endSpendable) < 1);
 });
 
 test("IRS cap: $3000/mo 401k stops when $24,500 is full; match follows", () => {

@@ -1,3 +1,4 @@
+import { format } from "date-fns";
 import { ageYears, dateAtAge, formatMonthYear, monthStart, projectionEndMonth, validIso, yearlyRateToMonthly } from "./dates.ts";
 import {
   monthlyIncomeAt,
@@ -13,7 +14,7 @@ import { cashShortYears } from "./cash-short.ts";
 import { usd, usdCompact } from "./format.ts";
 import { remainingLiability, liabilityPayoffDate } from "./liability.ts";
 import { mortgageAssociated, mortgagePayoffDate, remainingMortgage } from "./mortgage.ts";
-import type { Plan, SimResult } from "./types.ts";
+import type { Liability, LiabilityKind, Plan, SimResult } from "./types.ts";
 
 /** SCF 2022 net worth knots, inflated ~12% into 2026 dollars. Approximate. */
 const NW_BANDS: {
@@ -522,7 +523,7 @@ export function buildPeerBrief(
     });
   }
 
-  const debt = debtSentence(plan, month0?.liabilitiesEnd);
+  const debt = debtSentence(plan);
   if (debt) add("Debt", debt);
 
   if (sim.depletedAge != null) {
@@ -540,34 +541,68 @@ export function buildPeerBrief(
   return pack();
 }
 
-/** One sentence: remaining principal now, last loan payoff. Null if no modeled loans. */
-export function debtSentence(plan: Plan, remainingNow?: number): string | null {
+const LIABILITY_KIND: Record<LiabilityKind, string> = {
+  car: "car loan",
+  student: "student loan",
+  heloc: "HELOC",
+  personal: "personal loan",
+  credit_card: "credit card",
+  other: "loan",
+};
+
+function payoffMonthYear(isoDate: string | null): string {
+  if (!isoDate || !validIso(isoDate)) return "the end of the term you entered";
+  return format(monthStart(isoDate), "MMMM yyyy");
+}
+
+function liabilitySubject(l: Liability): string {
+  const name = l.name.trim();
+  const lender = (l.institutionName ?? "").trim();
+  const kind = LIABILITY_KIND[l.kind] ?? "loan";
+  const bare = kind.split(" ")[0].toLowerCase();
+  const nameIsKind =
+    !name || name.toLowerCase() === kind || name.toLowerCase() === bare;
+  if (lender && !nameIsKind) return `The ${lender} ${kind}, ${name},`;
+  if (lender) return `The ${lender} ${kind}`;
+  if (!nameIsKind) return `Your ${name} ${kind}`;
+  return `Your ${kind}`;
+}
+
+/** One line per loan: who it is, what it sits on, balance now, full payoff month. */
+export function debtSentence(plan: Plan): string | null {
   const asOf = plan.assumptions.asOfDate;
-  let remaining = 0;
-  let lastPayoff: string | null = null;
-  let any = false;
+  const lines: string[] = [];
 
   for (const p of plan.portfolios) {
     if (p.kind !== "real_estate" || !mortgageAssociated(p.mortgage)) continue;
-    any = true;
-    remaining += remainingMortgage(p.mortgage, asOf);
-    const pay = mortgagePayoffDate(p.mortgage);
-    if (pay && (!lastPayoff || pay > lastPayoff)) lastPayoff = pay;
+    const balance = remainingMortgage(p.mortgage, asOf);
+    if (balance < 1) continue;
+    const property = p.name.trim() || "property";
+    const lender = (p.mortgage?.institutionName ?? "").trim();
+    const subject = lender
+      ? `The ${lender} loan on your ${property}`
+      : `The loan on your ${property}`;
+    lines.push(
+      `${subject} is ${usd(balance)}. It pays off ${payoffMonthYear(mortgagePayoffDate(p.mortgage))}.`,
+    );
   }
+
   for (const l of plan.liabilities ?? []) {
     if (!(l.monthlyPi > 0) || !(l.termYears > 0)) continue;
-    any = true;
-    remaining += remainingLiability(l, asOf);
-    const pay = liabilityPayoffDate(l);
-    if (pay && (!lastPayoff || pay > lastPayoff)) lastPayoff = pay;
+    const balance = remainingLiability(l, asOf);
+    if (balance < 1) continue;
+    lines.push(
+      `${liabilitySubject(l)} is ${usd(balance)}. It pays off ${payoffMonthYear(liabilityPayoffDate(l))}.`,
+    );
   }
-  if (!any) return null;
-  const now = remainingNow != null && Number.isFinite(remainingNow) ? remainingNow : remaining;
-  if (now < 1) {
-    return "Modeled loans are paid off as of this MACH Run.";
+
+  if (!lines.length) {
+    const had =
+      plan.portfolios.some((p) => p.kind === "real_estate" && mortgageAssociated(p.mortgage)) ||
+      (plan.liabilities ?? []).some((l) => l.monthlyPi > 0 && l.termYears > 0);
+    return had ? "Modeled loans are paid off as of this MACH Run." : null;
   }
-  const when = lastPayoff ? formatMonthYear(lastPayoff) : "the end of the term you entered";
-  return `Remaining debt now is ${usd(now)}. Last modeled loan pays off ${when}.`;
+  return lines.join("\n");
 }
 
 function accountTable(plan: Plan, sim: SimResult, note: string): BriefTableSpec {

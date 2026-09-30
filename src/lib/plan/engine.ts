@@ -31,6 +31,7 @@ import type {
   FundingGap,
   IncomeStage,
   IncomeStream,
+  LedgerLine,
   MonthSnapshot,
   Plan,
   RmdAccountRow,
@@ -298,6 +299,27 @@ function fundQualifiedFirst<T extends { portfolioId: string }>(plan: Plan, rows:
     .map((row, index) => ({ row, index, rank: rank(row.portfolioId) }))
     .sort((a, b) => a.rank - b.rank || a.index - b.index)
     .map((item) => item.row);
+}
+
+function savedBreakdown(months: MonthSnapshot[]): LedgerLine[] {
+  const map = new Map<string, LedgerLine>();
+  const add = (id: string, label: string, amount: number) => {
+    if (amount <= 0.005) return;
+    const got = map.get(id) ?? { id, label, amount: 0 };
+    got.amount += amount;
+    got.label = label;
+    map.set(id, got);
+  };
+  for (const month of months) {
+    const detail = month.detail;
+    if (!detail) continue;
+    for (const line of detail.savedLines) add(`save:${line.id}`, line.label, line.amount);
+    if (detail.sweep) add(`sweep:${detail.sweep.id}`, detail.sweep.label, detail.sweep.amount);
+    for (const line of detail.matchLines) add(line.id, line.label, line.amount);
+  }
+  return [...map.values()]
+    .filter((row) => row.amount > 0.5)
+    .sort((a, b) => b.amount - a.amount);
 }
 
 export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
@@ -668,9 +690,12 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
         if (contribFlow) contribFlow.contribution += take;
         const rule = plan.contributions.find((row) => row.id === d.ruleId);
         const dest = plan.portfolios.find((row) => row.id === d.portfolioId);
+        const ruleName = rule?.label.trim() || "Contribution";
+        const account = dest?.name.trim() || "";
         savedLines.push({
           id: d.ruleId,
-          label: rule?.label.trim() || dest?.name.trim() || "Contribution",
+          label:
+            account && account !== ruleName ? `${ruleName} into ${account}` : ruleName || account,
           amount: take,
         });
         funded.push({
@@ -980,6 +1005,11 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
       }
     }
     const airPublished = airMonths.length > 0;
+    const savedLines = savedBreakdown(arr);
+    const spendableBalances = (last.detail?.spendableLines ?? []).map((line) => ({
+      id: line.id,
+      amount: line.amount,
+    }));
     years.push({
       year,
       primaryAge: last.primaryAge,
@@ -1008,6 +1038,8 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
       airWithdrawals: airPublished ? airWithdrawals : 0,
       airByKind: airPublished ? airByKind : {},
       incomeByKind,
+      savedLines,
+      spendableBalances,
     });
   }
 
