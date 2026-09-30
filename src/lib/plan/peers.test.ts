@@ -357,7 +357,7 @@ test("debt sentence ties each loan to the planned retirement date", () => {
   const clear = debtSentence(plan);
   assert.ok(clear);
   assert.match(clear, /before your planned retirement in January 2060/);
-  assert.match(clear, /You reach that retirement date with these loans paid off\. Well done\./);
+  assert.match(clear, /You reach that retirement date with these loans paid off\.\s+Well done\./);
   assert.doesNotMatch(clear, /will still be on it/);
 });
 

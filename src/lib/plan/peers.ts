@@ -568,6 +568,15 @@ function balanceSheetNow(plan: Plan): { assets: number; debt: number } {
   return { assets, debt };
 }
 
+/** One sentence per line. Leaves "U.S." and decimals like 2.7% alone. */
+function breakSentences(text: string): string {
+  return text
+    .split("\n")
+    .map((line) => line.replace(/(?<![A-Z])\.\s+(?=[A-Z])/g, ".\n").trim())
+    .filter(Boolean)
+    .join("\n");
+}
+
 /** SCF 2022: median leverage ratio among families that have debt. */
 const TYPICAL_DEBTOR_RATIO = 29;
 
@@ -792,11 +801,19 @@ export function debtSentence(plan: Plan, sim?: SimResult): string | null {
     const ratio = debtRatioLine(plan);
     const later = sim ? retirementDebtLine(plan, sim) : "";
     if (hasRetirement && monthsBetweenMonths(monthStart(asOf), monthStart(retirement as string)) > 0) {
-      return [`Modeled loans are already paid off. You reach that retirement date debt free. Well done.`, ratio, later]
-        .filter(Boolean)
-        .join("\n");
+      return breakSentences(
+        [
+          `Modeled loans are already paid off. You reach that retirement date debt free. Well done.`,
+          ratio,
+          later,
+        ]
+          .filter(Boolean)
+          .join("\n"),
+      );
     }
-    return [`Modeled loans are paid off as of this MACH Run.`, ratio, later].filter(Boolean).join("\n");
+    return breakSentences(
+      [`Modeled loans are paid off as of this MACH Run.`, ratio, later].filter(Boolean).join("\n"),
+    );
   }
 
   if (hasRetirement && open > 0 && clearByRetirement === open) {
@@ -812,7 +829,7 @@ export function debtSentence(plan: Plan, sim?: SimResult): string | null {
   }
   lines.push(debtRatioLine(plan));
   if (sim) lines.push(retirementDebtLine(plan, sim));
-  return lines.join("\n");
+  return breakSentences(lines.join("\n"));
 }
 
 function accountTable(plan: Plan, sim: SimResult, note: string): BriefTableSpec {
