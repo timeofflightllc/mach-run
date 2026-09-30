@@ -361,6 +361,77 @@ test("debt sentence ties each loan to the planned retirement date", () => {
   assert.doesNotMatch(clear, /will still be on it/);
 });
 
+test("debt sentence praises a light debt-to-asset ratio and flags a heavy one", () => {
+  const light = createDefaultPlan();
+  light.assumptions.asOfDate = "2026-08-01";
+  light.portfolios = [
+    {
+      id: "cash",
+      name: "Savings",
+      kind: "taxable",
+      owner: "primary",
+      currentValue: 1_000_000,
+      returnPct: 0,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  light.liabilities = [
+    {
+      id: "small",
+      name: "Card",
+      kind: "credit_card",
+      balance: 1_200,
+      originationDate: "2026-08-01",
+      aprPct: 0,
+      monthlyPi: 100,
+      termYears: 1,
+      includeInSpending: true,
+      owner: "primary",
+    },
+  ];
+  const praised = debtSentence(light);
+  assert.ok(praised);
+  assert.match(praised, /light load/);
+  assert.match(praised, /29%/);
+
+  const heavy = createDefaultPlan();
+  heavy.assumptions.asOfDate = "2026-08-01";
+  heavy.portfolios = [
+    {
+      id: "cash",
+      name: "Savings",
+      kind: "taxable",
+      owner: "primary",
+      currentValue: 50_000,
+      returnPct: 0,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  heavy.liabilities = [
+    {
+      id: "big",
+      name: "Personal",
+      kind: "personal",
+      balance: 120_000,
+      originationDate: "2026-08-01",
+      aprPct: 0,
+      monthlyPi: 1_000,
+      termYears: 10,
+      includeInSpending: true,
+      owner: "primary",
+    },
+  ];
+  const warned = debtSentence(heavy);
+  assert.ok(warned);
+  assert.match(warned, /larger than what you own/);
+  assert.match(warned, /tight spot, not a verdict/);
+  assert.doesNotMatch(warned, /light load/);
+});
+
 test("OODA paychecks sort by start date and print month then year", () => {
   const plan = createDefaultPlan();
   plan.primary.birthDate = "1976-01-01";

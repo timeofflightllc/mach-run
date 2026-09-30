@@ -555,6 +555,79 @@ function payoffMonthYear(isoDate: string | null): string {
   return format(monthStart(isoDate), "MMMM yyyy");
 }
 
+function balanceSheetNow(plan: Plan): { assets: number; debt: number } {
+  const asOf = plan.assumptions.asOfDate;
+  let assets = 0;
+  let debt = 0;
+  for (const p of plan.portfolios) {
+    if (!p.includeInNetWorth) continue;
+    assets += Math.max(0, p.currentValue);
+    if (p.kind === "real_estate") debt += remainingMortgage(p.mortgage, asOf);
+  }
+  for (const l of plan.liabilities ?? []) debt += remainingLiability(l, asOf);
+  return { assets, debt };
+}
+
+/** SCF 2022: median leverage ratio among families that have debt. */
+const TYPICAL_DEBTOR_RATIO = 29;
+
+function debtRatioLine(plan: Plan): string {
+  const { assets, debt } = balanceSheetNow(plan);
+  const bench = `A typical U.S. household that carries debt owes about ${TYPICAL_DEBTOR_RATIO}% of what it owns.`;
+  if (debt < 1 && assets > 1) {
+    return `Debt against ${usd(assets)} of assets on this run is effectively zero. ${bench} You are not in that group.`;
+  }
+  if (assets < 1) {
+    return `These loans add up to ${usd(debt)}, and no assets are included in net worth yet, so there is no debt-to-asset ratio to compare.`;
+  }
+  const pct = (debt / assets) * 100;
+  const shown = pct >= 10 ? String(Math.round(pct)) : String(Math.max(0.1, Math.round(pct * 10) / 10));
+  const lead = `Debt is ${usd(debt)} against ${usd(assets)} of assets on this run, about ${shown}%.`;
+  const focus = dominantDebt(plan);
+  if (pct < 10) {
+    return `${lead} ${bench} Yours is a light load.${focus} That cushion is worth keeping.`;
+  }
+  if (pct < 20) {
+    return `${lead} ${bench} You are carrying less than that.${focus} The assets are doing the heavy work.`;
+  }
+  if (pct < 40) {
+    return `${lead} ${bench} You are in that neighborhood.${focus} A house loan usually explains a number like this.`;
+  }
+  if (pct < 60) {
+    return `${lead} ${bench} Yours is higher, which a mortgage can do while you still have equity.${focus} The loans that are not the house are the ones to watch.`;
+  }
+  if (pct < 100) {
+    return `${lead} ${bench} This is a large share of what you own.${focus} There is still equity, but the margin is thinner than most.`;
+  }
+  return `Debt is ${usd(debt)} and the assets on this run are ${usd(assets)}. The loans are larger than what you own. ${bench}${focus} This is a tight spot, not a verdict.`;
+}
+
+function dominantDebt(plan: Plan): string {
+  const asOf = plan.assumptions.asOfDate;
+  const pieces: { label: string; amount: number; mortgage: boolean }[] = [];
+  for (const p of plan.portfolios) {
+    if (p.kind !== "real_estate" || !p.includeInNetWorth) continue;
+    const amount = remainingMortgage(p.mortgage, asOf);
+    if (amount >= 1) pieces.push({ label: p.name.trim() || "the house", amount, mortgage: true });
+  }
+  for (const l of plan.liabilities ?? []) {
+    const amount = remainingLiability(l, asOf);
+    if (amount >= 1) {
+      pieces.push({
+        label: l.name.trim() || LIABILITY_KIND[l.kind] || "a loan",
+        amount,
+        mortgage: false,
+      });
+    }
+  }
+  if (pieces.length < 2) return "";
+  const total = pieces.reduce((sum, piece) => sum + piece.amount, 0);
+  pieces.sort((a, b) => b.amount - a.amount);
+  const top = pieces[0];
+  if (!top || top.amount / total < 0.6) return "";
+  return top.mortgage ? ` Most of that sits on ${top.label}.` : ` Most of that is ${top.label}.`;
+}
+
 function liabilitySubject(l: Liability): string {
   const name = l.name.trim();
   const lender = (l.institutionName ?? "").trim();
@@ -647,10 +720,11 @@ export function debtSentence(plan: Plan): string | null {
       plan.portfolios.some((p) => p.kind === "real_estate" && mortgageAssociated(p.mortgage)) ||
       (plan.liabilities ?? []).some((l) => l.monthlyPi > 0 && l.termYears > 0);
     if (!had) return null;
+    const ratio = debtRatioLine(plan);
     if (hasRetirement && monthsBetweenMonths(monthStart(asOf), monthStart(retirement as string)) > 0) {
-      return "Modeled loans are already paid off. You reach that retirement date debt free. Well done.";
+      return `Modeled loans are already paid off. You reach that retirement date debt free. Well done.\n${ratio}`;
     }
-    return "Modeled loans are paid off as of this MACH Run.";
+    return `Modeled loans are paid off as of this MACH Run.\n${ratio}`;
   }
 
   if (hasRetirement && open > 0 && clearByRetirement === open) {
@@ -664,6 +738,7 @@ export function debtSentence(plan: Plan): string | null {
         : `You reach that retirement date with ${noun} paid off. Well done.`,
     );
   }
+  lines.push(debtRatioLine(plan));
   return lines.join("\n");
 }
 
