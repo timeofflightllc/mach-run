@@ -305,6 +305,62 @@ test("debt sentence is null when there are no loans", () => {
   assert.equal(debtSentence(plan), null);
 });
 
+test("debt sentence ties each loan to the planned retirement date", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-08-01";
+  plan.assumptions.retirementGoalDate = "2040-01-01";
+  plan.portfolios = [
+    {
+      id: "house",
+      name: "House",
+      kind: "real_estate",
+      owner: "joint",
+      currentValue: 400_000,
+      returnPct: 0,
+      taxBucket: "none",
+      spendable: false,
+      includeInNetWorth: true,
+      mortgage: {
+        originationDate: "2020-08-01",
+        aprPct: 4,
+        monthlyPi: 1500,
+        termYears: 30,
+        includeInSpending: true,
+        associated: true,
+        institutionName: "Rocket Mortgage",
+      },
+    },
+  ];
+  plan.liabilities = [
+    {
+      id: "lia-car",
+      name: "Car",
+      kind: "car",
+      balance: 20_000,
+      originationDate: "2023-08-01",
+      aprPct: 6,
+      monthlyPi: 400,
+      termYears: 6,
+      includeInSpending: true,
+      owner: "primary",
+      institutionName: "Navy Federal",
+    },
+  ];
+  const mixed = debtSentence(plan);
+  assert.ok(mixed);
+  assert.match(mixed, /August 2029, about 10 years before your planned retirement in January 2040/);
+  assert.match(mixed, /At your planned retirement in January 2040, about \$/);
+  assert.match(mixed, /will still be on it/);
+  assert.doesNotMatch(mixed, /debt free|Well done/);
+
+  plan.assumptions.retirementGoalDate = "2060-01-01";
+  const clear = debtSentence(plan);
+  assert.ok(clear);
+  assert.match(clear, /before your planned retirement in January 2060/);
+  assert.match(clear, /You reach that retirement date with these loans paid off\. Well done\./);
+  assert.doesNotMatch(clear, /will still be on it/);
+});
+
 test("OODA paychecks sort by start date and print month then year", () => {
   const plan = createDefaultPlan();
   plan.primary.birthDate = "1976-01-01";

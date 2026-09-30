@@ -13,7 +13,7 @@ import { guaranteedAnnuityEquivalent, type AnnuityEquivalent } from "./annuity-e
 import { cashShortYears } from "./cash-short.ts";
 import { usd, usdCompact } from "./format.ts";
 import { remainingLiability, liabilityPayoffDate } from "./liability.ts";
-import { mortgageAssociated, mortgagePayoffDate, remainingMortgage } from "./mortgage.ts";
+import { monthsBetweenMonths, mortgageAssociated, mortgagePayoffDate, remainingMortgage } from "./mortgage.ts";
 import type { Liability, LiabilityKind, Plan, SimResult } from "./types.ts";
 
 /** SCF 2022 net worth knots, inflated ~12% into 2026 dollars. Approximate. */
@@ -568,10 +568,56 @@ function liabilitySubject(l: Liability): string {
   return `Your ${kind}`;
 }
 
+function beforeSpan(months: number): string {
+  if (months <= 1) return "a month";
+  if (months < 12) return `${months} months`;
+  const years = Math.round(months / 12);
+  if (months % 12 === 0) return years === 1 ? "1 year" : `${years} years`;
+  return years === 1 ? "about a year" : `about ${years} years`;
+}
+
+/** Payoff, then how that date sits against the Family retirement goal. */
+function loanTail(
+  payoff: string | null,
+  balanceAtRetirement: number,
+  retirement: string | null,
+  asOf: string,
+): string {
+  const when = payoffMonthYear(payoff);
+  if (!retirement || !validIso(retirement)) return ` It pays off ${when}.`;
+  const retLabel = payoffMonthYear(retirement);
+  const already =
+    validIso(asOf) && monthsBetweenMonths(monthStart(retirement), monthStart(asOf)) >= 0;
+  if (payoff && validIso(payoff)) {
+    const monthsBefore = monthsBetweenMonths(monthStart(payoff), monthStart(retirement));
+    if (monthsBefore > 0) {
+      return ` It pays off ${when}, ${beforeSpan(monthsBefore)} before your planned retirement in ${retLabel}.`;
+    }
+    if (monthsBefore === 0) {
+      return ` It pays off ${when}, the same month you plan to retire.`;
+    }
+  }
+  const left = usd(balanceAtRetirement);
+  if (already) {
+    return ` It pays off ${when}. You are past your planned retirement in ${retLabel}, and about ${left} is still on it.`;
+  }
+  return ` It pays off ${when}. At your planned retirement in ${retLabel}, about ${left} will still be on it.`;
+}
+
 /** One line per loan: who it is, what it sits on, balance now, full payoff month. */
 export function debtSentence(plan: Plan): string | null {
   const asOf = plan.assumptions.asOfDate;
+  const retirement = plan.assumptions.retirementGoalDate;
+  const hasRetirement = Boolean(retirement && validIso(retirement));
   const lines: string[] = [];
+  let open = 0;
+  let clearByRetirement = 0;
+
+  const noteLoan = (payoff: string | null, balanceAtRetirement: number) => {
+    open += 1;
+    if (hasRetirement && balanceAtRetirement < 1) clearByRetirement += 1;
+    return loanTail(payoff, balanceAtRetirement, hasRetirement ? retirement : null, asOf);
+  };
 
   for (const p of plan.portfolios) {
     if (p.kind !== "real_estate" || !mortgageAssociated(p.mortgage)) continue;
@@ -582,8 +628,9 @@ export function debtSentence(plan: Plan): string | null {
     const subject = lender
       ? `The ${lender} loan on your ${property}`
       : `The loan on your ${property}`;
+    const atRetirement = hasRetirement ? remainingMortgage(p.mortgage, retirement as string) : balance;
     lines.push(
-      `${subject} is ${usd(balance)}. It pays off ${payoffMonthYear(mortgagePayoffDate(p.mortgage))}.`,
+      `${subject} is ${usd(balance)}.${noteLoan(mortgagePayoffDate(p.mortgage), atRetirement)}`,
     );
   }
 
@@ -591,16 +638,31 @@ export function debtSentence(plan: Plan): string | null {
     if (!(l.monthlyPi > 0) || !(l.termYears > 0)) continue;
     const balance = remainingLiability(l, asOf);
     if (balance < 1) continue;
-    lines.push(
-      `${liabilitySubject(l)} is ${usd(balance)}. It pays off ${payoffMonthYear(liabilityPayoffDate(l))}.`,
-    );
+    const atRetirement = hasRetirement ? remainingLiability(l, retirement as string) : balance;
+    lines.push(`${liabilitySubject(l)} is ${usd(balance)}.${noteLoan(liabilityPayoffDate(l), atRetirement)}`);
   }
 
   if (!lines.length) {
     const had =
       plan.portfolios.some((p) => p.kind === "real_estate" && mortgageAssociated(p.mortgage)) ||
       (plan.liabilities ?? []).some((l) => l.monthlyPi > 0 && l.termYears > 0);
-    return had ? "Modeled loans are paid off as of this MACH Run." : null;
+    if (!had) return null;
+    if (hasRetirement && monthsBetweenMonths(monthStart(asOf), monthStart(retirement as string)) > 0) {
+      return "Modeled loans are already paid off. You reach that retirement date debt free. Well done.";
+    }
+    return "Modeled loans are paid off as of this MACH Run.";
+  }
+
+  if (hasRetirement && open > 0 && clearByRetirement === open) {
+    const already =
+      validIso(asOf) &&
+      monthsBetweenMonths(monthStart(retirement as string), monthStart(asOf)) >= 0;
+    const noun = open === 1 ? "this loan" : "these loans";
+    lines.push(
+      already
+        ? `You reached that retirement date with ${noun} paid off. Well done.`
+        : `You reach that retirement date with ${noun} paid off. Well done.`,
+    );
   }
   return lines.join("\n");
 }
