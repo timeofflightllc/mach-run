@@ -336,12 +336,13 @@ function Pricing() {
           </div>
         </div>
 
-        <div className="mx-auto mt-6 max-w-md">
-          <label className="flex min-w-0 flex-col gap-1.5">
-            <span className="text-xs font-medium tracking-wide text-muted">
+        <div className="mx-auto mt-6 flex w-full max-w-[20rem] flex-col items-center text-center">
+          <label className="flex w-full min-w-0 flex-col items-center gap-1.5">
+            <span className="text-sm font-medium text-muted">
               {copy.couponLabel}
             </span>
             <TextInput
+              className="max-w-none text-center"
               value={trialCode}
               onChange={(e) => {
                 setTrialCode(e.target.value);
@@ -355,7 +356,7 @@ function Pricing() {
           </label>
           <p
             className={cn(
-              "mt-2 text-sm",
+              "mt-2 w-full text-center text-sm",
               hasTrial ? "text-fg" : codeInvalid ? "text-negative" : "text-subtle",
             )}
           >
