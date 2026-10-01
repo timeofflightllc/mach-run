@@ -26,6 +26,7 @@ import { MachOrbit } from "@/components/meridian/mach-orbit";
 import { GuestOnly } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { simulate } from "@/lib/plan/engine";
+import { planInputSignature } from "@/lib/plan/input-signature";
 import { buildPeerBrief, type PeerBrief } from "@/lib/plan/peers";
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import { usePlanStore } from "@/lib/plan/store";
@@ -120,9 +121,7 @@ function SweepNav({
 
 /** View toggle only. It does not change the run, so it must not force a re-execute. */
 function inputSignature(plan: Plan): string {
-  const assumptions = { ...plan.assumptions };
-  delete assumptions.dollars;
-  return JSON.stringify({ ...plan, assumptions });
+  return planInputSignature(plan);
 }
 
 export const Route = createFileRoute("/")({ component: Home });
@@ -310,14 +309,14 @@ function Home() {
       return;
     }
     const stored = loadStoredRuns();
-    const next: Record<
+    const loaded: Record<
       string,
       { id: number; plan: Plan; sim: SimResult; brief: PeerBrief }
     > = {};
     for (const [key, row] of Object.entries(stored)) {
       try {
         const sim = simulate(row.plan);
-        next[key] = {
+        loaded[key] = {
           id: row.id,
           plan: row.plan,
           sim: simForCharts(sim),
@@ -327,7 +326,14 @@ function Home() {
         /* skip a bad snapshot */
       }
     }
-    setRuns(next);
+    setRuns((prev) => {
+      const next = { ...loaded };
+      for (const [key, row] of Object.entries(prev)) {
+        const fromDisk = next[key];
+        if (!fromDisk || row.id >= fromDisk.id) next[key] = row;
+      }
+      return next;
+    });
   }, [isPending, signedIn]);
 
   useEffect(() => {
@@ -380,7 +386,6 @@ function Home() {
         assumptions: { ...run.plan.assumptions, dollars: plan.assumptions.dollars },
       }
     : plan;
-  const sim = run?.sim;
   const real = plan.assumptions.dollars === "real";
 
   useEffect(() => {
@@ -390,6 +395,8 @@ function Home() {
   useEffect(() => {
     setRunError(null);
   }, [runKey]);
+
+  const liveSig = inputSignature(plan);
 
   useEffect(() => {
     if (step !== "act") {
@@ -403,7 +410,6 @@ function Home() {
       setStalePrompt(false);
       return;
     }
-    const liveSig = inputSignature(usePlanStore.getState().plan);
     if (inputSignature(current.plan) === liveSig) {
       dismissedStale.current = null;
       setStalePrompt(false);
@@ -411,7 +417,7 @@ function Home() {
     }
     if (dismissedStale.current === liveSig) return;
     setStalePrompt(true);
-  }, [step, runKey, runs, holding]);
+  }, [step, runKey, runs, holding, liveSig]);
 
   useEffect(() => {
     if (!ent.paid) return;
@@ -891,7 +897,7 @@ function Home() {
               </p>
               <p className="mt-2 text-sm text-muted">Kicking the tires and lighting the fires.</p>
             </div>
-          ) : sim ? (
+          ) : run ? (
             <div className="flex flex-col gap-4">
               {!ent.paid ? (
                 <div
@@ -922,8 +928,8 @@ function Home() {
                         <ActPhase />
                         <Verdict
                           plan={displayPlan}
-                          sim={sim}
-                          brief={run?.brief ?? null}
+                          sim={run.sim}
+                          brief={run.brief}
                         />
                       </div>
                       <div className="flex min-w-0 flex-col gap-3">
@@ -934,29 +940,29 @@ function Home() {
                             className="h-9 w-auto min-w-[6.8rem] px-5 text-sm"
                           />
                         </div>
-                        <KpiStrip plan={displayPlan} sim={sim} />
+                        <KpiStrip plan={displayPlan} sim={run.sim} />
                       </div>
                     </div>
                     <PeerBriefCard
-                      key={run?.id ?? "idle"}
-                      brief={run?.brief ?? null}
+                      key={run.id}
+                      brief={run.brief}
                       ran
                       plan={displayPlan}
-                      sim={sim}
+                      sim={run.sim}
                     />
                   </div>
                   <div className="flex min-w-0 flex-col gap-4">
                     <PhaseLabel id="ooda-radar" label="Financial Radar" />
-                    <ActChartColumn plan={displayPlan} sim={sim} />
+                    <ActChartColumn plan={displayPlan} sim={run.sim} />
                     <OodaAiCard
                       plan={displayPlan}
-                      sim={sim}
-                      brief={run?.brief ?? null}
+                      sim={run.sim}
+                      brief={run.brief}
                     />
                   </div>
                 </div>
               </div>
-              <YearTable plan={displayPlan} sim={sim} />
+              <YearTable plan={displayPlan} sim={run.sim} />
             </div>
           ) : (
             <div className="flex flex-col gap-4">
