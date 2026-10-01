@@ -32,7 +32,7 @@ import type { ContributionRule, Plan } from "@/lib/plan/types";
 const MATCH_PCTS = Array.from({ length: 21 }, (_, i) => i * 5);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const summaryGrid =
-  "min-w-max grid-cols-[minmax(8rem,1.15fr)_minmax(8rem,1.25fr)_max-content_max-content_4.5rem_7.25rem] items-center gap-x-6";
+  "grid w-full min-w-[76rem] grid-cols-[minmax(9rem,1fr)_minmax(14rem,1.25fr)_minmax(22rem,1.45fr)_16rem_4.5rem_7.25rem] items-center gap-x-4";
 const bandField = "w-[9.5rem] shrink-0";
 const bandControl = "h-10 max-w-none";
 
@@ -213,7 +213,7 @@ export function ContributionForm() {
         {rows.length > 0 ? (
           <li className={`hidden px-3 text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid ${summaryGrid}`}>
             <span className="min-w-0">Name</span>
-            <span className="min-w-0">Account</span>
+            <span className="min-w-0 text-left">Account</span>
             <span>Amount</span>
             <span>When</span>
             <span>Match</span>
@@ -496,7 +496,7 @@ export function ContributionForm() {
                   </div>
                   <div className={`hidden text-sm @min-[46rem]:grid ${summaryGrid}`}>
                     <span className="min-w-0 truncate font-medium text-fg">{c.label.trim() || "Contribution"}</span>
-                    <span className="flex min-w-0 items-center gap-1.5 text-muted">
+                    <span className="flex w-full min-w-0 items-center justify-start gap-1.5 text-left text-muted">
                       <span className="min-w-0 truncate">{accountLabel(plan, c)}</span>
                       {logo ? (
                         <img
