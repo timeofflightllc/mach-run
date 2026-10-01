@@ -589,18 +589,24 @@ function ratioShown(pct: number): string {
     : String(Math.max(0.1, Math.round(pct * 10) / 10));
 }
 
-function debtRatioLine(plan: Plan): string {
+function debtRatioLine(plan: Plan, open: number): string {
   const { assets, debt } = balanceSheetNow(plan);
   const bench = `A typical U.S. household that carries debt owes about ${TYPICAL_DEBTOR_RATIO}% of what it owns.`;
+  const many = open > 1;
   if (debt < 1 && assets > 1) {
-    return `Debt against ${usd(assets)} of assets on this run is effectively zero. ${bench} You are not in that group.`;
+    return `Your total debt against ${usd(assets)} of assets is effectively zero. ${bench} You are not in that group.`;
   }
   if (assets < 1) {
-    return `These loans add up to ${usd(debt)}, and no assets are included in net worth yet, so there is no debt-to-asset ratio to compare.`;
+    const sum = many
+      ? `If we combine all loans, they add up to ${usd(debt)}`
+      : `Your total debt is ${usd(debt)}`;
+    return `${sum}, and no assets are included in net worth yet, so there is no debt-to-asset ratio to compare.`;
   }
   const pct = (debt / assets) * 100;
   const shown = ratioShown(pct);
-  const lead = `Debt is ${usd(debt)} against ${usd(assets)} of assets on this run, about ${shown}%.`;
+  const lead = many
+    ? `If we combine all loans, your total debt is ${usd(debt)} against ${usd(assets)} of assets, about ${shown}%.`
+    : `Your total debt is ${usd(debt)} against ${usd(assets)} of assets, about ${shown}%.`;
   const focus = dominantDebt(plan);
   if (pct < 10) {
     return `${lead} ${bench} Yours is a light load.${focus} That cushion is worth keeping.`;
@@ -617,21 +623,19 @@ function debtRatioLine(plan: Plan): string {
   if (pct < 100) {
     return `${lead} ${bench} This is a large share of what you own.${focus} There is still equity, but the margin is thinner than most.`;
   }
-  return `Debt is ${usd(debt)} and the assets on this run are ${usd(assets)}. The loans are larger than what you own. ${bench}${focus} This is a tight spot, not a verdict.`;
+  const over = many
+    ? `If we combine all loans, your total debt is ${usd(debt)} and your assets are ${usd(assets)}.`
+    : `Your total debt is ${usd(debt)} and your assets are ${usd(assets)}.`;
+  return `${over} The loans are larger than what you own. ${bench}${focus} This is a tight spot, not a verdict.`;
 }
 
 function retirementLanding(pct: number): string {
-  const bench = `A typical U.S. household that carries debt owes about ${TYPICAL_DEBTOR_RATIO}% of what it owns.`;
-  if (pct < 10) return `${bench} At retirement yours is a light load. That is a strong place to land.`;
-  if (pct < 20) return `${bench} You land under that. The assets are still doing the heavy work.`;
-  if (pct < 40) return `${bench} You land in that neighborhood. Fine if a house loan is most of it.`;
-  if (pct < 60) {
-    return `${bench} You land higher than that. Equity is still there, but the loans that are not the house are the ones to watch.`;
-  }
-  if (pct < 100) {
-    return `${bench} You land with a large share of what you own still pledged. There is equity, and less margin than most.`;
-  }
-  return `${bench} At retirement the loans are still larger than the assets. That is a tight landing, not a verdict.`;
+  if (pct < 10) return "That is a light load, and a strong place to land.";
+  if (pct < 20) return "The assets are still doing the heavy work.";
+  if (pct < 40) return "Fine if a house loan is most of it.";
+  if (pct < 60) return "Equity is still there, but the loans that are not the house are the ones to watch.";
+  if (pct < 100) return "A large share of what you own is still pledged. There is equity, and less margin than most.";
+  return "The loans are still larger than the assets. That is a tight landing, not a verdict.";
 }
 
 /** Debt-to-asset on the retirement month, in today's dollars, plus how it compares with today. */
@@ -666,10 +670,10 @@ function retirementDebtLine(plan: Plan, sim: SimResult): string {
       nowPct != null && nowPct >= 1
         ? ` That is lighter than the ${ratioShown(nowPct)}% you carry now.`
         : "";
-    return `At retirement in ${when}, modeled debt is gone against ${usd(assets)} of assets, in today's dollars. The debt-to-asset ratio there is zero.${lighter} You walk in clear.`;
+    return `At retirement in ${when}, these loans are paid off. Against ${usd(assets)} of assets in today's dollars, the debt-to-asset ratio there is zero.${lighter} You walk in clear.`;
   }
   if (assets < 1) {
-    return `At retirement in ${when}, modeled debt is still ${usd(debt)} and no assets are in net worth, in today's dollars. There is still no ratio to stand on.`;
+    return `At retirement in ${when}, what is still owed is ${usd(debt)} in today's dollars, and no assets are in net worth. There is still no ratio to stand on.`;
   }
   const pct = (debt / assets) * 100;
   const compared =
@@ -680,13 +684,16 @@ function retirementDebtLine(plan: Plan, sim: SimResult): string {
         : pct < nowPct
           ? ` That is lighter than the ${ratioShown(nowPct)}% you carry now.`
           : ` That is heavier than the ${ratioShown(nowPct)}% you carry now.`;
-  const oneLoan = openLoansAt(plan, goal) <= 1;
-  const lead = oneLoan
-    ? `At retirement in ${when}, that combined balance is about ${ratioShown(pct)}% of your assets in today's dollars (${usd(assets)}).`
-    : Math.abs(nominal - debt) < 1
-      ? `At retirement in ${when}, those loans together are ${usd(debt)} in today's dollars, about ${ratioShown(pct)}% of your assets (${usd(assets)}).`
-      : `At retirement in ${when}, those loans together are ${usd(nominal)} in future dollars (${usd(debt)} in today's dollars), about ${ratioShown(pct)}% of your assets in today's dollars (${usd(assets)}).`;
-  return `${lead}${compared} ${retirementLanding(pct)}`;
+  const still = openLoansAt(plan, goal);
+  const nowOpen = openLoansAt(plan, asOf);
+  const owed =
+    still <= 1
+      ? `what is still owed is about ${ratioShown(pct)}% of your assets in today's dollars (${usd(assets)})`
+      : Math.abs(nominal - debt) < 1
+        ? `what is still owed adds up to ${usd(debt)} in today's dollars, about ${ratioShown(pct)}% of your assets (${usd(assets)})`
+        : `what is still owed adds up to ${usd(nominal)} in future dollars (${usd(debt)} in today's dollars), about ${ratioShown(pct)}% of your assets in today's dollars (${usd(assets)})`;
+  const after = still < nowOpen ? "once the earlier loans are paid off, " : "";
+  return `At retirement in ${when}, ${after}${owed}.${compared} ${retirementLanding(pct)}`;
 }
 
 function openLoansAt(plan: Plan, date: string): number {
@@ -724,7 +731,15 @@ function dominantDebt(plan: Plan): string {
   pieces.sort((a, b) => b.amount - a.amount);
   const top = pieces[0];
   if (!top || top.amount / total < 0.6) return "";
-  return top.mortgage ? ` Most of that sits on ${top.label}.` : ` Most of that is ${top.label}.`;
+  return top.mortgage
+    ? ` Most of that sits on ${yourThing(top.label)}.`
+    : ` Most of that is ${yourThing(top.label)}.`;
+}
+
+function yourThing(label: string): string {
+  const trimmed = label.trim();
+  if (/^(the|your)\b/i.test(trimmed)) return trimmed;
+  return `your ${trimmed}`;
 }
 
 function liabilitySubject(l: Liability): string {
@@ -734,8 +749,8 @@ function liabilitySubject(l: Liability): string {
   const bare = kind.split(" ")[0].toLowerCase();
   const nameIsKind =
     !name || name.toLowerCase() === kind || name.toLowerCase() === bare;
-  if (lender && !nameIsKind) return `The ${lender} ${kind}, ${name},`;
-  if (lender) return `The ${lender} ${kind}`;
+  if (lender && !nameIsKind) return `Your ${name} ${kind} at ${lender}`;
+  if (lender) return `Your ${lender} ${kind}`;
   if (!nameIsKind) return `Your ${name} ${kind}`;
   return `Your ${kind}`;
 }
@@ -772,17 +787,18 @@ function loanTail(
   asOf: string,
 ): string {
   const when = payoffMonthYear(payoff);
-  if (!retirement || !validIso(retirement)) return ` It pays off ${when}.`;
+  const paid = when.startsWith("the ") ? `You pay it off at ${when}` : `You pay it off in ${when}`;
+  if (!retirement || !validIso(retirement)) return ` ${paid}.`;
   const retLabel = payoffMonthYear(retirement);
   const already =
     validIso(asOf) && monthsBetweenMonths(monthStart(retirement), monthStart(asOf)) >= 0;
   if (payoff && validIso(payoff)) {
     const monthsBefore = monthsBetweenMonths(monthStart(payoff), monthStart(retirement));
     if (monthsBefore > 0) {
-      return ` It pays off ${when}, ${beforeSpan(monthsBefore)} before your planned retirement in ${retLabel}.`;
+      return ` ${paid}, ${beforeSpan(monthsBefore)} before your planned retirement in ${retLabel}.`;
     }
     if (monthsBefore === 0) {
-      return ` It pays off ${when}, the same month you plan to retire.`;
+      return ` ${paid}, the same month you plan to retire.`;
     }
   }
   const left = usd(balanceAtRetirement);
@@ -791,9 +807,9 @@ function loanTail(
     ? `about ${left}`
     : `about ${left} in future dollars (${usd(balanceToday)} in today's dollars)`;
   if (already) {
-    return ` It pays off ${when}. You are past your planned retirement in ${retLabel}, and ${pair} is still on it.`;
+    return ` ${paid}. You are past your planned retirement in ${retLabel}, and ${pair} is still owed.`;
   }
-  return ` It pays off ${when}. At your planned retirement in ${retLabel}, ${pair} will still be on it.`;
+  return ` ${paid}. At your planned retirement in ${retLabel}, ${pair} is still owed.`;
 }
 
 /** One line per loan: who it is, what it sits on, balance now, full payoff month. */
@@ -851,14 +867,14 @@ export function debtSentence(plan: Plan, sim?: SimResult): string | null {
     const later = sim ? retirementDebtLine(plan, sim) : "";
     if (hasRetirement && monthsBetweenMonths(monthStart(asOf), monthStart(retirement as string)) > 0) {
       return [
-        `Individual loans. Modeled loans are already paid off. You reach that retirement date debt free. Well done.`,
-        combinedDebtLine(plan, 0),
+        `These loans are already paid off. You reach that retirement date debt free. Well done.`,
+        debtRatioLine(plan, 0),
         later,
       ]
         .filter(Boolean)
         .join("\n\n");
     }
-    return [`Individual loans. Modeled loans are paid off as of this MACH Run.`, combinedDebtLine(plan, 0), later]
+    return [`These loans are paid off as of this MACH Run.`, debtRatioLine(plan, 0), later]
       .filter(Boolean)
       .join("\n\n");
   }
@@ -874,18 +890,9 @@ export function debtSentence(plan: Plan, sim?: SimResult): string | null {
         : `You reach that retirement date with ${noun} paid off. Well done.`,
     );
   }
-  lines.unshift(open === 1 ? "Individual loan." : "Individual loans.");
-  lines.push(combinedDebtLine(plan, open));
+  lines.push(debtRatioLine(plan, open));
   if (sim) lines.push(retirementDebtLine(plan, sim));
   return lines.join("\n\n");
-}
-
-function combinedDebtLine(plan: Plan, open: number): string {
-  const ratio = debtRatioLine(plan);
-  if (open === 1) {
-    return `All loans combined. With one loan on this run, this is that same balance. ${ratio}`;
-  }
-  return `All loans combined. ${ratio}`;
 }
 
 function accountTable(plan: Plan, sim: SimResult, note: string): BriefTableSpec {

@@ -32,7 +32,7 @@ import type { ContributionRule, Plan } from "@/lib/plan/types";
 const MATCH_PCTS = Array.from({ length: 21 }, (_, i) => i * 5);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const summaryGrid =
-  "grid-cols-[minmax(0,1.15fr)_minmax(0,1.25fr)_minmax(9.5rem,9.5rem)_minmax(13rem,13rem)_minmax(4.5rem,4.5rem)_minmax(7.25rem,7.25rem)] items-center gap-x-3";
+  "min-w-max grid-cols-[minmax(8rem,1.15fr)_minmax(8rem,1.25fr)_max-content_max-content_4.5rem_7.25rem] items-center gap-x-6";
 const bandField = "w-[9.5rem] shrink-0";
 const bandControl = "h-10 max-w-none";
 
@@ -54,14 +54,15 @@ function accountLogo(plan: Plan, rule: ContributionRule): string | undefined {
 }
 
 function summaryAmount(plan: Plan, rule: ContributionRule): { main: string; title?: string } {
+  const dollars = `${usd(employeeMonthlyNow(plan, rule))}/mo`;
   if (rule.amountMode === "percent") {
     const inc = plan.incomes.find((s) => s.id === rule.percentOfIncomeId);
     const name = inc?.name.trim() || "that income";
-    const short = name.length > 5 ? `${name.slice(0, 5).trimEnd()}…` : name;
     const pct = rule.percentOfIncome ?? 0;
-    return { main: `${pct}% of ${short}`, title: `${pct}% of ${name}` };
+    const main = `${dollars} (${pct}% of ${name})`;
+    return { main, title: main };
   }
-  return { main: `${usd(rule.monthlyAmount)}/mo` };
+  return { main: dollars, title: dollars };
 }
 
 function shortDate(iso: string | null | undefined): string {
@@ -208,12 +209,12 @@ export function ContributionForm() {
         ) : null}
         {copy.contributionsP3.trim() ? <p className="whitespace-pre-wrap">{copy.contributionsP3}</p> : null}
       </div>
-      <ul className="flex flex-col gap-2">
+      <ul className="flex flex-col gap-2 overflow-x-auto">
         {rows.length > 0 ? (
           <li className={`hidden px-3 text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid ${summaryGrid}`}>
             <span className="min-w-0">Name</span>
             <span className="min-w-0">Account</span>
-            <span className="text-right">Amount</span>
+            <span>Amount</span>
             <span>When</span>
             <span>Match</span>
             <span />
@@ -466,7 +467,7 @@ export function ContributionForm() {
               >
                 <div className="min-h-0 overflow-hidden">
                   <div className="flex items-center gap-3 @min-[46rem]:hidden">
-                    <p className="min-w-0 flex-1 truncate text-sm text-fg">
+                    <p className="min-w-0 flex-1 text-sm text-fg">
                       <span className="font-medium">{c.label.trim() || "Contribution"}</span>
                       <span className="text-muted"> · {accountLabel(plan, c)}</span>
                       <span className="text-muted" title={amount.title}> · {amount.main}</span>
@@ -507,10 +508,10 @@ export function ContributionForm() {
                         />
                       ) : null}
                     </span>
-                    <span className="min-w-0 truncate whitespace-nowrap text-right tabular-nums text-fg" title={amount.title}>
+                    <span className="whitespace-nowrap tabular-nums text-fg" title={amount.title}>
                       {amount.main}
                     </span>
-                    <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-muted">
+                    <span className="whitespace-nowrap tabular-nums text-muted">
                       {shortDate(c.startDate)} → {c.endDate ? shortDate(c.endDate) : projectionEndMonth(plan.primary.birthDate, plan.assumptions.projectionEndAge)}
                     </span>
                     <span className="min-w-0 truncate tabular-nums text-muted">

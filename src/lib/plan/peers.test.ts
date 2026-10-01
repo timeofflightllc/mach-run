@@ -291,9 +291,9 @@ test("debt sentence names remaining principal and last payoff year", () => {
   const line = debtSentence(plan);
   assert.ok(line);
   assert.match(line, /The Rocket Mortgage loan on your House is \$/);
-  assert.match(line, /It pays off August 2050/);
-  assert.match(line, /The Navy Federal car loan is \$/);
-  assert.match(line, /It pays off August 2029/);
+  assert.match(line, /You pay it off in August 2050/);
+  assert.match(line, /Your Navy Federal car loan is \$/);
+  assert.match(line, /You pay it off in August 2029/);
   assert.doesNotMatch(line, /Remaining debt now is/);
   const sim = simulate(plan);
   const brief = buildPeerBrief(plan, sim, { expanded: true });
@@ -350,7 +350,7 @@ test("debt sentence ties each loan to the planned retirement date", () => {
   assert.ok(mixed);
   assert.match(mixed, /August 2029, about 10 years before your planned retirement in January 2040/);
   assert.match(mixed, /At your planned retirement in January 2040, about \$/);
-  assert.match(mixed, /will still be on it/);
+  assert.match(mixed, /will still be on it|is still owed/);
   assert.doesNotMatch(mixed, /debt free|Well done/);
 
   plan.assumptions.retirementGoalDate = "2060-01-01";
@@ -358,7 +358,7 @@ test("debt sentence ties each loan to the planned retirement date", () => {
   assert.ok(clear);
   assert.match(clear, /before your planned retirement in January 2060/);
   assert.match(clear, /You reach that retirement date with these loans paid off\.\s+Well done\./);
-  assert.doesNotMatch(clear, /will still be on it/);
+  assert.doesNotMatch(clear, /is still owed/);
 });
 
 test("debt sentence praises a light debt-to-asset ratio and flags a heavy one", () => {
@@ -474,7 +474,7 @@ test("debt section scores the ratio at retirement against today", () => {
   assert.match(open, /At retirement in January 2036/);
   assert.match(open, /in today's dollars/);
   assert.match(open, /lighter than the 90% you carry now/);
-  assert.match(open, /large share of what you own still pledged/);
+  assert.match(open, /large share of what you own is still pledged/);
 
   plan.liabilities[0].termYears = 2;
   plan.liabilities[0].monthlyPi = 10_000;
@@ -522,15 +522,15 @@ test("debt at retirement names the statement balance and today's dollars", () =>
   ];
   const text = debtSentence(plan, simulate(plan)) ?? "";
   const loan = text.match(
-    /about \$([0-9,]+) in future dollars \(\$([0-9,]+) in today's dollars\) will still be on it\./,
+    /about \$([0-9,]+) in future dollars \(\$([0-9,]+) in today's dollars\) is still owed\./,
   );
   assert.ok(loan, text);
   const statement = Number(loan[1].replace(/,/g, ""));
   const today = Number(loan[2].replace(/,/g, ""));
   assert.ok(statement > today);
-  assert.match(text, /Individual loan\./);
-  assert.match(text, /All loans combined\. With one loan on this run, this is that same balance\./);
-  assert.match(text, /that combined balance is about [0-9.]+% of your assets in today's dollars/);
+  assert.doesNotMatch(text, /Individual loan/);
+  assert.match(text, /Your total debt is \$/);
+  assert.match(text, /what is still owed is about [0-9.]+% of your assets in today's dollars/);
   assert.doesNotMatch(
     text,
     new RegExp(`debt is \\$${loan[1]} in future dollars`),
