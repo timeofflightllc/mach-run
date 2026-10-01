@@ -15,18 +15,31 @@ function About() {
     <main className="min-h-screen bg-bg py-10 text-fg">
       <div className="page-gutter mx-auto w-full space-y-8">
         <PageMast />
-        <header>
-          <h1 className="font-display text-4xl text-fg sm:text-5xl">{page.title}</h1>
-          {page.kicker ? <p className="mt-2 text-lg text-muted">{page.kicker}</p> : null}
-        </header>
-        <SiteCopyBody body={page.body} />
-        <figure className="mt-4 max-w-sm">
-          <img
-            src="/brand/cain-signature.png?v=4"
-            alt="Cain"
-            className="h-20 w-auto sm:h-24"
-          />
-        </figure>
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] lg:gap-10">
+          <div className="min-w-0 space-y-8">
+            <header>
+              <h1 className="font-display text-4xl text-fg sm:text-5xl">{page.title}</h1>
+              {page.kicker ? <p className="mt-2 text-lg text-muted">{page.kicker}</p> : null}
+            </header>
+            <SiteCopyBody body={page.body} />
+            <figure className="mt-4 max-w-sm">
+              <img
+                src="/brand/cain-signature.png?v=4"
+                alt="Cain"
+                className="h-20 w-auto sm:h-24"
+              />
+            </figure>
+          </div>
+          <figure className="lg:sticky lg:top-6">
+            <img
+              src="/brand/f-15qa-blue74.jpg"
+              alt="F-15QA climbing through cloud, afterburners lit"
+              width={960}
+              height={1439}
+              className="w-full rounded-lg"
+            />
+          </figure>
+        </div>
       </div>
       <MachFooter />
     </main>
