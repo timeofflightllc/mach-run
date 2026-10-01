@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { AuthSlot } from "@/components/meridian/auth-slot";
 import { ProfileSwitcher } from "@/components/meridian/profile-switcher";
 import { MACH_RESET_BASELINE } from "@/components/meridian/account-menu";
+import { StaleRunPrompt } from "@/components/meridian/confirm-remove";
 import { CalculateButton } from "@/components/meridian/calculate-button";
 import { AdvisoryStrip } from "@/components/meridian/advisory-note";
 import { CashChart, NetWorthChart, WealthChart } from "@/components/meridian/charts";
@@ -234,7 +235,9 @@ function Home() {
   const slideKey = motion ? `${motion.from}>${motion.to}` : "";
   const holdTimer = useRef<number | null>(null);
   const holdGen = useRef(0);
+  const dismissedStale = useRef<string | null>(null);
   const [holding, setHolding] = useState(false);
+  const [stalePrompt, setStalePrompt] = useState(false);
   useEffect(() => {
     return () => {
       if (holdTimer.current) window.clearTimeout(holdTimer.current);
@@ -389,6 +392,28 @@ function Home() {
   }, [runKey]);
 
   useEffect(() => {
+    if (step !== "act") {
+      dismissedStale.current = null;
+      setStalePrompt(false);
+      return;
+    }
+    if (holding) return;
+    const current = runs[runKey];
+    if (!current) {
+      setStalePrompt(false);
+      return;
+    }
+    const liveSig = inputSignature(usePlanStore.getState().plan);
+    if (inputSignature(current.plan) === liveSig) {
+      dismissedStale.current = null;
+      setStalePrompt(false);
+      return;
+    }
+    if (dismissedStale.current === liveSig) return;
+    setStalePrompt(true);
+  }, [step, runKey, runs, holding]);
+
+  useEffect(() => {
     if (!ent.paid) return;
     setRuns((prev) => {
       const cur = prev[runKey];
@@ -400,24 +425,6 @@ function Home() {
   function onNext() {
     const next = route[shownIndex + 1]?.id;
     if (!next) return;
-    const live = usePlanStore.getState().plan;
-    const key = useProfileStore.getState().activeId || "local";
-    const current = runs[key];
-    if (current && inputSignature(current.plan) !== inputSignature(live)) {
-      holdGen.current += 1;
-      if (holdTimer.current) {
-        window.clearTimeout(holdTimer.current);
-        holdTimer.current = null;
-      }
-      setHolding(false);
-      setRuns((prev) => {
-        if (!(key in prev)) return prev;
-        const copy = { ...prev };
-        delete copy[key];
-        return copy;
-      });
-      clearStoredRun(key);
-    }
     goStep(next);
     window.scrollTo(0, 0);
   }
@@ -1000,6 +1007,18 @@ function Home() {
         </div>
       </main>
       {shown === "act" ? <MachFooter variant="full" /> : <MachFooter />}
+      {stalePrompt ? (
+        <StaleRunPrompt
+          onIgnore={() => {
+            dismissedStale.current = inputSignature(usePlanStore.getState().plan);
+            setStalePrompt(false);
+          }}
+          onExecute={() => {
+            setStalePrompt(false);
+            void calculate({ stay: true });
+          }}
+        />
+      ) : null}
     </div>
   );
 }
