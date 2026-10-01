@@ -19,8 +19,8 @@ import { newId, usePlanStore } from "@/lib/plan/store";
 import type { Plan, SpendingPhase } from "@/lib/plan/types";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const summaryGrid =
-  "grid-cols-[minmax(0,1.4fr)_minmax(8.5rem,8.5rem)_minmax(13rem,13rem)_minmax(7.25rem,7.25rem)] items-center gap-x-3";
+const summaryCols =
+  "@min-[46rem]:grid @min-[46rem]:min-w-[48rem] @min-[46rem]:grid-cols-[minmax(9rem,1.4fr)_minmax(10rem,12rem)_14rem_7.25rem] @min-[46rem]:items-center @min-[46rem]:gap-x-4";
 const control = "h-10 max-w-none";
 
 function shortDate(value: string | null | undefined): string {
@@ -118,13 +118,13 @@ export function SpendingForm() {
       {copy.spendingBody.trim() ? (
         <p className="whitespace-pre-wrap text-sm text-muted">{copy.spendingBody}</p>
       ) : null}
-      <ul className="flex flex-col gap-2">
+      <ul className={`flex flex-col gap-2 overflow-x-auto ${summaryCols}`}>
         {rows.length > 0 ? (
-          <li className={`hidden px-3 text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid ${summaryGrid}`}>
-            <span className="min-w-0">Name</span>
-            <span className="text-right">Amount</span>
-            <span>When</span>
-            <span />
+          <li className="col-span-full hidden grid-cols-subgrid items-center text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid">
+            <span className="min-w-0 pl-3">Name</span>
+            <span className="min-w-0">Amount</span>
+            <span className="min-w-0">When</span>
+            <span className="pr-3" />
           </li>
         ) : null}
         {rows.map((phase, index) => (
@@ -223,10 +223,10 @@ function SpendingRow({
   return (
     <li
       id={`card-spending-${s.id}`}
-      className="rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
+      className="col-span-full rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)] @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid @min-[46rem]:items-center @min-[46rem]:px-0"
     >
       <div
-        className="grid transition-[grid-template-rows] duration-300 ease-out"
+        className="col-span-full grid px-0 transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:px-3"
         style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
         inert={!open}
       >
@@ -305,12 +305,12 @@ function SpendingRow({
         </div>
       </div>
       <div
-        className="grid transition-[grid-template-rows] duration-300 ease-out"
+        className="col-span-full grid transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:grid-cols-subgrid"
         style={{ gridTemplateRows: open ? "0fr" : "1fr" }}
         inert={open}
       >
-        <div className="min-h-0 overflow-hidden">
-          <div className="flex items-center gap-3 @min-[46rem]:hidden">
+        <div className="col-span-full min-h-0 overflow-hidden @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid">
+          <div className="col-span-full flex items-center gap-3 @min-[46rem]:hidden">
             <p className="min-w-0 flex-1 truncate text-sm text-fg">
               <span className="font-medium">{name}</span>
               <span className="text-muted"> · {usd(s.monthlyAmount)}/mo</span>
@@ -323,13 +323,13 @@ function SpendingRow({
               Edit
             </button>
           </div>
-          <div className={`hidden text-sm @min-[46rem]:grid ${summaryGrid}`}>
-            <span className="min-w-0 truncate font-medium text-fg">{name}</span>
-            <span className="min-w-0 truncate whitespace-nowrap text-right tabular-nums text-fg">
+          <div className="col-span-full hidden grid-cols-subgrid items-center text-sm @min-[46rem]:grid">
+            <span className="min-w-0 truncate pl-3 font-medium text-fg">{name}</span>
+            <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-fg">
               {usd(s.monthlyAmount)}/mo
             </span>
             <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-muted">{whenLabel(plan, s)}</span>
-            <span className="flex min-w-0 items-center justify-end gap-3">
+            <span className="flex min-w-0 items-center justify-end gap-3 pr-3">
               <button type="button" className="text-xs text-muted hover:text-negative" onClick={onRemove}>
                 Remove
               </button>
@@ -339,7 +339,7 @@ function SpendingRow({
             </span>
           </div>
           {!open && advisory ? (
-            <div className="mt-2">
+            <div className="col-span-full mt-2 px-3">
               <AdvisoryNote advisory={advisory} />
             </div>
           ) : null}
