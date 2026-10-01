@@ -45,8 +45,8 @@ const TAX: { value: TaxTreatment; label: string }[] = [
 ];
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const summaryGrid =
-  "grid-cols-[minmax(0,1.15fr)_minmax(0,1.35fr)_minmax(8.5rem,8.5rem)_minmax(13rem,13rem)_minmax(10.5rem,10.5rem)_minmax(7.25rem,7.25rem)] items-center gap-x-3";
+const summaryCols =
+  "@min-[46rem]:grid @min-[46rem]:min-w-[60rem] @min-[46rem]:grid-cols-[minmax(9rem,1.15fr)_minmax(8rem,1fr)_minmax(8rem,10rem)_14rem_minmax(8rem,10rem)_7.25rem] @min-[46rem]:items-center @min-[46rem]:gap-x-4";
 const control = "h-10 max-w-none";
 
 function kindLabel(kind: IncomeKind): string {
@@ -166,15 +166,15 @@ export function IncomeForm() {
       {copy.incomeBody.trim() ? (
         <p className="whitespace-pre-wrap text-sm text-muted">{copy.incomeBody}</p>
       ) : null}
-      <ul className="flex flex-col gap-2">
+      <ul className={`flex flex-col gap-2 overflow-x-auto ${summaryCols}`}>
         {rows.length > 0 ? (
-          <li className={`hidden px-3 text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid ${summaryGrid}`}>
-            <span className="min-w-0">Name</span>
+          <li className="col-span-full hidden grid-cols-subgrid items-center text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid">
+            <span className="min-w-0 pl-3">Name</span>
             <span className="min-w-0">Kind</span>
-            <span className="text-right">Amount</span>
-            <span>When</span>
-            <span>Tax</span>
-            <span />
+            <span className="min-w-0">Amount</span>
+            <span className="min-w-0">When</span>
+            <span className="min-w-0">Tax</span>
+            <span className="pr-3" />
           </li>
         ) : null}
         {rows.map((stream, index) => (
@@ -374,10 +374,10 @@ function IncomeRow({
   return (
     <li
       id={`card-income-${s.id}`}
-      className="rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
+      className="col-span-full rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)] @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid @min-[46rem]:items-center @min-[46rem]:px-0"
     >
       <div
-        className="grid transition-[grid-template-rows] duration-300 ease-out"
+        className="col-span-full grid px-0 transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:px-3"
         style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
         inert={!open}
       >
@@ -580,12 +580,12 @@ function IncomeRow({
         </div>
       </div>
       <div
-        className="grid transition-[grid-template-rows] duration-300 ease-out"
+        className="col-span-full grid transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:grid-cols-subgrid"
         style={{ gridTemplateRows: open ? "0fr" : "1fr" }}
         inert={open}
       >
-        <div className="min-h-0 overflow-hidden">
-          <div className="flex items-center gap-3 @min-[46rem]:hidden">
+        <div className="col-span-full min-h-0 overflow-hidden @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid">
+          <div className="col-span-full flex items-center gap-3 @min-[46rem]:hidden">
             <p className="min-w-0 flex-1 truncate text-sm text-fg">
               <span className="font-medium">{name}</span>
               <span className="text-muted"> · {kindLabel(s.kind)}</span>
@@ -604,17 +604,17 @@ function IncomeRow({
               Edit
             </button>
           </div>
-          <div className={`hidden text-sm @min-[46rem]:grid ${summaryGrid}`}>
-            <span className="min-w-0 truncate font-medium text-fg">{name}</span>
+          <div className="col-span-full hidden grid-cols-subgrid items-center text-sm @min-[46rem]:grid">
+            <span className="min-w-0 truncate pl-3 font-medium text-fg">{name}</span>
             <span className="min-w-0 truncate text-muted">{kindLabel(s.kind)}</span>
-            <span className="min-w-0 truncate whitespace-nowrap text-right tabular-nums text-fg">
+            <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-fg">
               {amountLabel(plan, s)}
             </span>
             <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-muted">
               {whenLabel(plan, s)}
             </span>
             <span className="min-w-0 truncate text-muted">{taxLabel(s.kind, s.taxTreatment)}</span>
-            <span className="flex min-w-0 items-center justify-end gap-3">
+            <span className="flex min-w-0 items-center justify-end gap-3 pr-3">
               <button
                 type="button"
                 className="text-xs text-muted hover:text-negative"
@@ -628,7 +628,7 @@ function IncomeRow({
             </span>
           </div>
           {!open && advisory ? (
-            <div className="mt-2">
+            <div className="col-span-full mt-2 px-3">
               <AdvisoryNote advisory={advisory} />
             </div>
           ) : null}
