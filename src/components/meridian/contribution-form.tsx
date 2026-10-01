@@ -31,8 +31,8 @@ import type { ContributionRule, Plan } from "@/lib/plan/types";
 
 const MATCH_PCTS = Array.from({ length: 21 }, (_, i) => i * 5);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const summaryGrid =
-  "grid w-full min-w-[76rem] grid-cols-[minmax(9rem,1fr)_minmax(14rem,1.25fr)_minmax(22rem,1.45fr)_16rem_4.5rem_7.25rem] items-center gap-x-4";
+const summaryCols =
+  "@min-[46rem]:grid @min-[46rem]:min-w-[68rem] @min-[46rem]:grid-cols-[minmax(9rem,1fr)_minmax(12rem,1.15fr)_minmax(18rem,1.55fr)_14rem_4.5rem_7.25rem] @min-[46rem]:items-center @min-[46rem]:gap-x-4";
 const bandField = "w-[9.5rem] shrink-0";
 const bandControl = "h-10 max-w-none";
 
@@ -209,15 +209,15 @@ export function ContributionForm() {
         ) : null}
         {copy.contributionsP3.trim() ? <p className="whitespace-pre-wrap">{copy.contributionsP3}</p> : null}
       </div>
-      <ul className="flex flex-col gap-2 overflow-x-auto">
+      <ul className={`flex flex-col gap-2 overflow-x-auto ${summaryCols}`}>
         {rows.length > 0 ? (
-          <li className={`hidden px-3 text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid ${summaryGrid}`}>
-            <span className="min-w-0">Name</span>
-            <span className="min-w-0 text-left">Account</span>
-            <span>Amount</span>
-            <span>When</span>
-            <span>Match</span>
-            <span />
+          <li className="col-span-full hidden grid-cols-subgrid items-center text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid">
+            <span className="min-w-0 pl-3">Name</span>
+            <span className="min-w-0">Account</span>
+            <span className="min-w-0">Amount</span>
+            <span className="min-w-0">When</span>
+            <span className="min-w-0">Match</span>
+            <span className="pr-3" />
           </li>
         ) : null}
         {rows.map((c) => {
@@ -249,10 +249,10 @@ export function ContributionForm() {
             <li
               key={c.id}
               id={`card-contributions-${c.id}`}
-              className="rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
+              className="col-span-full rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)] @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid @min-[46rem]:items-center @min-[46rem]:px-0"
             >
               <div
-                className="grid transition-[grid-template-rows] duration-300 ease-out"
+                className="col-span-full grid px-0 transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:px-3"
                 style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
                 inert={!open}
               >
@@ -461,12 +461,12 @@ export function ContributionForm() {
                 </div>
               </div>
               <div
-                className="grid transition-[grid-template-rows] duration-300 ease-out"
+                className="col-span-full grid transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:grid-cols-subgrid"
                 style={{ gridTemplateRows: open ? "0fr" : "1fr" }}
                 inert={open}
               >
-                <div className="min-h-0 overflow-hidden">
-                  <div className="flex items-center gap-3 @min-[46rem]:hidden">
+                <div className="col-span-full min-h-0 overflow-hidden @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid">
+                  <div className="col-span-full flex items-center gap-3 @min-[46rem]:hidden">
                     <p className="min-w-0 flex-1 text-sm text-fg">
                       <span className="font-medium">{c.label.trim() || "Contribution"}</span>
                       <span className="text-muted"> · {accountLabel(plan, c)}</span>
@@ -494,9 +494,9 @@ export function ContributionForm() {
                       Edit
                     </button>
                   </div>
-                  <div className={`hidden text-sm @min-[46rem]:grid ${summaryGrid}`}>
-                    <span className="min-w-0 truncate font-medium text-fg">{c.label.trim() || "Contribution"}</span>
-                    <span className="flex w-full min-w-0 items-center justify-start gap-1.5 text-left text-muted">
+                  <div className="col-span-full hidden grid-cols-subgrid items-center text-sm @min-[46rem]:grid">
+                    <span className="min-w-0 truncate pl-3 font-medium text-fg">{c.label.trim() || "Contribution"}</span>
+                    <span className="flex min-w-0 items-center justify-start gap-1.5 text-muted">
                       <span className="min-w-0 truncate">{accountLabel(plan, c)}</span>
                       {logo ? (
                         <img
@@ -508,16 +508,16 @@ export function ContributionForm() {
                         />
                       ) : null}
                     </span>
-                    <span className="whitespace-nowrap tabular-nums text-fg" title={amount.title}>
+                    <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-fg" title={amount.title}>
                       {amount.main}
                     </span>
-                    <span className="whitespace-nowrap tabular-nums text-muted">
+                    <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-muted">
                       {shortDate(c.startDate)} → {c.endDate ? shortDate(c.endDate) : projectionEndMonth(plan.primary.birthDate, plan.assumptions.projectionEndAge)}
                     </span>
                     <span className="min-w-0 truncate tabular-nums text-muted">
                       {c.employerMatch ? `${c.employerMatchPct ?? 0}%` : "—"}
                     </span>
-                    <span className="flex min-w-0 items-center justify-end gap-3">
+                    <span className="flex min-w-0 items-center justify-end gap-3 pr-3">
                       <button
                         type="button"
                         className="text-xs text-muted hover:text-negative"
@@ -535,7 +535,7 @@ export function ContributionForm() {
                     </span>
                   </div>
                   {!open && advisory ? (
-                    <div className="mt-2">
+                    <div className="col-span-full mt-2 px-3">
                       <AdvisoryNote advisory={advisory} />
                     </div>
                   ) : null}
