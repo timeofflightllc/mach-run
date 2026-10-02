@@ -166,7 +166,7 @@ function VerifyEmail() {
             <p className="text-sm text-muted">
               We sent it to {inbox}. Your MACH RUN account is{" "}
               <span className="text-fg">not created until this code is accepted</span>
-              . That is how we keep junk registrations out of the user list.
+              . That helps us ensure bots don't flood our registration system and website.
               Codes last 24 hours.
             </p>
           </header>
