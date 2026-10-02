@@ -30,7 +30,7 @@ function escapeHtml(value: string): string {
 function wrapDeskMail(subject: string, body: string, footer: string): { html: string; text: string } {
   const text = withMailFooter(body, footer);
   const htmlBody = escapeHtml(text).replace(/\n/g, "<br />");
-  const logo = "https://machrun.com/brand/mach-run-logo.jpg?v=21";
+  const logo = "https://machrun.com/brand/mach-run-logo.jpg?v=23";
   const html = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8" /><title>${escapeHtml(subject)}</title></head>
 <body style="margin:0;padding:0;background-color:#F3F0E8;">

@@ -620,7 +620,7 @@ function Home() {
               <ProfileSwitcher ent={ent} />
               <AuthSlot saved={saveStatus} />
             </div>
-            <p className="w-[7.5rem] min-w-0 whitespace-normal text-left text-[11px] font-bold leading-snug tracking-[0.04em] text-muted sm:w-[12.5rem] sm:text-xs sm:tracking-[0.08em] md:w-auto md:whitespace-nowrap md:text-[13px] md:tracking-[0.12em]">
+            <p className="w-[9.8rem] min-w-0 whitespace-normal text-left text-[11px] font-bold leading-snug tracking-[0.04em] text-muted sm:w-[11.5rem] sm:text-xs sm:tracking-[0.08em] md:w-auto md:whitespace-nowrap md:text-[13px] md:tracking-[0.12em]">
               The Supersonic Retirement Calculator
             </p>
             <div className="flex items-center justify-end gap-1 md:hidden">

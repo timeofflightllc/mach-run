@@ -33,7 +33,6 @@ export function MachGlyph({ className }: { className?: string }) {
 export function MachWordmark({
   className,
   size = "md",
-  framed = false,
 }: {
   className?: string;
   size?: "md" | "lg";
@@ -41,18 +40,15 @@ export function MachWordmark({
 }) {
   const large = size === "lg";
   return (
-    <span className={cn("inline-flex shrink-0 items-center", className)} aria-label="MACH RUN.com">
+    <span className={cn("inline-flex shrink-0 items-center", className)} aria-label="MACH RUN">
       <img
-        src="/brand/mach-run-logo.jpg?v=21"
-        alt="MACH RUN.com"
-        width={1257}
-        height={428}
+        src="/brand/mach-run-logo.jpg?v=23"
+        alt="MACH RUN"
+        width={887}
+        height={271}
         className={cn(
-          "block h-auto shrink-0 object-contain object-left",
-          large
-            ? "w-[16.75rem] max-w-[16.75rem]"
-            : "w-[7.5rem] max-w-[7.5rem] sm:w-[12.5rem] sm:max-w-[12.5rem] md:w-[14.5rem] md:max-w-[14.5rem]",
-          framed && "shadow-[0_0_0_1px_#c5cdd6]",
+          "block w-auto shrink-0 object-contain object-left",
+          large ? "h-16 sm:h-20" : "h-12 sm:h-14 md:h-16",
         )}
       />
     </span>
@@ -62,7 +58,6 @@ export function MachWordmark({
 export function BrandLockup({
   className,
   size = "md",
-  framed = false,
   showTagline = false,
 }: {
   className?: string;
@@ -73,7 +68,7 @@ export function BrandLockup({
   const large = size === "lg";
   return (
     <span className={cn("inline-flex shrink-0 flex-col items-stretch", className)}>
-      <MachWordmark size={size} framed={framed} />
+      <MachWordmark size={size} />
       {showTagline ? (
         <span
           className={cn(
@@ -159,12 +154,14 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
       <footer className="relative mt-8 w-screen max-w-[100vw] border-t border-border bg-bg [margin-left:calc(50%-50vw)]">
         <div className="short-footer-gutter mx-auto flex w-full flex-col gap-3 py-6">
           <div className="flex items-center justify-between gap-x-6">
-            <Link
-              to="/"
-              className="inline-flex shrink-0 items-center gap-2 font-logo text-2xl leading-none tracking-[0.08em] text-fg"
-            >
-              <img src="/brand/footer-mark.png" alt="" width={48} height={28} className="h-6 w-auto" />
-              MACH RUN
+            <Link to="/" className="inline-flex shrink-0 items-center" aria-label="MACH RUN">
+              <img
+                src="/brand/mach-run-logo.jpg?v=23"
+                alt=""
+                width={887}
+                height={271}
+                className="h-9 w-auto sm:h-11"
+              />
             </Link>
             <SiteNav tone="page" className="min-w-0 max-w-[72%] justify-end" />
           </div>

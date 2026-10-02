@@ -93,7 +93,7 @@ export function wrapEmail(
   signupWhy = false,
   footerText?: string | null,
 ): string {
-  const logo = "https://machrun.com/brand/mach-run-logo.jpg?v=21";
+  const logo = "https://machrun.com/brand/mach-run-logo.jpg?v=23";
   const typedFooter = footerText == null ? null : footerText;
   const customWhy =
     typedFooter && typedFooter.trim()

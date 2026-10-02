@@ -66,12 +66,12 @@ function jpegSize(bytes: Uint8Array): { w: number; h: number } {
     }
     i += 2 + len;
   }
-  return { w: 761, h: 268 };
+  return { w: 887, h: 271 };
 }
 
 async function loadLogo(): Promise<{ bytes: Uint8Array; w: number; h: number } | null> {
   try {
-    const res = await fetch("/brand/mach-run-logo.jpg?v=21");
+    const res = await fetch("/brand/mach-run-logo.jpg?v=23");
     if (!res.ok) return null;
     const bytes = new Uint8Array(await res.arrayBuffer());
     const { w, h } = jpegSize(bytes);

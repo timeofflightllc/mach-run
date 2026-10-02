@@ -19,8 +19,8 @@ export function WelcomeEmailPreviewOverlay() {
     };
     const mail = which === "flight" ? firstFlightEmail(notice) : welcomeSignupEmail(notice);
     return mail.html.replaceAll(
-      "https://machrun.com/brand/mach-run-logo.jpg?v=21",
-      "/brand/mach-run-logo.jpg?v=21",
+      "https://machrun.com/brand/mach-run-logo.jpg?v=23",
+      "/brand/mach-run-logo.jpg?v=23",
     );
   }, [which]);
 

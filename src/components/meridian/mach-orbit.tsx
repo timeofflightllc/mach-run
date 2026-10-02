@@ -8,10 +8,10 @@ export function MachOrbit() {
         <span className="mach-comet-head" />
       </div>
       <img
-        src="/brand/mach-run-logo.jpg?v=21"
+        src="/brand/mach-run-logo.jpg?v=23"
         alt=""
-        width={1257}
-        height={428}
+        width={887}
+        height={271}
         className="mach-run-pulse mach-orbit-logo"
       />
     </div>
