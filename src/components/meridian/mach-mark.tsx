@@ -86,14 +86,25 @@ export function BrandLockup({
 /** Top bar on every page except the calculator. */
 export function PageMast() {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <Link to="/" className="inline-block shrink-0 opacity-90 hover:opacity-100">
-        <BrandLockup framed />
-      </Link>
-      <p className="min-w-0 flex-1 px-2 text-center text-[11px] font-bold leading-snug tracking-[0.12em] text-muted sm:text-xs md:text-[13px]">
+    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-3">
+      <div className="flex items-center justify-between gap-3">
+        <Link to="/" className="inline-block shrink-0 opacity-90 hover:opacity-100">
+          <BrandLockup framed />
+        </Link>
+        <div className="flex shrink-0 items-center gap-1 md:hidden">
+          <SiteMenu align="right" />
+          <Link
+            to="/"
+            className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+          >
+            Home
+          </Link>
+        </div>
+      </div>
+      <p className="text-center text-[11px] font-bold leading-snug tracking-[0.12em] text-muted sm:text-xs md:min-w-0 md:flex-1 md:px-2 md:text-[13px]">
         The Supersonic Retirement Calculator
       </p>
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="hidden shrink-0 items-center gap-1 md:flex">
         <SiteMenu align="right" />
         <Link
           to="/"
