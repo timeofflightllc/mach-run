@@ -27,7 +27,7 @@ export const Route = createRootRoute({
         content:
           "The Supersonic Retirement Calculator. Measure, Allocate, Compound, Harvest.",
       },
-      { property: "og:image", content: "https://machrun.com/og-v22.jpg" },
+      { property: "og:image", content: "https://machrun.com/og.jpg?v=24" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { property: "og:image:alt", content: "MACH RUN — The Supersonic Retirement Calculator" },
@@ -38,7 +38,7 @@ export const Route = createRootRoute({
         content:
           "The Supersonic Retirement Calculator. Measure, Allocate, Compound, Harvest.",
       },
-      { name: "twitter:image", content: "https://machrun.com/og-v22.jpg" },
+      { name: "twitter:image", content: "https://machrun.com/og.jpg?v=24" },
     ],
     links: [
       { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },

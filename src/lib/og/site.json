@@ -3,5 +3,6 @@
   "description": "The Supersonic Retirement Calculator. Measure, Allocate, Compound, Harvest.",
   "color": "0a1835",
   "card": "custom",
-  "image": "/og.jpg"
+  "image": "/og.jpg",
+  "imageVersion": "24"
 }
