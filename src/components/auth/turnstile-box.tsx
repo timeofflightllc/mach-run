@@ -35,8 +35,10 @@ declare global {
 
 export function TurnstileBox({
   onToken,
+  resetKey = 0,
 }: {
   onToken: (token: string | null) => void;
+  resetKey?: number;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const widget = useRef<string | null>(null);
@@ -87,7 +89,7 @@ export function TurnstileBox({
         widget.current = null;
       }
     };
-  }, []);
+  }, [resetKey]);
 
   return <div ref={host} className="min-h-[65px]" />;
 }

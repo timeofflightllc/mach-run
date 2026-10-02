@@ -22,6 +22,7 @@ function Login() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [captcha, setCaptcha] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
   const [honeypot, setHoneypot] = useState("");
 
 
@@ -44,7 +45,11 @@ function Login() {
             honeypot,
           },
         });
-        if (!started.ok) throw new Error(started.reason);
+        if (!started.ok) {
+          setCaptcha(null);
+          setCaptchaReset((n) => n + 1);
+          throw new Error(started.reason);
+        }
         try {
           sessionStorage.setItem("mach-pending-email", email.trim().toLowerCase());
           sessionStorage.setItem("mach-pending-password", password);
@@ -152,7 +157,9 @@ function Login() {
                         onChange={(ev) => setHoneypot(ev.target.value)}
                       />
                     </label>
-                    {turnstileEnabled() ? <TurnstileBox onToken={setCaptcha} /> : null}
+                    {turnstileEnabled() ? (
+                      <TurnstileBox resetKey={captchaReset} onToken={setCaptcha} />
+                    ) : null}
                   </>
                 ) : null}
                 {error ? <p className="text-sm text-negative">{error}</p> : null}

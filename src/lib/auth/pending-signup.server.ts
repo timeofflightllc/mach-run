@@ -7,7 +7,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes, randomInt } 
 import { getRequest } from "@tanstack/react-start/server";
 import { getSql } from "@/lib/db";
 import { isDisposableEmail } from "./disposable-email";
-import { clientIp, tooManySignups, verifyTurnstile } from "./signup-gate.server";
+import { clientIp, tooManySignups, turnstileFailureReason, verifyTurnstile } from "./signup-gate.server";
 
 const TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_ATTEMPTS = 8;
@@ -110,8 +110,9 @@ export async function startPendingSignup(input: {
   }
 
   const ip = requestIp();
-  if (!(await verifyTurnstile(input.captcha, ip))) {
-    return { ok: false, reason: "Confirm you’re not a robot, then try again." };
+  const turnstile = await verifyTurnstile(input.captcha);
+  if (!turnstile.ok) {
+    return { ok: false, reason: turnstileFailureReason(turnstile.code) };
   }
   if (await tooManySignups(ip)) {
     return { ok: false, reason: "Too many new accounts from this network. Try again later." };

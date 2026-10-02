@@ -24,26 +24,40 @@ export function clientIp(request: Request): string {
   return "unknown";
 }
 
-export async function verifyTurnstile(token: string, ip: string): Promise<boolean> {
+export async function verifyTurnstile(
+  token: string,
+): Promise<{ ok: true } | { ok: false; code: string }> {
   const secret = env("TURNSTILE_SECRET_KEY");
-  if (!secret) return true;
-  if (!token || token.length > 2048) return false;
+  if (!secret) return { ok: true };
+  if (!token || token.length > 2048) return { ok: false, code: "missing-input-response" };
   const body = new URLSearchParams();
   body.set("secret", secret);
   body.set("response", token);
-  if (ip && ip !== "unknown") body.set("remoteip", ip);
+  // Do not send remoteip. Behind Vercel the address we see is often not the
+  // browser that solved the widget, and Cloudflare then rejects a valid token.
   try {
     const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
       body,
       headers: { "content-type": "application/x-www-form-urlencoded" },
     });
-    if (!res.ok) return false;
-    const data = (await res.json()) as { success?: boolean };
-    return data.success === true;
+    if (!res.ok) return { ok: false, code: `http-${res.status}` };
+    const data = (await res.json()) as { success?: boolean; "error-codes"?: string[] };
+    if (data.success === true) return { ok: true };
+    return { ok: false, code: data["error-codes"]?.[0] ?? "rejected" };
   } catch {
-    return false;
+    return { ok: false, code: "network" };
   }
+}
+
+export function turnstileFailureReason(code: string): string {
+  if (code === "invalid-input-secret" || code === "missing-input-secret") {
+    return "Robot check failed on the server. The Cloudflare secret key does not match this site.";
+  }
+  if (code === "timeout-or-duplicate") {
+    return "That robot check already expired. Confirm again, then create the account.";
+  }
+  return `Confirm you’re not a robot, then try again. (${code})`;
 }
 
 export async function tooManySignups(ip: string): Promise<boolean> {
