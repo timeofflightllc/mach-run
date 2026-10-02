@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { TextInput } from "@/components/ui/field";
 import {
   institutionById,
@@ -64,15 +65,34 @@ export function InstitutionInput({
   onChange: (next: { institutionId: string | null; institutionName: string }) => void;
 }) {
   const listId = useId();
+  const box = useRef<HTMLDivElement>(null);
   const [text, setText] = useState(institutionName);
   const [open, setOpen] = useState(false);
   const [hi, setHi] = useState(0);
+  const [place, setPlace] = useState<{ top: number; left: number; width: number } | null>(null);
   const focused = useRef(false);
   const results = searchInstitutions(text);
 
   useEffect(() => {
     if (!focused.current) setText(institutionName);
   }, [institutionName]);
+
+  useEffect(() => {
+    if (!open) return;
+    const move = () => {
+      const node = box.current;
+      if (!node) return;
+      const rect = node.getBoundingClientRect();
+      setPlace({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    };
+    move();
+    window.addEventListener("scroll", move, true);
+    window.addEventListener("resize", move);
+    return () => {
+      window.removeEventListener("scroll", move, true);
+      window.removeEventListener("resize", move);
+    };
+  }, [open, text]);
 
   function commit(nextText: string) {
     const next = resolveInstitution(nextText);
@@ -91,7 +111,7 @@ export function InstitutionInput({
     !open && institutionId == null && institutionName.trim().length > 0;
 
   return (
-    <div className="relative">
+    <div className="relative" ref={box}>
       <TextInput
         value={text}
         role="combobox"
@@ -139,12 +159,14 @@ export function InstitutionInput({
           }
         }}
       />
-      {open && results.length > 0 ? (
-        <ul
-          id={listId}
-          role="listbox"
-          className="absolute z-30 mt-1 max-h-56 w-full overflow-auto rounded-lg bg-elevated py-1 shadow-[0_0_0_1px_var(--color-border)]"
-        >
+      {open && results.length > 0 && place
+        ? createPortal(
+            <ul
+              id={listId}
+              role="listbox"
+              style={{ top: place.top, left: place.left, width: place.width }}
+              className="fixed z-50 max-h-40 overflow-auto rounded-lg bg-elevated py-1 shadow-[0_0_0_1px_var(--color-border)]"
+            >
           {results.map((row, index) => (
             <li key={row.id} role="option" aria-selected={index === hi}>
               <button
@@ -166,9 +188,11 @@ export function InstitutionInput({
                 {row.name}
               </button>
             </li>
-          ))}
-        </ul>
-      ) : null}
+            ))}
+            </ul>,
+            document.body,
+          )
+        : null}
       {custom ? (
         <p className="mt-1 text-xs text-muted">
           Not on the list. MACH RUN will keep this name.
