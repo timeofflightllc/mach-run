@@ -53,7 +53,7 @@ export const DEFAULT_PLANNER_COPY: PlannerCopy = {
   contributionsP2:
     "If your 401(k) or TSP has a company match, select that below. That match is free money on top, not from your paycheck.",
   contributionsP3:
-    "Tax-qualified accounts are funded first when the paycheck cannot cover every contribution.",
+    "When the paycheck cannot cover every contribution, rules are paid tax-qualified first, then taxable. Inside each of those groups, rules are paid in the order they are listed.",
 };
 
 export function serializePlannerCopy(copy: PlannerCopy): string {
