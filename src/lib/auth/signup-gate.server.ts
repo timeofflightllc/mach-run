@@ -6,7 +6,11 @@
 import { getSql } from "@/lib/db";
 
 function env(key: string): string | undefined {
-  const v = process.env[key]?.trim();
+  let v = process.env[key]?.trim();
+  if (!v) return undefined;
+  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+    v = v.slice(1, -1).trim();
+  }
   return v || undefined;
 }
 
@@ -30,21 +34,19 @@ export async function verifyTurnstile(
   const secret = env("TURNSTILE_SECRET_KEY");
   if (!secret) return { ok: true };
   if (!token || token.length > 2048) return { ok: false, code: "missing-input-response" };
-  const body = new URLSearchParams();
-  body.set("secret", secret);
-  body.set("response", token);
-  // Do not send remoteip. Behind Vercel the address we see is often not the
-  // browser that solved the widget, and Cloudflare then rejects a valid token.
+  const body = JSON.stringify({ secret, response: token });
   try {
     const res = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
       method: "POST",
       body,
-      headers: { "content-type": "application/x-www-form-urlencoded" },
+      headers: { "content-type": "application/json" },
     });
-    if (!res.ok) return { ok: false, code: `http-${res.status}` };
-    const data = (await res.json()) as { success?: boolean; "error-codes"?: string[] };
-    if (data.success === true) return { ok: true };
-    return { ok: false, code: data["error-codes"]?.[0] ?? "rejected" };
+    const data = (await res.json().catch(() => null)) as {
+      success?: boolean;
+      "error-codes"?: string[];
+    } | null;
+    if (data?.success === true) return { ok: true };
+    return { ok: false, code: data?.["error-codes"]?.[0] ?? `http-${res.status}` };
   } catch {
     return { ok: false, code: "network" };
   }
