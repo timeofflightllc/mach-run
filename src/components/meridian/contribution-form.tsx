@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   DateInput,
@@ -8,6 +8,7 @@ import {
   MonthInput,
   MonthYearMoney,
   PrimaryButton,
+  DangerButton,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
@@ -441,6 +442,18 @@ export function ContributionForm() {
                     <PrimaryButton className="h-10 self-end" onClick={saveOpen}>
                       Save contribution
                     </PrimaryButton>
+                    <div className="flex items-end justify-end">
+                      <DangerButton
+                        aria-label={`Remove ${c.label.trim() || "contribution"}`}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          setPendingRemove(c.id);
+                        }}
+                      >
+                        <Trash2 className="size-4" />
+                      </DangerButton>
+                    </div>
                     {c.amountMode === "percent" ? (
                       <p className="basis-full text-xs leading-relaxed text-subtle">
                         {income
