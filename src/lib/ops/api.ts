@@ -378,6 +378,20 @@ export const setOpsPromoActiveFn = createServerFn({ method: "POST" })
     return setPromoActive(actor, data.code, data.active);
   });
 
+export const deleteOpsPromoFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((input: { code?: string }) => {
+    const raw = asRecord(input);
+    return { code: String(input?.code ?? raw.code ?? "") };
+  })
+  .handler(async ({ context, data }) => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { ok: false as const, error: "Not found." };
+    const { deletePromo } = await import("@/lib/billing/promo.server");
+    return deletePromo(actor, data.code);
+  });
+
 export const listOpsEmailCopyFn = createServerFn({ method: "POST" })
   .middleware([opsSessionMiddleware])
   .validator((_input?: unknown) => ({}))

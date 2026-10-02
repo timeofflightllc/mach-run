@@ -60,7 +60,42 @@ export async function ensurePromoTable(): Promise<boolean> {
   }
 }
 
-function day(value: string | Date | null | undefined): string | null {
+async function ensureRemovedTable(): Promise<boolean> {
+  try {
+    const sql = await getSql();
+    await sql.query(`
+      create table if not exists mach_promo_removed (
+        code text primary key,
+        removed_by text,
+        removed_at timestamptz not null default now()
+      )
+    `);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function removedCodes(): Promise<Set<string>> {
+  if (!(await ensureRemovedTable())) return new Set();
+  try {
+    const sql = await getSql();
+    const rows = await sql.query<{ code: string }>(`select code from mach_promo_removed`);
+    return new Set(rows.map((row) => row.code));
+  } catch {
+    return new Set();
+  }
+}
+
+async function clearRemoved(code: string): Promise<void> {
+  if (!(await ensureRemovedTable())) return;
+  try {
+    const sql = await getSql();
+    await sql.query(`delete from mach_promo_removed where code = $1`, [code]);
+  } catch {
+    /* a new save should still land */
+  }
+}
   if (!value) return null;
   if (typeof value === "string") return value.slice(0, 10) || null;
   if (Number.isNaN(value.getTime())) return null;
@@ -114,6 +149,7 @@ async function loadDbPromo(code: string): Promise<PromoRecord | null> {
 export async function findPromo(code: string): Promise<PromoRecord | null> {
   const id = sanitizePromoCode(code);
   if (!id) return null;
+  if ((await removedCodes()).has(id)) return null;
   return (await loadDbPromo(id)) ?? builtinPromo(id);
 }
 
@@ -221,11 +257,13 @@ export async function listPromos(): Promise<PromoRecord[]> {
          from mach_promo_codes
         order by updated_at desc`,
     );
-    const db = rows.map(fromRow);
+    const removed = await removedCodes();
+    const db = rows.map(fromRow).filter((row) => !removed.has(row.code));
     const used = new Set(db.map((r) => r.code));
-    return [...db, ...builtins.filter((b) => !used.has(b.code))].map((row) =>
-      withUsage(row, usage),
-    );
+    return [
+      ...db,
+      ...builtins.filter((b) => !used.has(b.code) && !removed.has(b.code)),
+    ].map((row) => withUsage(row, usage));
   } catch {
     return builtins.map((row) => withUsage(row, usage));
   }
@@ -345,6 +383,8 @@ export async function savePromo(
     return { ok: false, error: "Could not save that code." };
   }
 
+  await clearRemoved(code);
+
   await recordAdminEvent({
     actorUserId: actor.id,
     actorEmail: actor.email,
@@ -399,6 +439,47 @@ export async function setPromoActive(
     targetEmail: actor.email,
     action: active ? "promo_on" : "promo_off",
     detail: { code: id, active },
+    note: id,
+  });
+  return { ok: true };
+}
+
+export async function deletePromo(
+  actor: OpsActor,
+  code: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const id = sanitizePromoCode(code);
+  if (!id) return { ok: false, error: "Missing code." };
+  const builtin = builtinPromo(id);
+  const existing = await loadDbPromo(id);
+  if (!existing && !builtin) return { ok: false, error: "That code is not on the list." };
+  if (builtin) {
+    if (!(await ensureRemovedTable())) return { ok: false, error: "Could not delete that code." };
+    try {
+      const sql = await getSql();
+      await sql.query(
+        `insert into mach_promo_removed (code, removed_by, removed_at)
+         values ($1, $2, now())
+         on conflict (code) do update set removed_by = excluded.removed_by, removed_at = now()`,
+        [id, actor.email],
+      );
+    } catch {
+      return { ok: false, error: "Could not delete that code." };
+    }
+  }
+  try {
+    const sql = await getSql();
+    await sql.query(`delete from mach_promo_codes where code = $1`, [id]);
+  } catch {
+    if (!builtin) return { ok: false, error: "Could not delete that code." };
+  }
+  await recordAdminEvent({
+    actorUserId: actor.id,
+    actorEmail: actor.email,
+    targetUserId: actor.id,
+    targetEmail: actor.email,
+    action: "promo_delete",
+    detail: { code: id },
     note: id,
   });
   return { ok: true };

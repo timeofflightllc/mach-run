@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { SavedAt } from "@/components/ops/saved-at";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
-import { listOpsPromosFn, saveOpsPromoFn, setOpsPromoActiveFn } from "@/lib/ops/api";
+import { listOpsPromosFn, saveOpsPromoFn, setOpsPromoActiveFn, deleteOpsPromoFn } from "@/lib/ops/api";
 import {
   CHECKOUT_PACKAGES,
   PACKAGE_LABEL,
@@ -97,6 +97,22 @@ export function PromoCodesDesk() {
     }
   }
 
+  async function remove(code: string) {
+    if (!window.confirm(`Delete ${code}? Checkout will stop accepting it.`)) return;
+    setBusy(true);
+    setStatus(null);
+    try {
+      const r = await deleteOpsPromoFn({ data: { code } });
+      setStatus(r.ok ? `${code} deleted.` : r.error);
+      if (r.ok) {
+        setDraft((d) => (d.code === code ? EMPTY : d));
+        await reload();
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function loadRow(row: PromoRecord) {
     setDraft({
       code: row.code,
@@ -164,6 +180,14 @@ export function PromoCodesDesk() {
                   onClick={() => void setActive(row.code, !row.active)}
                 >
                   {row.active ? "Turn off" : "Turn on"}
+                </button>
+                <button
+                  type="button"
+                  className="text-sm text-muted hover:text-fg"
+                  disabled={busy}
+                  onClick={() => void remove(row.code)}
+                >
+                  Delete
                 </button>
                 <SavedAt at={rowSavedAt[row.code]} />
               </div>
