@@ -98,7 +98,6 @@ export function PromoCodesDesk() {
   }
 
   function loadRow(row: PromoRecord) {
-    if (row.builtin) return;
     setDraft({
       code: row.code,
       kind: row.kind,
@@ -115,11 +114,63 @@ export function PromoCodesDesk() {
     <div className="space-y-6">
       <p className="text-sm text-muted">
         Create a code, pick the window, pick the offer, pick the packages. Pricing
-        checks this list at checkout. SUPER14 / EAGLE / MARVIN / INVERTED stay
-        built in until you save a row with the same name, which overrides them.
-        Used = unique people who applied that code at checkout. Active = those
-        still trialing or paid.
+        checks this list at checkout. Used = unique people who applied that code at
+        checkout. Active = those still trialing or paid.
       </p>
+
+      <ul className="space-y-2">
+        {rows.map((row) => (
+          <li
+            key={row.code}
+            className="rounded-xl bg-surface px-4 py-3 shadow-[0_0_0_1px_var(--color-border)]"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="font-medium text-fg">
+                  {row.code}
+                  {!row.active ? (
+                    <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-[#e8c547]">
+                      Off
+                    </span>
+                  ) : null}
+                </p>
+                <p className="mt-1 text-sm text-muted">{describePromo(row)}</p>
+                <p className="mt-1 text-sm text-fg">
+                  Used {row.used} · Active {row.activeUsers}
+                  {row.activeUsers === 0 ? " (none live)" : ""}
+                </p>
+                {row.activeEmails.length > 0 ? (
+                  <p className="mt-1 text-xs text-subtle">{row.activeEmails.join(" · ")}</p>
+                ) : null}
+                <p className="mt-1 text-xs text-subtle">
+                  {row.startsAt || row.endsAt
+                    ? `${row.startsAt ?? "open"} → ${row.endsAt ?? "open"}`
+                    : "No date window"}
+                  {row.note ? ` · ${row.note}` : ""}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="text-sm text-muted hover:text-fg"
+                  onClick={() => loadRow(row)}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="text-sm text-muted hover:text-fg"
+                  disabled={busy}
+                  onClick={() => void setActive(row.code, !row.active)}
+                >
+                  {row.active ? "Turn off" : "Turn on"}
+                </button>
+                <SavedAt at={rowSavedAt[row.code]} />
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
 
       <div className="rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)]">
         <p className="font-display text-lg text-fg">New or replace</p>
@@ -219,69 +270,6 @@ export function PromoCodesDesk() {
         </div>
         {status ? <p className="mt-3 text-sm text-muted">{status}</p> : null}
       </div>
-
-      <ul className="space-y-2">
-        {rows.map((row) => (
-          <li
-            key={row.code}
-            className="rounded-xl bg-surface px-4 py-3 shadow-[0_0_0_1px_var(--color-border)]"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="font-medium text-fg">
-                  {row.code}
-                  {row.builtin ? (
-                    <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-subtle">
-                      Built in
-                    </span>
-                  ) : null}
-                  {!row.active ? (
-                    <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-[#e8c547]">
-                      Off
-                    </span>
-                  ) : null}
-                </p>
-                <p className="mt-1 text-sm text-muted">{describePromo(row)}</p>
-                <p className="mt-1 text-sm text-fg">
-                  Used {row.used} · Active {row.activeUsers}
-                  {row.activeUsers === 0 ? " (none live)" : ""}
-                </p>
-                {row.activeEmails.length > 0 ? (
-                  <p className="mt-1 text-xs text-subtle">{row.activeEmails.join(" · ")}</p>
-                ) : null}
-                <p className="mt-1 text-xs text-subtle">
-                  {row.startsAt || row.endsAt
-                    ? `${row.startsAt ?? "open"} → ${row.endsAt ?? "open"}`
-                    : "No date window"}
-                  {row.note ? ` · ${row.note}` : ""}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {row.builtin ? null : (
-                  <>
-                    <button
-                      type="button"
-                      className="text-sm text-muted hover:text-fg"
-                      onClick={() => loadRow(row)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="text-sm text-muted hover:text-fg"
-                      disabled={busy}
-                      onClick={() => void setActive(row.code, !row.active)}
-                    >
-                      {row.active ? "Turn off" : "Turn on"}
-                    </button>
-                    <SavedAt at={rowSavedAt[row.code]} />
-                  </>
-                )}
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }

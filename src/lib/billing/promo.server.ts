@@ -368,7 +368,21 @@ export async function setPromoActive(
   const id = sanitizePromoCode(code);
   if (!id) return { ok: false, error: "Missing code." };
   const existing = await loadDbPromo(id);
-  if (!existing) return { ok: false, error: "Built-in codes stay on. Save a new row with the same name to override." };
+  if (!existing) {
+    const builtin = builtinPromo(id);
+    if (!builtin) return { ok: false, error: "That code is not on the list." };
+    const saved = await savePromo(actor, {
+      code: builtin.code,
+      kind: builtin.kind,
+      trialDays: builtin.trialDays ?? 0,
+      percentOff: builtin.percentOff ?? 0,
+      packages: builtin.packages,
+      startsAt: builtin.startsAt ?? "",
+      endsAt: builtin.endsAt ?? "",
+      note: builtin.note,
+    });
+    if (!saved.ok) return saved;
+  }
   try {
     const sql = await getSql();
     await sql.query(`update mach_promo_codes set active = $2, updated_at = now() where code = $1`, [
