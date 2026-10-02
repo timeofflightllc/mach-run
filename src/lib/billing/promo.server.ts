@@ -96,6 +96,8 @@ async function clearRemoved(code: string): Promise<void> {
     /* a new save should still land */
   }
 }
+
+function day(value: string | Date | null | undefined): string | null {
   if (!value) return null;
   if (typeof value === "string") return value.slice(0, 10) || null;
   if (Number.isNaN(value.getTime())) return null;
