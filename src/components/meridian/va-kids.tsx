@@ -1,15 +1,7 @@
-import { Plus, Trash2 } from "lucide-react";
-import {
-  DangerButton,
-  DateInput,
-  Field,
-  GhostButton,
-  SelectInput,
-  TextInput,
-} from "@/components/ui/field";
+import { Field, SelectInput } from "@/components/ui/field";
 import { usd } from "@/lib/plan/format";
 import { monthStart } from "@/lib/plan/dates";
-import { newId, usePlanStore } from "@/lib/plan/store";
+import { usePlanStore } from "@/lib/plan/store";
 import type { IncomeStream } from "@/lib/plan/types";
 import {
   VA_RATINGS,
@@ -24,9 +16,6 @@ import {
 export function VaKids({ stream }: { stream: IncomeStream }) {
   const plan = usePlanStore((s) => s.plan);
   const updateIncome = usePlanStore((s) => s.updateIncome);
-  const addChild = usePlanStore((s) => s.addChild);
-  const updateChild = usePlanStore((s) => s.updateChild);
-  const removeChild = usePlanStore((s) => s.removeChild);
   const asOf = monthStart(plan.assumptions.asOfDate);
   const under18 = childrenUnder18(plan.children, asOf);
   const spouse = vaHasSpouse(plan, stream);
@@ -81,33 +70,11 @@ export function VaKids({ stream }: { stream: IncomeStream }) {
         <p className="font-display text-xl tabular-nums text-fg">{under18.length}</p>
       </Field>
 
-      <ul className="flex flex-col gap-2">
-        {plan.children.map((c) => (
-          <li key={c.id} className="flex flex-col gap-2">
-            <div className="flex items-center gap-2">
-              <TextInput
-                value={c.name}
-                placeholder="Name"
-                onChange={(e) => updateChild(c.id, { name: e.target.value })}
-                className="h-10"
-              />
-              <DangerButton aria-label={`Remove ${c.name || "child"}`} onClick={() => removeChild(c.id)}>
-                <Trash2 className="size-4" />
-              </DangerButton>
-            </div>
-            <Field label="Birthday">
-              <DateInput
-                value={c.birthDate}
-                onValue={(v) => updateChild(c.id, { birthDate: v })}
-              />
-            </Field>
-          </li>
-        ))}
-      </ul>
-      <GhostButton onClick={() => addChild({ id: newId("child"), name: "", birthDate: "" })}>
-        <Plus className="size-4" />
-        Add child
-      </GhostButton>
+      {plan.children.length === 0 ? (
+        <p className="text-xs leading-relaxed text-[#5c4a18]">
+          Add dependents in Family. MACH RUN uses their birthdays for the under-18 step-down.
+        </p>
+      ) : null}
 
       {rating ? (
         <div>

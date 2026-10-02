@@ -22,6 +22,22 @@ export function isTaxQualified(kind: AccountKind): boolean {
   );
 }
 
+/** IRS caps that belong to one person. A Trump account stays with the child. */
+export function needsTaxOwner(kind: AccountKind): boolean {
+  return isTaxQualified(kind) && kind !== "trump";
+}
+
+/**
+ * The owner field counts only when it is exactly you or your spouse.
+ * Joint, blank, and a name in the account title do not.
+ */
+export function explicitTaxOwner(owner: string | null | undefined): "primary" | "spouse" | null {
+  const s = (owner ?? "").trim();
+  if (/^spouse$/i.test(s)) return "spouse";
+  if (/^(primary|you)$/i.test(s)) return "primary";
+  return null;
+}
+
 export function familyOwnerOptions(
   plan: Plan,
   kind: AccountKind,
@@ -40,4 +56,42 @@ export function familyOwnerOptions(
     rows.push({ value: "joint", label: "Joint" });
   }
   return rows;
+}
+
+export function childOwnerValue(id: string): string {
+  return `child:${id}`;
+}
+
+export function childIdFromOwner(owner: string | null | undefined): string | null {
+  const match = /^child:(.+)$/i.exec((owner ?? "").trim());
+  return match?.[1] ?? null;
+}
+
+/** Account-owner menu. Dependents are only offered when the account is not tax-qualified. */
+export function accountOwnerOptions(
+  plan: Plan,
+  kind: AccountKind,
+): { value: string; label: string }[] {
+  const rows: { value: string; label: string }[] = familyOwnerOptions(plan, kind);
+  if (isTaxQualified(kind)) return rows;
+  for (const child of plan.children ?? []) {
+    rows.push({
+      value: childOwnerValue(child.id),
+      label: child.name.trim() || "Dependent",
+    });
+  }
+  return rows;
+}
+
+/** Value for the account-owner select. A missing dependent stays blank, not primary. */
+export function accountOwnerValue(plan: Plan, kind: AccountKind, owner: string | null | undefined): string {
+  if (needsTaxOwner(kind)) return explicitTaxOwner(owner) ?? "";
+  const childId = childIdFromOwner(owner);
+  if (childId) {
+    return (plan.children ?? []).some((child) => child.id === childId)
+      ? childOwnerValue(childId)
+      : "";
+  }
+  if (!(owner ?? "").trim()) return "";
+  return normalizeOwner(owner);
 }

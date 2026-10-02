@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createDefaultPlan } from "./defaults.ts";
 import { simulate } from "./engine.ts";
+import { accountOwnerOptions } from "./family-owners.ts";
 import { irsCapPerson } from "./irs-limits.ts";
 import type { Plan, PlanAudit, Portfolio } from "./types.ts";
 
@@ -81,6 +82,19 @@ test("Joint is not an IRS person — a spouse-named Roth uses her age", () => {
     "primary",
   );
   assert.equal(irsCapPerson(plan, matt, { label: "Matt", capPerson: "spouse" }), "spouse");
+  assert.equal(
+    irsCapPerson(plan, { name: "Sarah Roth IRA", owner: "child:sybil" }, { label: "Sarah Roth" }),
+    null,
+  );
+});
+
+test("a dependent is an owner only on an account that is not tax-qualified", () => {
+  const plan = household();
+  plan.children = [{ id: "sybil", name: "Sybil", birthDate: "2018-04-02" }];
+  const taxable = accountOwnerOptions(plan, "taxable").map((row) => row.value);
+  const rothIra = accountOwnerOptions(plan, "roth_ira").map((row) => row.value);
+  assert.ok(taxable.includes("child:sybil"));
+  assert.equal(rothIra.includes("child:sybil"), false);
 });
 
 test("spouse Roth cap is hers — an uncapped primary Roth does not eat it", () => {
@@ -233,7 +247,7 @@ test("workplace employee cap follows the primary, and match is outside it", () =
   expectYear(2042, 35750, true);
 });
 
-test("a Joint 401k with no name still uses the primary age for catch-up", () => {
+test("an unnamed Joint 401k does not use the primary age or catch-up", () => {
   const plan = household();
   plan.portfolios = [
     {
@@ -260,17 +274,69 @@ test("a Joint 401k with no name still uses the primary age for catch-up", () => 
     },
   ];
   const sim = simulate(plan, { audit: true });
-  const expectYear = (year: number, cap: number, catchUp: boolean) => {
-    near(invested(sim.audit, "c-k", year), cap, `employee ${year}`);
+  for (const year of [2027, 2029, 2039, 2044]) {
+    near(invested(sim.audit, "c-k", year), 0, `employee ${year}`);
     for (const row of rows(sim.audit, "c-k", year)) {
-      assert.equal(row.irsLimit, cap, row.date);
-      assert.equal(row.catchUp, catchUp, row.date);
+      assert.equal(row.irsLimit, 0, row.date);
+      assert.equal(row.catchUp, false, row.date);
     }
-  };
-  expectYear(2027, 24500, false);
-  expectYear(2029, 32500, true);
-  expectYear(2039, 35750, true);
-  expectYear(2044, 32500, true);
+  }
+});
+
+test("an unnamed Joint Roth does not get its own cap or reduce the primary", () => {
+  const plan = household();
+  plan.portfolios = [
+    roth("port-matt", "Matt Roth IRA - AMS", "primary"),
+    roth("port-open", "Roth IRA", "Joint"),
+  ];
+  plan.contributions = [
+    {
+      id: "c-matt",
+      label: "Matt Roth",
+      portfolioId: "port-matt",
+      monthlyAmount: 800,
+      startDate: "2026-01-01",
+      endDate: null,
+      capToIrsLimit: true,
+    },
+    {
+      id: "c-open",
+      label: "IRA",
+      portfolioId: "port-open",
+      monthlyAmount: 800,
+      startDate: "2026-01-01",
+      endDate: null,
+      capToIrsLimit: true,
+    },
+  ];
+  const sim = simulate(plan, { audit: true });
+  near(invested(sim.audit, "c-matt", 2027), 7500, "matt keeps his room");
+  near(invested(sim.audit, "c-open", 2027), 0, "unnamed invests nothing");
+  for (const row of rows(sim.audit, "c-open", 2027)) {
+    assert.equal(row.irsLimit, 0, row.date);
+  }
+});
+
+test("a named spouse Roth with owner Joint still uses her cap", () => {
+  const plan = household();
+  plan.portfolios = [roth("port-sarah", "Sarah Roth IRA - AMS", "Joint")];
+  plan.contributions = [
+    {
+      id: "c-sarah",
+      label: "Sarah Roth",
+      portfolioId: "port-sarah",
+      monthlyAmount: 800,
+      startDate: "2026-01-01",
+      endDate: null,
+      capToIrsLimit: true,
+    },
+  ];
+  const sim = simulate(plan, { audit: true });
+  near(invested(sim.audit, "c-sarah", 2027), 7500, "sarah 2027");
+  for (const row of rows(sim.audit, "c-sarah", 2027)) {
+    assert.equal(row.irsLimit, 7500, row.date);
+    assert.equal(row.catchUp, false, row.date);
+  }
 });
 
 test("two capped Roth IRAs under 50 each reach 7500", () => {

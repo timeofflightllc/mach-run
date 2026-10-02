@@ -71,6 +71,7 @@ export function irsCapPerson(
   const explicit = rule?.capPerson;
   if (explicit === "primary" || explicit === "spouse") return explicit;
   const owner = (account.owner ?? "").trim();
+  if (/^child:/i.test(owner)) return null;
   if (/spouse/i.test(owner)) return "spouse";
   if (/^(primary|you)$/i.test(owner)) return "primary";
   const hay = `${account.name ?? ""} ${rule?.label ?? ""} ${owner}`;

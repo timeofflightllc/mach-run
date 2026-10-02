@@ -524,27 +524,30 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
       let catchUp = false;
       let irs: { key: string; limit: number } | null = null;
       if (rule.capToIrsLimit && dest && cls) {
-        let capPerson = person;
-        if (!capPerson && cls === "workplace") {
-          capPerson = /spouse/i.test(dest.owner ?? "") ? "spouse" : "primary";
+        if (!person && cls !== "trump") {
+          capUsed = 0;
+          catchUp = false;
+          irs = {
+            key: `${cursor.getFullYear()}|unassigned|${rule.portfolioId}|${cls}`,
+            limit: 0,
+          };
+        } else {
+          const birth =
+            person === "spouse"
+              ? plan.spouse.birthDate
+              : person === "primary"
+                ? plan.primary.birthDate
+                : "";
+          const age = validIso(birth) ? ageInCalendarYear(birth, cursor.getFullYear()) : 0;
+          const cap = irsAnnualCap(dest.kind, age) ?? 0;
+          capUsed = cap;
+          catchUp = cls !== "trump" && age >= 50;
+          const ytdKey =
+            cls === "trump"
+              ? `${cursor.getFullYear()}|${rule.portfolioId}|trump`
+              : `${cursor.getFullYear()}|${person}|${cls}`;
+          irs = { key: ytdKey, limit: cap };
         }
-        const birth =
-          capPerson === "spouse"
-            ? plan.spouse.birthDate
-            : capPerson === "primary"
-              ? plan.primary.birthDate
-              : "";
-        const age = validIso(birth) ? ageInCalendarYear(birth, cursor.getFullYear()) : 0;
-        const cap = irsAnnualCap(dest.kind, age) ?? 0;
-        capUsed = cap;
-        catchUp = cls !== "trump" && age >= 50;
-        const ytdKey =
-          cls === "trump"
-            ? `${cursor.getFullYear()}|${rule.portfolioId}|trump`
-            : capPerson
-              ? `${cursor.getFullYear()}|${capPerson}|${cls}`
-              : `${cursor.getFullYear()}|unresolved|${rule.portfolioId}|${cls}`;
-        irs = { key: ytdKey, limit: cap };
       }
       const matchPct =
         rule.employerMatch && dest && isWorkplaceMatchAccount(dest.kind)

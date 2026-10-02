@@ -1,16 +1,24 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Field, DateInput, MonthInput, MoneyInput, NumberInput, SelectInput, TextInput } from "@/components/ui/field";
-import { longDate } from "@/lib/plan/dates";
-import { usePlanStore } from "@/lib/plan/store";
+import { ConfirmRemove } from "@/components/meridian/confirm-remove";
+import { ageYears, longDate, parseDate } from "@/lib/plan/dates";
+import { newId, usePlanStore } from "@/lib/plan/store";
 
 export function HouseholdForm() {
   const plan = usePlanStore((s) => s.plan);
   const patchPrimary = usePlanStore((s) => s.patchPrimary);
   const patchSpouse = usePlanStore((s) => s.patchSpouse);
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
+  const addChild = usePlanStore((s) => s.addChild);
+  const updateChild = usePlanStore((s) => s.updateChild);
+  const removeChild = usePlanStore((s) => s.removeChild);
   const spouseOnFile = Boolean(plan.spouse.name.trim() || plan.spouse.birthDate);
   const [includeSpouse, setIncludeSpouse] = useState(spouseOnFile);
   const [editingAsOf, setEditingAsOf] = useState(false);
+  const [addingDependent, setAddingDependent] = useState(false);
+  const [editingChildId, setEditingChildId] = useState<string | null>(null);
+  const [removingChildId, setRemovingChildId] = useState<string | null>(null);
 
   useEffect(() => {
     if (spouseOnFile) setIncludeSpouse(true);
@@ -18,24 +26,22 @@ export function HouseholdForm() {
 
   return (
     <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-5 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
-      <div className="grid grid-cols-1 items-start gap-x-8 gap-y-3 sm:grid-cols-2">
-        <div className="flex min-w-0 flex-col gap-3">
-          <Field label="Primary name">
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+          <Field label="Primary name" className="w-full max-w-[16rem]">
             <TextInput
               value={plan.primary.name}
               onChange={(e) => patchPrimary({ name: e.target.value })}
               placeholder="Name"
             />
           </Field>
-          <Field label="Primary birth date">
+          <Field label="Primary birthday" className="w-auto">
             <DateInput
               value={plan.primary.birthDate}
               onValue={(v) => patchPrimary({ birthDate: v })}
             />
           </Field>
-        </div>
-        <div className="flex min-w-0 flex-col gap-3">
-          <label className="flex items-center gap-2 text-sm text-fg">
+          <label className="flex h-11 items-center gap-2 text-sm text-fg">
             <input
               type="checkbox"
               checked={includeSpouse}
@@ -47,24 +53,118 @@ export function HouseholdForm() {
             />
             Include spouse or significant other
           </label>
-          {includeSpouse ? (
-            <div className="flex flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
-              <Field label="Spouse or Significant Other's Name">
-                <TextInput
-                  value={plan.spouse.name}
-                  onChange={(e) => patchSpouse({ name: e.target.value })}
-                  placeholder="Name"
-                />
-              </Field>
-              <Field label="Birth date">
-                <DateInput
-                  value={plan.spouse.birthDate}
-                  onValue={(v) => patchSpouse({ birthDate: v })}
-                />
-              </Field>
-            </div>
-          ) : null}
         </div>
+        {includeSpouse ? (
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+            <Field label="Spouse or Significant Other's Name" className="w-full max-w-[16rem]">
+              <TextInput
+                value={plan.spouse.name}
+                onChange={(e) => patchSpouse({ name: e.target.value })}
+                placeholder="Name"
+              />
+            </Field>
+            <Field label="Birth date" className="w-auto">
+              <DateInput
+                value={plan.spouse.birthDate}
+                onValue={(v) => patchSpouse({ birthDate: v })}
+              />
+            </Field>
+          </div>
+        ) : null}
+        <button
+          type="button"
+          className="h-10 self-start rounded-lg px-3 text-sm text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-surface"
+          onClick={() => setAddingDependent(true)}
+        >
+          Add additional dependent
+        </button>
+        {plan.children.length ? (
+          <div className="flex flex-col gap-2">
+            <div className="grid grid-cols-[minmax(0,11rem)_4rem_minmax(0,1fr)_auto] gap-x-6 px-3 text-xs font-medium text-muted">
+              <span className="text-left">Dependent Name</span>
+              <span className="text-left">Age</span>
+              <span className="text-left">Birthday</span>
+            </div>
+            <ul className="flex flex-col gap-2">
+            {[...plan.children]
+              .sort((a, b) => {
+                if (a.birthDate && b.birthDate) return b.birthDate.localeCompare(a.birthDate);
+                if (a.birthDate) return -1;
+                if (b.birthDate) return 1;
+                return a.name.localeCompare(b.name);
+              })
+              .map((child) => {
+              const editing = editingChildId === child.id;
+              const name = child.name.trim() || "Dependent";
+              const born = child.birthDate ? longDate(child.birthDate) : "Birthday not set";
+              const age = child.birthDate
+                ? String(ageYears(child.birthDate, parseDate(plan.assumptions.asOfDate)))
+                : "—";
+              return (
+                <li
+                  key={child.id}
+                  className="rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
+                >
+                  {editing ? (
+                    <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+                      <Field label="First name" className="w-full max-w-[16rem]">
+                        <TextInput
+                          value={child.name}
+                          onChange={(e) => updateChild(child.id, { name: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="Birthday" className="w-auto">
+                        <DateInput
+                          value={child.birthDate}
+                          onValue={(v) => updateChild(child.id, { birthDate: v })}
+                        />
+                      </Field>
+                      <div className="flex h-11 items-center gap-3">
+                        <button
+                          type="button"
+                          className="text-sm font-medium text-fg"
+                          onClick={() => setEditingChildId(null)}
+                        >
+                          Save and Close
+                        </button>
+                        <button
+                          type="button"
+                          className="text-xs text-muted hover:text-negative"
+                          onClick={() => setRemovingChildId(child.id)}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-[minmax(0,11rem)_4rem_minmax(0,1fr)_auto] items-center gap-x-6">
+                      <span className="truncate text-left text-sm font-medium text-fg">{name}</span>
+                      <span className="text-left text-sm tabular-nums text-fg">{age}</span>
+                      <span className="truncate text-left text-sm text-fg">{born}</span>
+                      <span className="flex items-center justify-end gap-3">
+                        <button
+                          type="button"
+                          className="shrink-0 text-xs text-muted hover:text-negative"
+                          onClick={() => setRemovingChildId(child.id)}
+                        >
+                          Remove
+                        </button>
+                        <button
+                          type="button"
+                          className="shrink-0 text-sm font-medium text-fg"
+                          onClick={() => setEditingChildId(child.id)}
+                        >
+                          Edit
+                        </button>
+                      </span>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
+            </ul>
+          </div>
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 items-start gap-3 @min-[48rem]:grid-cols-2">
@@ -243,6 +343,115 @@ export function HouseholdForm() {
           </Field>
         </div>
       </div>
+      {addingDependent ? (
+        <AddDependentPrompt
+          onCancel={() => setAddingDependent(false)}
+          onSave={(name, birthDate) => {
+            addChild({ id: newId("child"), name, birthDate });
+            setAddingDependent(false);
+          }}
+        />
+      ) : null}
+      {removingChildId ? (
+        <ConfirmRemove
+          title="Remove this dependent?"
+          body={`${plan.children.find((child) => child.id === removingChildId)?.name.trim() || "This dependent"} will be removed. Any account that listed them as owner goes back to Select owner.`}
+          onCancel={() => setRemovingChildId(null)}
+          onConfirm={() => {
+            removeChild(removingChildId);
+            if (editingChildId === removingChildId) setEditingChildId(null);
+            setRemovingChildId(null);
+          }}
+        />
+      ) : null}
     </div>
+  );
+}
+
+function AddDependentPrompt({
+  onCancel,
+  onSave,
+}: {
+  onCancel: () => void;
+  onSave: (name: string, birthDate: string) => void;
+}) {
+  const onCancelRef = useRef(onCancel);
+  const [armed, setArmed] = useState(false);
+  const [name, setName] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  onCancelRef.current = onCancel;
+  const ready = name.trim().length > 0 && birthDate.trim().length > 0;
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setArmed(true), 250);
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onCancelRef.current();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[200] grid place-items-center bg-black/60 px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-dependent-title"
+      onMouseDown={() => {
+        if (armed) onCancel();
+      }}
+    >
+      <div
+        className="w-full max-w-md rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <p id="add-dependent-title" className="font-display text-lg text-fg">
+          Add additional dependent
+        </p>
+        <p className="mt-3 text-sm leading-relaxed text-muted">
+          First name and birthday only. Our privacy policy applies. MACH RUN uses the dependent only
+          to name who owns a non-retirement custodial account, and the birthday only for any VA
+          benefits step-down as dependents age out.
+        </p>
+        <div className="mt-4 flex flex-col gap-3">
+          <Field label="First name">
+            <TextInput
+              autoFocus
+              value={name}
+              placeholder="First name"
+              onChange={(e) => setName(e.target.value)}
+            />
+          </Field>
+          <Field label="Birthday">
+            <DateInput value={birthDate} onValue={setBirthDate} />
+          </Field>
+        </div>
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="h-11 rounded-lg px-4 text-sm font-medium text-muted hover:bg-surface hover:text-fg"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            disabled={!ready}
+            onClick={() => {
+              if (ready) onSave(name.trim(), birthDate);
+            }}
+            className="h-11 rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90 disabled:opacity-40"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }

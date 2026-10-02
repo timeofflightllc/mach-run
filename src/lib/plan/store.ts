@@ -88,6 +88,9 @@ export const usePlanStore = create<PlanState>()(
           edit((plan) => ({
             ...plan,
             children: plan.children.filter((c) => c.id !== id),
+            portfolios: plan.portfolios.map((p) =>
+              p.owner === `child:${id}` ? { ...p, owner: "" } : p,
+            ),
           })),
         updatePortfolio: (id, patch) =>
           edit((plan) => ({

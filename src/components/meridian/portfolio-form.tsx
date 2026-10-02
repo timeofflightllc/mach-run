@@ -33,9 +33,10 @@ import { atAccountCap, useEntitlement } from "@/lib/billing/use-entitlement";
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import { fillPlanner } from "@/lib/site-copy/planner-copy";
 import {
-  familyOwnerOptions,
-  isTaxQualified,
-  normalizeOwner,
+  accountOwnerOptions,
+  accountOwnerValue,
+  explicitTaxOwner,
+  needsTaxOwner,
 } from "@/lib/plan/family-owners";
 
 const KIND_LABELS: { value: AccountKind; label: string; bucket: TaxBucket }[] = [
@@ -189,15 +190,14 @@ function AccountTile({
   const rate = p.returnPct ?? plan.assumptions.defaultReturnPct;
   const setKind = (kind: AccountKind) => {
     const row = KIND_LABELS.find((k) => k.value === kind);
+    const entering = needsTaxOwner(kind) && !needsTaxOwner(p.kind);
     onChange({
       kind,
       ...(row ? { taxBucket: row.bucket } : {}),
       ...(kind === "real_estate"
         ? { mortgage: p.mortgage ?? emptyMortgage(), spendable: false }
         : {}),
-      ...(isTaxQualified(kind) && normalizeOwner(p.owner) === "joint"
-        ? { owner: "primary" }
-        : {}),
+      ...(entering ? { owner: "" } : {}),
     });
   };
 
@@ -285,14 +285,18 @@ function AccountTile({
       </div>
     </Field>
   );
+  const mustPickOwner = needsTaxOwner(p.kind);
+  const chosenOwner = explicitTaxOwner(p.owner);
+  const ownerValue = accountOwnerValue(plan, p.kind, p.owner);
   const owner = (
     <Field label="Account owner" className={slotOwner}>
       <SelectInput
-        value={normalizeOwner(p.owner)}
+        value={ownerValue}
         className={control}
         onChange={(e) => onChange({ owner: e.target.value })}
       >
-        {familyOwnerOptions(plan, p.kind).map((o) => (
+        {ownerValue === "" ? <option value="">Select owner</option> : null}
+        {accountOwnerOptions(plan, p.kind).map((o) => (
           <option key={o.value} value={o.value}>
             {o.label}
           </option>
@@ -300,6 +304,14 @@ function AccountTile({
       </SelectInput>
     </Field>
   );
+  const ownerPrompt =
+    mustPickOwner && !chosenOwner ? (
+      <p className="text-xs leading-relaxed text-[#5c4a18]">
+        Pick who owns this account. The IRS yearly limit belongs to you or your spouse, not to the
+        account. Until you pick, MACH RUN will not invest a capped contribution here, and it will
+        not give this account its own limit.
+      </p>
+    ) : null;
   const save = (
     <PrimaryButton className="h-10 self-end" onClick={onSave}>
       Save account
@@ -365,6 +377,7 @@ function AccountTile({
               save,
               remove,
             ])}
+            {ownerPrompt}
             {invested}
             {warn}
             {p.kind === "real_estate" ? (
@@ -405,9 +418,10 @@ function AccountSummary({
 }) {
   const kind = KIND_LABELS.find((k) => k.value === p.kind)?.label ?? p.kind;
   const tax = BUCKETS.find((k) => k.value === p.taxBucket)?.label ?? p.taxBucket;
+  const ownerValue = accountOwnerValue(plan, p.kind, p.owner);
   const owner =
-    familyOwnerOptions(plan, p.kind).find((o) => o.value === normalizeOwner(p.owner))?.label ??
-    "You (primary)";
+    accountOwnerOptions(plan, p.kind).find((o) => o.value === ownerValue)?.label ??
+    "Select owner";
   const flags = [
     p.spendable ? "Spendable" : null,
     p.includeInNetWorth ? "Net worth" : null,
