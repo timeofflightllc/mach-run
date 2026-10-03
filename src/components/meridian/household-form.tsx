@@ -194,10 +194,12 @@ export function AssumptionsForm() {
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
   const [editingAsOf, setEditingAsOf] = useState(false);
 
+  const pct = "w-[5.75rem] max-w-none";
+
   return (
-    <div className="@container mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-3 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem] @min-[48rem]:grid-cols-2">
-      <div className="flex min-w-0 flex-col gap-3">
-        <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
+    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-3 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
+      <div className="grid grid-cols-1 items-start gap-x-8 gap-y-4 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)] @min-[48rem]:grid-cols-2">
+        <div className="flex min-w-0 flex-col gap-3">
           <div className="flex min-w-0 flex-col gap-1.5">
             <span className="text-xs font-medium tracking-wide text-muted">As-of date</span>
             {editingAsOf ? (
@@ -226,6 +228,7 @@ export function AssumptionsForm() {
           <Field
             label="Project through longevity age"
             hint="Blank end dates run through this age."
+            className="max-w-[8rem]"
           >
             <NumberInput
               min={70}
@@ -233,18 +236,19 @@ export function AssumptionsForm() {
               step={1}
               value={plan.assumptions.projectionEndAge}
               onValue={(n) => patchAssumptions({ projectionEndAge: n })}
+              className={pct}
             />
           </Field>
         </div>
 
-        <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
+        <div className="flex min-w-0 flex-col gap-3">
           {(() => {
             const goal = plan.assumptions.retirementGoalDate;
             const asOf = plan.assumptions.asOfDate.slice(0, 7);
             const already = Boolean(goal && goal.slice(0, 7) <= asOf);
             return (
               <>
-                <label className="flex items-center gap-2 text-sm text-fg">
+                <label className="flex h-11 items-center gap-2 text-sm text-fg">
                   <input
                     type="checkbox"
                     checked={already}
@@ -302,73 +306,85 @@ export function AssumptionsForm() {
       </div>
 
       <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
-        <Field
-          label="Nominal return (% / yr)"
-          hint={`Real ≈ ${(((1 + plan.assumptions.defaultReturnPct / 100) / (1 + plan.assumptions.inflationPct / 100) - 1) * 100).toFixed(2)}%`}
-        >
-          <NumberInput
-            min={-5}
-            max={15}
-            step={0.1}
-            value={plan.assumptions.defaultReturnPct}
-            onValue={(n) => patchAssumptions({ defaultReturnPct: n })}
-          />
-        </Field>
-        <Field label="Nominal COLA for all incomes (% / yr)">
-          <NumberInput
-            min={0}
-            max={15}
-            step={0.1}
-            value={plan.assumptions.defaultColaPct ?? 2.5}
-            onValue={(n) => patchAssumptions({ defaultColaPct: n })}
-          />
-        </Field>
+        <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+          <Field
+            label="Nominal return (% / yr)"
+            hint={`Real ≈ ${(((1 + plan.assumptions.defaultReturnPct / 100) / (1 + plan.assumptions.inflationPct / 100) - 1) * 100).toFixed(2)}%`}
+            className="w-auto"
+          >
+            <NumberInput
+              min={-5}
+              max={15}
+              step={0.1}
+              value={plan.assumptions.defaultReturnPct}
+              onValue={(n) => patchAssumptions({ defaultReturnPct: n })}
+              className={pct}
+            />
+          </Field>
+          <Field label="Nominal COLA for all incomes (% / yr)" className="w-auto">
+            <NumberInput
+              min={0}
+              max={15}
+              step={0.1}
+              value={plan.assumptions.defaultColaPct ?? 2.5}
+              onValue={(n) => patchAssumptions({ defaultColaPct: n })}
+              className={pct}
+            />
+          </Field>
+          <Field label="Inflation (% / yr)" className="w-auto">
+            <NumberInput
+              min={0}
+              max={10}
+              step={0.1}
+              value={plan.assumptions.inflationPct}
+              onValue={(n) => patchAssumptions({ inflationPct: n })}
+              className={pct}
+            />
+          </Field>
+        </div>
         <p className="text-xs leading-relaxed text-[#5c4a18]">
           This is the default COLA for every income. It steps up each January
           and stays flat the rest of the year. You can set a different COLA
           on each income in Orient.
         </p>
-        <Field label="Inflation (% / yr)">
-          <NumberInput
-            min={0}
-            max={10}
-            step={0.1}
-            value={plan.assumptions.inflationPct}
-            onValue={(n) => patchAssumptions({ inflationPct: n })}
-          />
-        </Field>
-        <Field
-          label="Ordinary tax rate (%)"
-          hint="Blended federal on pension, salary, pre-tax withdrawals. VA is tax-free."
-        >
-          <NumberInput
-            min={0}
-            max={50}
-            step={1}
-            value={plan.assumptions.ordinaryTaxRatePct}
-            onValue={(n) => patchAssumptions({ ordinaryTaxRatePct: n })}
-          />
-        </Field>
-        <Field
-          label="Sweep surplus into"
-          hint="Blank means the leftover is spent. It is included in Spend and is not added to an account."
-        >
-          <SelectInput
-            value={plan.assumptions.sweepPortfolioId ?? ""}
-            onChange={(e) =>
-              patchAssumptions({
-                sweepPortfolioId: e.target.value === "" ? null : e.target.value,
-              })
-            }
+        <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+          <Field
+            label="Ordinary tax rate (%)"
+            hint="Blended federal on pension, salary, pre-tax withdrawals. VA is tax-free."
+            className="w-auto"
           >
-            <option value="">Do not sweep (spend leftover)</option>
-            {plan.portfolios.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name.trim() || "Untitled account"}
-              </option>
-            ))}
-          </SelectInput>
-        </Field>
+            <NumberInput
+              min={0}
+              max={50}
+              step={1}
+              value={plan.assumptions.ordinaryTaxRatePct}
+              onValue={(n) => patchAssumptions({ ordinaryTaxRatePct: n })}
+              className={pct}
+            />
+          </Field>
+          <Field
+            label="Sweep surplus into"
+            hint="Blank means the leftover is spent. It is included in Spend and is not added to an account."
+            className="w-auto min-w-[16rem]"
+          >
+            <SelectInput
+              value={plan.assumptions.sweepPortfolioId ?? ""}
+              onChange={(e) =>
+                patchAssumptions({
+                  sweepPortfolioId: e.target.value === "" ? null : e.target.value,
+                })
+              }
+              className="w-auto min-w-[16rem] max-w-none"
+            >
+              <option value="">Do not sweep (spend leftover)</option>
+              {plan.portfolios.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name.trim() || "Untitled account"}
+                </option>
+              ))}
+            </SelectInput>
+          </Field>
+        </div>
       </div>
     </div>
   );
