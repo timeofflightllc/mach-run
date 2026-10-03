@@ -52,7 +52,7 @@ Questions, a bug, or a feature you want on the jet — [Contact](/contact). What
     body: `This is the briefing on the engine — not a second legal page. [Legal](/legal) holds the disclaimer. Here is what Calculate does with the numbers in Observe, Orient, and Decide.
 
 # How a MACH RUN works
-You fill the household as it stands. Observe is family and accounts. Orient is paychecks and spending. Decide is contributions into those accounts. Charts, the ledger, and the MachRun Financial Analysis stay frozen until you hit Calculate. That press is the MACH RUN. Change an input after that and Act holds the last run until you Calculate again.
+You fill the household as it stands. Observe is family and accounts. Orient is paychecks and spending. Decide is contributions into those accounts. Charts, the ledger, and the MACH OODA Financial Analysis stay frozen until you hit Calculate. That press is the MACH RUN. Change an input after that and Act holds the last run until you Calculate again.
 
 # Rates
 In Family you type a nominal return and a default COLA. Fresh plans start at 7% return and 2.5% COLA. Each account can override the return. Each paycheck can override the COLA. Inflation (also 2.5% on a fresh plan) is the Today $ / Future $ lens on the charts — it is not a second return stacked on the same box. Today $ shows buying power. Future $ shows the dollars the sim actually grew.
@@ -87,10 +87,10 @@ Fill Observe, Orient, and Decide. Hit Calculate. That is the method.`,
     body: `MACH RUN is a calculator, not a crystal ball. These answers match how the site works today. None of it is financial, tax, legal, or investment advice — it is a planning sketch from the numbers you type.
 
 # What is MACH RUN?
-MACH RUN is The Supersonic Financial Calculator. You type the household as it stands — family, accounts, paychecks, spending, contributions — then hit Calculate. The engine runs an OODA Loop on those numbers: Observe, Orient, Decide, Act. MACH stands for Measure, Allocate, Compound, Harvest.
+MACH RUN is The Supersonic Retirement Calculator. You type the household as it stands — family, accounts, paychecks, spending, contributions — then hit Calculate. The engine runs an OODA Loop on those numbers: Observe, Orient, Decide, Act. MACH stands for Measure, Allocate, Compound, Harvest.
 
 # How do I start a MACH RUN?
-Open Family, then Accounts. Add at least one income and your spending if you have it. Hit Calculate at the bottom of Observe, Orient, or Decide. Charts and the MachRun Financial Analysis stay frozen until you do. That is a MACH RUN.
+Open Family, then Accounts. Add at least one income and your spending if you have it. Hit Calculate at the bottom of Observe, Orient, or Decide. Charts and the MACH OODA Financial Analysis stay frozen until you do. That is a MACH RUN.
 
 # What does OODA mean here?
 Observe, Orient, Decide, Act. It comes from U.S. Air Force Col. John Boyd (Ret.). On this site it is a way to look at money — not a trademarked product from anyone else. Observe is the household as it stands. Orient is where dollars go (income and spending). Decide is contributions. Act is the ledger, charts, and analysis after Calculate.
@@ -101,7 +101,7 @@ No. MACH RUN is a hypothetical planning tool. It is not financial, tax, or legal
 # What is free, and what do I pay for?
 Free: register in about 30 seconds, save one household, with a limit of 2 accounts, 2 contributions, and 2 incomes. The OODA analysis is shortened.
 
-Individual ($4/month or $40/year): one household, unlimited accounts, contributions, and incomes, plus the full MachRun Financial Analysis and OODA AI on that MACH RUN. Net Worth stays locked.
+Individual ($4/month or $40/year): one household, unlimited accounts, contributions, and incomes, plus the full MACH OODA Financial Analysis and OODA AI on that MACH RUN. Net Worth stays locked.
 
 Individual Unlimited ($15/month or $150/year): everything in Individual, plus Net Worth (assets vs liabilities), a liabilities list, and encrypted MACH RUN backup download.
 
@@ -114,7 +114,7 @@ In Family, set the retirement goal date — there is an “already retired” pa
 Type amounts in today’s dollars (what the paycheck or balance is now). MACH RUN applies the return and COLA rates you set. Use the Today $ / Future $ control on the run to switch how the ledger is labeled. You are not supposed to enter 2041 dollars in a 2026 box.
 
 # Why don’t the charts move until I hit Calculate?
-On purpose. Fill Observe, Orient, and Decide, then Calculate. That keeps the MachRun Financial Analysis honest to a snapshot you chose, not every keystroke.
+On purpose. Fill Observe, Orient, and Decide, then Calculate. That keeps the MACH OODA Financial Analysis honest to a snapshot you chose, not every keystroke.
 
 # What about Social Security, VA, and military retired pay?
 Those are income kinds you name and date. Social Security can follow a family member and a claiming age. VA can use rating, spouse, and children under 18, then step down as kids turn 18. Figures are estimates, not official SSA, DFAS, or VA determinations.
@@ -149,7 +149,7 @@ A retired U.S. Air Force fighter pilot who wanted one strip for income, contribu
     kicker: "",
     body: `[FAQ](/faq) — How a MACH RUN works, free vs paid, dollars, and what is not advice.
 
-[Free vs MACH RUN paid](/pricing) — $4/month or $40/year unlocks unlimited accounts, contribution rules, income stages, Net Worth, and the full OODA.
+[Free vs MACH RUN paid](/pricing) — Individual ($4/month or $40/year) keeps unlimited accounts, contributions, and incomes. Net Worth stays locked until Individual Unlimited or Advisor.
 
 [Privacy policy](/privacy) — Your MACH Run data is encrypted in transit (HTTPS) and encrypted at rest on the server. We do not sell it.
 

@@ -29,7 +29,7 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
     bullets: [
       "One household, unlimited accounts",
       "Unlimited contributions and incomes",
-      "Full MachRun Financial Analysis",
+      "Full MACH OODA Financial Analysis",
       "OODA AI on this MACH RUN",
       "Net Worth stays locked — unlock on Unlimited",
     ],
@@ -51,7 +51,7 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
       "5 named profiles (client IDs)",
       "Dropdown to switch Client profiles",
       "Export / import encrypted MACH RUN file",
-      "For financial professionals, or nerds",
+      "For financial professionals",
     ],
   },
   advisorUnlimited: {

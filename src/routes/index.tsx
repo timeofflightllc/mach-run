@@ -908,7 +908,7 @@ function Home() {
                   }}
                 >
                   <p className="text-sm leading-relaxed text-fg">
-                    This MachRun is on Free. Upgrade to open more features
+                    This MACH RUN is on Free. Upgrade to open more features
                     including accounts, incomes, the full OODA Analysis and
                     OODA AI.
                   </p>

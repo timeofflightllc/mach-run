@@ -169,7 +169,7 @@ export function PeerBriefCard({
     return (
       <div className="rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
-          MachRun Financial Analysis*
+          MACH OODA Financial Analysis*
         </p>
         <p className="mt-2 font-display text-lg text-fg">
           Waiting on Calculate.
@@ -201,7 +201,7 @@ export function PeerBriefCard({
     <div className="rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]">
       <div className="flex items-start justify-between gap-3">
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
-          MachRun Financial Analysis*
+          MACH OODA Financial Analysis*
         </p>
         {plan && sim && brief.expanded ? (
           <PrimaryButton
@@ -308,7 +308,7 @@ export function PeerBriefCard({
               to="/login"
               className="inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
             >
-              Sign in to keep this MachRun
+              Sign in to keep this MACH RUN
             </Link>
           </GuestOnly>
           <RealSignedIn>

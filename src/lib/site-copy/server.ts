@@ -83,6 +83,18 @@ async function seedIfEmpty(): Promise<void> {
   );
 }
 
+function freshenStoredCopy(body: string): string {
+  return body
+    .replaceAll(
+      "[Free vs MACH RUN paid](/pricing) — $4/month or $40/year unlocks unlimited accounts, contribution rules, income stages, Net Worth, and the full OODA.",
+      "[Free vs MACH RUN paid](/pricing) — Individual ($4/month or $40/year) keeps unlimited accounts, contributions, and incomes. Net Worth stays locked until Individual Unlimited or Advisor.",
+    )
+    .replaceAll("MachRun Financial Analysis", "MACH OODA Financial Analysis")
+    .replaceAll("MachRun", "MACH RUN")
+    .replaceAll("Supersonic Financial Calculator", "Supersonic Retirement Calculator")
+    .replaceAll("For financial professionals, or nerds", "For financial professionals");
+}
+
 function mapPage(row: {
   slug: string;
   title: string;
@@ -94,7 +106,7 @@ function mapPage(row: {
     slug: row.slug,
     title: row.title,
     kicker: row.kicker ?? "",
-    body: row.body ?? "",
+    body: freshenStoredCopy(row.body ?? ""),
   };
 }
 
