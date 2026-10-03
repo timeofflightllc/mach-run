@@ -204,7 +204,7 @@ Standard technical logs (IP address, browser, pages loaded) to keep the site run
 To run the calculator, save your MACH Run across devices, sign you in, take payment for Unlimited, answer OODA AI questions you ask, and keep the service secure. We do not use your household numbers to advertise other people’s products to you.
 
 # Who runs the pieces
-The site is hosted by Vercel (AWS - Washington, D.C., USA). Saved plans, including the numbers you typed, are stored in Neon (AWS - Virginia, USA). Payments are processed by Stripe. OODA AI questions go to xAI. Email signup can use Cloudflare Turnstile to check that a person, not a script, is registering. Stripe and Turnstile do not receive your household balances. xAI receives the question you ask and the compact snapshot described above.
+The site is hosted by Vercel (AWS - Washington, D.C., USA). The database, including all plans and the numbers you typed, is stored in Neon (AWS - Virginia, USA). Payments are processed by Stripe. OODA AI questions go to xAI. Email signup can use Cloudflare Turnstile to check that a person, not a script, is registering. Stripe and Turnstile do not receive your household balances. xAI receives the question you ask and the compact snapshot described above.
 
 # What we will not do
 We will not spam you. We will not sell, rent, trade, or otherwise knowingly give your personal information, financial inputs, passwords, or email address to marketers, data brokers, or anyone else for their own use.
