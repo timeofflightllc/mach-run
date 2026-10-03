@@ -853,7 +853,7 @@ function Home() {
       </header>
       <GuestOnly>
         {heroDismissed ? null : <GuestHero onShowFamily={showFamily} onDemo={showDemo} />}
-        <div id="master-caution" className="relative z-10 border-t border-[#8a7020] bg-[#2c220e]">
+        <div id="master-caution" className="sticky top-[var(--mach-header-h,5.5rem)] z-10 border-t border-[#8a7020] bg-[#2c220e]">
           <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-2 py-4 text-center">
             <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
               Master Caution
