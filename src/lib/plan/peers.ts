@@ -14,6 +14,7 @@ import { cashShortYears } from "./cash-short.ts";
 import { usd, usdCompact } from "./format.ts";
 import { remainingLiability, liabilityPayoffDate } from "./liability.ts";
 import { monthsBetweenMonths, mortgageAssociated, mortgagePayoffDate, remainingMortgage } from "./mortgage.ts";
+import { recommendedRetirementCopy, type RecommendedRetirement } from "./earliest-retirement.ts";
 import type { Liability, LiabilityKind, Plan, SimResult } from "./types.ts";
 
 /** SCF 2022 net worth knots, inflated ~12% into 2026 dollars. Approximate. */
@@ -90,6 +91,8 @@ export interface PeerBrief {
   paragraphs: string[];
   expanded: boolean;
   annuityEquivalent?: AnnuityEquivalent | null;
+  /** Set on Calculate. Null date means no retirement month covers the full runway. */
+  recommendedRetirement?: RecommendedRetirement;
 }
 
 export function percentileFromKnots(
@@ -310,9 +313,12 @@ function throughPrimaryAge(plan: Plan, endIso: string | null): string {
 export function buildPeerBrief(
   plan: Plan,
   sim: SimResult,
-  opts?: { expanded?: boolean },
+  opts?: { expanded?: boolean; recommended?: RecommendedRetirement },
 ): PeerBrief {
   const expanded = Boolean(opts?.expanded);
+  const recommended = opts?.recommended;
+  const landing = (body: string) =>
+    recommended ? `${body}\n\n${recommendedRetirementCopy(plan, recommended)}` : body;
   const asOf = monthStart(plan.assumptions.asOfDate);
   const age = validIso(plan.primary.birthDate)
     ? ageYears(plan.primary.birthDate, asOf)
@@ -370,6 +376,7 @@ export function buildPeerBrief(
     paragraphs: sections.map((s) => `${s.title}: ${s.body}`),
     expanded,
     annuityEquivalent,
+    recommendedRetirement: recommended,
   });
 
   if (plan.portfolios.length === 0 && namedIncomes.length === 0) {
@@ -412,7 +419,9 @@ export function buildPeerBrief(
     if (ret.now) {
       add(
         "Retirement landing",
-        `Retirement goal date is this month (or you're already retired), so “at retirement” is today: spendable ${usd(ret.spendableReal)} in today's dollars. Modeled income in the next twelve months is ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo).`,
+        landing(
+          `Retirement goal date is this month (or you're already retired), so “at retirement” is today: spendable ${usd(ret.spendableReal)} in today's dollars. Modeled income in the next twelve months is ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo).`,
+        ),
       );
     } else {
       const retAge =
@@ -421,13 +430,17 @@ export function buildPeerBrief(
           : null;
       add(
         "Retirement landing",
-        `Retirement goal is ${formatMonthYear(ret.date)}${retAge != null ? ` (age ${retAge})` : ""}. Spendable there: ${usd(ret.spendableReal)} in today's dollars. Modeled retirement income ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo) from the stages you entered.`,
+        landing(
+          `Retirement goal is ${formatMonthYear(ret.date)}${retAge != null ? ` (age ${retAge})` : ""}. Spendable there: ${usd(ret.spendableReal)} in today's dollars. Modeled retirement income ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo) from the stages you entered.`,
+        ),
       );
     }
   } else {
     add(
       "Retirement landing",
-      "No retirement goal date in Family yet, so MACH RUN cannot score the landing. Put a goal date in — or check Already retired — then Calculate again.",
+      landing(
+        "No retirement goal date in Family yet, so MACH RUN cannot score the landing. Put a goal date in — or check Already retired — then Calculate again.",
+      ),
     );
   }
 

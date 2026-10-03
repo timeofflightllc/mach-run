@@ -1,9 +1,14 @@
-import { usd } from "@/lib/plan/format";
-import type { PeerBrief } from "@/lib/plan/peers";
-import { nestEggTrack, peerRankLine } from "@/lib/plan/peers";
-import type { Plan, SimResult } from "@/lib/plan/types";
+import { useState } from "react";
+import { PrimaryButton } from "@/components/ui/field";
+import { formatMonthYear, monthStart, validIso } from "@/lib/plan/dates";
+import {
+  recommendedRetirementCopy,
+  type RecommendedRetirement,
+} from "@/lib/plan/earliest-retirement";
 import { monthlyIncomeAt, startingSpendable } from "@/lib/plan/engine";
-import { monthStart } from "@/lib/plan/dates";
+import { usd } from "@/lib/plan/format";
+import { nestEggTrack, peerRankLine, type PeerBrief } from "@/lib/plan/peers";
+import type { Plan, SimResult } from "@/lib/plan/types";
 
 export function NestEggHeadline({
   egg,
@@ -36,10 +41,12 @@ export function Verdict({
   plan,
   sim,
   brief,
+  onUseRecommended,
 }: {
   plan: Plan;
   sim: SimResult;
   brief?: PeerBrief | null;
+  onUseRecommended?: (date: string) => void;
 }) {
   const real = plan.assumptions.dollars === "real";
   const atTerm = real ? sim.spendableAtEndReal : sim.spendableAtEnd;
@@ -97,6 +104,77 @@ export function Verdict({
         {plan.assumptions.projectionEndAge} is {usd(atTerm)} ({unit}).
         {retLine}
       </p>
+      {brief?.recommendedRetirement ? (
+        <RecommendedRetirement
+          plan={plan}
+          rec={brief.recommendedRetirement}
+          onUse={onUseRecommended}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+export function RecommendedRetirement({
+  plan,
+  rec,
+  onUse,
+  copy = true,
+}: {
+  plan: Plan;
+  rec: RecommendedRetirement;
+  onUse?: (date: string) => void;
+  /** Analysis already prints the sentence. The button still sits under that section. */
+  copy?: boolean;
+}) {
+  const [ask, setAsk] = useState(false);
+  const goal = plan.assumptions.retirementGoalDate;
+  const same =
+    Boolean(rec.date) &&
+    Boolean(goal && validIso(goal) && goal.slice(0, 7) === rec.date?.slice(0, 7));
+  const canUse = Boolean(rec.date && onUse && !same);
+
+  return (
+    <div className={copy ? "mt-3" : "mt-2"}>
+      {copy ? (
+        <p className="text-sm font-medium leading-relaxed text-fg">
+          {recommendedRetirementCopy(plan, rec)}
+        </p>
+      ) : null}
+      {canUse && !ask ? (
+        <PrimaryButton
+          className="mt-2 h-9 w-auto px-3 text-sm"
+          onClick={() => setAsk(true)}
+        >
+          Use this recommended retirement date
+        </PrimaryButton>
+      ) : null}
+      {canUse && ask && rec.date ? (
+        <div className="mt-2 flex flex-col gap-2">
+          <p className="text-sm leading-relaxed text-fg">
+            Set the retirement goal date in Observe to {formatMonthYear(rec.date)} and re-run
+            this MACH RUN on that date?
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <PrimaryButton
+              className="h-9 w-auto px-3 text-sm"
+              onClick={() => {
+                setAsk(false);
+                onUse?.(rec.date as string);
+              }}
+            >
+              Re-run the MACH RUN
+            </PrimaryButton>
+            <button
+              type="button"
+              className="inline-flex h-9 items-center rounded-lg px-3 text-sm text-muted hover:text-fg"
+              onClick={() => setAsk(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

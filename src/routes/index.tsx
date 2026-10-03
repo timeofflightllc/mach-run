@@ -28,6 +28,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { simulate } from "@/lib/plan/engine";
 import { planInputSignature } from "@/lib/plan/input-signature";
 import { buildPeerBrief, type PeerBrief } from "@/lib/plan/peers";
+import { earliestWorkableRetirement } from "@/lib/plan/earliest-retirement";
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import { usePlanStore } from "@/lib/plan/store";
 import { MACH_PROFILE_REMOVED, useProfileStore } from "@/lib/plan/profile-store";
@@ -317,11 +318,12 @@ function Home() {
     for (const [key, row] of Object.entries(stored)) {
       try {
         const sim = simulate(row.plan);
+        const recommended = earliestWorkableRetirement(row.plan);
         loaded[key] = {
           id: row.id,
           plan: row.plan,
           sim: simForCharts(sim),
-          brief: buildPeerBrief(row.plan, sim, { expanded: false }),
+          brief: buildPeerBrief(row.plan, sim, { expanded: false, recommended }),
         };
       } catch {
         /* skip a bad snapshot */
@@ -506,7 +508,11 @@ function Home() {
       useProfileStore.getState().snapshotCurrent(live);
       const snapshot = structuredClone(live) as Plan;
       const nextSim = simulate(snapshot);
-      const brief = buildPeerBrief(snapshot, nextSim, { expanded: Boolean(ent.paid) });
+      const recommended = earliestWorkableRetirement(snapshot);
+      const brief = buildPeerBrief(snapshot, nextSim, {
+        expanded: Boolean(ent.paid),
+        recommended,
+      });
       const runId = Date.now();
       const nextRun = {
         id: runId,
@@ -523,7 +529,7 @@ function Home() {
       void getEntitlement()
         .then((liveEnt) => {
           if (!liveEnt?.paid) return;
-          expanded = buildPeerBrief(snapshot, nextSim, { expanded: true });
+          expanded = buildPeerBrief(snapshot, nextSim, { expanded: true, recommended });
           setRuns((prev) => {
             const cur = prev[key];
             if (!cur || cur.id !== runId || cur.brief.expanded) return prev;
@@ -560,6 +566,18 @@ function Home() {
         err instanceof Error ? err.message : "Calculate failed. Check the numbers and try again.",
       );
     }
+  }
+
+  function applyRecommendedDate(date: string) {
+    const current = usePlanStore.getState().plan;
+    usePlanStore.getState().setPlan({
+      ...current,
+      assumptions: { ...current.assumptions, retirementGoalDate: date },
+      contributions: current.contributions.map((rule) =>
+        rule.endAtRetirement ? { ...rule, endDate: date, endWithStageId: undefined } : rule,
+      ),
+    });
+    void calculate({ stay: true });
   }
 
   const inputFrame =
@@ -954,6 +972,7 @@ function Home() {
                           plan={displayPlan}
                           sim={run.sim}
                           brief={run.brief}
+                          onUseRecommended={applyRecommendedDate}
                         />
                       </div>
                       <div className="flex min-w-0 flex-col gap-3">
@@ -973,6 +992,7 @@ function Home() {
                       ran
                       plan={displayPlan}
                       sim={run.sim}
+                      onUseRecommended={applyRecommendedDate}
                     />
                   </div>
                   <div className="flex min-w-0 flex-col gap-4">
