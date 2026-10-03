@@ -237,7 +237,7 @@ function PhaseFolderTabs({
   onPick: (id: StepId) => void;
 }) {
   return (
-    <div className="flex min-w-0 items-end justify-end gap-1 sm:gap-1.5" role="tablist" aria-label={name}>
+    <div className="mr-8 flex min-w-0 items-end justify-end gap-1 sm:gap-1.5" role="tablist" aria-label={name}>
       {tabs.map((tab) => {
         const on = active === tab.id;
         return (
