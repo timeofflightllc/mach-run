@@ -16,7 +16,7 @@ function env(key: string): string {
 }
 
 function fromAddress(): string {
-  return env("MACH_NOTIFY_FROM") || "MACH RUN <beth.t@example.com>";
+  return env("MACH_NOTIFY_FROM") || "MACH RUN <matt@machrun.com>";
 }
 
 function escapeHtml(value: string): string {

@@ -44,7 +44,7 @@ function escapeHtml(value: string): string {
 }
 
 function fromAddress(): string {
-  return env("MACH_NOTIFY_FROM") || "MACH RUN <beth.t@example.com>";
+  return env("MACH_NOTIFY_FROM") || "MACH RUN <matt@machrun.com>";
 }
 
 async function sendResend(mail: {
