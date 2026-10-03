@@ -76,6 +76,7 @@ test("Yes creates one primary Social Security row and not a second", () => {
   const created = ssIncomesToCreate(plan, () => "ss-primary");
   assert.equal(created.length, 1);
   assert.equal(created[0]?.person, "primary");
+  assert.equal(created[0]?.name, "Cain's Social Security");
   assert.equal(created[0]?.ssPia, 3563.2);
   assert.equal(created[0]?.ssClaimAge, 67);
   assert.equal(created[0]?.ssEstimated, true);
@@ -114,7 +115,7 @@ test("spouse salary estimates the spouse and is not added to the primary", () =>
     rows.map((row) => row.person),
     ["primary", "spouse"],
   );
-  assert.equal(rows[1]?.name, "Social Security — Sarah");
+  assert.equal(rows[1]?.name, "Sarah's Social Security");
   assert.equal(rows[1]?.ssPia, spousePia);
 });
 

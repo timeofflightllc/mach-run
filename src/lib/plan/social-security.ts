@@ -145,10 +145,10 @@ export function ssIncomesToCreate(
     const birth = person === "spouse" ? plan.spouse.birthDate : plan.primary.birthDate;
     const window = ssScheduleDates(birth, 67, plan.assumptions.projectionEndAge);
     if (!window) continue;
-    const spouseName = plan.spouse.name.trim() || "Spouse";
+    const name = person === "spouse" ? plan.spouse.name.trim() || "Spouse" : plan.primary.name.trim() || "Primary";
     rows.push({
       id: idFor(person),
-      name: person === "primary" ? "Social Security" : `Social Security — ${spouseName}`,
+      name: `${name}'s Social Security`,
       kind: "ss",
       monthlyAmount: 0,
       startDate: window.startDate,
