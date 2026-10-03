@@ -393,6 +393,9 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
   let cursor = asOf;
   let guard = 0;
   const irsYtd = new Map<string, number>();
+  const linkedLiabilityIds = new Set(
+    plan.spending.map((phase) => phase.liabilityId).filter((id): id is string => Boolean(id)),
+  );
   while (!isBefore(endDate, cursor) && guard < 1200) {
     guard += 1;
     const monthsFromAsOf = months.length;
@@ -458,7 +461,9 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
     for (const phase of plan.spending) {
       const win = spendingWindow(plan, phase);
       if (!inRange(cursor, win.start, win.end)) continue;
-      const amount = inflate(phase.monthlyAmount, mInf, monthsFromAsOf);
+      const amount = phase.liabilityId
+        ? phase.monthlyAmount
+        : inflate(phase.monthlyAmount, mInf, monthsFromAsOf);
       spending += amount;
       if (amount > 0.005) {
         spendingLines.push({
@@ -481,6 +486,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
       }
     }
     for (const l of plan.liabilities ?? []) {
+      if (l.id && linkedLiabilityIds.has(l.id)) continue;
       const duePay = liabilityPaymentDue(l, cursor);
       spending += duePay;
       if (duePay > 0.005) {

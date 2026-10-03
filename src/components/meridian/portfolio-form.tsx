@@ -268,34 +268,32 @@ function AccountTile({
     </Field>
   );
   const include = (
-    <div className="flex w-full min-w-full flex-col gap-1">
-      <p className="text-xs leading-relaxed text-muted">
-        Spendable means this balance can be drawn in retirement. Leave it off for a house or a debt
-        you are not spending.
-      </p>
-      <Field label="Include in" className="w-auto shrink-0">
-        <div className="flex h-10 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fg">
+    <Field label="Include in" className="w-auto max-w-sm shrink-0">
+      <div className="flex h-10 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fg">
+        <label className="flex items-center gap-1.5">
+          <input
+            type="checkbox"
+            checked={p.spendable}
+            onChange={(e) => onChange({ spendable: e.target.checked })}
+          />
+          Spendable
+        </label>
+        {showNetWorth ? (
           <label className="flex items-center gap-1.5">
             <input
               type="checkbox"
-              checked={p.spendable}
-              onChange={(e) => onChange({ spendable: e.target.checked })}
+              checked={p.includeInNetWorth}
+              onChange={(e) => onChange({ includeInNetWorth: e.target.checked })}
             />
-            Spendable
+            Net worth
           </label>
-          {showNetWorth ? (
-            <label className="flex items-center gap-1.5">
-              <input
-                type="checkbox"
-                checked={p.includeInNetWorth}
-                onChange={(e) => onChange({ includeInNetWorth: e.target.checked })}
-              />
-              Net worth
-            </label>
-          ) : null}
-        </div>
-      </Field>
-    </div>
+        ) : null}
+      </div>
+      <p className="mt-1 text-xs leading-relaxed text-muted">
+        Spendable means this balance can be drawn in retirement. Leave it off for a house or a debt
+        you are not spending.
+      </p>
+    </Field>
   );
   const mustPickOwner = needsTaxOwner(p.kind);
   const chosenOwner = explicitTaxOwner(p.owner);
@@ -324,6 +322,15 @@ function AccountTile({
         not give this account its own limit.
       </p>
     ) : null;
+  const ownerAndFlags = (
+    <div className="flex flex-wrap items-start gap-x-4 gap-y-2 self-start">
+      <div className="flex max-w-sm flex-col gap-1">
+        {owner}
+        {ownerPrompt}
+      </div>
+      {include}
+    </div>
+  );
   const save = (
     <PrimaryButton className="h-10 self-end" onClick={onSave}>
       Save account
@@ -384,12 +391,10 @@ function AccountTile({
               tax,
               returns,
               value,
-              include,
-              owner,
+              ownerAndFlags,
               save,
               remove,
             ])}
-            {ownerPrompt}
             {invested}
             {warn}
             {p.kind === "real_estate" ? (

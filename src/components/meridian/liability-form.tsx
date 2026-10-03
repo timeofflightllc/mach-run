@@ -1,5 +1,6 @@
 import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { ConfirmRemove } from "@/components/meridian/confirm-remove";
 import {
   InstitutionInput,
@@ -25,6 +26,7 @@ import {
   liabilityPayoffDate,
   originalLiability,
   remainingLiability,
+  syncLiabilitySpending,
 } from "@/lib/plan/liability";
 import { newId, usePlanStore } from "@/lib/plan/store";
 import type { Liability, LiabilityKind, Plan } from "@/lib/plan/types";
@@ -66,6 +68,13 @@ export function LiabilityForm() {
   const [openId, setOpenId] = useState<string | null>(null);
   const [pendingRemove, setPendingRemove] = useState<string | null>(null);
   const rows = plan.liabilities ?? [];
+
+  useEffect(() => {
+    const live = usePlanStore.getState().plan;
+    const spending = syncLiabilitySpending(live);
+    if (spending === live.spending) return;
+    usePlanStore.getState().setPlan({ ...live, spending });
+  }, [plan.liabilities]);
 
   return (
     <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
@@ -149,6 +158,7 @@ function LiabilityRow({
   const payoff = liabilityPayoffDate(l);
   const hasLoan = l.monthlyPi > 0 && l.termYears > 0;
   const name = l.name.trim() || "Liability";
+  const [spendingNotice, setSpendingNotice] = useState(false);
 
   return (
     <li className="col-span-full rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)] @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid @min-[46rem]:items-center @min-[46rem]:px-0">
@@ -262,16 +272,23 @@ function LiabilityRow({
                     onValue={(n) => updateLiability(l.id, { termYears: n })}
                   />
                 </Field>
-                <Field label="In spending" className="w-auto shrink-0">
-                  <label className="flex h-10 items-center gap-2 text-xs text-[#5c4a18]">
+                <div className="w-full min-w-[16rem] max-w-xs shrink-0">
+                  <p className="text-xs font-medium leading-snug text-[#5c4a18]">
+                    Automatically include in spending calculation?
+                  </p>
+                  <label className="mt-1.5 flex h-10 items-center gap-2 text-xs text-[#5c4a18]">
                     <input
                       type="checkbox"
                       checked={Boolean(l.includeInSpending)}
-                      onChange={(e) => updateLiability(l.id, { includeInSpending: e.target.checked })}
+                      onChange={(e) => {
+                        const on = e.target.checked;
+                        updateLiability(l.id, { includeInSpending: on });
+                        if (on) setSpendingNotice(true);
+                      }}
                     />
                     Yes
                   </label>
-                </Field>
+                </div>
               </div>
               {hasLoan ? (
                 <p className="mt-3 text-xs leading-relaxed text-[#5c4a18]">
@@ -341,6 +358,30 @@ function LiabilityRow({
           </div>
         </div>
       </div>
+      {spendingNotice ? <SpendingIncludeNotice onClose={() => setSpendingNotice(false)} /> : null}
     </li>
+  );
+}
+
+function SpendingIncludeNotice({ onClose }: { onClose: () => void }) {
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[200] grid place-items-center bg-black/60 px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="spending-include-title"
+    >
+      <div className="w-full max-w-md rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]">
+        <p id="spending-include-title" className="text-sm leading-relaxed text-fg">
+          This monthly debt payment will be included in monthly spending automatically. It will end
+          at the scheduled payoff date. MACH RUN adds a spending line for this liability.
+        </p>
+        <PrimaryButton className="mt-4 h-9 w-auto px-4 text-sm" onClick={onClose}>
+          OK
+        </PrimaryButton>
+      </div>
+    </div>,
+    document.body,
   );
 }

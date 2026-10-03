@@ -168,10 +168,19 @@ export function SpendingForm() {
       {pendingRemove ? (
         <ConfirmRemove
           title="Remove spending"
-          body="Are you sure you want to remove this spending phase? This cannot be undone."
+          body={
+            plan.spending.find((row) => row.id === pendingRemove)?.liabilityId
+              ? "This line was created from a liability. Removing it turns off automatic inclusion in spending. The loan itself stays."
+              : "Are you sure you want to remove this spending phase? This cannot be undone."
+          }
           onCancel={() => setPendingRemove(null)}
           onConfirm={() => {
-            removeSpending(pendingRemove);
+            const phase = plan.spending.find((row) => row.id === pendingRemove);
+            if (phase?.liabilityId) {
+              usePlanStore.getState().updateLiability(phase.liabilityId, { includeInSpending: false });
+            } else {
+              removeSpending(pendingRemove);
+            }
             setFrozen((current) => current?.filter((id) => id !== pendingRemove) ?? null);
             if (openId === pendingRemove) {
               setOpenId(null);
@@ -231,6 +240,21 @@ function SpendingRow({
         inert={!open}
       >
         <div className="min-h-0 overflow-hidden">
+          {s.liabilityId ? (
+            <div className="flex flex-col gap-2 pb-1">
+              <p className="text-sm leading-relaxed text-fg">
+                {name} is a liability payment of {usd(s.monthlyAmount)}/mo, {whenLabel(plan, s)}. It
+                does not rise with inflation, and it stops at the payoff date.
+              </p>
+              <p className="text-xs leading-relaxed text-muted">
+                Change the amount or the dates on the liability. Remove this line to turn off
+                automatic inclusion.
+              </p>
+              <PrimaryButton className="h-10 w-auto self-start px-4" onClick={onSave}>
+                Close
+              </PrimaryButton>
+            </div>
+          ) : (
           <div className="flex flex-wrap items-end gap-x-3 gap-y-3 pb-1">
             <Field label="Name" className="w-44 shrink-0">
               <TextInput
@@ -302,6 +326,7 @@ function SpendingRow({
               </div>
             ) : null}
           </div>
+          )}
         </div>
       </div>
       <div
@@ -313,6 +338,7 @@ function SpendingRow({
           <div className="col-span-full flex items-center gap-3 @min-[46rem]:hidden">
             <p className="min-w-0 flex-1 truncate text-sm text-fg">
               <span className="font-medium">{name}</span>
+              {s.liabilityId ? <span className="text-muted"> · liability</span> : null}
               <span className="text-muted"> · {usd(s.monthlyAmount)}/mo</span>
               <span className="text-muted"> · {whenLabel(plan, s)}</span>
             </p>
@@ -324,7 +350,10 @@ function SpendingRow({
             </button>
           </div>
           <div className="col-span-full hidden grid-cols-subgrid items-center text-sm @min-[46rem]:grid">
-            <span className="min-w-0 truncate pl-3 font-medium text-fg">{name}</span>
+            <span className="min-w-0 truncate pl-3 font-medium text-fg">
+              {name}
+              {s.liabilityId ? <span className="font-normal text-muted"> · liability</span> : null}
+            </span>
             <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-fg">
               {usd(s.monthlyAmount)}/mo
             </span>

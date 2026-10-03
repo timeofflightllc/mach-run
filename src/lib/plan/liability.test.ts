@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { remainingMortgage } from "./mortgage.ts";
-import { remainingLiability } from "./liability.ts";
+import { remainingLiability, syncLiabilitySpending } from "./liability.ts";
+import { simulate } from "./engine.ts";
 import { ensurePlan, createDefaultPlan } from "./defaults.ts";
 import type { Liability, Mortgage } from "./types.ts";
 
@@ -42,4 +43,48 @@ test("old plans missing liabilities migrate to []", () => {
   delete raw.liabilities;
   const next = ensurePlan(raw as ReturnType<typeof createDefaultPlan>);
   assert.deepEqual(next.liabilities, []);
+});
+
+test("a checked liability becomes one spending line and is not counted twice", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-01-01";
+  plan.assumptions.inflationPct = 3;
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.primary.birthDate = "1980-01-15";
+  plan.spending = [];
+  plan.incomes = [];
+  plan.liabilities = [
+    {
+      id: "car",
+      name: "Truck",
+      kind: "car",
+      balance: 2400,
+      aprPct: 0,
+      monthlyPi: 200,
+      originationDate: "2026-01-01",
+      termYears: 1,
+      includeInSpending: true,
+      owner: "primary",
+    },
+  ];
+  const spending = syncLiabilitySpending(plan);
+  assert.equal(spending.length, 1);
+  assert.equal(spending[0]?.label, "Truck");
+  assert.equal(spending[0]?.monthlyAmount, 200);
+  assert.equal(spending[0]?.startDate.slice(0, 7), "2026-01");
+  assert.equal(spending[0]?.endDate?.slice(0, 7), "2026-12");
+  const sim = simulate({ ...plan, spending });
+  const at = (key: string) => sim.months.find((m) => m.date.startsWith(key))?.spending ?? -1;
+  assert.ok(Math.abs(at("2026-01") - 200) < 1);
+  assert.ok(Math.abs(at("2026-06") - 200) < 1);
+  assert.ok(Math.abs(at("2026-12") - 200) < 1);
+  assert.ok(at("2027-01") < 1);
+  const lines = sim.months.find((m) => m.date.startsWith("2026-06"))?.detail.spendingLines ?? [];
+  assert.equal(lines.filter((row) => row.label === "Truck").length, 1);
+  const off = syncLiabilitySpending({
+    ...plan,
+    spending,
+    liabilities: [{ ...plan.liabilities[0], includeInSpending: false }],
+  });
+  assert.equal(off.length, 0);
 });

@@ -187,6 +187,8 @@ export interface SpendingPhase {
   tiedToStageId?: string;
   /** Start date tracks the day after the previous spending phase ends. */
   startDayAfterPrevious?: boolean;
+  /** Set when this line was created from a liability. The payment does not inflate. */
+  liabilityId?: string;
 }
 
 export interface Assumptions {
