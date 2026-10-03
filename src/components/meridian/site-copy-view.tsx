@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-function inline(text: string): ReactNode[] {
+function inline(text: string, underline: boolean): ReactNode[] {
   const parts: ReactNode[] = [];
   const re = /\[([^\]]+)\]\((\/[a-z0-9\-/?#]*)\)/gi;
   let last = 0;
@@ -12,7 +12,11 @@ function inline(text: string): ReactNode[] {
       <a
         key={`l-${i++}`}
         href={m[2]}
-        className="text-fg underline-offset-4 hover:underline"
+        className={
+          underline
+            ? "text-fg underline underline-offset-4 hover:text-accent"
+            : "text-fg underline-offset-4 hover:underline"
+        }
       >
         {m[1]}
       </a>,
@@ -23,7 +27,13 @@ function inline(text: string): ReactNode[] {
   return parts;
 }
 
-export function SiteCopyBody({ body }: { body: string }) {
+export function SiteCopyBody({
+  body,
+  underlineLinks = false,
+}: {
+  body: string;
+  underlineLinks?: boolean;
+}) {
   const blocks = body.replace(/\r\n/g, "\n").trim().split(/\n{2,}/);
   if (!blocks[0]) return null;
   return (
@@ -41,11 +51,11 @@ export function SiteCopyBody({ body }: { body: string }) {
               <h2 id={headingId} className="scroll-mt-24 text-xl font-medium text-fg">
                 {heading}
               </h2>
-              {rest ? <p>{inline(rest)}</p> : null}
+              {rest ? <p>{inline(rest, underlineLinks)}</p> : null}
             </section>
           );
         }
-        return <p key={i}>{inline(block.replace(/\n/g, " "))}</p>;
+        return <p key={i}>{inline(block.replace(/\n/g, " "), underlineLinks)}</p>;
       })}
     </div>
   );

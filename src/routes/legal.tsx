@@ -19,7 +19,7 @@ function Legal() {
           <h1 className="font-display text-4xl text-fg sm:text-5xl">{page.title}</h1>
           {page.kicker ? <p className="mt-2 text-lg text-muted">{page.kicker}</p> : null}
         </header>
-        <SiteCopyBody body={page.body} />
+        <SiteCopyBody body={page.body} underlineLinks />
       </div>
       <MachFooter />
     </main>
