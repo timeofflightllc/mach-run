@@ -175,12 +175,24 @@ function VerifyEmail() {
               Verify email
             </p>
             <h1 className="font-display text-3xl text-fg">Enter the 6-digit code</h1>
+            <p className="text-sm text-fg">
+              Sent to{" "}
+              <span className="font-medium">{inbox}</span>.
+            </p>
             <p className="text-sm text-muted">
-              We sent it to {inbox}. Your MACH RUN account is{" "}
+              Your MACH RUN account is{" "}
               <span className="text-fg">not created until this code is accepted</span>
               . That helps us ensure bots don't flood our registration system and website.
               Codes last 24 hours.
             </p>
+            {waitingOnPending ? (
+              <a
+                href={backToRegister}
+                className="inline-block text-sm text-[#e8c547] underline decoration-[#e8c547]/70 underline-offset-2"
+              >
+                Wrong address? Go back and fix it.
+              </a>
+            ) : null}
           </header>
           {error ? <p className="text-sm text-negative">{error}</p> : null}
           {msg ? <p className="text-sm text-muted">{msg}</p> : null}

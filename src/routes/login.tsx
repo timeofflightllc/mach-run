@@ -5,6 +5,7 @@ import { afterAuthHref, loginSearch, registerForPlanHref } from "@/lib/billing/c
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { TurnstileBox, turnstileEnabled } from "@/components/auth/turnstile-box";
 import { startPendingSignup } from "@/lib/auth/pending-signup-api";
+import { suggestEmailFix } from "@/lib/auth/email-domain-typo";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 
 export const Route = createFileRoute("/login")({
@@ -28,7 +29,13 @@ function Login() {
   const [captcha, setCaptcha] = useState<string | null>(null);
   const [captchaReset, setCaptchaReset] = useState(0);
   const [honeypot, setHoneypot] = useState("");
+  const [keptTypo, setKeptTypo] = useState<string | null>(null);
+  const [typoHold, setTypoHold] = useState(false);
 
+  const suggestion = mode === "up" ? suggestEmailFix(email) : null;
+  const holdingTypo = Boolean(
+    suggestion && keptTypo !== suggestion.typed.toLowerCase(),
+  );
 
   async function onEmail(e: FormEvent) {
     e.preventDefault();
@@ -37,6 +44,12 @@ function Login() {
     setError(null);
     try {
       if (mode === "up") {
+        const fix = suggestEmailFix(email);
+        if (fix && keptTypo !== fix.typed.toLowerCase()) {
+          setTypoHold(true);
+          setBusy(false);
+          return;
+        }
         if (turnstileEnabled() && !captcha) {
           throw new Error("Confirm you’re not a robot before creating an account.");
         }
@@ -139,12 +152,48 @@ function Login() {
                     type="email"
                     required
                     value={email}
-                    onChange={(ev) => setEmail(ev.target.value)}
+                    onChange={(ev) => {
+                      setEmail(ev.target.value);
+                      setKeptTypo(null);
+                      setTypoHold(false);
+                    }}
                     autoComplete="email"
                     placeholder="you@example.com"
                   />
                 </Field>
-                <Field label="Password" hint="At least 8 characters">
+                {holdingTypo && suggestion ? (
+                  <p className="text-sm leading-relaxed text-[#e8c547]">
+                    {typoHold ? "Not sent yet. " : null}
+                    Did you mean {suggestion.email}?{" "}
+                    <button
+                      type="button"
+                      className="font-medium text-[#e8c547] underline decoration-[#e8c547]/70 underline-offset-2"
+                      onClick={() => {
+                        setEmail(suggestion.email);
+                        setKeptTypo(null);
+                        setTypoHold(false);
+                      }}
+                    >
+                      Use this address
+                    </button>
+                    {" · "}
+                    <button
+                      type="button"
+                      className="font-medium text-[#e8c547] underline decoration-[#e8c547]/70 underline-offset-2"
+                      onClick={() => setKeptTypo(suggestion.typed.toLowerCase())}
+                    >
+                      Keep what I typed
+                    </button>
+                  </p>
+                ) : suggestion && keptTypo === suggestion.typed.toLowerCase() ? (
+                  <p className="text-sm text-muted">
+                    Keeping {suggestion.typed}. Hit Create account to send the code.
+                  </p>
+                ) : null}
+                <Field
+                  label="Password"
+                  hint={mode === "up" ? "At least 8 characters" : undefined}
+                >
                   <TextInput
                     type="password"
                     required
