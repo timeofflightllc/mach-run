@@ -12,10 +12,11 @@ test("Roth IRA / IRA cap is $7,500 for 2026", () => {
   assert.equal(irsEmployeeAnnualLimit("ira"), 7500);
 });
 
-test("401k / 401k Roth / TSP cap is $24,500 for 2026", () => {
+test("401k / 401k Roth / TSP / Roth TSP cap is $24,500 for 2026", () => {
   assert.equal(irsEmployeeAnnualLimit("401k"), 24500);
   assert.equal(irsEmployeeAnnualLimit("401k_roth"), 24500);
   assert.equal(irsEmployeeAnnualLimit("tsp"), 24500);
+  assert.equal(irsEmployeeAnnualLimit("tsp_roth"), 24500);
 });
 
 test("taxable and cash have no IRS employee deferral cap", () => {

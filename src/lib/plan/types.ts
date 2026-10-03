@@ -7,6 +7,7 @@ export type AccountKind =
   | "traditional"
   | "taxable"
   | "tsp"
+  | "tsp_roth"
   | "cash"
   | "529"
   | "ugma"

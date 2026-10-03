@@ -22,6 +22,7 @@ export function irsLimitClass(kind: AccountKind): "ira" | "workplace" | "trump" 
     case "401k":
     case "401k_roth":
     case "tsp":
+    case "tsp_roth":
       return "workplace";
     case "trump":
       return "trump";

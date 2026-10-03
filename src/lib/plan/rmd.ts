@@ -32,7 +32,7 @@ export function uniformLifetimeFactor(age: number): number {
 }
 
 export function rmdClass(p: Portfolio): RmdClass {
-  if (p.kind === "roth" || p.kind === "roth_ira" || p.kind === "401k_roth") return "none";
+  if (p.kind === "roth" || p.kind === "roth_ira" || p.kind === "401k_roth" || p.kind === "tsp_roth") return "none";
   if (p.taxBucket === "roth") return "none";
   if (p.taxBucket !== "pre_tax") return "none";
   if (p.kind === "401k" || p.kind === "tsp") return "workplace";

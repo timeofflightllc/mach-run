@@ -135,7 +135,7 @@ export function contributionWindow(
 }
 
 function isWorkplaceMatchAccount(kind: string): boolean {
-  return kind === "401k" || kind === "401k_roth" || kind === "tsp";
+  return kind === "401k" || kind === "401k_roth" || kind === "tsp" || kind === "tsp_roth";
 }
 
 export function streamColaAnnual(plan: Plan, stream: IncomeStream, infA: number): number {

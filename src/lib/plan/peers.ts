@@ -1004,7 +1004,7 @@ function rmdTable(sim: SimResult): BriefTableSpec {
       : undefined;
   return {
     intro: rows.length
-      ? "The minimum the IRS makes you withdraw from a pre-tax retirement account at a set age. MACH RUN figures it from the prior year-end balance and counts it as ordinary income. Roth IRA and Roth 401(k) have none. A traditional IRA starts at 73 or 75, depending on birth year. A 401(k) or TSP uses those same ages, but is skipped while you are still earning salary and still contributing to that account. If one is due, MACH RUN already withdraws it and shows it as income in the table below."
+      ? "The minimum the IRS makes you withdraw from a pre-tax retirement account at a set age. MACH RUN figures it from the prior year-end balance and counts it as ordinary income. Roth IRA, Roth 401(k), and Roth TSP have none. A traditional IRA starts at 73 or 75, depending on birth year. A 401(k) or TSP uses those same ages, but is skipped while you are still earning salary and still contributing to that account. If one is due, MACH RUN already withdraws it and shows it as income in the table below."
       : "Add a pre-tax IRA, 401(k), or TSP in Observe to see RMDs here.",
     headers: [
       { label: "Account" },

@@ -46,6 +46,7 @@ const KIND_LABELS: { value: AccountKind; label: string; bucket: TaxBucket }[] = 
   { value: "ira", label: "Traditional IRA", bucket: "pre_tax" },
   { value: "roth_ira", label: "Roth IRA", bucket: "roth" },
   { value: "tsp", label: "TSP", bucket: "pre_tax" },
+  { value: "tsp_roth", label: "Roth TSP", bucket: "roth" },
   { value: "roth", label: "Roth (other)", bucket: "roth" },
   { value: "traditional", label: "Traditional (other)", bucket: "pre_tax" },
   { value: "taxable", label: "Taxable brokerage", bucket: "taxable" },

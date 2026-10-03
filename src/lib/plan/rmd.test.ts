@@ -35,11 +35,13 @@ test("Uniform Lifetime Table: 73 is 26.5, so $265k → $10k/year", () => {
   assert.ok(Math.abs(monthlyRmd(265_000, 73) * 12 - 10_000) < 1);
 });
 
-test("Roth IRA and Roth 401k have no lifetime RMD", () => {
+test("Roth IRA, Roth 401k, and Roth TSP have no lifetime RMD", () => {
   assert.equal(rmdClass(port({ id: "a", kind: "roth_ira", taxBucket: "roth" })), "none");
   assert.equal(rmdClass(port({ id: "b", kind: "401k_roth", taxBucket: "roth" })), "none");
+  assert.equal(rmdClass(port({ id: "e", kind: "tsp_roth", taxBucket: "roth" })), "none");
   assert.equal(rmdClass(port({ id: "c", kind: "ira", taxBucket: "pre_tax" })), "ira");
   assert.equal(rmdClass(port({ id: "d", kind: "401k", taxBucket: "pre_tax" })), "workplace");
+  assert.equal(rmdClass(port({ id: "f", kind: "tsp", taxBucket: "pre_tax" })), "workplace");
 });
 
 test("Traditional IRA at 73 is forced income even if working", () => {

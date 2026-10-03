@@ -38,7 +38,7 @@ const bandField = "w-[9.5rem] shrink-0";
 const bandControl = "h-10 max-w-none";
 
 function isWorkplace(kind: string): boolean {
-  return kind === "401k" || kind === "401k_roth" || kind === "tsp";
+  return kind === "401k" || kind === "401k_roth" || kind === "tsp" || kind === "tsp_roth";
 }
 
 function accountLabel(plan: Plan, rule: ContributionRule): string {
