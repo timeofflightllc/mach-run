@@ -162,13 +162,13 @@ Social Security, military retirement, VA compensation, and similar figures are e
 Observe, Orient, Decide, Act (OODA) comes from the late, great U.S. Air Force Col. John Boyd (Ret.). His Energy-Maneuverability theory and the OODA Loop changed the world. Any mention of OODA or the OODA Loop on this site refers to Boyd’s publicly circulated work — not to any private organization that later trademarked, copyrighted, or packaged his ideas.
 
 # Terms of Service {#terms}
-Last updated: September 22, 2026. MACH RUN is a hypothetical household planning calculator. It is not a broker, bank, fiduciary, or advisor.
+Last updated: October 3, 2026. MACH RUN is a hypothetical household planning calculator. It is not a broker, bank, fiduciary, or advisor. MACH RUN is operated by Time of Flight LLC, and Florida law governs these terms.
 
 # Accounts
 You may register with email or a sign-in provider. You are responsible for the account and for the numbers you type. Do not share your password.
 
 # Subscriptions
-Paid plans are billed by Stripe. You can cancel anytime from Manage billing. Access lasts through the paid period unless the account is closed for abuse.
+Paid plans are billed by Stripe. You can cancel anytime in Manage billing. The current period is not refunded except where the law requires it. Access lasts through the paid period unless the account is closed for abuse. For Advisor Lite and Advisor Unlimited trials, the card is charged when the trial ends unless canceled before then. The plan renews until canceled.
 
 # Not advice
 MACH RUN does not provide financial, tax, legal, or investment advice. Projections are illustrations from the numbers you enter. See the disclaimer above.
@@ -188,7 +188,7 @@ Questions go to [Contact](/contact).`,
   {
     slug: "privacy",
     title: "Privacy policy",
-    kicker: "Last updated: September 7, 2026",
+    kicker: "Last updated: October 3, 2026",
     body: `MACH Run is a household calculator. You type in names, dates, balances, income, and spending so the engine can project a MACH Run. That is personal financial information. We treat it that way.
 
 # What we collect
@@ -203,6 +203,9 @@ Standard technical logs (IP address, browser, pages loaded) to keep the site run
 # How we use it
 To run the calculator, save your MACH Run across devices, sign you in, take payment for Unlimited, answer OODA AI questions you ask, and keep the service secure. We do not use your household numbers to advertise other people’s products to you.
 
+# Who runs the pieces
+The site is hosted by Vercel (AWS - Washington, D.C., USA). Saved plans, including the numbers you typed, are stored in Neon (AWS - Virginia, USA). Payments are processed by Stripe. OODA AI questions go to xAI. Email signup can use Cloudflare Turnstile to check that a person, not a script, is registering. Stripe and Turnstile do not receive your household balances. xAI receives the question you ask and the compact snapshot described above.
+
 # What we will not do
 We will not spam you. We will not sell, rent, trade, or otherwise knowingly give your personal information, financial inputs, passwords, or email address to marketers, data brokers, or anyone else for their own use.
 
@@ -215,16 +218,19 @@ Your MACH Run is tied to your login. Other MACH RUN users cannot see it. Data is
 We use a session cookie (or a short-lived token in the live preview) so you stay signed in. We do not run advertising pixels or sell browsing history.
 
 # Keeping it
-We keep your account and saved MACH Run while the account is open. You can ask us to delete the account and stored plan. Backups may lag for a short period. Billing records may be kept as required by tax and payment rules.
+We keep your account and saved MACH Run while the account is open.
 
 # Security
-Passwords are hashed. Traffic is encrypted in transit (HTTPS). Saved MACH Runs are encrypted at rest. Optional .machrun backup files use a password only you know — we do not keep that password. No method is perfect. Do not reuse a bank password here. MACH Run is a planning tool, not a bank, broker, or custodian.
+Passwords are hashed. Traffic is encrypted in transit (HTTPS). Saved MACH Runs are encrypted at rest. Optional .machrun backup files use a password only you know — we do not keep that password. No method is perfect. Do not reuse a bank password here. MACH Run is a planning tool, not a bank, broker, or custodian. If we learn of a breach of account or plan data, we will email the account and update this page.
 
 # Children
 MACH Run is for adults. You may enter a child’s name and birth date as a dependent for VA or similar benefits. We do not knowingly create accounts for children under 13.
 
+# Your rights
+You may ask to access, correct, or delete your information, and to receive a copy of your plan. We do not sell personal information. Deletion is by [Contact](/contact) from the account email. Backups may keep a copy for a limited time. We will not use that copy to restore an account you asked us to delete. Billing records stay as tax and payment rules require.
+
 # Your choices
-You can edit or clear inputs in the calculator, update email and password on Account profile, manage billing with Stripe, and sign out. For deletion of an account and stored plan, use [Contact](/contact) from the email on that account.
+You can edit or clear inputs in the calculator, update email and password on Account profile, manage billing with Stripe, and sign out. To delete the account and stored plan, use [Contact](/contact) from the email on that account.
 
 # Not advice
 MACH Run, the MACH OODA Financial Analysis, and OODA AI are for entertainment and illustration. They are not financial, tax, legal, or investment advice.

@@ -95,6 +95,14 @@ function freshenStoredCopy(body: string): string {
     .replaceAll("For financial professionals, or nerds", "For financial professionals");
 }
 
+function preferCurrentLegal(page: SitePage): SitePage {
+  const fresh = DEFAULT_PAGES.find((item) => item.slug === page.slug);
+  if (!fresh) return page;
+  if (page.slug === "privacy" && !page.body.includes("Cloudflare Turnstile")) return fresh;
+  if (page.slug === "legal" && !page.body.includes("Florida law governs")) return fresh;
+  return page;
+}
+
 function mapPage(row: {
   slug: string;
   title: string;
@@ -102,12 +110,12 @@ function mapPage(row: {
   body: string;
 }): SitePage | null {
   if (!isSlug(row.slug)) return null;
-  return {
+  return preferCurrentLegal({
     slug: row.slug,
     title: row.title,
     kicker: row.kicker ?? "",
     body: freshenStoredCopy(row.body ?? ""),
-  };
+  });
 }
 
 export async function loadSiteCopy(): Promise<SiteCopy> {

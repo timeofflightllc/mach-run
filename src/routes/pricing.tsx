@@ -602,6 +602,9 @@ function Pricing() {
                 <li key={`advl-${i}`}>{line}</li>
               ))}
             </ul>
+            <p className="mt-4 text-sm leading-relaxed text-muted">
+              The card is charged when the trial ends unless canceled before then. The plan renews until canceled.
+            </p>
             {!signedIn ? (
               <a
                 href={registerForPlanHref("advisor_lite", interval)}
@@ -656,6 +659,9 @@ function Pricing() {
                 <li key={`advu-${i}`}>{line}</li>
               ))}
             </ul>
+            <p className="mt-4 text-sm leading-relaxed text-muted">
+              The card is charged when the trial ends unless canceled before then. The plan renews until canceled.
+            </p>
             {!signedIn ? (
               <a
                 href={registerForPlanHref("advisor", interval)}
