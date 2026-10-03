@@ -239,7 +239,7 @@ function PhaseFolderTabs({
 }) {
   return (
     <div
-      className="ml-auto flex min-w-0 max-w-[calc(100%-6.75rem)] flex-wrap items-end justify-end gap-1 sm:mr-8 sm:max-w-none sm:flex-nowrap sm:gap-1.5"
+      className="ml-auto flex min-w-0 flex-1 flex-nowrap items-end justify-end gap-0.5 sm:mr-8 sm:flex-none sm:gap-1.5"
       role="tablist"
       aria-label={name}
     >
@@ -253,7 +253,7 @@ function PhaseFolderTabs({
             aria-selected={on}
             onClick={() => onPick(tab.id)}
             className={cn(
-              "whitespace-nowrap rounded-t-lg rounded-b-none px-2 text-xs font-medium leading-none sm:px-3.5 sm:text-sm",
+              "whitespace-nowrap rounded-t-lg rounded-b-none px-1 font-display text-[10px] font-medium leading-none tracking-normal min-[420px]:text-[11px] min-[520px]:px-2 min-[520px]:font-sans min-[520px]:text-xs sm:px-3.5 sm:text-sm",
               on
                 ? "z-10 bg-surface pb-2.5 pt-2 text-fg shadow-[0_-1px_0_0_var(--color-border),1px_0_0_0_var(--color-border),-1px_0_0_0_var(--color-border)]"
                 : "z-0 mb-1.5 bg-section-lift pb-2 pt-1.5 text-muted shadow-[0_0_0_1px_var(--color-section-lift-border)]",
