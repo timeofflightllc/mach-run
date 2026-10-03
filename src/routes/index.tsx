@@ -508,6 +508,21 @@ function Home() {
   const [demoLoaded, setDemoLoaded] = useState(false);
   const heroVisible = heroOn && !heroDismissed;
 
+  useEffect(() => {
+    const header = document.getElementById("mach-header");
+    if (!header) return;
+    const apply = () => {
+      document.documentElement.style.setProperty(
+        "--mach-header-h",
+        `${header.getBoundingClientRect().height}px`,
+      );
+    };
+    apply();
+    const observer = new ResizeObserver(apply);
+    observer.observe(header);
+    return () => observer.disconnect();
+  }, []);
+
   function onNext() {
     const next = route[shownIndex + 1]?.id;
     if (!next) return;
