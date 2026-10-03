@@ -33,7 +33,7 @@ import type { ContributionRule, Plan } from "@/lib/plan/types";
 const MATCH_PCTS = Array.from({ length: 21 }, (_, i) => i * 5);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const summaryCols =
-  "@min-[46rem]:grid @min-[46rem]:min-w-[68rem] @min-[46rem]:grid-cols-[minmax(9rem,1fr)_minmax(12rem,1.15fr)_minmax(18rem,1.55fr)_14rem_4.5rem_7.25rem] @min-[46rem]:items-center @min-[46rem]:gap-x-4";
+  "w-full @min-[46rem]:min-w-[40rem] @min-[46rem]:grid @min-[46rem]:grid-cols-[minmax(5rem,1fr)_minmax(6rem,1.15fr)_minmax(7.5rem,1.45fr)_minmax(9.5rem,13rem)_minmax(3rem,3.5rem)_minmax(6.25rem,7.25rem)] @min-[46rem]:items-center @min-[46rem]:gap-x-3";
 const bandField = "w-[9.5rem] shrink-0";
 const bandControl = "h-10 max-w-none";
 
@@ -199,7 +199,7 @@ export function ContributionForm() {
   void orderTick;
 
   return (
-    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
+    <div className="@container mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
       <div className="flex flex-col gap-3 text-sm text-muted">
         {copy.contributionsP1.trim() ? <p className="whitespace-pre-wrap">{copy.contributionsP1}</p> : null}
         {copy.contributionsP2.trim() || matchLine ? (
@@ -210,7 +210,8 @@ export function ContributionForm() {
         ) : null}
         {copy.contributionsP3.trim() ? <p className="whitespace-pre-wrap">{copy.contributionsP3}</p> : null}
       </div>
-      <ul className={`flex flex-col gap-2 overflow-x-auto ${summaryCols}`}>
+      <div className="min-w-0 w-full overflow-x-auto">
+      <ul className={`flex flex-col gap-2 ${summaryCols}`}>
         {rows.length > 0 ? (
           <li className="col-span-full hidden grid-cols-subgrid items-center text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid">
             <span className="min-w-0 pl-3">Name</span>
@@ -558,6 +559,7 @@ export function ContributionForm() {
           );
         })}
       </ul>
+      </div>
       {capped ? (
         <UpgradeNudge kind="contributions" />
       ) : (
