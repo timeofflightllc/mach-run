@@ -7,12 +7,13 @@ import { institutionFields } from "./institutions.ts";
  * are typed in — MACH does not invent them.
  */
 export function createDefaultPlan(): Plan {
+  const asOf = todayIso();
   return {
     primary: { name: "", birthDate: "" },
     spouse: { name: "", birthDate: "" },
     children: [],
     assumptions: {
-      asOfDate: todayIso(),
+      asOfDate: asOf,
       inflationPct: 2.5,
       defaultColaPct: 2.5,
       defaultReturnPct: 7,
@@ -30,28 +31,8 @@ export function createDefaultPlan(): Plan {
     portfolios: [],
     liabilities: [],
     contributions: [],
-    incomes: [
-      {
-        id: "inc-1",
-        name: "",
-        kind: "salary",
-        monthlyAmount: 0,
-        startDate: "2026-08-01",
-        endDate: null,
-        colaPct: null,
-        taxTreatment: "ordinary",
-        person: "household",
-      },
-    ],
-    spending: [
-      {
-        id: "sp-1",
-        label: "Household spending",
-        monthlyAmount: 8500,
-        startDate: "2026-08-01",
-        endDate: null,
-      },
-    ],
+    incomes: [],
+    spending: [],
   };
 }
 

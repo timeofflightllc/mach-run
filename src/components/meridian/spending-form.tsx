@@ -155,7 +155,7 @@ export function SpendingForm() {
           addSpending({
             id,
             label: "",
-            monthlyAmount: 10000,
+            monthlyAmount: 0,
             startDate: plan.assumptions.asOfDate,
             endDate: null,
           });

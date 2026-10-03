@@ -20,7 +20,19 @@ function fatClient(): Plan {
       includeInNetWorth: true,
     },
   ];
-  p.incomes = [{ ...p.incomes[0], name: "Boeing", monthlyAmount: 25_000 }];
+  p.incomes = [
+    {
+      id: "inc-boeing",
+      name: "Boeing",
+      kind: "salary",
+      monthlyAmount: 25_000,
+      startDate: p.assumptions.asOfDate,
+      endDate: null,
+      colaPct: null,
+      taxTreatment: "ordinary",
+      person: "household",
+    },
+  ];
   p.contributions = [
     {
       id: "c1",
@@ -51,7 +63,19 @@ function thinTest(): Plan {
       includeInNetWorth: true,
     },
   ];
-  p.incomes = [{ ...p.incomes[0], name: "One income", monthlyAmount: 10 }];
+  p.incomes = [
+    {
+      id: "inc-one",
+      name: "One income",
+      kind: "salary",
+      monthlyAmount: 10,
+      startDate: p.assumptions.asOfDate,
+      endDate: null,
+      colaPct: null,
+      taxTreatment: "ordinary",
+      person: "household",
+    },
+  ];
   p.contributions = [
     {
       id: "tc1",

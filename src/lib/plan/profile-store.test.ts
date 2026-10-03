@@ -5,10 +5,34 @@ import { useProfileStore } from "./profile-store";
 function twoClients() {
   const a = createDefaultPlan();
   a.primary.name = "Alpha";
-  a.incomes[0].monthlyAmount = 1111;
+  a.incomes = [
+    {
+      id: "inc-a",
+      name: "",
+      kind: "salary",
+      monthlyAmount: 1111,
+      startDate: a.assumptions.asOfDate,
+      endDate: null,
+      colaPct: null,
+      taxTreatment: "ordinary",
+      person: "household",
+    },
+  ];
   const b = createDefaultPlan();
   b.primary.name = "Bravo";
-  b.incomes[0].monthlyAmount = 2222;
+  b.incomes = [
+    {
+      id: "inc-b",
+      name: "",
+      kind: "salary",
+      monthlyAmount: 2222,
+      startDate: b.assumptions.asOfDate,
+      endDate: null,
+      colaPct: null,
+      taxTreatment: "ordinary",
+      person: "household",
+    },
+  ];
   useProfileStore.setState({
     profiles: [
       { id: "p1", name: "Client 1", plan: a },
@@ -141,7 +165,19 @@ describe("advisor profile isolation", () => {
     useProfileStore.setState({ activeId: "p2" });
     const stale = createDefaultPlan();
     stale.primary.name = "Alpha";
-    stale.incomes[0].monthlyAmount = 1111;
+    stale.incomes = [
+      {
+        id: "inc-a",
+        name: "",
+        kind: "salary",
+        monthlyAmount: 1111,
+        startDate: stale.assumptions.asOfDate,
+        endDate: null,
+        colaPct: null,
+        taxTreatment: "ordinary",
+        person: "household",
+      },
+    ];
     useProfileStore.getState().asLibraryFor(stale, "p1");
     expect(useProfileStore.getState().profiles.find((p) => p.id === "p1")?.plan.primary.name).toBe(
       "Alpha",
