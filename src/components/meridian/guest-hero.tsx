@@ -141,18 +141,18 @@ export function GuestHero({
         <div className="relative mt-10 w-full">
           <BombBurstSketch />
           <div className="relative z-10 mx-auto w-full max-w-3xl px-2">
-          {/* 12.5% of this width is 20% of a 16:10 screen. The extra drops the chin behind the page. */}
-          <div style={{ marginBottom: "calc(-12.5% - 1.125rem)" }}>
-            <div className="overflow-hidden rounded-t-xl border-8 border-[#1a2330] bg-[#fffcf6] sm:border-[12px]">
-              <img
-                src="/brand/mach-run-demo.png?v=3"
-                alt="A MACH RUN for the Hale household, on track for $2,500,000."
-                className="aspect-[16/10] w-full object-cover object-top"
-              />
+            {/* 12.5% of this width is 20% of a 16:10 screen. The extra drops the chin behind the page. */}
+            <div style={{ marginBottom: "calc(-12.5% - 1.125rem)" }}>
+              <div className="overflow-hidden rounded-t-xl border-8 border-[#1a2330] bg-[#fffcf6] sm:border-[12px]">
+                <img
+                  src="/brand/mach-run-demo.png?v=3"
+                  alt="A MACH RUN for the Hale household, on track for $2,500,000."
+                  className="aspect-[16/10] w-full object-cover object-top"
+                />
+              </div>
+              <div className="h-3 rounded-b-lg bg-[#1a2330]" />
+              <div className="mx-auto h-1.5 w-28 rounded-b-md bg-[#243044]" />
             </div>
-            <div className="h-3 rounded-b-lg bg-[#1a2330]" />
-            <div className="mx-auto h-1.5 w-28 rounded-b-md bg-[#243044]" />
-          </div>
           </div>
         </div>
       </div>

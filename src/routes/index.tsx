@@ -504,75 +504,211 @@ function Home() {
   }, [ent.paid, runKey]);
 
   const heroOn = !isRealUser(user);
-  const [heroDismissed, setHeroDismissed] = useState(false);
   const [demoLoaded, setDemoLoaded] = useState(false);
-  const heroVisible = heroOn && !heroDismissed;
-  const stageRef = useRef<HTMLDivElement>(null);
-  const formScrollRef = useRef<HTMLDivElement>(null);
-  const [cautionLocked, setCautionLocked] = useState(false);
+  const stepsRef = useRef<HTMLDivElement>(null);
+  const engagedRef = useRef(false);
+  const [stepsH, setStepsH] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (!heroOn) return;
-    const html = document.documentElement;
-    const body = document.body;
-    const prevHtml = html.style.overflow;
-    const prevBody = body.style.overflow;
-    html.style.overflow = "hidden";
-    body.style.overflow = "hidden";
-    return () => {
-      html.style.overflow = prevHtml;
-      body.style.overflow = prevBody;
-    };
-  }, [heroOn]);
+  function stepsHeight() {
+    const header = document.getElementById("mach-header");
+    const caution = document.getElementById("master-caution");
+    if (!header || !caution) return 0;
+    return Math.max(
+      120,
+      window.innerHeight - header.getBoundingClientRect().height - caution.getBoundingClientRect().height,
+    );
+  }
+
+  function engageSteps() {
+    const steps = stepsRef.current;
+    const h = stepsHeight();
+    engagedRef.current = true;
+    if (steps) {
+      steps.style.height = `${h}px`;
+      steps.style.overflowY = "auto";
+      steps.style.overscrollBehavior = "contain";
+      steps.style.overflowAnchor = "none";
+    }
+    setStepsH(h);
+  }
+
+  function releaseSteps() {
+    if (!engagedRef.current && stepsH == null) return;
+    engagedRef.current = false;
+    const steps = stepsRef.current;
+    if (steps) {
+      steps.style.height = "";
+      steps.style.overflowY = "";
+      steps.style.overscrollBehavior = "";
+    }
+    setStepsH(null);
+  }
 
   useEffect(() => {
     if (!heroOn) {
-      setCautionLocked(false);
+      engagedRef.current = false;
+      setStepsH(null);
       return;
     }
-    if (heroDismissed) {
-      setCautionLocked(true);
-      return;
-    }
-    if (cautionLocked) return;
-    const stage = stageRef.current;
-    if (!stage) return;
-    const check = () => {
+
+    function pair() {
+      const header = document.getElementById("mach-header");
       const caution = document.getElementById("master-caution");
-      if (!caution) return;
-      if (caution.getBoundingClientRect().top <= stage.getBoundingClientRect().top + 1) {
-        setCautionLocked(true);
+      const steps = stepsRef.current;
+      if (!header || !caution || !steps) return null;
+      return { header, caution, steps };
+    }
+
+    function pixels(event: WheelEvent) {
+      if (event.deltaMode === 1) return event.deltaY * 16;
+      if (event.deltaMode === 2) return event.deltaY * window.innerHeight;
+      return event.deltaY;
+    }
+
+    function nested(target: EventTarget | null, steps: HTMLElement) {
+      let node = target instanceof Element ? target : null;
+      while (node && node !== steps) {
+        if (node instanceof HTMLElement) {
+          const oy = getComputedStyle(node).overflowY;
+          if ((oy === "auto" || oy === "scroll") && node.scrollHeight > node.clientHeight + 1) return node;
+        }
+        node = node.parentElement;
       }
+      return null;
+    }
+
+    const onWheel = (event: WheelEvent) => {
+      const found = pair();
+      if (!found) return;
+      const { header, caution, steps } = found;
+      const dy = pixels(event);
+      if (dy === 0) return;
+      const line = header.getBoundingClientRect().bottom;
+      const top = caution.getBoundingClientRect().top;
+      const inner = nested(event.target, steps);
+      if (inner) {
+        const up = dy < 0;
+        const atTop = inner.scrollTop <= 0;
+        const atBottom = inner.scrollTop + inner.clientHeight >= inner.scrollHeight - 1;
+        if ((up && !atTop) || (!up && !atBottom)) return;
+      }
+      const atLine = top <= line + 1;
+      const wouldCross = dy > 0 && top - dy <= line + 1;
+      if (!engagedRef.current && dy < 0) return;
+      if (!engagedRef.current && !atLine && !wouldCross) return;
+      if (dy < 0 && steps.scrollTop <= 0) {
+        releaseSteps();
+        return;
+      }
+      event.preventDefault();
+      if (!engagedRef.current) engageSteps();
+      steps.scrollTop += dy;
     };
-    stage.addEventListener("scroll", check, { passive: true });
-    check();
-    return () => stage.removeEventListener("scroll", check);
-  }, [heroOn, heroDismissed, cautionLocked]);
+
+    let touchY = 0;
+    const onTouchStart = (event: TouchEvent) => {
+      touchY = event.touches[0]?.clientY ?? 0;
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      const found = pair();
+      if (!found) return;
+      const y = event.touches[0]?.clientY ?? touchY;
+      const dy = touchY - y;
+      touchY = y;
+      if (Math.abs(dy) < 1) return;
+      const { header, caution, steps } = found;
+      const line = header.getBoundingClientRect().bottom;
+      const top = caution.getBoundingClientRect().top;
+      const atLine = top <= line + 1;
+      const wouldCross = dy > 0 && top - dy <= line + 1;
+      if (!engagedRef.current && dy < 0) return;
+      if (!engagedRef.current && !atLine && !wouldCross) return;
+      if (dy < 0 && steps.scrollTop <= 0) {
+        releaseSteps();
+        return;
+      }
+      event.preventDefault();
+      if (!engagedRef.current) engageSteps();
+      steps.scrollTop += dy;
+    };
+
+    const onKey = (event: KeyboardEvent) => {
+      if (!engagedRef.current) return;
+      const target = event.target;
+      if (target instanceof HTMLElement) {
+        const tag = target.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable) return;
+      }
+      const steps = stepsRef.current;
+      if (!steps) return;
+      const up = event.key === "ArrowUp" || event.key === "PageUp" || event.key === "Home";
+      const down = event.key === "ArrowDown" || event.key === "PageDown" || event.key === " ";
+      if (!up && !down) return;
+      if (up && steps.scrollTop <= 0) {
+        releaseSteps();
+        return;
+      }
+      event.preventDefault();
+      if (event.key === "Home") steps.scrollTop = 0;
+      else if (event.key === "ArrowUp") steps.scrollTop -= 48;
+      else if (event.key === "ArrowDown") steps.scrollTop += 48;
+      else if (event.key === "PageUp") steps.scrollTop -= steps.clientHeight * 0.85;
+      else steps.scrollTop += steps.clientHeight * 0.85;
+    };
+
+    const onScroll = () => {
+      if (!engagedRef.current) return;
+      const found = pair();
+      if (!found) return;
+      const top = found.caution.getBoundingClientRect().top;
+      const line = found.header.getBoundingClientRect().bottom;
+      if (top > line + 24) releaseSteps();
+    };
+
+    const onResize = () => {
+      if (!engagedRef.current) return;
+      setStepsH(stepsHeight());
+    };
+
+    window.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onResize);
+      engagedRef.current = false;
+    };
+  }, [heroOn]);
 
   function scrollStepToTop() {
-    if (heroOn && cautionLocked) {
-      if (formScrollRef.current) formScrollRef.current.scrollTop = 0;
+    if (!heroOn) {
+      window.scrollTo(0, 0);
       return;
     }
-    if (heroOn) {
-      if (stageRef.current) stageRef.current.scrollTop = 0;
-      return;
+    const header = document.getElementById("mach-header");
+    const caution = document.getElementById("master-caution");
+    if (header && caution) {
+      const y =
+        window.scrollY + caution.getBoundingClientRect().top - header.getBoundingClientRect().bottom;
+      window.scrollTo(0, Math.max(0, y));
     }
-    window.scrollTo(0, 0);
+    engageSteps();
+    window.requestAnimationFrame(() => {
+      if (stepsRef.current) stepsRef.current.scrollTop = 0;
+    });
   }
 
   function onNext() {
     const next = route[shownIndex + 1]?.id;
     if (!next) return;
-    const droppingHero = heroVisible;
-    if (droppingHero) setHeroDismissed(true);
-    goStep(next, { scroll: droppingHero ? "keep" : "top" });
-    if (droppingHero) {
-      setCautionLocked(true);
-      window.setTimeout(() => {
-        if (formScrollRef.current) formScrollRef.current.scrollTop = 0;
-      }, 0);
-    }
+    goStep(next);
   }
 
   function goStep(next: StepId, opts?: { scroll?: "top" | "keep" }) {
@@ -737,19 +873,8 @@ function Home() {
     motionRef.current = null;
     setMotion(null);
     setFrameHeight(null);
-    setHeroDismissed(true);
-    setCautionLocked(true);
     setStep("family");
-    window.setTimeout(() => {
-      const head = document.getElementById("ooda-observe");
-      const scroller = formScrollRef.current;
-      if (!head || !scroller) return;
-      const top =
-        head.getBoundingClientRect().top -
-        scroller.getBoundingClientRect().top +
-        scroller.scrollTop;
-      scroller.scrollTop = Math.max(0, top);
-    }, 60);
+    window.setTimeout(() => scrollStepToTop(), 60);
   }
 
   function showDemo() {
@@ -758,13 +883,7 @@ function Home() {
     setFrameHeight(null);
     setStep("family");
     setDemoLoaded(true);
-    setHeroDismissed(true);
-    setCautionLocked(true);
-    window.setTimeout(() => {
-      setCautionLocked(true);
-      const scroller = formScrollRef.current;
-      if (scroller) scroller.scrollTop = 0;
-    }, 60);
+    window.setTimeout(() => scrollStepToTop(), 60);
   }
 
   function clearDemo() {
@@ -774,23 +893,15 @@ function Home() {
 
   const onBack = () => {
     const prev = route[shownIndex - 1]?.id;
-    if (prev) goStep(prev, { scroll: heroVisible ? "keep" : "top" });
+    if (prev) goStep(prev);
   };
 
   return (
-    <div
-      className={cn(
-        "bg-bg text-fg",
-        heroOn ? "flex h-dvh max-h-dvh flex-col overflow-hidden" : "min-h-screen",
-      )}
-    >
+    <div className="min-h-screen bg-bg text-fg">
       <WelcomeEmailPreviewOverlay />
       <header
         id="mach-header"
-        className={cn(
-          "canopy-bar z-30 border-b border-border",
-          heroOn ? "shrink-0" : "sticky top-0",
-        )}
+        className="canopy-bar sticky top-0 z-30 border-b border-border"
       >
         <div className="page-gutter relative z-50 mx-auto max-w-none py-2.5">
           <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
@@ -907,21 +1018,10 @@ function Home() {
         </nav>
         <EmailVerifyBanner />
       </header>
-      <div
-        ref={stageRef}
-        className={
-          heroOn
-            ? cautionLocked
-              ? "flex min-h-0 flex-1 flex-col overflow-hidden overscroll-none bg-bg"
-              : "min-h-0 flex-1 overflow-y-auto overscroll-none bg-bg"
-            : undefined
-        }
-      >
-      {heroOn && !cautionLocked && !heroDismissed ? (
-        <GuestHero onShowFamily={showFamily} onDemo={showDemo} />
-      ) : null}
+      {heroOn ? <GuestHero onShowFamily={showFamily} onDemo={showDemo} /> : null}
+      <div id={heroOn ? "guest-dock" : undefined}>
       {heroOn ? (
-        <div id="master-caution" className="shrink-0 border-t border-[#8a7020] bg-[#2c220e]">
+        <div id="master-caution" className="relative z-20 border-t border-[#8a7020] bg-[#2c220e]">
           <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-2 py-4 text-center">
             <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
               Master Caution
@@ -950,10 +1050,9 @@ function Home() {
         </div>
       ) : null}
       <div
-        ref={formScrollRef}
-        className={
-          heroOn && cautionLocked ? "min-h-0 flex-1 overflow-y-auto overscroll-none bg-bg" : undefined
-        }
+        ref={stepsRef}
+        className={stepsH != null ? "overflow-y-auto overscroll-contain bg-bg" : undefined}
+        style={stepsH != null ? { height: stepsH, overflowAnchor: "none" } : undefined}
       >
 
       <main className="relative z-10 bg-bg page-gutter mx-auto flex max-w-none flex-col gap-5 py-5">
