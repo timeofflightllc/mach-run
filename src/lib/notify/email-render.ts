@@ -48,7 +48,7 @@ function codeAndButton(code: string): string {
         <tr><td align="center" style="padding:0 28px 24px;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0">
             <tr>
-              <td align="center" bgcolor="#C45E3A" style="background-color:#C45E3A;">
+              <td align="center" bgcolor="#3A8A58" style="background-color:#3A8A58;">
                 <a href="${VERIFY_URL}" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#FFF8F4;text-decoration:none;">Verify Email</a>
               </td>
             </tr>
@@ -91,7 +91,7 @@ function openButton(): string {
   return `<tr><td align="center" style="padding:12px 28px 20px;">
           <table role="presentation" cellpadding="0" cellspacing="0" border="0">
             <tr>
-              <td align="center" bgcolor="#C45E3A" style="background-color:#C45E3A;">
+              <td align="center" bgcolor="#3A8A58" style="background-color:#3A8A58;">
                 <a href="https://machrun.com" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#FFF8F4;text-decoration:none;">Open MACH RUN</a>
               </td>
             </tr>
