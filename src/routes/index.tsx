@@ -238,7 +238,11 @@ function PhaseFolderTabs({
   onPick: (id: StepId) => void;
 }) {
   return (
-    <div className="mr-8 flex min-w-0 items-end justify-end gap-1 sm:gap-1.5" role="tablist" aria-label={name}>
+    <div
+      className="ml-auto flex min-w-0 max-w-[calc(100%-6.75rem)] items-end justify-end gap-px overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] sm:mr-8 sm:max-w-none sm:gap-1.5 sm:overflow-visible [&::-webkit-scrollbar]:hidden"
+      role="tablist"
+      aria-label={name}
+    >
       {tabs.map((tab) => {
         const on = active === tab.id;
         return (
@@ -249,7 +253,7 @@ function PhaseFolderTabs({
             aria-selected={on}
             onClick={() => onPick(tab.id)}
             className={cn(
-              "whitespace-nowrap rounded-t-lg rounded-b-none px-2 text-xs font-medium leading-none sm:px-3.5 sm:text-sm",
+              "shrink-0 whitespace-nowrap rounded-t-lg rounded-b-none px-1 font-display text-[12px] font-medium leading-none tracking-normal sm:px-3.5 sm:font-sans sm:text-sm",
               on
                 ? "z-10 bg-surface pb-2.5 pt-2 text-fg shadow-[0_-1px_0_0_var(--color-border),1px_0_0_0_var(--color-border),-1px_0_0_0_var(--color-border)]"
                 : "z-0 mb-1.5 bg-section-lift pb-2 pt-1.5 text-muted shadow-[0_0_0_1px_var(--color-section-lift-border)]",
@@ -273,7 +277,7 @@ function PhaseHead({
   tabs: ReactNode;
 }) {
   return (
-    <div className="relative z-10 -mb-0.5 flex items-end justify-between gap-3">
+    <div className="relative z-10 -mb-0.5 flex items-end justify-between gap-1.5 sm:gap-3">
       <PhaseLabel id={id} label={label} className="mb-2 shrink-0 leading-none" />
       {tabs}
     </div>
