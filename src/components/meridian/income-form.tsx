@@ -46,7 +46,7 @@ const TAX: { value: TaxTreatment; label: string }[] = [
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const summaryCols =
-  "@min-[46rem]:grid @min-[46rem]:min-w-[60rem] @min-[46rem]:grid-cols-[minmax(9rem,1.15fr)_minmax(8rem,1fr)_minmax(8rem,10rem)_14rem_minmax(8rem,10rem)_7.25rem] @min-[46rem]:items-center @min-[46rem]:gap-x-4";
+  "w-full @min-[46rem]:min-w-[42rem] @min-[46rem]:grid @min-[46rem]:grid-cols-[minmax(5rem,1.15fr)_minmax(5.5rem,1fr)_minmax(6.5rem,10rem)_minmax(9.5rem,13rem)_minmax(5.5rem,8rem)_minmax(6.25rem,7.25rem)] @min-[46rem]:items-center @min-[46rem]:gap-x-3";
 const control = "h-10 max-w-none";
 
 function kindLabel(kind: IncomeKind): string {
@@ -162,11 +162,12 @@ export function IncomeForm() {
     .filter((stream): stream is IncomeStream => Boolean(stream));
 
   return (
-    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
+    <div className="@container mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
       {copy.incomeBody.trim() ? (
         <p className="whitespace-pre-wrap text-sm text-muted">{copy.incomeBody}</p>
       ) : null}
-      <ul className={`flex flex-col gap-2 overflow-x-auto ${summaryCols}`}>
+      <div className="min-w-0 w-full overflow-x-auto">
+      <ul className={`flex flex-col gap-2 ${summaryCols}`}>
         {rows.length > 0 ? (
           <li className="col-span-full hidden grid-cols-subgrid items-center text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid">
             <span className="min-w-0 pl-3">Name</span>
@@ -196,6 +197,7 @@ export function IncomeForm() {
           />
         ))}
       </ul>
+      </div>
       {capped ? (
         <UpgradeNudge kind="incomes" />
       ) : (
