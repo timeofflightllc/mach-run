@@ -195,7 +195,7 @@ export function MachFooter({
 
   if (variant === "short") {
     return (
-      <footer className="relative z-10 mt-8 w-screen max-w-[100vw] border-t border-border bg-bg [margin-left:calc(50%-50vw)]">
+      <footer className="relative z-10 mt-8 w-screen max-w-[100vw] border-t border-border bg-bg [margin-left:calc(50%-50vw)] before:pointer-events-none before:absolute before:inset-x-0 before:-top-8 before:h-8 before:bg-bg before:content-['']">
         <div className="short-footer-gutter mx-auto flex w-full flex-col gap-3 py-6">
           <div className="flex items-center justify-between gap-x-6">
             <Link to="/" className="inline-flex shrink-0 items-center" aria-label="MACH RUN">
@@ -229,7 +229,7 @@ export function MachFooter({
   }
 
   return (
-    <footer className="relative z-10 mt-8 border-t border-border bg-bg">
+    <footer className="relative z-10 mt-8 border-t border-border bg-bg before:pointer-events-none before:absolute before:inset-x-0 before:-top-8 before:h-8 before:bg-bg before:content-['']">
       <div className="page-gutter mx-auto flex w-full flex-col gap-5 py-8">
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <BrandLockup size="lg" framed />
