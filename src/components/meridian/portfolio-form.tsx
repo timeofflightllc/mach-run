@@ -30,6 +30,7 @@ import {
   InstitutionMark,
 } from "@/components/meridian/institution-field";
 import { atAccountCap, useEntitlement } from "@/lib/billing/use-entitlement";
+import { hasBalanceSheet } from "@/lib/billing/limits";
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import { fillPlanner } from "@/lib/site-copy/planner-copy";
 import {
@@ -120,6 +121,7 @@ export function PortfolioForm() {
             key={p.id}
             plan={plan}
             portfolio={p}
+            showNetWorth={hasBalanceSheet(ent.plan)}
             open={openId === p.id}
             onEdit={() => setOpenId(p.id)}
             onSave={() => setOpenId(null)}
@@ -173,6 +175,7 @@ export function PortfolioForm() {
 function AccountTile({
   plan,
   portfolio: p,
+  showNetWorth,
   open,
   onEdit,
   onSave,
@@ -181,6 +184,7 @@ function AccountTile({
 }: {
   plan: Plan;
   portfolio: Portfolio;
+  showNetWorth: boolean;
   open: boolean;
   onEdit: () => void;
   onSave: () => void;
@@ -264,26 +268,34 @@ function AccountTile({
     </Field>
   );
   const include = (
-    <Field label="Include in" className="w-auto shrink-0">
-      <div className="flex h-10 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fg">
-        <label className="flex items-center gap-1.5">
-          <input
-            type="checkbox"
-            checked={p.spendable}
-            onChange={(e) => onChange({ spendable: e.target.checked })}
-          />
-          Spendable
-        </label>
-        <label className="flex items-center gap-1.5">
-          <input
-            type="checkbox"
-            checked={p.includeInNetWorth}
-            onChange={(e) => onChange({ includeInNetWorth: e.target.checked })}
-          />
-          Net worth
-        </label>
-      </div>
-    </Field>
+    <div className="flex w-full min-w-full flex-col gap-1">
+      <p className="text-xs leading-relaxed text-muted">
+        Spendable means this balance can be drawn in retirement. Leave it off for a house or a debt
+        you are not spending.
+      </p>
+      <Field label="Include in" className="w-auto shrink-0">
+        <div className="flex h-10 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fg">
+          <label className="flex items-center gap-1.5">
+            <input
+              type="checkbox"
+              checked={p.spendable}
+              onChange={(e) => onChange({ spendable: e.target.checked })}
+            />
+            Spendable
+          </label>
+          {showNetWorth ? (
+            <label className="flex items-center gap-1.5">
+              <input
+                type="checkbox"
+                checked={p.includeInNetWorth}
+                onChange={(e) => onChange({ includeInNetWorth: e.target.checked })}
+              />
+              Net worth
+            </label>
+          ) : null}
+        </div>
+      </Field>
+    </div>
   );
   const mustPickOwner = needsTaxOwner(p.kind);
   const chosenOwner = explicitTaxOwner(p.owner);
@@ -398,7 +410,13 @@ function AccountTile({
         inert={open}
       >
         <div className="col-span-full min-h-0 overflow-hidden @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid">
-          <AccountSummary plan={plan} portfolio={p} onEdit={onEdit} onRemove={onRemove} />
+          <AccountSummary
+            plan={plan}
+            portfolio={p}
+            showNetWorth={showNetWorth}
+            onEdit={onEdit}
+            onRemove={onRemove}
+          />
         </div>
       </div>
     </li>
@@ -408,11 +426,13 @@ function AccountTile({
 function AccountSummary({
   plan,
   portfolio: p,
+  showNetWorth,
   onEdit,
   onRemove,
 }: {
   plan: Plan;
   portfolio: Portfolio;
+  showNetWorth: boolean;
   onEdit: () => void;
   onRemove: () => void;
 }) {
@@ -424,7 +444,7 @@ function AccountSummary({
     "Select owner";
   const flags = [
     p.spendable ? "Spendable" : null,
-    p.includeInNetWorth ? "Net worth" : null,
+    showNetWorth && p.includeInNetWorth ? "Net worth" : null,
   ].filter(Boolean);
   const mortgage =
     p.kind === "real_estate" && mortgageAssociated(p.mortgage) ? "mortgage" : null;
