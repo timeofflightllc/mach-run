@@ -93,7 +93,7 @@ export function GuestHero({
   }
 
   return (
-    <section className="sticky top-[var(--mach-header-h,5.5rem)] z-0 overflow-x-clip border-t border-border bg-bg">
+    <section className="overflow-x-clip border-t border-border bg-bg">
       <div className="page-gutter mx-auto flex max-w-none flex-col items-center pt-10 sm:pt-14">
         <h2 className="max-w-4xl text-center font-display text-3xl font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
           The Supersonic Retirement Calculator built for those who want

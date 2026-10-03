@@ -23,7 +23,7 @@ import { Verdict } from "@/components/meridian/verdict";
 import { YearTable } from "@/components/meridian/year-table";
 import { MachFooter, BrandLockup } from "@/components/meridian/mach-mark";
 import { MachOrbit } from "@/components/meridian/mach-orbit";
-import { GuestOnly, isRealUser } from "@/lib/auth/gates";
+import { isRealUser } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { simulate } from "@/lib/plan/engine";
 import { refreshEstimatedSocialSecurity } from "@/lib/plan/social-security";
@@ -507,98 +507,59 @@ function Home() {
   const [heroDismissed, setHeroDismissed] = useState(false);
   const [demoLoaded, setDemoLoaded] = useState(false);
   const heroVisible = heroOn && !heroDismissed;
-  const dockRef = useRef<HTMLDivElement>(null);
-  const guestScrollRef = useRef<HTMLDivElement>(null);
-  const lockScrollRef = useRef(0);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const formScrollRef = useRef<HTMLDivElement>(null);
   const [cautionLocked, setCautionLocked] = useState(false);
+
+  useEffect(() => {
+    if (!heroOn) return;
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtml = html.style.overflow;
+    const prevBody = body.style.overflow;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    return () => {
+      html.style.overflow = prevHtml;
+      body.style.overflow = prevBody;
+    };
+  }, [heroOn]);
 
   useEffect(() => {
     if (!heroOn) {
       setCautionLocked(false);
       return;
     }
-    let frame = 0;
+    if (heroDismissed) {
+      setCautionLocked(true);
+      return;
+    }
+    if (cautionLocked) return;
+    const stage = stageRef.current;
+    if (!stage) return;
     const check = () => {
-      frame = 0;
-      if (cautionLocked) return;
-      const header = document.getElementById("mach-header");
-      const dock = dockRef.current;
-      if (!header || !dock) return;
-      const headerH = header.getBoundingClientRect().height;
-      if (dock.getBoundingClientRect().top <= headerH + 1) {
-        lockScrollRef.current = window.scrollY;
+      const caution = document.getElementById("master-caution");
+      if (!caution) return;
+      if (caution.getBoundingClientRect().top <= stage.getBoundingClientRect().top + 1) {
         setCautionLocked(true);
       }
     };
-    const onScroll = () => {
-      if (frame) return;
-      frame = window.requestAnimationFrame(check);
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
+    stage.addEventListener("scroll", check, { passive: true });
     check();
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (frame) window.cancelAnimationFrame(frame);
-    };
-  }, [heroOn, cautionLocked, heroDismissed]);
+    return () => stage.removeEventListener("scroll", check);
+  }, [heroOn, heroDismissed, cautionLocked]);
 
-  useEffect(() => {
-    if (!cautionLocked) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [cautionLocked]);
-
-  useEffect(() => {
-    if (!cautionLocked) return;
-    const el = guestScrollRef.current;
-    if (!el) return;
-    const unlock = () => {
-      setCautionLocked(false);
-      const y = Math.max(0, lockScrollRef.current - 24);
-      window.requestAnimationFrame(() => window.scrollTo(0, y));
-    };
-    const onWheel = (event: WheelEvent) => {
-      if (event.deltaY < 0 && el.scrollTop <= 0) {
-        event.preventDefault();
-        unlock();
-      }
-    };
-    let touchY = 0;
-    const onTouchStart = (event: TouchEvent) => {
-      touchY = event.touches[0]?.clientY ?? 0;
-    };
-    const onTouchMove = (event: TouchEvent) => {
-      const y = event.touches[0]?.clientY ?? touchY;
-      if (el.scrollTop <= 0 && y > touchY + 12) unlock();
-      touchY = y;
-    };
-    el.addEventListener("wheel", onWheel, { passive: false });
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
-    el.addEventListener("touchmove", onTouchMove, { passive: true });
-    return () => {
-      el.removeEventListener("wheel", onWheel);
-      el.removeEventListener("touchstart", onTouchStart);
-      el.removeEventListener("touchmove", onTouchMove);
-    };
-  }, [cautionLocked]);
-
-  useEffect(() => {
-    const header = document.getElementById("mach-header");
-    if (!header) return;
-    const apply = () => {
-      document.documentElement.style.setProperty(
-        "--mach-header-h",
-        `${header.getBoundingClientRect().height}px`,
-      );
-    };
-    apply();
-    const observer = new ResizeObserver(apply);
-    observer.observe(header);
-    return () => observer.disconnect();
-  }, []);
+  function scrollStepToTop() {
+    if (heroOn && cautionLocked) {
+      if (formScrollRef.current) formScrollRef.current.scrollTop = 0;
+      return;
+    }
+    if (heroOn) {
+      if (stageRef.current) stageRef.current.scrollTop = 0;
+      return;
+    }
+    window.scrollTo(0, 0);
+  }
 
   function onNext() {
     const next = route[shownIndex + 1]?.id;
@@ -606,7 +567,12 @@ function Home() {
     const droppingHero = heroVisible;
     if (droppingHero) setHeroDismissed(true);
     goStep(next, { scroll: droppingHero ? "keep" : "top" });
-    if (droppingHero) window.setTimeout(() => window.scrollTo(0, 0), 0);
+    if (droppingHero) {
+      setCautionLocked(true);
+      window.setTimeout(() => {
+        if (formScrollRef.current) formScrollRef.current.scrollTop = 0;
+      }, 0);
+    }
   }
 
   function goStep(next: StepId, opts?: { scroll?: "top" | "keep" }) {
@@ -623,10 +589,7 @@ function Home() {
       setMotion(null);
       setFrameHeight(null);
       setStep(next);
-      if (scroll === "top") {
-        if (guestScrollRef.current) guestScrollRef.current.scrollTop = 0;
-        if (!cautionLocked) window.scrollTo(0, 0);
-      }
+      if (scroll === "top") scrollStepToTop();
       return;
     }
     const nextIndex = route.findIndex((page) => page.id === next);
@@ -643,10 +606,7 @@ function Home() {
     motionRef.current = nextMotion;
     setStep(next);
     setMotion(nextMotion);
-    if (scroll === "top") {
-      if (guestScrollRef.current) guestScrollRef.current.scrollTop = 0;
-      if (!cautionLocked) window.scrollTo(0, 0);
-    }
+    if (scroll === "top") scrollStepToTop();
   }
 
   function pane(id: StepId, idle: string): {
@@ -777,12 +737,18 @@ function Home() {
     motionRef.current = null;
     setMotion(null);
     setFrameHeight(null);
+    setHeroDismissed(true);
+    setCautionLocked(true);
     setStep("family");
     window.setTimeout(() => {
-      document.getElementById("ooda-observe")?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+      const head = document.getElementById("ooda-observe");
+      const scroller = formScrollRef.current;
+      if (!head || !scroller) return;
+      const top =
+        head.getBoundingClientRect().top -
+        scroller.getBoundingClientRect().top +
+        scroller.scrollTop;
+      scroller.scrollTop = Math.max(0, top);
     }, 60);
   }
 
@@ -792,13 +758,12 @@ function Home() {
     setFrameHeight(null);
     setStep("family");
     setDemoLoaded(true);
+    setHeroDismissed(true);
+    setCautionLocked(true);
     window.setTimeout(() => {
-      const block = document.getElementById("master-caution");
-      const header = document.getElementById("mach-header");
-      if (!block) return;
-      const headerH = header?.getBoundingClientRect().height ?? 0;
-      const top = block.getBoundingClientRect().top + window.scrollY - headerH;
-      window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+      setCautionLocked(true);
+      const scroller = formScrollRef.current;
+      if (scroller) scroller.scrollTop = 0;
     }, 60);
   }
 
@@ -813,11 +778,19 @@ function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-fg">
+    <div
+      className={cn(
+        "bg-bg text-fg",
+        heroOn ? "flex h-dvh max-h-dvh flex-col overflow-hidden" : "min-h-screen",
+      )}
+    >
       <WelcomeEmailPreviewOverlay />
       <header
         id="mach-header"
-        className="canopy-bar sticky top-0 z-30 border-b border-border"
+        className={cn(
+          "canopy-bar z-30 border-b border-border",
+          heroOn ? "shrink-0" : "sticky top-0",
+        )}
       >
         <div className="page-gutter relative z-50 mx-auto max-w-none py-2.5">
           <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
@@ -934,28 +907,20 @@ function Home() {
         </nav>
         <EmailVerifyBanner />
       </header>
-      <GuestOnly>
-        {heroDismissed ? null : <GuestHero onShowFamily={showFamily} onDemo={showDemo} />}
-      </GuestOnly>
       <div
-        ref={dockRef}
+        ref={stageRef}
         className={
-          cautionLocked
-            ? "fixed inset-x-0 z-20 flex flex-col bg-bg"
-            : heroOn
-              ? "relative z-10"
-              : undefined
-        }
-        style={
-          cautionLocked
-            ? {
-                top: "var(--mach-header-h, 5.5rem)",
-                height: "calc(100dvh - var(--mach-header-h, 5.5rem))",
-              }
+          heroOn
+            ? cautionLocked
+              ? "flex min-h-0 flex-1 flex-col overflow-hidden overscroll-none bg-bg"
+              : "min-h-0 flex-1 overflow-y-auto overscroll-none bg-bg"
             : undefined
         }
       >
-      <GuestOnly>
+      {heroOn && !cautionLocked && !heroDismissed ? (
+        <GuestHero onShowFamily={showFamily} onDemo={showDemo} />
+      ) : null}
+      {heroOn ? (
         <div id="master-caution" className="shrink-0 border-t border-[#8a7020] bg-[#2c220e]">
           <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-2 py-4 text-center">
             <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
@@ -983,10 +948,12 @@ function Home() {
             ) : null}
           </div>
         </div>
-      </GuestOnly>
+      ) : null}
       <div
-        ref={guestScrollRef}
-        className={cautionLocked ? "min-h-0 flex-1 overflow-y-auto" : undefined}
+        ref={formScrollRef}
+        className={
+          heroOn && cautionLocked ? "min-h-0 flex-1 overflow-y-auto overscroll-none bg-bg" : undefined
+        }
       >
 
       <main className="relative z-10 bg-bg page-gutter mx-auto flex max-w-none flex-col gap-5 py-5">
