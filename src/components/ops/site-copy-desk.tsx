@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SavedAt } from "@/components/ops/saved-at";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import {
@@ -46,6 +46,45 @@ const PAGE_LABEL: Record<SitePageSlug, string> = {
   footer: "Footer content",
   planner: "Calculator",
 };
+
+function BulletLines({
+  lines,
+  onChange,
+}: {
+  lines: string[];
+  onChange: (lines: string[]) => void;
+}) {
+  const [text, setText] = useState(() => bulletsToText(lines));
+  const focused = useRef(false);
+  const linesKey = lines.join("\n");
+
+  useEffect(() => {
+    if (focused.current) return;
+    setText(linesKey);
+  }, [linesKey]);
+
+  return (
+    <textarea
+      rows={6}
+      value={text}
+      onFocus={() => {
+        focused.current = true;
+      }}
+      onBlur={() => {
+        focused.current = false;
+        const next = bulletsFromText(text);
+        setText(bulletsToText(next));
+        onChange(next);
+      }}
+      onChange={(e) => {
+        const next = e.target.value;
+        setText(next);
+        onChange(bulletsFromText(next));
+      }}
+      className="w-full min-w-0 rounded-lg border border-border bg-elevated px-3 py-2 text-sm text-fg outline-none"
+    />
+  );
+}
 
 function Area({
   value,
@@ -172,10 +211,9 @@ function PricingFields({
             </Field>
           ) : null}
           <Field label="Bullets (one per line; blank line omitted)">
-            <Area
-              rows={6}
-              value={bulletsToText(value[key].bullets)}
-              onChange={(text) => setCard(key, { bullets: bulletsFromText(text) })}
+            <BulletLines
+              lines={value[key].bullets}
+              onChange={(bullets) => setCard(key, { bullets })}
             />
           </Field>
         </div>
