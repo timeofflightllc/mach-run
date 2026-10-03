@@ -9,7 +9,7 @@ import { AdvisoryStrip } from "@/components/meridian/advisory-note";
 import { CashChart, NetWorthChart, WealthChart } from "@/components/meridian/charts";
 import { Pinnable, useChartPins } from "@/components/meridian/chart-pin";
 import { ContributionForm } from "@/components/meridian/contribution-form";
-import { HouseholdForm } from "@/components/meridian/household-form";
+import { AssumptionsForm, HouseholdForm } from "@/components/meridian/household-form";
 import { IncomeForm } from "@/components/meridian/income-form";
 import { KpiStrip } from "@/components/meridian/kpi-strip";
 import { PortfolioForm } from "@/components/meridian/portfolio-form";
@@ -161,6 +161,7 @@ function ActChartColumn({ plan, sim }: { plan: Plan; sim: SimResult }) {
 
 const PAGES = [
   { id: "family", phase: "observe" },
+  { id: "assumptions", phase: "observe" },
   { id: "assets", phase: "observe" },
   { id: "liabilities", phase: "observe" },
   { id: "income", phase: "orient" },
@@ -565,6 +566,7 @@ function Home() {
     "mx-auto flex w-full max-w-6xl flex-col gap-3 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]";
   const shell = "flex w-full flex-col";
   const familyPane = pane("family", shell);
+  const assumptionsPane = pane("assumptions", shell);
   const assetsPane = pane("assets", shell);
   const liabilitiesPane = pane("liabilities", shell);
   const incomePane = pane("income", shell);
@@ -708,8 +710,8 @@ function Home() {
             }}
           >
             <p className="page-gutter mx-auto max-w-none text-sm font-bold leading-relaxed text-fg">
-              Get started — Family first, then Accounts, Income, Spending, and
-              Contributions. On Act, Execute. That’s a MACH RUN.
+              Get started — Family first, then Assumptions, Accounts, Income,
+              Spending, and Contributions. On Act, Execute. That’s a MACH RUN.
             </p>
           </div>
           <div className="border-t border-[#5c4a18] bg-[#241c0c]">
@@ -758,6 +760,27 @@ function Home() {
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
             >
               <HouseholdForm />
+            </Section>
+            </div>
+          </div>
+          <div
+            ref={(node) => {
+              panelRefs.current.assumptions = node;
+            }}
+            className={assumptionsPane.className}
+            style={assumptionsPane.style}
+            aria-hidden={assumptionsPane.hidden}
+            hidden={assumptionsPane.hidden}
+          >
+            <div className={inputFrame}>
+            <PhaseLabel id="ooda-observe-assumptions" label="Observe" />
+            <Section
+              title="Assumptions"
+              hint={copy.assumptionsHint}
+              pinned
+              nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
+            >
+              <AssumptionsForm />
             </Section>
             </div>
           </div>

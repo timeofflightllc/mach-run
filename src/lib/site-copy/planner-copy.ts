@@ -3,6 +3,7 @@ import type { SiteCopy } from "./types";
 /** Desk-editable calculator instructions. Live numbers stay in code via {spendable}, {net}, {return}. */
 export type PlannerCopy = {
   familyHint: string;
+  assumptionsHint: string;
   assetsHint: string;
   assetsBody: string;
   liabilitiesHint: string;
@@ -19,6 +20,7 @@ export type PlannerCopy = {
 
 export const PLANNER_COPY_KEYS = [
   "familyHint",
+  "assumptionsHint",
   "assetsHint",
   "assetsBody",
   "liabilitiesHint",
@@ -34,7 +36,8 @@ export const PLANNER_COPY_KEYS = [
 ] as const satisfies readonly (keyof PlannerCopy)[];
 
 export const DEFAULT_PLANNER_COPY: PlannerCopy = {
-  familyHint: "Who is in the household, and when you want to retire.",
+  familyHint: "Names and birthdays for the household.",
+  assumptionsHint: "As-of date, longevity, returns, retirement goal, and where leftover dollars go.",
   assetsHint: "The accounts you have today, and what each one is worth.",
   assetsBody:
     "Spendable (retirement) {spendable} · Net worth {net}. These accounts are the only ones Orient can sweep into and Decide can contribute to. Per-account return blank uses the global {return}% nominal.",
@@ -71,7 +74,10 @@ export function parsePlannerCopy(raw: string): PlannerCopy {
   const next = { ...DEFAULT_PLANNER_COPY };
   for (const key of PLANNER_COPY_KEYS) {
     const value = src[key];
-    if (typeof value === "string") next[key] = value;
+    if (typeof value === "string") {
+      if (key === "familyHint" && value === "Who is in the household, and when you want to retire.") continue;
+      next[key] = value;
+    }
   }
   return next;
 }
