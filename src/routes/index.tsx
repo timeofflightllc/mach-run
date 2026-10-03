@@ -1113,7 +1113,7 @@ function Home() {
               <div className="@container">
                 <div className="grid grid-cols-1 gap-4 @min-[64rem]:grid-cols-[minmax(0,1.15fr)_minmax(24rem,1fr)] @min-[64rem]:items-start">
                   <div className="flex min-w-0 flex-col gap-4">
-                    <div className="grid grid-cols-1 gap-4 @min-[36rem]:grid-cols-2">
+                    <div className="grid grid-cols-1 items-start gap-4 @min-[36rem]:grid-cols-2">
                       <div className="flex min-w-0 flex-col gap-3">
                         <ActPhase />
                         <Verdict
@@ -1124,14 +1124,20 @@ function Home() {
                         />
                       </div>
                       <div className="flex min-w-0 flex-col gap-3">
-                        <div className="flex min-h-11 items-center justify-center">
+                        <p
+                          aria-hidden="true"
+                          className="invisible hidden font-display text-lg font-semibold tracking-[0.18em] sm:text-xl @min-[36rem]:block"
+                        >
+                          Act
+                        </p>
+                        <KpiStrip plan={displayPlan} sim={run.sim} />
+                        <div className="flex items-center justify-center">
                           <CalculateButton
                             label="Execute the MACH RUN"
                             onCalculate={() => calculate({ stay: true })}
                             className="h-9 w-auto min-w-[6.8rem] px-5 text-sm"
                           />
                         </div>
-                        <KpiStrip plan={displayPlan} sim={run.sim} />
                       </div>
                     </div>
                     <PeerBriefCard
@@ -1144,8 +1150,10 @@ function Home() {
                     />
                   </div>
                   <div className="flex min-w-0 flex-col gap-4">
-                    <PhaseLabel id="ooda-radar" label="Financial Radar" />
-                    <ActChartColumn plan={displayPlan} sim={run.sim} />
+                    <div className="flex min-w-0 flex-col gap-3">
+                      <PhaseLabel id="ooda-radar" label="Financial Radar" />
+                      <ActChartColumn plan={displayPlan} sim={run.sim} />
+                    </div>
                     <OodaAiCard
                       plan={displayPlan}
                       sim={run.sim}
