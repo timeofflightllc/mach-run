@@ -8,3 +8,7 @@
  * Do NOT edit `server.ts` for this — that file is frozen pre-wired config.
  */
   export const emailAndPasswordEnabled = true;
+
+/** Matches Better Auth's default. Enforced on the form so signup does not fail later. */
+export const PASSWORD_MIN_LENGTH = 8;
+export const PASSWORD_MAX_LENGTH = 128;

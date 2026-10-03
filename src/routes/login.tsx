@@ -6,6 +6,7 @@ import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { TurnstileBox, turnstileEnabled } from "@/components/auth/turnstile-box";
 import { startPendingSignup } from "@/lib/auth/pending-signup-api";
 import { suggestEmailFix } from "@/lib/auth/email-domain-typo";
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/auth/email-password";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 
 export const Route = createFileRoute("/login")({
@@ -49,6 +50,9 @@ function Login() {
           setTypoHold(true);
           setBusy(false);
           return;
+        }
+        if (password.length > PASSWORD_MAX_LENGTH) {
+          throw new Error("Password must be 128 characters or fewer.");
         }
         if (turnstileEnabled() && !captcha) {
           throw new Error("Confirm you’re not a robot before creating an account.");
@@ -192,12 +196,13 @@ function Login() {
                 ) : null}
                 <Field
                   label="Password"
-                  hint={mode === "up" ? "At least 8 characters" : undefined}
+                  hint={mode === "up" ? "8 to 128 characters" : undefined}
                 >
                   <TextInput
                     type="password"
                     required
-                    minLength={8}
+                    minLength={PASSWORD_MIN_LENGTH}
+                    maxLength={PASSWORD_MAX_LENGTH}
                     value={password}
                     onChange={(ev) => setPassword(ev.target.value)}
                     autoComplete={mode === "up" ? "new-password" : "current-password"}

@@ -10,6 +10,7 @@ import { canDownloadBackup } from "@/lib/billing/limits";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { sendTestSignupAlert, signupAlertStatus, emailPrefsStatus, setOptionalEmails } from "@/lib/notify/api";
 import { authClient, signIn, signInWithApple, signOut } from "@/lib/auth/client";
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/auth/email-password";
 import { deleteMyAccount, getDeleteOptions } from "@/lib/auth/delete-account-api";
 import type { DeleteProvider } from "@/lib/auth/delete-account";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -215,8 +216,11 @@ function Account() {
     setError(null);
     setMsg(null);
     try {
-      if (newPassword.length < 8) {
+      if (newPassword.length < PASSWORD_MIN_LENGTH) {
         throw new Error("New password must be at least 8 characters.");
+      }
+      if (newPassword.length > PASSWORD_MAX_LENGTH) {
+        throw new Error("New password must be 128 characters or fewer.");
       }
       const { error: err } = await authClient.changePassword({
         currentPassword,
@@ -434,14 +438,17 @@ function Account() {
             <TextInput
               type="password"
               autoComplete="current-password"
+              maxLength={PASSWORD_MAX_LENGTH}
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
             />
           </Field>
-          <Field label="New password">
+          <Field label="New password" hint="8 to 128 characters">
             <TextInput
               type="password"
               autoComplete="new-password"
+              minLength={PASSWORD_MIN_LENGTH}
+              maxLength={PASSWORD_MAX_LENGTH}
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
             />

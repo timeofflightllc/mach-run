@@ -7,6 +7,7 @@ import { createCipheriv, createDecipheriv, createHash, randomBytes, randomInt } 
 import { getRequest } from "@tanstack/react-start/server";
 import { getSql } from "@/lib/db";
 import { isDisposableEmail } from "./disposable-email";
+import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "./email-password";
 import { clientIp, tooManySignups, turnstileFailureReason, verifyTurnstile } from "./signup-gate.server";
 
 const TTL_MS = 24 * 60 * 60 * 1000;
@@ -102,8 +103,11 @@ export async function startPendingSignup(input: {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { ok: false, reason: "Enter a valid email address." };
   }
-  if (password.length < 8) {
+  if (password.length < PASSWORD_MIN_LENGTH) {
     return { ok: false, reason: "Password must be at least 8 characters." };
+  }
+  if (password.length > PASSWORD_MAX_LENGTH) {
+    return { ok: false, reason: "Password must be 128 characters or fewer." };
   }
   if (isDisposableEmail(email)) {
     return { ok: false, reason: "Use a lasting email address, not a temporary inbox." };
