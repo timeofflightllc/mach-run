@@ -144,7 +144,40 @@ function MachSteps({ copy }: { copy: FooterCopy }) {
   );
 }
 
-export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }) {
+function PlannerDisclaimer() {
+  return (
+    <div className="w-full space-y-2 text-left text-[12.5px] leading-relaxed text-muted">
+      <p className="font-semibold text-fg">DISCLAIMER</p>
+      <p>
+        The content, calculators, and tools on MACH RUN are for informational and educational
+        purposes only. They are not financial, tax, legal, or investment advice. They apply general
+        financial concepts to the numbers you provide, and the results are hypothetical. They are a
+        planning sketch, not a projection you should rely on by themselves. A retirement picture
+        should include the full household, not a single account. Retired pay, VA disability
+        compensation, Social Security, a TSP or an IRA, a spouse's paycheck, home equity, and
+        savings all belong in the same calculation. If any of those are left out, the result is
+        incomplete. MACH RUN lets you estimate future income needs and see how a change in inputs
+        affects the result. It is a tool you may use on your own behalf to think through a plan. It
+        is not a complete financial plan, and it should not be acted on as one. You alone own the
+        decisions. Before you invest, move money, or make a significant financial decision, consult
+        a professional who has a fiduciary duty to you. MACH RUN is not a financial advisor, and it
+        does not sell financial products. MACH RUN works to keep its information and calculations
+        accurate and current. The figures shown here are based on the inputs you enter and may
+        differ from those on a financial institution's or product provider's site. All content,
+        tools, calculations, estimates, and scenarios are provided without warranty. For further
+        information, please click Legal below.
+      </p>
+    </div>
+  );
+}
+
+export function MachFooter({
+  variant = "short",
+  disclaimer = false,
+}: {
+  variant?: "full" | "short";
+  disclaimer?: boolean;
+}) {
   const [copy, setCopy] = useState<FooterCopy>(DEFAULT_FOOTER_COPY);
   useEffect(() => {
     let live = true;
@@ -178,6 +211,11 @@ export function MachFooter({ variant = "short" }: { variant?: "full" | "short" }
           </div>
           <MachSteps copy={copy} />
           <div className="mt-1 w-full border-t border-border pt-4">
+            {disclaimer ? (
+              <div className="mb-4">
+                <PlannerDisclaimer />
+              </div>
+            ) : null}
             <p className="w-full text-center text-[12.5px] leading-snug text-muted">
               <Link to="/privacy" className="font-medium text-fg underline underline-offset-4 hover:text-accent">Privacy</Link>
               <span className="px-4">|</span>

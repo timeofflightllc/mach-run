@@ -23,7 +23,7 @@ import { Verdict } from "@/components/meridian/verdict";
 import { YearTable } from "@/components/meridian/year-table";
 import { MachFooter, BrandLockup } from "@/components/meridian/mach-mark";
 import { MachOrbit } from "@/components/meridian/mach-orbit";
-import { GuestOnly } from "@/lib/auth/gates";
+import { GuestOnly, isRealUser } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { simulate } from "@/lib/plan/engine";
 import { refreshEstimatedSocialSecurity } from "@/lib/plan/social-security";
@@ -47,6 +47,7 @@ import {
 import { cn } from "@/lib/utils";
 import { WelcomeEmailPreviewOverlay } from "@/components/meridian/welcome-email-preview";
 import { EmailVerifyBanner } from "@/components/meridian/email-verify-banner";
+import { GuestHero } from "@/components/meridian/guest-hero";
 import { GhostButton, PrimaryButton } from "@/components/ui/field";
 
 /** Charts need the months. Drop the ledger detail so the run stays light. */
@@ -502,14 +503,20 @@ function Home() {
     });
   }, [ent.paid, runKey]);
 
+  const heroOn = !isRealUser(user);
+  const [heroDismissed, setHeroDismissed] = useState(false);
+  const heroVisible = heroOn && !heroDismissed;
+
   function onNext() {
     const next = route[shownIndex + 1]?.id;
     if (!next) return;
-    goStep(next);
-    window.scrollTo(0, 0);
+    const droppingHero = heroVisible;
+    if (droppingHero) setHeroDismissed(true);
+    goStep(next, { scroll: droppingHero ? "keep" : "top" });
+    if (droppingHero) window.setTimeout(() => window.scrollTo(0, 0), 0);
   }
 
-  function goStep(next: StepId) {
+  function goStep(next: StepId, opts?: { scroll?: "top" | "keep" }) {
     if (!route.some((page) => page.id === next)) return;
     const reduce =
       typeof window !== "undefined" &&
@@ -517,12 +524,13 @@ function Home() {
     const current = motionRef.current;
     const from = current?.to ?? step;
     if (next === from) return;
+    const scroll = opts?.scroll ?? "top";
     if (reduce || current) {
       motionRef.current = null;
       setMotion(null);
       setFrameHeight(null);
       setStep(next);
-      window.scrollTo(0, 0);
+      if (scroll === "top") window.scrollTo(0, 0);
       return;
     }
     const nextIndex = route.findIndex((page) => page.id === next);
@@ -539,7 +547,7 @@ function Home() {
     motionRef.current = nextMotion;
     setStep(next);
     setMotion(nextMotion);
-    window.scrollTo(0, 0);
+    if (scroll === "top") window.scrollTo(0, 0);
   }
 
   function pane(id: StepId, idle: string): {
@@ -576,8 +584,8 @@ function Home() {
       setRunError(null);
       const live = refreshEstimatedSocialSecurity(usePlanStore.getState().plan);
       if (live !== usePlanStore.getState().plan) usePlanStore.getState().setPlan(live);
-      const key = useProfileStore.getState().activeId || "local";
       useProfileStore.getState().snapshotCurrent(live);
+      const key = useProfileStore.getState().activeId || "local";
       const snapshot = structuredClone(live) as Plan;
       const nextSim = simulate(snapshot);
       const recommended = earliestWorkableRetirement(snapshot);
@@ -666,9 +674,22 @@ function Home() {
 
   const showBack = shownIndex > 0;
   const showNext = shownIndex >= 0 && shownIndex < route.length - 1;
+  function showFamily() {
+    motionRef.current = null;
+    setMotion(null);
+    setFrameHeight(null);
+    setStep("family");
+    window.setTimeout(() => {
+      document.getElementById("ooda-observe")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 60);
+  }
+
   const onBack = () => {
     const prev = route[shownIndex - 1]?.id;
-    if (prev) goStep(prev);
+    if (prev) goStep(prev, { scroll: heroVisible ? "keep" : "top" });
   };
 
   return (
@@ -712,7 +733,7 @@ function Home() {
               <ProfileSwitcher ent={ent} />
               <AuthSlot saved={saveStatus} />
             </div>
-            <p className="w-[9.8rem] min-w-0 whitespace-normal text-left text-[11px] font-bold leading-snug tracking-[0.04em] text-muted sm:w-[11.5rem] sm:text-xs sm:tracking-[0.08em] md:w-auto md:whitespace-nowrap md:text-[13px] md:tracking-[0.12em]">
+            <p className="mt-[0.8px] w-[9.8rem] min-w-0 whitespace-normal text-left text-[11px] font-bold leading-snug tracking-[0.04em] text-muted sm:w-[11.5rem] sm:text-xs sm:tracking-[0.08em] md:w-auto md:whitespace-nowrap md:text-[13px] md:tracking-[0.12em]">
               The Supersonic Retirement Calculator
             </p>
             <div className="flex items-center justify-end gap-1 md:hidden">
@@ -791,43 +812,31 @@ function Home() {
             })}
           </div>
         </nav>
-        <GuestOnly>
-          <div
-            className="border-t py-2.5 text-center"
-            style={{
-              background: "var(--color-section-lift)",
-              borderColor: "var(--color-section-lift-border)",
-            }}
-          >
-            <p className="page-gutter mx-auto max-w-none text-sm font-bold leading-relaxed text-fg">
-              Get started — Family first, then Assumptions, Accounts, Income,
-              Spending, and Contributions. On Act, Execute. That’s a MACH RUN.
-            </p>
-          </div>
-          <div className="border-t border-[#5c4a18] bg-[#241c0c]">
-            <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-1.5 py-2.5 text-center sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-3">
-              <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-2 py-0.5 font-display text-[10px] font-semibold uppercase tracking-[0.16em] text-[#1a1408]">
-                Master Caution
-              </span>
-              <p className="max-w-xl text-xs leading-relaxed text-[#ead9a0]">
-                Your MACH RUN information is not saved until you create an
-                account.{" "}
-                <Link
-                  to="/login"
-                  search={{ mode: "up" }}
-                  className="font-medium text-[#f6e7b0] underline decoration-[#e8c547]/80 underline-offset-[3px] hover:text-[#fff3c4]"
-                >
-                  Create a free account in 30 seconds
-                </Link>
-                .
-              </p>
-            </div>
-          </div>
-        </GuestOnly>
         <EmailVerifyBanner />
       </header>
+      <GuestOnly>
+        {heroDismissed ? null : <GuestHero onShowFamily={showFamily} />}
+        <div className="relative z-10 border-t border-[#8a7020] bg-[#2c220e]">
+          <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-2 py-4 text-center">
+            <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
+              Master Caution
+            </span>
+            <p className="max-w-3xl text-base leading-snug text-[#fff3c4] sm:text-lg">
+              Your MACH RUN information is not saved until you create an
+              account.
+            </p>
+            <Link
+              to="/login"
+              search={{ mode: "up" }}
+              className="text-base font-semibold text-white underline decoration-[#e8c547] underline-offset-[3px] hover:text-[#fff3c4] sm:text-lg"
+            >
+              Create a free account in 30 seconds.
+            </Link>
+          </div>
+        </div>
+      </GuestOnly>
 
-      <main className="page-gutter mx-auto flex max-w-none flex-col gap-5 py-5">
+      <main className="relative z-10 bg-bg page-gutter mx-auto flex max-w-none flex-col gap-5 py-5">
         <div
           className="relative"
           style={frameHeight != null ? { height: frameHeight, overflow: "hidden" } : undefined}
@@ -1151,7 +1160,7 @@ function Home() {
         </div>
         <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-8">
           {shownIndex > 0 ? (
-            <NavButton kind="back" onPress={() => goStep(route[shownIndex - 1].id)}>
+            <NavButton kind="back" onPress={onBack}>
               Back
             </NavButton>
           ) : (
@@ -1164,7 +1173,7 @@ function Home() {
           ) : null}
         </div>
       </main>
-      {shown === "act" ? <MachFooter variant="full" /> : <MachFooter />}
+      {shown === "act" ? <MachFooter variant="full" /> : <MachFooter disclaimer />}
       {stalePrompt ? (
         <StaleRunPrompt
           onIgnore={() => {

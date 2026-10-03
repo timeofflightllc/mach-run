@@ -44,6 +44,23 @@ const summaryCols =
   "@min-[46rem]:grid @min-[46rem]:min-w-[64rem] @min-[46rem]:grid-cols-[minmax(9rem,1.15fr)_minmax(8rem,0.9fr)_minmax(8rem,10rem)_14rem_minmax(7rem,0.8fr)_7.25rem] @min-[46rem]:items-center @min-[46rem]:gap-x-4";
 const slot = "w-[12.5rem] max-w-full shrink-0";
 const control = "h-10 max-w-full";
+const HIDE_SPENDING_NOTICE = "mach-hide-liability-spending-notice";
+
+function spendingNoticeHidden(): boolean {
+  try {
+    return window.localStorage.getItem(HIDE_SPENDING_NOTICE) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function hideSpendingNoticeNextTime() {
+  try {
+    window.localStorage.setItem(HIDE_SPENDING_NOTICE, "1");
+  } catch {
+    /* private mode */
+  }
+}
 
 function kindLabel(kind: LiabilityKind): string {
   return KINDS.find((row) => row.value === kind)?.label ?? "Loan";
@@ -283,7 +300,7 @@ function LiabilityRow({
                       onChange={(e) => {
                         const on = e.target.checked;
                         updateLiability(l.id, { includeInSpending: on });
-                        if (on) setSpendingNotice(true);
+                        if (on && !spendingNoticeHidden()) setSpendingNotice(true);
                       }}
                     />
                     Yes
@@ -364,6 +381,7 @@ function LiabilityRow({
 }
 
 function SpendingIncludeNotice({ onClose }: { onClose: () => void }) {
+  const [hideNext, setHideNext] = useState(false);
   if (typeof document === "undefined") return null;
   return createPortal(
     <div
@@ -377,7 +395,22 @@ function SpendingIncludeNotice({ onClose }: { onClose: () => void }) {
           This monthly debt payment will be included in monthly spending automatically. It will end
           at the scheduled payoff date. MACH RUN adds a spending line for this liability.
         </p>
-        <PrimaryButton className="mt-4 h-9 w-auto px-4 text-sm" onClick={onClose}>
+        <label className="mt-4 flex items-center gap-2 text-sm text-fg">
+          <input
+            type="checkbox"
+            className="size-4 shrink-0"
+            checked={hideNext}
+            onChange={(e) => setHideNext(e.target.checked)}
+          />
+          Do not show this message again
+        </label>
+        <PrimaryButton
+          className="mt-4 h-9 w-auto px-4 text-sm"
+          onClick={() => {
+            if (hideNext) hideSpendingNoticeNextTime();
+            onClose();
+          }}
+        >
           OK
         </PrimaryButton>
       </div>
