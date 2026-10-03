@@ -295,7 +295,7 @@ function bottomLine(opts: {
   };
 }
 
-/** Blank income end = the month the primary reaches Project through primary age. */
+/** Blank income end = the month the primary reaches the longevity age. */
 function horizonMonth(plan: Plan): string {
   return projectionEndMonth(plan.primary.birthDate, plan.assumptions.projectionEndAge);
 }
@@ -304,7 +304,7 @@ function throughPrimaryAge(plan: Plan, endIso: string | null): string {
   const horizon = horizonMonth(plan);
   const end = endIso ? formatMonthYear(endIso) : horizon;
   if (end !== horizon) return end;
-  return `${end} (Primary Age ${plan.assumptions.projectionEndAge})`;
+  return `${end} (Longevity age ${plan.assumptions.projectionEndAge})`;
 }
 
 export function buildPeerBrief(

@@ -92,6 +92,9 @@ function freshenStoredCopy(body: string): string {
     .replaceAll("MachRun Financial Analysis", "MACH OODA Financial Analysis")
     .replaceAll("MachRun", "MACH RUN")
     .replaceAll("Supersonic Financial Calculator", "Supersonic Retirement Calculator")
+    .replaceAll("Project through primary age", "Project through longevity age")
+    .replaceAll("project through primary age", "project through longevity age")
+    .replaceAll("“project through” age", "longevity age")
     .replaceAll("For financial professionals, or nerds", "For financial professionals");
 }
 

@@ -552,7 +552,7 @@ function IncomeRow({
               ) : (
                 <p className="basis-full text-xs leading-relaxed text-[#5c4a18]">
                   Social Security for {ownerLabel} starts at claiming age {claimAge} and is set to
-                  expire at age {endAge} (Family → Project through primary age). Pays{" "}
+                  expire at age {endAge} (Family → Project through longevity age). Pays{" "}
                   {s.ssPia
                     ? `${usd(ssBenefitFromPia(s.ssPia, claimAge, s.ssFra ?? 67), true)}/mo`
                     : "from the PIA you enter"}{" "}

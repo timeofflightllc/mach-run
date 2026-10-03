@@ -590,8 +590,8 @@ test("OODA paychecks sort by start date and print month then year", () => {
   assert.ok(w2 >= 0 && pension > w2);
   assert.match(pay.body, /Aug 2026/);
   assert.match(pay.body, /Sep 2036/);
-  assert.match(pay.body, /Jan 2071 \(Primary Age 95\)/);
-  assert.equal(pay.columns?.rows[0]?.window.includes("Primary Age"), false);
+  assert.match(pay.body, /Jan 2071 \(Longevity age 95\)/);
+  assert.equal(pay.columns?.rows[0]?.window.includes("Longevity age"), false);
   assert.doesNotMatch(pay.body, /open/);
   assert.doesNotMatch(pay.body, /2026-08/);
 });

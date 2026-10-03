@@ -196,7 +196,7 @@ export function HouseholdForm() {
               </span>
             </div>
             <Field
-              label="Project through primary age"
+              label="Project through longevity age"
               hint="Blank end dates run through this age."
             >
               <NumberInput
