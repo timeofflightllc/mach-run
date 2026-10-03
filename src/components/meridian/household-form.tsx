@@ -74,14 +74,15 @@ export function HouseholdForm() {
           className="h-10 self-start rounded-lg px-3 text-sm text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-surface"
           onClick={() => setAddingDependent(true)}
         >
-          Add additional dependent
+          Add additional child
         </button>
         {plan.children.length ? (
           <div className="flex flex-col gap-2">
-            <div className="grid grid-cols-[minmax(0,11rem)_4rem_minmax(0,1fr)_auto] gap-x-6 px-3 text-xs font-medium text-muted">
-              <span className="text-left">Dependent Name</span>
+            <div className="grid grid-cols-[minmax(0,1fr)_2.75rem_auto] items-center gap-x-3 px-3 text-xs font-medium text-muted sm:grid-cols-[minmax(0,11rem)_4rem_minmax(0,1fr)_auto] sm:gap-x-6">
+              <span className="text-left">Child's Name</span>
               <span className="text-left">Age</span>
-              <span className="text-left">Birthday</span>
+              <span className="hidden text-left sm:block">Birthday</span>
+              <span className="sm:hidden" />
             </div>
             <ul className="flex flex-col gap-2">
             {[...plan.children]
@@ -93,7 +94,7 @@ export function HouseholdForm() {
               })
               .map((child) => {
               const editing = editingChildId === child.id;
-              const name = child.name.trim() || "Dependent";
+              const name = child.name.trim() || "Child";
               const born = child.birthDate ? longDate(child.birthDate) : "Birthday not set";
               const age = child.birthDate
                 ? String(ageYears(child.birthDate, parseDate(plan.assumptions.asOfDate)))
@@ -135,10 +136,10 @@ export function HouseholdForm() {
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-[minmax(0,11rem)_4rem_minmax(0,1fr)_auto] items-center gap-x-6">
+                    <div className="grid grid-cols-[minmax(0,1fr)_2.75rem_auto] items-center gap-x-3 sm:grid-cols-[minmax(0,11rem)_4rem_minmax(0,1fr)_auto] sm:gap-x-6">
                       <span className="truncate text-left text-sm font-medium text-fg">{name}</span>
                       <span className="text-left text-sm tabular-nums text-fg">{age}</span>
-                      <span className="truncate text-left text-sm text-fg">{born}</span>
+                      <span className="hidden truncate text-left text-sm text-fg sm:block">{born}</span>
                       <span className="flex items-center justify-end gap-3">
                         <button
                           type="button"
@@ -175,8 +176,8 @@ export function HouseholdForm() {
       ) : null}
       {removingChildId ? (
         <ConfirmRemove
-          title="Remove this dependent?"
-          body={`${plan.children.find((child) => child.id === removingChildId)?.name.trim() || "This dependent"} will be removed. Any account that listed them as owner goes back to Select owner.`}
+          title="Remove this child?"
+          body={`${plan.children.find((child) => child.id === removingChildId)?.name.trim() || "This child"} will be removed. Any account that listed them as owner goes back to Select owner.`}
           onCancel={() => setRemovingChildId(null)}
           onConfirm={() => {
             removeChild(removingChildId);
@@ -419,12 +420,12 @@ function AddDependentPrompt({
         onMouseDown={(event) => event.stopPropagation()}
       >
         <p id="add-dependent-title" className="font-display text-lg text-fg">
-          Add additional dependent
+          Add additional child
         </p>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          First name and birthday only. Our privacy policy applies. MACH RUN uses the dependent only
+          First name and birthday only. Our privacy policy applies. MACH RUN uses the child only
           to name who owns a non-retirement custodial account, and the birthday only for any VA
-          benefits step-down as dependents age out.
+          benefits step-down as children age out.
         </p>
         <div className="mt-4 flex flex-col gap-3">
           <Field label="First name">
