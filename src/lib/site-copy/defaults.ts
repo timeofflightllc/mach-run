@@ -147,21 +147,7 @@ A retired U.S. Air Force fighter pilot who wanted one strip for income, contribu
     slug: "legal",
     title: "Legal",
     kicker: "",
-    body: `[FAQ](/faq) — How a MACH RUN works, free vs paid, dollars, and what is not advice.
-
-[Free vs MACH RUN paid](/pricing) — Individual ($4/month or $40/year) keeps unlimited accounts, contributions, and incomes. Net Worth stays locked until Individual Unlimited or Advisor.
-
-[Privacy policy](/privacy) — Your MACH Run data is encrypted in transit (HTTPS) and encrypted at rest on the server. We do not sell it.
-
-* MACH OODA AI analysis and OODA AI questions are for entertainment purposes only. They are not financial, tax, legal, or investment advice.
-
-Projections are hypothetical illustrations based on the numbers and rates you type in. They are not guarantees of future results. Past performance does not guarantee future returns. Markets, inflation, taxes, longevity, health costs, and policy can all go differently than modeled. Account rules, contribution limits, and benefit formulas change.
-
-Social Security, military retirement, VA compensation, and similar figures are estimates, not official determinations. Confirm amounts with the Social Security Administration, DFAS, VA, your plan administrator, and a qualified advisor before you act. You are solely responsible for your financial decisions.
-
-Observe, Orient, Decide, Act (OODA) comes from the late, great U.S. Air Force Col. John Boyd (Ret.). His Energy-Maneuverability theory and the OODA Loop changed the world. Any mention of OODA or the OODA Loop on this site refers to Boyd’s publicly circulated work — not to any private organization that later trademarked, copyrighted, or packaged his ideas.
-
-# Terms of Service {#terms}
+    body: `# Terms of Service {#terms}
 Last updated: October 3, 2026. MACH RUN is a hypothetical household planning calculator. It is not a broker, bank, fiduciary, or advisor. MACH RUN is operated by Time of Flight LLC, and Florida law governs these terms.
 
 # Accounts
@@ -171,7 +157,7 @@ You may register with email or a sign-in provider. You are responsible for the a
 Paid plans are billed by Stripe. You can cancel anytime in Manage billing. The current period is not refunded except where the law requires it. Access lasts through the paid period unless the account is closed for abuse. For Advisor Lite and Advisor Unlimited trials, the card is charged when the trial ends unless canceled before then. The plan renews until canceled.
 
 # Not advice
-MACH RUN does not provide financial, tax, legal, or investment advice. Projections are illustrations from the numbers you enter. See the disclaimer above.
+MACH RUN does not provide financial, tax, legal, or investment advice. Projections are illustrations from the numbers you enter. See the disclaimer below.
 
 # Acceptable use
 Do not break the law, attack the service, scrape other people’s data, or overload the site. We may suspend or close accounts that abuse the service.
@@ -183,7 +169,21 @@ See the [Privacy policy](/privacy).
 MACH RUN is provided as-is. We are not liable for decisions you make from a calculated run or from OODA AI.
 
 # Contact
-Questions go to [Contact](/contact).`,
+Questions go to [Contact](/contact).
+
+[FAQ](/faq) — How a MACH RUN works, free vs paid, dollars, and what is not advice.
+
+[Free vs MACH RUN paid](/pricing) — Individual ($4/month or $40/year) keeps unlimited accounts, contributions, and incomes. Net Worth stays locked until Individual Unlimited or Advisor.
+
+[Privacy policy](/privacy) — Your MACH Run data is encrypted in transit (HTTPS) and encrypted at rest on the server. We do not sell it.
+
+* MACH OODA AI analysis and OODA AI questions are for entertainment purposes only. They are not financial, tax, legal, or investment advice.
+
+Projections are hypothetical illustrations based on the numbers and rates you type in. They are not guarantees of future results. Past performance does not guarantee future returns. Markets, inflation, taxes, longevity, health costs, and policy can all go differently than modeled. Account rules, contribution limits, and benefit formulas change.
+
+Social Security, military retirement, VA compensation, and similar figures are estimates, not official determinations. Confirm amounts with the Social Security Administration, DFAS, VA, your plan administrator, and a qualified advisor before you act. You are solely responsible for your financial decisions.
+
+Observe, Orient, Decide, Act (OODA) comes from the late, great U.S. Air Force Col. John Boyd (Ret.). His Energy-Maneuverability theory and the OODA Loop changed the world. Any mention of OODA or the OODA Loop on this site refers to Boyd’s publicly circulated work — not to any private organization that later trademarked, copyrighted, or packaged his ideas.`,
   },
   {
     slug: "privacy",
