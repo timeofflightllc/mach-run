@@ -213,6 +213,49 @@ function ActPhase() {
   );
 }
 
+const OBSERVE_TABS = [
+  { id: "family", label: "Family" },
+  { id: "assumptions", label: "Assumptions" },
+  { id: "assets", label: "Assets" },
+  { id: "liabilities", label: "Liabilities" },
+] as const;
+
+function ObserveFolderTabs({
+  active,
+  onPick,
+}: {
+  active: (typeof OBSERVE_TABS)[number]["id"];
+  onPick: (id: StepId) => void;
+}) {
+  return (
+    <div className="relative z-10 -mb-2 flex w-full justify-end sm:grid sm:grid-cols-2" role="tablist" aria-label="Observe">
+      <div className="hidden sm:block" aria-hidden="true" />
+      <div className="flex max-w-full items-end justify-end gap-1 pr-3 sm:justify-center sm:gap-1.5 sm:pr-2">
+        {OBSERVE_TABS.map((tab) => {
+          const on = active === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              onClick={() => onPick(tab.id)}
+              className={cn(
+                "rounded-t-lg rounded-b-none px-2 text-xs font-medium leading-none sm:px-3.5 sm:text-sm",
+                on
+                  ? "z-10 bg-surface pb-3 pt-2 text-fg shadow-[0_-1px_0_0_var(--color-border),1px_0_0_0_var(--color-border),-1px_0_0_0_var(--color-border)]"
+                  : "z-0 mb-2 bg-section-lift pb-2 pt-1.5 text-muted shadow-[0_0_0_1px_var(--color-section-lift-border)]",
+              )}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Home() {
   const plan = usePlanStore((s) => s.plan);
   const copy = usePlannerCopy();
@@ -771,6 +814,7 @@ function Home() {
           >
             <div className={inputFrame}>
             <PhaseLabel id="ooda-observe" label="Observe" />
+            <ObserveFolderTabs active="family" onPick={goStep} />
             <Section
               title="Family"
               hint={copy.familyHint}
@@ -792,6 +836,7 @@ function Home() {
           >
             <div className={inputFrame}>
             <PhaseLabel id="ooda-observe-assumptions" label="Observe" />
+            <ObserveFolderTabs active="assumptions" onPick={goStep} />
             <Section
               title="Assumptions"
               hint={copy.assumptionsHint}
@@ -813,6 +858,7 @@ function Home() {
           >
             <div className={inputFrame}>
             <PhaseLabel id="ooda-observe-assets" label="Observe" />
+            <ObserveFolderTabs active="assets" onPick={goStep} />
             <Section
               title="Accounts - Assets"
               hint={copy.assetsHint}
@@ -834,6 +880,7 @@ function Home() {
           >
             <div className={inputFrame}>
             <PhaseLabel id="ooda-observe-liabilities" label="Observe" />
+            <ObserveFolderTabs active="liabilities" onPick={goStep} />
             <Section
               title="Accounts - Liabilities"
               hint={copy.liabilitiesHint}
