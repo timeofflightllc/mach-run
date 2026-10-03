@@ -1,20 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { GROK_PROVIDERS, appleSignInEnabled, authClient, authEnabled, signIn, signInWithApple } from "@/lib/auth/client";
+import { afterAuthHref, loginSearch, registerForPlanHref } from "@/lib/billing/checkout-intent";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { TurnstileBox, turnstileEnabled } from "@/components/auth/turnstile-box";
 import { startPendingSignup } from "@/lib/auth/pending-signup-api";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 
 export const Route = createFileRoute("/login")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    mode: search.mode === "up" ? ("up" as const) : ("in" as const),
-  }),
+  validateSearch: (search: Record<string, unknown>) => loginSearch(search),
   component: Login,
 });
 
 function Login() {
   const start = Route.useSearch();
+  const next = afterAuthHref(start);
+  const retry =
+    start.package && start.interval
+      ? registerForPlanHref(start.package, start.interval)
+      : "/login?mode=up";
   const [mode, setMode] = useState<"in" | "up">(start.mode);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -56,17 +60,21 @@ function Login() {
         } catch {
           /* private mode */
         }
-        window.location.href = "/verify-email";
+        const verify = new URLSearchParams();
+        if (start.package) verify.set("package", start.package);
+        if (start.interval) verify.set("interval", start.interval);
+        const qs = verify.toString();
+        window.location.href = qs ? `/verify-email?${qs}` : "/verify-email";
         return;
       } else {
         const { error: err } = await authClient.signIn.email({
           email: email.trim(),
           password,
-          callbackURL: "/",
+          callbackURL: next,
         });
         if (err) throw new Error(err.message ?? "Could not sign in.");
       }
-      window.location.href = "/";
+      window.location.href = next;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-in failed.");
       setBusy(false);
@@ -181,7 +189,7 @@ function Login() {
                     onClick={() => {
                       setBusy(true);
                       setError(null);
-                      void signInWithApple("/").catch((err) => {
+                      void signInWithApple(next, retry).catch((err) => {
                         setError(
                           err instanceof Error
                             ? err.message
@@ -205,7 +213,7 @@ function Login() {
                   <button
                     key={p.providerId}
                     type="button"
-                    onClick={() => void signIn(p.providerId, { callbackURL: "/" })}
+                    onClick={() => void signIn(p.providerId, { callbackURL: next, errorCallbackURL: retry })}
                     className="h-11 w-full rounded-lg bg-bg text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
                   >
                     Continue with {p.label}

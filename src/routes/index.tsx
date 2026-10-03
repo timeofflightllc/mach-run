@@ -722,6 +722,7 @@ function Home() {
                 account.{" "}
                 <Link
                   to="/login"
+                  search={{ mode: "up" }}
                   className="font-medium text-[#f6e7b0] underline decoration-[#e8c547]/80 underline-offset-[3px] hover:text-[#fff3c4]"
                 >
                   Create a free account in 30 seconds

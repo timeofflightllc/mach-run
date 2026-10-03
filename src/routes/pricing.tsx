@@ -1,8 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { PrimaryButton, TextInput } from "@/components/ui/field";
 import { peekPromoCode, startBillingPortal, startCheckout } from "@/lib/billing/api";
+import {
+  pricingSearch,
+  registerForPlanHref,
+} from "@/lib/billing/checkout-intent";
 import {
   ADVISOR_MONTHLY_USD,
   ADVISOR_TRIAL_DAYS,
@@ -25,9 +29,12 @@ import { loadPublicSiteCopy, pageBySlug } from "@/lib/site-copy/api";
 import { parsePricingCopy } from "@/lib/site-copy/pricing-copy";
 
 export const Route = createFileRoute("/pricing")({
+  validateSearch: (search: Record<string, unknown>) => pricingSearch(search),
   loader: () => loadPublicSiteCopy(),
   component: Pricing,
 });
+
+const checkoutOnce = new Set<string>();
 
 function billingSelectedLabel(interval: "month" | "year" | null): string | null {
   if (interval === "year") return "(Annual billing selected)";
@@ -53,17 +60,22 @@ function YourPlanMark({ interval }: { interval: "month" | "year" | null }) {
 
 function Pricing() {
   const site = Route.useLoaderData();
+  const search = Route.useSearch();
   const copy = parsePricingCopy(pageBySlug(site, "pricing").body);
   const ent = useEntitlement();
-  const { user } = useCurrentUserState();
+  const { user, isPending } = useCurrentUserState();
   const signedIn = Boolean(user && !user.isDevFallback);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [interval, setInterval] = useState<"month" | "year">(
-    ent.interval === "year" ? "year" : "month",
+    search.interval ?? (ent.interval === "year" ? "year" : "month"),
   );
   const [audience, setAudience] = useState<"individual" | "advisor">(
-    isAdvisorPlan(ent.plan) ? "advisor" : "individual",
+    search.package === "advisor" || search.package === "advisor_lite"
+      ? "advisor"
+      : isAdvisorPlan(ent.plan)
+        ? "advisor"
+        : "individual",
   );
   const [trialCode, setTrialCode] = useState("");
   const [livePromo, setLivePromo] = useState<PromoRecord | null | undefined>(undefined);
@@ -111,17 +123,20 @@ function Pricing() {
   const onAdvisorLite = signedIn && ent.plan === "advisor_lite";
   const onAdvisor = signedIn && ent.plan === "advisor";
 
-  async function checkout(pkg: "individual" | "unlimited" | "advisor" | "advisor_lite") {
+  async function checkout(
+    pkg: "individual" | "unlimited" | "advisor" | "advisor_lite",
+    bill: "month" | "year" = interval,
+  ) {
     if (codeInvalid) {
       setError("That code isn’t valid.");
       return;
     }
     setError(null);
-    setBusy(`${pkg}-${interval}`);
+    setBusy(`${pkg}-${bill}`);
     try {
       const { url } = await startCheckout({
         data: {
-          interval,
+          interval: bill,
           package: pkg,
           origin: window.location.origin,
           trialCode: trialCode.trim() || undefined,
@@ -148,6 +163,20 @@ function Pricing() {
     }
   }
 
+  const checkoutStarted = useRef(false);
+  useEffect(() => {
+    if (checkoutStarted.current || isPending) return;
+    if (search.checkout !== "1" || !search.package || !search.interval) return;
+    if (!user || user.isDevFallback) return;
+    const key = `${user.id}:${search.package}:${search.interval}`;
+    if (checkoutOnce.has(key)) return;
+    checkoutOnce.add(key);
+    checkoutStarted.current = true;
+    void checkout(search.package, search.interval);
+    // One-shot. checkout changes every render; the guards stop a second charge.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPending, user?.id, user?.isDevFallback, search.checkout, search.package, search.interval]);
+
   const indPrice = interval === "year" ? MACH_YEARLY_USD : MACH_MONTHLY_USD;
   const unlPrice = interval === "year" ? UNLIMITED_YEARLY_USD : UNLIMITED_MONTHLY_USD;
   const advPrice = interval === "year" ? ADVISOR_YEARLY_USD : ADVISOR_MONTHLY_USD;
@@ -162,11 +191,7 @@ function Pricing() {
           ? "That code isn't valid."
           : promoState.message
         : "Type coupon code above.";
-  const individualSignIn = trialOnIndividual
-    ? promoDays
-      ? `Sign in, then start ${promoDays}-day trial`
-      : `Sign in, then choose Individual${promoPct ? ` · ${promoPct}% off` : ""}`
-    : "Sign in, then choose Individual";
+  const individualSignIn = "Create an account, then choose Individual";
   const individualButton =
     busy === `individual-${interval}`
       ? "Redirecting…"
@@ -175,11 +200,7 @@ function Pricing() {
         : trialOnIndividual && promoPct
           ? `Choose Individual · ${promoPct}% off`
           : `Choose Individual · $${indPrice}${per}`;
-  const unlimitedSignIn = trialOnUnlimited
-    ? promoDays
-      ? `Sign in, then start ${promoDays}-day trial`
-      : `Sign in, then choose Individual Unlimited${promoPct ? ` · ${promoPct}% off` : ""}`
-    : "Sign in, then choose Individual Unlimited";
+  const unlimitedSignIn = "Create an account, then choose Individual Unlimited";
   const unlimitedButton =
     busy === `unlimited-${interval}`
       ? "Redirecting…"
@@ -198,16 +219,12 @@ function Pricing() {
     : interval === "year"
       ? `${ADVISOR_TRIAL_DAYS}-day trial, 2 months free`
       : `${ADVISOR_TRIAL_DAYS}-day trial, then $${ADVISOR_MONTHLY_USD}/month`;
-  const advisorSignIn = trialOnAdvisorLite && promoDays
-    ? `Sign in, then start ${promoDays}-day trial`
-    : "Sign in, then start Advisor Lite trial";
+  const advisorSignIn = "Create an account, then choose Advisor Lite";
   const advisorLiteButton =
     busy === `advisor_lite-${interval}`
       ? "Redirecting…"
       : `Start ${trialOnAdvisorLite && promoDays ? promoDays : ADVISOR_TRIAL_DAYS}-day trial`;
-  const advisorUnlSignIn = trialOnAdvisor && promoDays
-    ? `Sign in, then start ${promoDays}-day trial`
-    : "Sign in, then choose Advisor Unlimited";
+  const advisorUnlSignIn = "Create an account, then choose Advisor Unlimited";
   const advisorUnlButton =
     busy === `advisor-${interval}`
       ? "Redirecting…"
@@ -300,6 +317,7 @@ function Pricing() {
                 Not signed in — pick a package after you register.{" "}
                 <Link
                   to="/login"
+                  search={{ mode: "in" }}
                   className="underline underline-offset-4 hover:text-accent"
                 >
                   Sign in here.
@@ -476,8 +494,8 @@ function Pricing() {
             </ul>
             {!signedIn ? (
               <a
-                href="/login"
-                className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90"
+                href={registerForPlanHref("individual", interval)}
+                className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg bg-accent px-4 py-2 text-center text-sm font-medium leading-snug text-accent-fg hover:opacity-90"
               >
                 {individualSignIn}
               </a>
@@ -528,8 +546,8 @@ function Pricing() {
             </ul>
             {!signedIn ? (
               <a
-                href="/login"
-                className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90"
+                href={registerForPlanHref("unlimited", interval)}
+                className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg bg-accent px-4 py-2 text-center text-sm font-medium leading-snug text-accent-fg hover:opacity-90"
               >
                 {unlimitedSignIn}
               </a>
@@ -586,8 +604,8 @@ function Pricing() {
             </ul>
             {!signedIn ? (
               <a
-                href="/login"
-                className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90"
+                href={registerForPlanHref("advisor_lite", interval)}
+                className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg bg-accent px-4 py-2 text-center text-sm font-medium leading-snug text-accent-fg hover:opacity-90"
               >
                 {advisorSignIn}
               </a>
@@ -640,8 +658,8 @@ function Pricing() {
             </ul>
             {!signedIn ? (
               <a
-                href="/login"
-                className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90"
+                href={registerForPlanHref("advisor", interval)}
+                className="mt-6 inline-flex min-h-11 items-center justify-center rounded-lg bg-accent px-4 py-2 text-center text-sm font-medium leading-snug text-accent-fg hover:opacity-90"
               >
                 {advisorUnlSignIn}
               </a>

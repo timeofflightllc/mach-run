@@ -157,7 +157,10 @@ export async function signIn(
 }
 
 /** Apple is a first-party Better Auth social provider, not the Grok broker. */
-export async function signInWithApple(callbackURL = "/"): Promise<void> {
+export async function signInWithApple(
+  callbackURL = "/",
+  errorCallbackURL = "/login",
+): Promise<void> {
   await runPreSignInSignOut({
     livePreview: inLivePreview(),
     hasBearer: Boolean(getBearerToken()),
@@ -169,7 +172,7 @@ export async function signInWithApple(callbackURL = "/"): Promise<void> {
     const { data, error } = await social({
       provider: "apple",
       callbackURL,
-      errorCallbackURL: "/login",
+      errorCallbackURL,
     });
     if (error) throw new Error(error.message ?? "Apple sign-in failed");
     if (data?.url) {
@@ -184,7 +187,7 @@ export async function signInWithApple(callbackURL = "/"): Promise<void> {
     body: JSON.stringify({
       provider: "apple",
       callbackURL,
-      errorCallbackURL: "/login",
+      errorCallbackURL,
     }),
   });
   const json = (await res.json().catch(() => ({}))) as {

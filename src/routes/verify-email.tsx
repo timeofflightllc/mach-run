@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
@@ -14,11 +14,15 @@ import {
   submitEmailVerifyCode,
 } from "@/lib/auth/email-verify-api";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { afterAuthHref, registerForPlanHref, verifySearch } from "@/lib/billing/checkout-intent";
 
 const PENDING_EMAIL = "mach-pending-email";
 const PENDING_PASSWORD = "mach-pending-password";
 
-export const Route = createFileRoute("/verify-email")({ component: VerifyEmail });
+export const Route = createFileRoute("/verify-email")({
+  validateSearch: (search: Record<string, unknown>) => verifySearch(search),
+  component: VerifyEmail,
+});
 
 function readPending() {
   try {
@@ -41,7 +45,12 @@ function clearPending() {
 }
 
 function VerifyEmail() {
-  const navigate = useNavigate();
+  const search = Route.useSearch();
+  const next = afterAuthHref(search);
+  const backToRegister =
+    search.package && search.interval
+      ? registerForPlanHref(search.package, search.interval)
+      : "/login?mode=up";
   const { user, isPending } = useCurrentUserState();
   const [pendingEmail, setPendingEmail] = useState("");
   const [pendingPassword, setPendingPassword] = useState("");
@@ -62,16 +71,19 @@ function VerifyEmail() {
     if (!ready || isPending) return;
     if (pendingEmail && !user) return;
     if (!user) {
-      window.location.href = "/login?mode=up";
+      window.location.href = backToRegister;
       return;
     }
     void emailVerifyStatus()
       .then((s) => {
-        if (s.verified) navigate({ to: "/" });
-        else void ensureEmailVerifyCode().catch(() => {});
+        if (s.verified) {
+          window.location.href = next;
+          return;
+        }
+        void ensureEmailVerifyCode().catch(() => {});
       })
       .catch(() => {});
-  }, [ready, isPending, user, pendingEmail, navigate]);
+  }, [ready, isPending, user, pendingEmail, next, backToRegister]);
 
   const waitingOnPending = Boolean(pendingEmail && !user);
 
@@ -93,12 +105,12 @@ function VerifyEmail() {
           const { error: err } = await authClient.signIn.email({
             email: pendingEmail,
             password: pendingPassword,
-            callbackURL: "/",
+            callbackURL: next,
           });
           if (err) throw new Error(err.message ?? "Account created. Sign in.");
         }
         clearPending();
-        window.location.href = "/";
+        window.location.href = next;
         return;
       }
       const result = await submitEmailVerifyCode({ data: { code } });
@@ -106,7 +118,7 @@ function VerifyEmail() {
         setError(result.reason);
         return;
       }
-      window.location.href = "/";
+      window.location.href = next;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not verify.");
     } finally {
