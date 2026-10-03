@@ -73,6 +73,82 @@ export function ConfirmRemove({
   );
 }
 
+export function ConfirmChoice({
+  title,
+  body,
+  yesLabel = "Yes",
+  noLabel = "No",
+  onYes,
+  onNo,
+}: {
+  title: string;
+  body?: string;
+  yesLabel?: string;
+  noLabel?: string;
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  const noRef = useRef<HTMLButtonElement>(null);
+  const onNoRef = useRef(onNo);
+  const [armed, setArmed] = useState(false);
+  onNoRef.current = onNo;
+
+  useEffect(() => {
+    noRef.current?.focus();
+    const timer = window.setTimeout(() => setArmed(true), 250);
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onNoRef.current();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, []);
+
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[200] grid place-items-center bg-black/60 px-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirm-choice-title"
+      onMouseDown={() => {
+        if (armed) onNo();
+      }}
+    >
+      <div
+        className="w-full max-w-md rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <p id="confirm-choice-title" className="font-display text-lg text-fg">
+          {title}
+        </p>
+        {body ? <p className="mt-3 text-sm leading-relaxed text-muted">{body}</p> : null}
+        <div className="mt-5 flex justify-end gap-2">
+          <button
+            ref={noRef}
+            type="button"
+            onClick={onNo}
+            className="h-11 rounded-lg px-4 text-sm font-medium text-muted hover:bg-surface hover:text-fg"
+          >
+            {noLabel}
+          </button>
+          <button
+            type="button"
+            onClick={onYes}
+            className="h-11 rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90"
+          >
+            {yesLabel}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
 export function StaleRunPrompt({
   onIgnore,
   onExecute,

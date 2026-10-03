@@ -14,14 +14,14 @@ import {
 } from "@/components/ui/field";
 import type { IncomeKind, IncomeStream, Plan, TaxTreatment } from "@/lib/plan/types";
 import { newId, usePlanStore } from "@/lib/plan/store";
-import { ssBenefitFromPia, ssBirthFor, ssScheduleDates } from "@/lib/plan/social-security";
+import { ssBenefitFromPia, ssBirthFor, ssIncomesToCreate, ssScheduleDates } from "@/lib/plan/social-security";
 import { blankEndLabel, dateAtAge, iso, monthAfter, monthStart, projectionEndMonth, validIso } from "@/lib/plan/dates";
 import { usd } from "@/lib/plan/format";
 import { vaPayTodayDollars } from "@/lib/plan/va";
 import { VaKids } from "@/components/meridian/va-kids";
 import { AdvisoryNote, useOpenAdvisories } from "@/components/meridian/advisory-note";
 import type { Advisory } from "@/lib/plan/advisories";
-import { ConfirmRemove } from "@/components/meridian/confirm-remove";
+import { ConfirmRemove, ConfirmChoice } from "@/components/meridian/confirm-remove";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import { atIncomeCap, useEntitlement } from "@/lib/billing/use-entitlement";
@@ -119,8 +119,11 @@ export function IncomeForm() {
   const copy = usePlannerCopy();
   const [openId, setOpenId] = useState<string | null>(null);
   const [pendingRemove, setPendingRemove] = useState<string | null>(null);
+  const [ssOffer, setSsOffer] = useState<IncomeStream[] | null>(null);
   const [frozen, setFrozen] = useState<string[] | null>(null);
   const sortTimer = useRef<number | null>(null);
+  const freshIds = useRef(new Set<string>());
+  const askedIds = useRef(new Set<string>());
 
   useEffect(() => {
     return () => {
@@ -143,6 +146,17 @@ export function IncomeForm() {
 
   function holdOrder() {
     setFrozen((current) => current ?? orderedIds());
+  }
+
+  function offerSocialSecurity(stream: IncomeStream) {
+    if (!freshIds.current.has(stream.id) || askedIds.current.has(stream.id)) return;
+    if (stream.kind !== "salary" && stream.kind !== "bonus") return;
+    if (!(stream.monthlyAmount > 0)) return;
+    const live = usePlanStore.getState().plan;
+    const rows = ssIncomesToCreate(live, () => newId("inc"));
+    if (rows.length === 0) return;
+    setSsOffer(rows);
+    askedIds.current.add(stream.id);
   }
 
   function releaseOrder() {
@@ -192,6 +206,7 @@ export function IncomeForm() {
             onSave={() => {
               setOpenId(null);
               releaseOrder();
+              offerSocialSecurity(stream);
             }}
             onRemove={() => setPendingRemove(stream.id)}
           />
@@ -204,6 +219,7 @@ export function IncomeForm() {
         <GhostButton
           onClick={() => {
             const id = newId("inc");
+            freshIds.current.add(id);
             const base = frozen ?? sortedIncomes(plan, plan.incomes).map((stream) => stream.id);
             setFrozen([...base, id]);
             addIncome({
@@ -237,6 +253,21 @@ export function IncomeForm() {
               releaseOrder();
             }
             setPendingRemove(null);
+          }}
+        />
+      ) : null}
+      {ssOffer ? (
+        <ConfirmChoice
+          title="Auto generate estimated Social Security payment at Full Retirement Age (FRA)?"
+          body={
+            ssOffer.length > 1
+              ? "This adds a Social Security income for you and your spouse at full retirement age."
+              : `This adds a Social Security income for ${ssOffer[0]?.person === "spouse" ? plan.spouse.name.trim() || "your spouse" : plan.primary.name.trim() || "you"} at full retirement age.`
+          }
+          onNo={() => setSsOffer(null)}
+          onYes={() => {
+            for (const row of ssOffer) addIncome(row);
+            setSsOffer(null);
           }}
         />
       ) : null}
@@ -300,12 +331,13 @@ function IncomeRow({
   ]);
 
   useEffect(() => {
-    if (s.kind !== "ss") return;
+    if (s.kind !== "ss" || s.ssEstimated === false) return;
     if (!ssWindow) return;
     if (s.startDate === ssWindow.startDate && s.endDate === ssWindow.endDate) return;
     updateIncome(s.id, { startDate: ssWindow.startDate, endDate: ssWindow.endDate });
   }, [
     s.kind,
+    s.ssEstimated,
     s.id,
     s.startDate,
     s.endDate,
@@ -406,6 +438,20 @@ function IncomeRow({
                 ))}
               </SelectInput>
             </Field>
+            {s.kind === "salary" || s.kind === "bonus" ? (
+              <Field label="Who earns this?" className="w-44 shrink-0">
+                <SelectInput
+                  value={s.person === "spouse" ? "spouse" : "primary"}
+                  className={control}
+                  onChange={(e) =>
+                    updateIncome(s.id, { person: e.target.value === "spouse" ? "spouse" : "primary" })
+                  }
+                >
+                  <option value="primary">{plan.primary.name.trim() || "Primary"}</option>
+                  <option value="spouse">{plan.spouse.name.trim() || "Spouse"}</option>
+                </SelectInput>
+              </Field>
+            ) : null}
             {s.kind === "ss" ? (
               <>
                 <Field label="Who is this Social Security for?" className="w-[16.5rem] shrink-0">
@@ -437,7 +483,12 @@ function IncomeRow({
                   <MoneyInput
                     value={s.ssPia ?? 0}
                     className={control}
-                    onValue={(n) => updateIncome(s.id, { ssPia: n })}
+                    onValue={(n) =>
+                      updateIncome(s.id, {
+                        ssPia: n,
+                        ...(s.ssEstimated && n !== (s.ssPia ?? 0) ? { ssEstimated: false } : {}),
+                      })
+                    }
                   />
                 </Field>
                 <Field label="Claiming age" className="w-[7.5rem] shrink-0">
@@ -463,7 +514,13 @@ function IncomeRow({
             <Field label="Start" className="shrink-0">
               <DateInput
                 value={s.startDate}
-                onValue={(v) => updateIncome(s.id, { startDate: v, startDayAfterPrevious: false })}
+                onValue={(v) =>
+                  updateIncome(s.id, {
+                    startDate: v,
+                    startDayAfterPrevious: false,
+                    ...(s.kind === "ss" && s.ssEstimated ? { ssEstimated: false } : {}),
+                  })
+                }
               />
             </Field>
             <Field
@@ -473,7 +530,12 @@ function IncomeRow({
               <DateInput
                 value={s.endDate}
                 clearable
-                onValue={(v) => updateIncome(s.id, { endDate: v === "" ? null : v })}
+                onValue={(v) =>
+                  updateIncome(s.id, {
+                    endDate: v === "" ? null : v,
+                    ...(s.kind === "ss" && s.ssEstimated ? { ssEstimated: false } : {}),
+                  })
+                }
               />
             </Field>
             <Field label="Tax" className="w-[11.5rem] shrink-0">
@@ -563,6 +625,17 @@ function IncomeRow({
             {s.kind === "ss" ? (
               <p className="basis-full text-xs leading-relaxed text-subtle">
                 Social Security tax treatment is set automatically when Kind is Social Security.
+              </p>
+            ) : null}
+            {s.kind === "ss" && s.ssEstimated ? (
+              <p className="basis-full text-xs leading-relaxed text-[#5c4a18]">
+                Estimated from covered pay since age 22, in today's dollars, capped at the wage base.
+                Not a Social Security statement.
+              </p>
+            ) : null}
+            {s.kind === "ss" && s.ssEstimated === false ? (
+              <p className="basis-full text-xs leading-relaxed text-subtle">
+                The plan is using your amount, not the covered-pay estimate.
               </p>
             ) : null}
             <p className="basis-full text-xs leading-relaxed text-subtle">

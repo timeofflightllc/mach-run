@@ -26,6 +26,7 @@ import { MachOrbit } from "@/components/meridian/mach-orbit";
 import { GuestOnly } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { simulate } from "@/lib/plan/engine";
+import { refreshEstimatedSocialSecurity } from "@/lib/plan/social-security";
 import { planInputSignature } from "@/lib/plan/input-signature";
 import { buildPeerBrief, type PeerBrief } from "@/lib/plan/peers";
 import { earliestWorkableRetirement } from "@/lib/plan/earliest-retirement";
@@ -569,7 +570,8 @@ function Home() {
   async function calculate(opts?: { stay?: boolean }) {
     try {
       setRunError(null);
-      const live = usePlanStore.getState().plan;
+      const live = refreshEstimatedSocialSecurity(usePlanStore.getState().plan);
+      if (live !== usePlanStore.getState().plan) usePlanStore.getState().setPlan(live);
       const key = useProfileStore.getState().activeId || "local";
       useProfileStore.getState().snapshotCurrent(live);
       const snapshot = structuredClone(live) as Plan;

@@ -167,6 +167,11 @@ export interface IncomeStream {
   ssPia?: number;
   ssClaimAge?: number;
   ssFra?: number;
+  /**
+   * True while MACH RUN owns this Social Security estimate.
+   * A typed PIA or an edited start/end sets it false and stops the refresh.
+   */
+  ssEstimated?: boolean;
   /** Birthday when person is "other" (not listed in Family). */
   ssBirthDate?: string | null;
   vaChildAware?: boolean;
