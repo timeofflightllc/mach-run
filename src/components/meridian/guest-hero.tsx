@@ -69,13 +69,19 @@ function SketchJet({
   );
 }
 
-export function GuestHero({ onShowFamily }: { onShowFamily: () => void }) {
+export function GuestHero({
+  onShowFamily,
+  onDemo,
+}: {
+  onShowFamily: () => void;
+  onDemo: () => void;
+}) {
   const [confirming, setConfirming] = useState(false);
 
   function fill() {
     usePlanStore.getState().setPlan(demoPlan());
     setConfirming(false);
-    onShowFamily();
+    onDemo();
   }
 
   function prefill() {

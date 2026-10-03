@@ -505,6 +505,7 @@ function Home() {
 
   const heroOn = !isRealUser(user);
   const [heroDismissed, setHeroDismissed] = useState(false);
+  const [demoLoaded, setDemoLoaded] = useState(false);
   const heroVisible = heroOn && !heroDismissed;
 
   function onNext() {
@@ -687,6 +688,27 @@ function Home() {
     }, 60);
   }
 
+  function showDemo() {
+    motionRef.current = null;
+    setMotion(null);
+    setFrameHeight(null);
+    setStep("family");
+    setDemoLoaded(true);
+    window.setTimeout(() => {
+      const block = document.getElementById("master-caution");
+      const header = document.getElementById("mach-header");
+      if (!block) return;
+      const headerH = header?.getBoundingClientRect().height ?? 0;
+      const top = block.getBoundingClientRect().top + window.scrollY - headerH;
+      window.scrollTo({ top: Math.max(0, top), behavior: "auto" });
+    }, 60);
+  }
+
+  function clearDemo() {
+    usePlanStore.getState().reset();
+    setDemoLoaded(false);
+  }
+
   const onBack = () => {
     const prev = route[shownIndex - 1]?.id;
     if (prev) goStep(prev, { scroll: heroVisible ? "keep" : "top" });
@@ -815,8 +837,8 @@ function Home() {
         <EmailVerifyBanner />
       </header>
       <GuestOnly>
-        {heroDismissed ? null : <GuestHero onShowFamily={showFamily} />}
-        <div className="relative z-10 border-t border-[#8a7020] bg-[#2c220e]">
+        {heroDismissed ? null : <GuestHero onShowFamily={showFamily} onDemo={showDemo} />}
+        <div id="master-caution" className="relative z-10 border-t border-[#8a7020] bg-[#2c220e]">
           <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-2 py-4 text-center">
             <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
               Master Caution
@@ -832,6 +854,15 @@ function Home() {
             >
               Create a free account in 30 seconds.
             </Link>
+            {demoLoaded ? (
+              <button
+                type="button"
+                onClick={clearDemo}
+                className="mt-1 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#e8c547] px-4 py-2 text-sm font-semibold text-[#1a1408] hover:bg-[#f3d56a] active:scale-[0.98]"
+              >
+                Clear demonstration information from MACH RUN
+              </button>
+            ) : null}
           </div>
         </div>
       </GuestOnly>
