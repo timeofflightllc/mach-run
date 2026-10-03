@@ -507,6 +507,83 @@ function Home() {
   const [heroDismissed, setHeroDismissed] = useState(false);
   const [demoLoaded, setDemoLoaded] = useState(false);
   const heroVisible = heroOn && !heroDismissed;
+  const dockRef = useRef<HTMLDivElement>(null);
+  const guestScrollRef = useRef<HTMLDivElement>(null);
+  const lockScrollRef = useRef(0);
+  const [cautionLocked, setCautionLocked] = useState(false);
+
+  useEffect(() => {
+    if (!heroOn) {
+      setCautionLocked(false);
+      return;
+    }
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      if (cautionLocked) return;
+      const header = document.getElementById("mach-header");
+      const dock = dockRef.current;
+      if (!header || !dock) return;
+      const headerH = header.getBoundingClientRect().height;
+      if (dock.getBoundingClientRect().top <= headerH + 1) {
+        lockScrollRef.current = window.scrollY;
+        setCautionLocked(true);
+      }
+    };
+    const onScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(check);
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    check();
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [heroOn, cautionLocked, heroDismissed]);
+
+  useEffect(() => {
+    if (!cautionLocked) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [cautionLocked]);
+
+  useEffect(() => {
+    if (!cautionLocked) return;
+    const el = guestScrollRef.current;
+    if (!el) return;
+    const unlock = () => {
+      setCautionLocked(false);
+      const y = Math.max(0, lockScrollRef.current - 24);
+      window.requestAnimationFrame(() => window.scrollTo(0, y));
+    };
+    const onWheel = (event: WheelEvent) => {
+      if (event.deltaY < 0 && el.scrollTop <= 0) {
+        event.preventDefault();
+        unlock();
+      }
+    };
+    let touchY = 0;
+    const onTouchStart = (event: TouchEvent) => {
+      touchY = event.touches[0]?.clientY ?? 0;
+    };
+    const onTouchMove = (event: TouchEvent) => {
+      const y = event.touches[0]?.clientY ?? touchY;
+      if (el.scrollTop <= 0 && y > touchY + 12) unlock();
+      touchY = y;
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    el.addEventListener("touchmove", onTouchMove, { passive: true });
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+    };
+  }, [cautionLocked]);
 
   useEffect(() => {
     const header = document.getElementById("mach-header");
@@ -546,7 +623,10 @@ function Home() {
       setMotion(null);
       setFrameHeight(null);
       setStep(next);
-      if (scroll === "top") window.scrollTo(0, 0);
+      if (scroll === "top") {
+        if (guestScrollRef.current) guestScrollRef.current.scrollTop = 0;
+        if (!cautionLocked) window.scrollTo(0, 0);
+      }
       return;
     }
     const nextIndex = route.findIndex((page) => page.id === next);
@@ -563,7 +643,10 @@ function Home() {
     motionRef.current = nextMotion;
     setStep(next);
     setMotion(nextMotion);
-    if (scroll === "top") window.scrollTo(0, 0);
+    if (scroll === "top") {
+      if (guestScrollRef.current) guestScrollRef.current.scrollTop = 0;
+      if (!cautionLocked) window.scrollTo(0, 0);
+    }
   }
 
   function pane(id: StepId, idle: string): {
@@ -853,7 +936,27 @@ function Home() {
       </header>
       <GuestOnly>
         {heroDismissed ? null : <GuestHero onShowFamily={showFamily} onDemo={showDemo} />}
-        <div id="master-caution" className="sticky top-[var(--mach-header-h,5.5rem)] z-20 border-t border-[#8a7020] bg-[#2c220e]">
+      </GuestOnly>
+      <div
+        ref={dockRef}
+        className={
+          cautionLocked
+            ? "fixed inset-x-0 z-20 flex flex-col bg-bg"
+            : heroOn
+              ? "relative z-10"
+              : undefined
+        }
+        style={
+          cautionLocked
+            ? {
+                top: "var(--mach-header-h, 5.5rem)",
+                height: "calc(100dvh - var(--mach-header-h, 5.5rem))",
+              }
+            : undefined
+        }
+      >
+      <GuestOnly>
+        <div id="master-caution" className="shrink-0 border-t border-[#8a7020] bg-[#2c220e]">
           <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-2 py-4 text-center">
             <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
               Master Caution
@@ -881,6 +984,10 @@ function Home() {
           </div>
         </div>
       </GuestOnly>
+      <div
+        ref={guestScrollRef}
+        className={cautionLocked ? "min-h-0 flex-1 overflow-y-auto" : undefined}
+      >
 
       <main className="relative z-10 bg-bg page-gutter mx-auto flex max-w-none flex-col gap-5 py-5">
         <div
@@ -1228,6 +1335,8 @@ function Home() {
         </div>
       </main>
       {shown === "act" ? <MachFooter variant="full" /> : <MachFooter disclaimer />}
+      </div>
+      </div>
       {stalePrompt ? (
         <StaleRunPrompt
           onIgnore={() => {

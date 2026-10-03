@@ -101,7 +101,7 @@ export function PageMast() {
           </Link>
         </div>
       </div>
-      <p className="text-center text-[11px] font-bold leading-snug tracking-[0.12em] text-muted sm:text-xs md:min-w-0 md:flex-1 md:px-2 md:text-[13px]">
+      <p className="text-center text-[11px] font-bold leading-snug tracking-[0.12em] text-muted sm:text-xs md:min-w-0 md:flex-1 md:px-2 md:text-[13px] lg:text-lg lg:tracking-[0.08em]">
         The Supersonic Retirement Calculator
       </p>
       <div className="hidden shrink-0 items-center gap-1 md:flex">
