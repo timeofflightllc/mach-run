@@ -149,23 +149,33 @@ function PlannerDisclaimer() {
     <div className="w-full space-y-2 text-left text-[12.5px] leading-relaxed text-muted">
       <p className="font-semibold text-fg">DISCLAIMER</p>
       <p>
-        The content, calculators, and tools on MACH RUN are for informational and educational
-        purposes only. They are not financial, tax, legal, or investment advice. They apply general
-        financial concepts to the numbers you provide, and the results are hypothetical. They are a
-        planning sketch, not a projection you should rely on by themselves. A retirement picture
-        should include the full household, not a single account. Retired pay, VA disability
-        compensation, Social Security, a TSP or an IRA, a spouse's paycheck, home equity, and
-        savings all belong in the same calculation. If any of those are left out, the result is
-        incomplete. MACH RUN lets you estimate future income needs and see how a change in inputs
-        affects the result. It is a tool you may use on your own behalf to think through a plan. It
-        is not a complete financial plan, and it should not be acted on as one. You alone own the
-        decisions. Before you invest, move money, or make a significant financial decision, consult
-        a professional who has a fiduciary duty to you. MACH RUN is not a financial advisor, and it
-        does not sell financial products. MACH RUN works to keep its information and calculations
-        accurate and current. The figures shown here are based on the inputs you enter and may
-        differ from those on a financial institution's or product provider's site. All content,
-        tools, calculations, estimates, and scenarios are provided without warranty. For further
-        information, please click Legal below.
+        MACH RUN is a household calculator. What you read and what the charts draw is
+        illustration, not a recommendation, and not financial, tax, legal, or investment advice.
+        Each result is a what-if built only from the amounts, dates, and rates you enter. It is
+        not a forecast of what your accounts will be worth, and it is not a path to follow on
+        its own.
+      </p>
+      <p>
+        A useful picture includes the whole household. Earned pay, a spouse's pay, military
+        retired pay, VA disability compensation, Social Security, a TSP or IRA, Roth and taxable
+        savings, and home equity all change the answer when they belong to you. Omit one and the
+        run is missing part of the story.
+      </p>
+      <p>
+        Change a date, a savings rate, or a spending number and watch the years move. That is
+        what this calculator is for. It does not produce a financial plan, and it does not tell
+        you what to do with your money. Those choices remain yours.
+      </p>
+      <p>
+        Before you buy, sell, roll money over, claim a benefit, or move a large sum, talk with
+        someone who is required to put your interest ahead of their own. MACH RUN does not give
+        that advice. It does not offer or sell investments, insurance, or annuities.
+      </p>
+      <p>
+        The formulas are kept current, but a statement, a benefits letter, or a product page can
+        still show a different number. Those sources use their own rules, and an entry here can
+        be incomplete. Nothing on this site is warranted as complete, exact, or suited to a
+        particular decision. The longer notice is on the Legal page.
       </p>
     </div>
   );
@@ -195,7 +205,7 @@ export function MachFooter({
 
   if (variant === "short") {
     return (
-      <footer className="relative z-10 mt-8 w-screen max-w-[100vw] border-t border-border bg-bg [margin-left:calc(50%-50vw)] before:pointer-events-none before:absolute before:inset-x-0 before:-top-8 before:h-8 before:bg-bg before:content-['']">
+      <footer className="relative z-10 mt-8 w-screen max-w-[100vw] border-t border-border bg-bg [margin-left:calc(50%-50vw)] before:pointer-events-none before:absolute before:inset-x-0 before:-top-[calc(2rem+2px)] before:h-[calc(2rem+2px)] before:bg-bg before:content-['']">
         <div className="short-footer-gutter mx-auto flex w-full flex-col gap-3 py-6">
           <div className="flex items-center justify-between gap-x-6">
             <Link to="/" className="inline-flex shrink-0 items-center" aria-label="MACH RUN">
@@ -229,7 +239,7 @@ export function MachFooter({
   }
 
   return (
-    <footer className="relative z-10 mt-8 border-t border-border bg-bg before:pointer-events-none before:absolute before:inset-x-0 before:-top-8 before:h-8 before:bg-bg before:content-['']">
+    <footer className="relative z-10 mt-8 border-t border-border bg-bg before:pointer-events-none before:absolute before:inset-x-0 before:-top-[calc(2rem+2px)] before:h-[calc(2rem+2px)] before:bg-bg before:content-['']">
       <div className="page-gutter mx-auto flex w-full flex-col gap-5 py-8">
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <BrandLockup size="lg" framed />
