@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
-import { SiteCopyBody } from "@/components/meridian/site-copy-view";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 import type { ContactTopic } from "@/lib/notify/contact";
@@ -35,7 +34,7 @@ function Contact() {
       ? "What did you expect, what happened, and which page were you on?"
       : topic === "feature"
         ? "What should MACH RUN do that it does not do yet?"
-        : "Ask anything about the calculator, billing, or your account.";
+        : page.body.trim() || "Ask anything about the calculator, billing, or your account.";
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -71,7 +70,6 @@ function Contact() {
           <h1 className="font-display text-4xl text-fg sm:text-5xl">{page.title}</h1>
           {page.kicker ? <p className="mt-2 text-lg text-muted">{page.kicker}</p> : null}
         </header>
-        {page.body.trim() ? <SiteCopyBody body={page.body} /> : null}
 
         <div className="flex justify-center">
           <div className="inline-flex max-w-full flex-wrap justify-center rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">

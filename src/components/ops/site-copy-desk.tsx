@@ -518,7 +518,7 @@ export function SiteCopyDesk() {
                 onChange={(e) => setDraft({ ...draft, kicker: e.target.value })}
               />
             </Field>
-            <Field label="Body">
+            <Field label={slug === "contact" ? "Body — line under the topic buttons" : "Body"}>
               <textarea
                 rows={14}
                 value={draft.body}
@@ -526,6 +526,11 @@ export function SiteCopyDesk() {
                 className="w-full min-w-0 rounded-lg border border-border bg-elevated px-3 py-2 text-sm text-fg outline-none"
               />
             </Field>
+            {slug === "contact" ? (
+              <p className="text-xs text-muted">
+                Shown when General Question is selected. Replaces “Ask anything about the calculator, billing, or your account.” Leave it blank to keep that sentence. Bug and Feature Request keep their own lines.
+              </p>
+            ) : null}
             <div className="flex flex-wrap items-center gap-3">
               <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
                 Save {PAGE_LABEL[draft.slug]}
