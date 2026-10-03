@@ -117,11 +117,26 @@ export function PageMast() {
   );
 }
 
+function FooterMark() {
+  return (
+    <img
+      src="/brand/mach-mark.png"
+      alt=""
+      width={373}
+      height={354}
+      className="mx-auto mt-3 h-12 w-12 rounded-lg object-cover"
+    />
+  );
+}
+
 function CopyrightLine() {
   return (
-    <p className="mt-1 border-t border-border pt-4 text-center text-[11px] leading-snug text-muted">
-      Copyright © MACHRUN.com
-    </p>
+    <>
+      <p className="mt-1 border-t border-border pt-4 text-center text-[11px] leading-snug text-muted">
+        Copyright © MACHRUN.com
+      </p>
+      <FooterMark />
+    </>
   );
 }
 
@@ -232,6 +247,7 @@ export function MachFooter({
               <Link to="/legal" className="font-medium text-fg underline underline-offset-4 hover:text-accent">Legal</Link>
             </p>
             <p className="mt-2 w-full text-center text-[11px] leading-snug text-muted">Copyright © MACHRUN.com</p>
+            <FooterMark />
           </div>
         </div>
       </footer>
