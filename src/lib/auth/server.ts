@@ -179,6 +179,9 @@ const apple = await appleSocialProvider();
 const googleClientId = env("GOOGLE_CLIENT_ID");
 const googleClientSecret = env("GOOGLE_CLIENT_SECRET");
 const googleConfigured = Boolean(googleClientId && googleClientSecret);
+const twitterClientId = env("TWITTER_CLIENT_ID");
+const twitterClientSecret = env("TWITTER_CLIENT_SECRET");
+const twitterConfigured = Boolean(twitterClientId && twitterClientSecret);
 
 export const auth = betterAuth({
   baseURL,
@@ -207,6 +210,7 @@ export const auth = betterAuth({
         GATE_PROVIDER_ID,
         ...(appleConfigured ? ["apple"] : []),
         ...(googleConfigured ? ["google"] : []),
+        ...(twitterConfigured ? ["twitter"] : []),
       ],
       // X's synthetic email is never "verified", so don't gate linking on the
       // local user's email-verified state.
@@ -260,7 +264,7 @@ export const auth = betterAuth({
     },
   },
 
-  ...((apple || googleConfigured)
+  ...((apple || googleConfigured || twitterConfigured)
     ? {
         socialProviders: {
           ...(apple
@@ -276,6 +280,28 @@ export const auth = betterAuth({
                 google: {
                   clientId: googleClientId as string,
                   clientSecret: googleClientSecret as string,
+                },
+              }
+            : {}),
+          ...(twitterConfigured
+            ? {
+                twitter: {
+                  clientId: twitterClientId as string,
+                  clientSecret: twitterClientSecret as string,
+                  // Default scopes include users.email, which X rejects unless
+                  // that permission was approved. Read is enough to sign in.
+                  disableDefaultScope: true,
+                  scope: ["users.read", "tweet.read", "offline.access"],
+                  mapProfileToUser: (profile) => {
+                    const id = profile.data?.id ?? "unknown";
+                    const email = profile.data?.email;
+                    return {
+                      email:
+                        email && email.includes("@")
+                          ? email
+                          : `x-${id}@users.machrun.com`,
+                    };
+                  },
                 },
               }
             : {}),

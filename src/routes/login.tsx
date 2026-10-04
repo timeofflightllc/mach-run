@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { GROK_PROVIDERS, appleSignInEnabled, authClient, authEnabled, signIn, signInWithApple, signInWithGoogle } from "@/lib/auth/client";
+import { GROK_PROVIDERS, appleSignInEnabled, authClient, authEnabled, signIn, signInWithApple, signInWithGoogle, signInWithX } from "@/lib/auth/client";
 import { afterAuthHref, loginSearch, registerForPlanHref } from "@/lib/billing/checkout-intent";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { TurnstileBox, turnstileEnabled } from "@/components/auth/turnstile-box";
@@ -273,7 +273,9 @@ function Login() {
                       const start =
                         p.providerId === "grok-google"
                           ? signInWithGoogle(next, retry)
-                          : signIn(p.providerId, { callbackURL: next, errorCallbackURL: retry });
+                          : p.providerId === "grok-x"
+                            ? signInWithX(next, retry)
+                            : signIn(p.providerId, { callbackURL: next, errorCallbackURL: retry });
                       void start.catch((err) => {
                         setError(err instanceof Error ? err.message : "Sign-in failed.");
                         setBusy(false);

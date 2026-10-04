@@ -158,7 +158,7 @@ export async function signIn(
 
 /** First-party Better Auth social sign-in (Apple, and Google when configured). */
 async function signInWithSocial(
-  provider: "apple" | "google",
+  provider: "apple" | "google" | "twitter",
   callbackURL: string,
   errorCallbackURL: string,
   notConfigured: string,
@@ -233,6 +233,26 @@ export async function signInWithGoogle(
     callbackURL,
     errorCallbackURL,
     "Google sign-in is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, then redeploy.",
+  );
+}
+
+/**
+ * Production uses the X app (TWITTER_CLIENT_ID / SECRET).
+ * Better Auth still calls this provider "twitter".
+ * Live preview stays on the broker.
+ */
+export async function signInWithX(
+  callbackURL = "/",
+  errorCallbackURL = "/login",
+): Promise<void> {
+  if (inLivePreview()) {
+    return signIn("grok-x", { callbackURL, errorCallbackURL });
+  }
+  return signInWithSocial(
+    "twitter",
+    callbackURL,
+    errorCallbackURL,
+    "X sign-in is not configured. Add TWITTER_CLIENT_ID and TWITTER_CLIENT_SECRET, then redeploy.",
   );
 }
 
