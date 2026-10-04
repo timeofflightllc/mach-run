@@ -58,12 +58,12 @@ function SketchJet({
         <path d="M46 4 C 16 14, 0 20, -18 16" strokeWidth="0.85" opacity="0.4" />
       </g>
       <path d="M-46 1.5C-16-2 22-3 48 0.5c8 1 16 2.2 22 3-8 1.2-18 2.4-28 2.6C8 7.2-22 6-46 2.4" strokeWidth="1.7" />
-      <path d="M-6-1c3-7 12-9 20-4.5" strokeWidth="1.5" />
-      <path d="M6 3 L-14 22 L16 5.5" strokeWidth="1.55" />
+      <path d="M7-1.67c3-6.5 12-8.5 20 0.38" strokeWidth="1.5" />
+      <path d="M16 5 L-1 22 L-12 25 L-2 6.2 Z" strokeWidth="1.55" />
       <path d="M-30-0.5 L-40-16 L-22 0.5" strokeWidth="1.55" />
       <path d="M-24 0.4 L-32-13 L-16 1.2" strokeWidth="1.35" />
       <path d="M-34 2.5 L-50 11 L-28 4" strokeWidth="1.45" />
-      <path d="M2 3.2 L-8 9 L10 4.2" strokeWidth="1.3" />
+      <path d="M13 -1.66 L0 -8.6 L-16 -9.2 L-8 -1.36 Z" strokeWidth="1.25" />
       <path d="M-48 1.6 L-58 0.2 M-50 4.2 L-57 6.5" strokeWidth="1.15" opacity="0.8" />
     </g>
   );
