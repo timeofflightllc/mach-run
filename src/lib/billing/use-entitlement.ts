@@ -1,20 +1,21 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { GUEST_ENTITLEMENT, type Entitlement } from "./limits";
 import { getBillingConfig, getEntitlement } from "./api";
 
 export function useEntitlement(): Entitlement & { pending: boolean } {
   const { user, isPending } = useCurrentUserState();
+  const userId = user?.id ?? null;
   const [ent, setEnt] = useState<Entitlement>(GUEST_ENTITLEMENT);
   const [pending, setPending] = useState(true);
+  const settledFor = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
-    if (isPending) {
-      setPending(true);
-      return;
-    }
-    if (!user) {
+    if (isPending) return;
+    if (!userId) {
+      if (settledFor.current === null) return;
+      settledFor.current = null;
       setPending(false);
       void getBillingConfig()
         .then((cfg) => {
@@ -40,22 +41,25 @@ export function useEntitlement(): Entitlement & { pending: boolean } {
         cancelled = true;
       };
     }
+    if (settledFor.current === userId) return;
     setPending(true);
     void getEntitlement()
       .then((next) => {
         if (cancelled) return;
+        settledFor.current = userId;
         setEnt(next);
         setPending(false);
       })
       .catch(() => {
         if (cancelled) return;
+        settledFor.current = userId;
         setEnt({ ...GUEST_ENTITLEMENT, signedIn: true });
         setPending(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [user, isPending]);
+  }, [userId, isPending]);
 
   return { ...ent, pending };
 }
