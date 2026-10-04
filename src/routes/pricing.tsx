@@ -118,11 +118,12 @@ function Pricing() {
   const trialOnAdvisorLite = codeOn("advisor_lite");
   const trialOnAdvisor = codeOn("advisor");
 
-  const onFree = signedIn && !ent.paid;
-  const onIndividual = signedIn && ent.paid && ent.plan === "individual";
-  const onUnlimited = signedIn && ent.paid && ent.plan === "unlimited";
-  const onAdvisorLite = signedIn && ent.plan === "advisor_lite";
-  const onAdvisor = signedIn && ent.plan === "advisor";
+  const onFree = !ent.pending && signedIn && !ent.paid;
+  const onIndividual = !ent.pending && signedIn && ent.paid && ent.plan === "individual";
+  const onUnlimited = !ent.pending && signedIn && ent.paid && ent.plan === "unlimited";
+  const onAdvisorLite = !ent.pending && signedIn && ent.plan === "advisor_lite";
+  const onAdvisor = !ent.pending && signedIn && ent.plan === "advisor";
+  const planPending = ent.pending && signedIn;
 
   async function checkout(
     pkg: "individual" | "unlimited" | "advisor" | "advisor_lite",
@@ -325,7 +326,9 @@ function Pricing() {
             </>
           )}
           <p className="mt-6 rounded-lg bg-surface px-4 py-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)]">
-            {ent.signedIn && currentText ? (
+            {planPending ? (
+              "Checking your plan…"
+            ) : ent.signedIn && currentText ? (
               currentText
             ) : (
               <>
@@ -339,7 +342,7 @@ function Pricing() {
                 </Link>
               </>
             )}
-            {ent.status === "trialing" && ent.billed === "unlimited" ? (
+            {!planPending && ent.status === "trialing" && ent.billed === "unlimited" ? (
               <span className="mt-2 block font-normal text-muted">
                 Unlimited trial ends {formatDeskTrialEnd(ent.periodEnd)}.{" "}
                 <button

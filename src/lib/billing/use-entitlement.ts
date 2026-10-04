@@ -3,14 +3,19 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { GUEST_ENTITLEMENT, type Entitlement } from "./limits";
 import { getBillingConfig, getEntitlement } from "./api";
 
-export function useEntitlement() {
+export function useEntitlement(): Entitlement & { pending: boolean } {
   const { user, isPending } = useCurrentUserState();
   const [ent, setEnt] = useState<Entitlement>(GUEST_ENTITLEMENT);
+  const [pending, setPending] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
-    if (isPending) return;
+    if (isPending) {
+      setPending(true);
+      return;
+    }
     if (!user) {
+      setPending(false);
       void getBillingConfig()
         .then((cfg) => {
           if (cancelled) return;
@@ -35,19 +40,24 @@ export function useEntitlement() {
         cancelled = true;
       };
     }
+    setPending(true);
     void getEntitlement()
       .then((next) => {
-        if (!cancelled) setEnt(next);
+        if (cancelled) return;
+        setEnt(next);
+        setPending(false);
       })
       .catch(() => {
-        if (!cancelled) setEnt({ ...GUEST_ENTITLEMENT, signedIn: true });
+        if (cancelled) return;
+        setEnt({ ...GUEST_ENTITLEMENT, signedIn: true });
+        setPending(false);
       });
     return () => {
       cancelled = true;
     };
   }, [user, isPending]);
 
-  return ent;
+  return { ...ent, pending };
 }
 
 function previewUnlimited(): boolean {
