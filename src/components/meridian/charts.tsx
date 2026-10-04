@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Area,
@@ -11,6 +11,8 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { createPortal } from "react-dom";
+import { Maximize2, X } from "lucide-react";
 import { usd, usdCompact } from "@/lib/plan/format";
 import { PinToggle } from "@/components/meridian/chart-pin";
 import type { MonthSnapshot, Plan, SimResult, YearSnapshot } from "@/lib/plan/types";
@@ -28,6 +30,57 @@ const chartCard =
   "rounded-xl bg-white p-4 text-slate-800 shadow-[0_0_0_1px_#c8d2de] sm:p-5";
 const tickFill = "#4b5b6e";
 const gridStroke = "#d5dde6";
+
+function useChartExpanded() {
+  const [expanded, setExpanded] = useState(false);
+  const close = useCallback(() => setExpanded(false), []);
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [expanded, close]);
+  return { expanded, toggle: () => setExpanded((open) => !open), close };
+}
+
+function ChartStage({
+  expanded,
+  onClose,
+  label,
+  children,
+}: {
+  expanded: boolean;
+  onClose: () => void;
+  label: string;
+  children: ReactNode;
+}) {
+  if (!expanded || typeof document === "undefined") return children;
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[80] flex flex-col bg-[#0c1620]/75 p-3 sm:p-5"
+      onClick={onClose}
+      role="presentation"
+    >
+      <div
+        className="flex min-h-0 flex-1 flex-col"
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+        onClick={(event) => event.stopPropagation()}
+      >
+        {children}
+      </div>
+    </div>,
+    document.body,
+  );
+}
 
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -159,12 +212,16 @@ function ChartSpanBar({
   onChange,
   pinned,
   onPin,
+  expanded,
+  onExpand,
 }: {
   span: ChartSpan;
   endAge: number;
   onChange: (next: ChartSpan) => void;
   pinned?: boolean;
   onPin?: () => void;
+  expanded?: boolean;
+  onExpand?: () => void;
 }) {
   return (
     <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
@@ -185,6 +242,17 @@ function ChartSpanBar({
         ))}
       </div>
       {onPin ? <PinToggle pinned={Boolean(pinned)} onToggle={onPin} tone="light" /> : null}
+      {onExpand ? (
+        <button
+          type="button"
+          aria-pressed={Boolean(expanded)}
+          onClick={onExpand}
+          className="inline-flex h-8 shrink-0 items-center gap-1 rounded-md bg-slate-100 px-2 text-xs font-medium text-slate-800 shadow-[0_0_0_1px_#94a3b8] hover:bg-slate-200"
+        >
+          {expanded ? <X className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+          {expanded ? "Close" : "Full screen"}
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -373,16 +441,19 @@ export function WealthChart({
 }) {
   const real = plan.assumptions.dollars === "real";
   const [span, setSpan] = useState<ChartSpan>("horizon");
+  const { expanded, toggle, close } = useChartExpanded();
   const data = wealthPoints(plan, sim, span);
   const x = axisProps(span);
 
   return (
-    <div className={chartCard}>
+    <ChartStage expanded={expanded} onClose={close} label="Spendable Wealth">
+    <div className={cn(chartCard, expanded && "flex h-full min-h-0 flex-1 flex-col")}>
       <h2 className="font-display text-xl font-bold text-slate-900">Spendable Wealth</h2>
       <p className="mb-4 mt-1 text-xs text-slate-600">
         {real ? "Inflation-adjusted (today's dollars)" : "Future dollars"} ·
         Roth / taxable / TSP marked spendable. Houses and 529s sit in net worth
         only.
+        {expanded ? " Esc closes this view." : ""}
       </p>
       <ChartSpanBar
         span={span}
@@ -390,8 +461,10 @@ export function WealthChart({
         onChange={setSpan}
         pinned={pinned}
         onPin={onPin}
+        expanded={expanded}
+        onExpand={toggle}
       />
-      <div className="h-64 sm:h-80">
+      <div className={expanded ? "h-[calc(100svh-12rem)]" : "h-64 sm:h-80"}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
             <CartesianGrid stroke={gridStroke} vertical={false} />
@@ -446,6 +519,7 @@ export function WealthChart({
         </ResponsiveContainer>
       </div>
     </div>
+    </ChartStage>
   );
 }
 
@@ -462,11 +536,13 @@ export function CashChart({
 }) {
   const real = plan.assumptions.dollars === "real";
   const [span, setSpan] = useState<ChartSpan>("horizon");
+  const { expanded, toggle, close } = useChartExpanded();
   const data = cashPoints(plan, sim, span);
   const x = axisProps(span);
 
   return (
-    <div className={chartCard}>
+    <ChartStage expanded={expanded} onClose={close} label="Annual Cash Flow">
+    <div className={cn(chartCard, expanded && "flex h-full min-h-0 flex-1 flex-col")}>
       <h2 className="font-display text-xl font-bold text-slate-900">Annual Cash Flow</h2>
       <p className="mb-4 mt-1 text-xs text-slate-600">
         Gross income vs spending vs planned contributions. Guaranteed (gold
@@ -478,6 +554,7 @@ export function CashChart({
           : span === 5
             ? " Each point is one month, times 12, so the scale matches the yearly views."
             : ""}
+        {expanded ? " Esc closes this view." : ""}
       </p>
       <ChartSpanBar
         span={span}
@@ -485,8 +562,10 @@ export function CashChart({
         onChange={setSpan}
         pinned={pinned}
         onPin={onPin}
+        expanded={expanded}
+        onExpand={toggle}
       />
-      <div className="h-64 sm:h-80">
+      <div className={expanded ? "h-[calc(100svh-12rem)]" : "h-64 sm:h-80"}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
             <CartesianGrid stroke={gridStroke} vertical={false} />
@@ -558,6 +637,7 @@ export function CashChart({
         </ResponsiveContainer>
       </div>
     </div>
+    </ChartStage>
   );
 }
 
@@ -576,19 +656,22 @@ export function NetWorthChart({
 }) {
   const real = plan.assumptions.dollars === "real";
   const [span, setSpan] = useState<ChartSpan>(10);
+  const { expanded, toggle, close } = useChartExpanded();
   const live = netWorthPoints(plan, sim, span);
   const data = locked ? fakeNetWorthPoints(span) : live;
   const hasDebt = data.some((d) => d.liabilities > 1);
   const x = axisProps(span);
 
   return (
-    <div className={cn("relative", chartCard)}>
-      <div className={cn(locked && "pointer-events-none select-none opacity-60")}>
+    <ChartStage expanded={expanded} onClose={close} label="Net Worth">
+    <div className={cn("relative", chartCard, expanded && "flex h-full min-h-0 flex-1 flex-col")}>
+      <div className={cn(locked && "pointer-events-none select-none opacity-60", expanded && "flex min-h-0 flex-1 flex-col")}>
         <h2 className="font-display text-xl font-bold text-slate-900">Net Worth</h2>
         <p className="mb-4 mt-1 text-xs text-slate-600">
           {locked
             ? "Sample only — 1969 dollars, made-up balances. Your numbers unlock on Individual Unlimited."
             : `${real ? "Inflation-adjusted (today's dollars)" : "Future dollars"} · Assets minus remaining loans.${!hasDebt ? " No loan on this MACH Run, so assets and net worth overlap." : ""}`}
+          {expanded ? " Esc closes this view." : ""}
         </p>
         <ChartSpanBar
           span={span}
@@ -596,8 +679,10 @@ export function NetWorthChart({
           onChange={setSpan}
           pinned={pinned}
           onPin={onPin}
+          expanded={expanded}
+          onExpand={locked ? undefined : toggle}
         />
-        <div className="h-64 sm:h-80">
+        <div className={expanded ? "h-[calc(100svh-12rem)]" : "h-64 sm:h-80"}>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid stroke="var(--color-border)" vertical={false} />
@@ -677,5 +762,6 @@ export function NetWorthChart({
         </div>
       ) : null}
     </div>
+    </ChartStage>
   );
 }
