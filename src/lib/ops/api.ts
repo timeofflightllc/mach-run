@@ -1,5 +1,6 @@
 import { createMiddleware, createServerFn } from "@tanstack/react-start";
 import type { CheckoutPackage, MachPackage } from "@/lib/billing/limits";
+import { deskTrialDays, type DeskTrialUnit } from "@/lib/billing/desk-trial";
 import type { PromoKind, PromoRecord } from "@/lib/billing/promo";
 import {
   EMPTY_OPS_COUNTS,
@@ -123,6 +124,47 @@ export const compOpsTimeFn = createServerFn({ method: "POST" })
     if (!actor) return { ok: false as const, error: "Not found." };
     const { compOpsTime } = await import("./writes.server");
     return compOpsTime(actor, { ...data, userId: data.userId });
+  });
+
+export const startOpsDeskTrialFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((input: {
+    userId?: string;
+    email?: string;
+    interval?: "month" | "year";
+    length?: number | string;
+    unit?: DeskTrialUnit;
+    note?: string;
+  }) => {
+    const ref = readUserRef(input);
+    const raw = asRecord(input);
+    const unit: DeskTrialUnit = raw.unit === "months" ? "months" : "days";
+    const length = typeof raw.length === "number" ? raw.length : Number(raw.length);
+    const converted = deskTrialDays(length, unit);
+    return {
+      userId: ref.userId,
+      email: ref.email,
+      interval: raw.interval === "year" ? ("year" as const) : ("month" as const),
+      trialDays: converted.ok ? converted.days : 0,
+      trialError: converted.ok ? "" : converted.error,
+      note: typeof raw.note === "string" ? raw.note : "",
+    };
+  })
+  .handler(async ({ context, data }) => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { ok: false as const, error: "Not found." };
+    if (data.trialError || data.trialDays < 1) {
+      return { ok: false as const, error: data.trialError || "Trial length is not valid." };
+    }
+    const { startOpsDeskTrial } = await import("./writes.server");
+    return startOpsDeskTrial(actor, {
+      userId: data.userId,
+      email: data.email,
+      interval: data.interval,
+      trialDays: data.trialDays,
+      note: data.note,
+    });
   });
 
 export const cancelOpsSubscriptionFn = createServerFn({ method: "POST" })

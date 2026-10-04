@@ -366,7 +366,10 @@ export const peekPromoCode = createServerFn({ method: "POST" })
 
 export const startBillingPortal = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((input: { origin: string }) => input)
+  .validator((input: { origin: string; updatePaymentMethod?: boolean }) => ({
+    origin: typeof input?.origin === "string" ? input.origin : "",
+    updatePaymentMethod: input?.updatePaymentMethod === true,
+  }))
   .handler(async ({ context, data }) => {
     const { getStripe, stripeConfigured } = await import("./stripe.server");
     if (!stripeConfigured()) throw new Error("Stripe is not connected yet.");
@@ -376,11 +379,20 @@ export const startBillingPortal = createServerFn({ method: "POST" })
     }
     const origin = sanitizeOrigin(data.origin);
     const stripe = await getStripe();
+    const base = {
+      customer: existing.stripe_customer_id,
+      return_url: `${origin}/`,
+    };
     try {
-      const session = await stripe.billingPortal.sessions.create({
-        customer: existing.stripe_customer_id,
-        return_url: `${origin}/`,
-      });
+      const session = data.updatePaymentMethod
+        ? await stripe.billingPortal.sessions
+            .create({ ...base, flow_data: { type: "payment_method_update" } })
+            .catch((err: unknown) => {
+              const msg = err instanceof Error ? err.message : String(err);
+              if (/No such customer/i.test(msg)) throw err;
+              return stripe.billingPortal.sessions.create(base);
+            })
+        : await stripe.billingPortal.sessions.create(base);
       return { url: session.url };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);

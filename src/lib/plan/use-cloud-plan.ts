@@ -1,5 +1,12 @@
 import { useEffect, useState } from "react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { useEntitlement } from "@/lib/billing/use-entitlement";
+import {
+  FREE_ACCOUNT_LIMIT,
+  FREE_CONTRIBUTION_LIMIT,
+  FREE_INCOME_LIMIT,
+  clampPlan,
+} from "@/lib/billing/limits";
 import { pickDisplayedPlan } from "./cloud-hydrate";
 import { clearLocalMachRunWorkspace } from "./clear-local";
 import { loadMachPlan, saveMachPlan } from "./plan-api";
@@ -24,11 +31,26 @@ function payloadFromLiveStores() {
 
 export function useCloudPlan() {
   const { user, isPending } = useCurrentUserState();
+  const ent = useEntitlement();
   const plan = usePlanStore((s) => s.plan);
   const setPlan = usePlanStore((s) => s.setPlan);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "guest">("guest");
   const [cloudReady, setCloudReady] = useState(false);
   const userId = user?.id ?? null;
+
+  useEffect(() => {
+    if (!ent.signedIn || ent.paid) return;
+    const current = usePlanStore.getState().plan;
+    const view = clampPlan(current, FREE_ACCOUNT_LIMIT, FREE_CONTRIBUTION_LIMIT, FREE_INCOME_LIMIT);
+    if (
+      view.portfolios.length === current.portfolios.length &&
+      view.contributions.length === current.contributions.length &&
+      (view.incomes?.length ?? 0) === (current.incomes?.length ?? 0)
+    ) {
+      return;
+    }
+    setPlan(view);
+  }, [ent.signedIn, ent.paid, plan, setPlan]);
 
   useEffect(() => {
     if (isPending) return;

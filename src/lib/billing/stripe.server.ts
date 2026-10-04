@@ -9,10 +9,20 @@ type StripeClient = {
   checkout: { sessions: { create: (args: Record<string, unknown>) => Promise<{ url?: string | null; customer?: unknown; subscription?: unknown; metadata?: Record<string, string>; client_reference_id?: string | null }> } };
   billingPortal: { sessions: { create: (args: Record<string, unknown>) => Promise<{ url: string }> } };
   coupons: { create: (args: Record<string, unknown>) => Promise<{ id?: string }> };
+  customers: {
+    create: (
+      args: Record<string, unknown>,
+      options?: { idempotencyKey?: string },
+    ) => Promise<{ id: string }>;
+  };
   subscriptions: {
     retrieve: (id: string) => Promise<StripeSubscription>;
     update: (id: string, args: Record<string, unknown>) => Promise<StripeSubscription>;
     cancel: (id: string) => Promise<StripeSubscription>;
+    create: (
+      args: Record<string, unknown>,
+      options?: { idempotencyKey?: string },
+    ) => Promise<StripeSubscription>;
   };
 };
 
@@ -24,6 +34,7 @@ type StripeSubscription = {
   customer: string | { id: string };
   metadata?: Record<string, string>;
   current_period_end?: number;
+  trial_end?: number | null;
   items: { data: Array<{ id?: string; price: { id: string }; current_period_end?: number }> };
 };
 

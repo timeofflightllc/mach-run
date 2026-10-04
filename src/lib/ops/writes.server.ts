@@ -2,6 +2,12 @@ import { wipeUserRows } from "@/lib/auth/delete-account.server";
 import { getSql } from "@/lib/db";
 import { packageLabel, paidFromStatus, type CheckoutPackage, type MachPackage } from "@/lib/billing/limits";
 import {
+  deskTrialBlocked,
+  deskTrialDays,
+  deskTrialIdempotencyKey,
+  deskTrialSubscriptionParams,
+} from "@/lib/billing/desk-trial";
+import {
   getStripe,
   loadSubscription,
   priceIdFor,
@@ -318,6 +324,142 @@ export async function cancelOpsSubscription(
       input.when === "now"
         ? `Canceled Stripe for ${targetEmail ?? userId} now. Login stays.`
         : `Stripe will end at period end for ${targetEmail ?? userId}. Login stays.`,
+  };
+}
+
+function keptPeriod(value: string | Date | null | undefined): Date | null {
+  if (value == null) return null;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+async function advisorGrantOn(userId: string): Promise<boolean> {
+  try {
+    const sql = await getSql();
+    const rows = await sql.query<{ advisor_grant: boolean | null }>(
+      `select advisor_grant from mach_subscriptions where user_id = $1 limit 1`,
+      [userId],
+    );
+    return rows[0]?.advisor_grant === true;
+  } catch {
+    return false;
+  }
+}
+
+export async function startOpsDeskTrial(
+  actor: OpsActor,
+  input: {
+    userId: string;
+    email?: string;
+    interval: "month" | "year";
+    trialDays: number;
+    note: string;
+  },
+): Promise<OpsWriteResult> {
+  const note = input.note.trim();
+  if (!note) return { ok: false, error: "A trial needs a short note." };
+  const length = deskTrialDays(input.trialDays, "days");
+  if (!length.ok) return { ok: false, error: length.error };
+  const target = await resolveTarget(input.userId, input.email);
+  if (!target) return { ok: false, error: "No person with that id or email." };
+  if (!target.email) return { ok: false, error: "This account has no email. A trial needs an email." };
+  const userId = target.id;
+  const targetEmail = target.email;
+  await ensureSubscriptionsTable();
+  const row = await loadSubscription(userId);
+  const blocked = deskTrialBlocked({
+    hasEmail: true,
+    advisorGrant: await advisorGrantOn(userId),
+    stripeSubscriptionId: row?.stripe_subscription_id ?? null,
+    status: row?.status ?? null,
+  });
+  if (blocked) return { ok: false, error: blocked };
+
+  let priceId: string;
+  try {
+    priceId = priceIdFor(input.interval, "unlimited");
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Missing Stripe price." };
+  }
+
+  const stripe = await getStripe();
+  let customerId = row?.stripe_customer_id ?? null;
+  if (!customerId) {
+    try {
+      const customer = await stripe.customers.create(
+        { email: targetEmail, metadata: { userId } },
+        { idempotencyKey: `desk-unlimited-customer-${userId}` },
+      );
+      customerId = customer.id;
+    } catch (err) {
+      return { ok: false, error: err instanceof Error ? err.message : "Stripe could not create the customer." };
+    }
+    await upsertSubscription({
+      userId,
+      customerId,
+      subscriptionId: row?.stripe_subscription_id ?? null,
+      status: row?.status ?? "none",
+      priceId: row?.price_id ?? null,
+      periodEnd: keptPeriod(row?.current_period_end),
+    });
+  }
+
+  const params = deskTrialSubscriptionParams({
+    customerId,
+    priceId,
+    userId,
+    trialDays: length.days,
+  });
+  let created: {
+    id: string;
+    status: string;
+    trial_end?: number | null;
+    current_period_end?: number;
+    items: { data: Array<{ current_period_end?: number }> };
+  };
+  try {
+    created = await stripe.subscriptions.create(params, {
+      idempotencyKey: deskTrialIdempotencyKey(userId, length.days),
+    });
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Stripe could not start the trial." };
+  }
+
+  const trialEnd =
+    created.status === "trialing" && created.trial_end
+      ? new Date(created.trial_end * 1000)
+      : keptPeriod(
+          created.current_period_end
+            ? new Date(created.current_period_end * 1000)
+            : created.items.data[0]?.current_period_end
+              ? new Date(created.items.data[0].current_period_end * 1000)
+              : null,
+        );
+  await upsertSubscription({
+    userId,
+    customerId,
+    subscriptionId: created.id,
+    status: created.status,
+    priceId,
+    periodEnd: trialEnd,
+  });
+  await log(
+    actor,
+    userId,
+    "desk_trial",
+    {
+      trialDays: length.days,
+      interval: input.interval,
+      priceId,
+      subscriptionId: created.id,
+      status: created.status,
+    },
+    note,
+  );
+  const until = trialEnd ? trialEnd.toISOString().slice(0, 10) : "the Stripe trial end";
+  return {
+    ok: true,
+    message: `Started a ${length.days}-day Individual Unlimited trial for ${targetEmail}. No card today. It ends ${until} unless they add a card. Stripe will charge ${input.interval === "year" ? "yearly" : "monthly"} if they stay.`,
   };
 }
 

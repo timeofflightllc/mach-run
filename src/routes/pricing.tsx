@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { PrimaryButton, TextInput } from "@/components/ui/field";
 import { peekPromoCode, startBillingPortal, startCheckout } from "@/lib/billing/api";
+import { formatDeskTrialEnd } from "@/lib/billing/desk-trial";
 import {
   pricingSearch,
   registerForPlanHref,
@@ -155,6 +156,20 @@ function Pricing() {
     try {
       const { url } = await startBillingPortal({
         data: { origin: window.location.origin },
+      });
+      window.location.href = url;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not open billing.");
+      setBusy(null);
+    }
+  }
+
+  async function addCard() {
+    setError(null);
+    setBusy("card");
+    try {
+      const { url } = await startBillingPortal({
+        data: { origin: window.location.origin, updatePaymentMethod: true },
       });
       window.location.href = url;
     } catch (err) {
@@ -324,6 +339,20 @@ function Pricing() {
                 </Link>
               </>
             )}
+            {ent.status === "trialing" && ent.billed === "unlimited" ? (
+              <span className="mt-2 block font-normal text-muted">
+                Unlimited trial ends {formatDeskTrialEnd(ent.periodEnd)}.{" "}
+                <button
+                  type="button"
+                  disabled={busy !== null}
+                  onClick={() => void addCard()}
+                  className="underline underline-offset-4 hover:text-fg disabled:opacity-60"
+                >
+                  {busy === "card" ? "Opening…" : "Add a card"}
+                </button>{" "}
+                to keep it.
+              </span>
+            ) : null}
           </p>
         </header>
 

@@ -17,6 +17,7 @@ import {
   listOpsRoster,
   probeOpsDoor,
   setOpsPackageFn,
+  startOpsDeskTrialFn,
 } from "@/lib/ops/api";
 import { actionLabel, type OpsAdminEvent } from "@/lib/ops/events";
 import {
@@ -26,7 +27,8 @@ import {
   type MachActivitySummary,
 } from "@/lib/ops/activity";
 import type { MachPackage } from "@/lib/billing/limits";
-import { packageLabel } from "@/lib/billing/limits";
+import { DESK_UNLIMITED_TRIAL_DAYS, packageLabel } from "@/lib/billing/limits";
+import { deskTrialDays, type DeskTrialUnit } from "@/lib/billing/desk-trial";
 import {
   EMPTY_OPS_COUNTS,
   OPS_ROSTER_PAGE,
@@ -447,6 +449,23 @@ function CountTile({ label, value }: { label: string; value: number }) {
   );
 }
 
+function TrialLengthHint({ length, unit }: { length: string; unit: DeskTrialUnit }) {
+  const parsed = Number(length.trim());
+  const result = deskTrialDays(parsed, unit);
+  if (!length.trim()) {
+    return <p className="text-muted">Enter a length. 90 days is the usual gift.</p>;
+  }
+  if (!result.ok) return <p className="text-negative">{result.error}</p>;
+  if (unit === "months") {
+    return (
+      <p className="text-muted">
+        {parsed} month{parsed === 1 ? "" : "s"} is {result.days} days.
+      </p>
+    );
+  }
+  return <p className="text-muted">{result.days} days.</p>;
+}
+
 function PersonPane({
   row,
   onDone,
@@ -468,8 +487,12 @@ function PersonPane({
   const [compNote, setCompNote] = useState("");
   const [cancelWhen, setCancelWhen] = useState<"period_end" | "now">("period_end");
   const [cancelNote, setCancelNote] = useState("");
-  const [busy, setBusy] = useState<"pkg" | "comp" | "cancel" | null>(null);
-  const [savedAt, setSavedAt] = useState<Partial<Record<"pkg" | "comp" | "cancel", Date>>>({});
+  const [trialLength, setTrialLength] = useState(String(DESK_UNLIMITED_TRIAL_DAYS));
+  const [trialUnit, setTrialUnit] = useState<DeskTrialUnit>("days");
+  const [trialInterval, setTrialInterval] = useState<"month" | "year">(row.interval ?? "month");
+  const [trialNote, setTrialNote] = useState("");
+  const [busy, setBusy] = useState<"pkg" | "comp" | "cancel" | "trial" | null>(null);
+  const [savedAt, setSavedAt] = useState<Partial<Record<"pkg" | "comp" | "cancel" | "trial", Date>>>({});
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [personLog, setPersonLog] = useState<OpsAdminEvent[]>([]);
@@ -505,7 +528,7 @@ function PersonPane({
   }, [row.id, row.periodEnd, row.status, row.plan]);
 
   async function run(
-    kind: "pkg" | "comp" | "cancel",
+    kind: "pkg" | "comp" | "cancel" | "trial",
     confirmText: string,
     work: () => Promise<{ ok: boolean; message?: string; error?: string }>,
   ) {
@@ -754,6 +777,78 @@ function PersonPane({
             {busy === "comp" ? "Saving…" : "Comp time"}
           </button>
           <SavedAt at={savedAt.comp} />
+          </div>
+          <div className="space-y-3 border-t border-border/70 pt-3">
+            <h3 className="font-medium text-fg">Start Unlimited trial</h3>
+            <Field label="Length">
+              <TextInput
+                inputMode="numeric"
+                value={trialLength}
+                onChange={(e) => setTrialLength(e.target.value)}
+              />
+            </Field>
+            <Field label="Unit">
+              <SelectInput
+                value={trialUnit}
+                onChange={(e) => setTrialUnit(e.target.value === "months" ? "months" : "days")}
+              >
+                <option value="days">Days</option>
+                <option value="months">Months</option>
+              </SelectInput>
+            </Field>
+            <Field label="Interval if they stay">
+              <SelectInput
+                value={trialInterval}
+                onChange={(e) => setTrialInterval(e.target.value === "year" ? "year" : "month")}
+              >
+                <option value="month">Monthly</option>
+                <option value="year">Yearly</option>
+              </SelectInput>
+            </Field>
+            <Field label="Note (required)">
+              <TextInput value={trialNote} onChange={(e) => setTrialNote(e.target.value)} />
+            </Field>
+            <TrialLengthHint length={trialLength} unit={trialUnit} />
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                disabled={busy !== null}
+                className="h-11 rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg disabled:opacity-40"
+                onClick={() => {
+                  const parsed = Number(trialLength.trim());
+                  const length = deskTrialDays(parsed, trialUnit);
+                  if (!length.ok) {
+                    setMsg(null);
+                    setErr(length.error);
+                    return;
+                  }
+                  if (!trialNote.trim()) {
+                    setMsg(null);
+                    setErr("A trial needs a short note.");
+                    return;
+                  }
+                  const bill = trialInterval === "year" ? "yearly" : "monthly";
+                  void run(
+                    "trial",
+                    `Start a real Stripe Individual Unlimited trial for ${who} for ${length.days} days? No card today. Unlimited ends on its own if they do not add a card. ${bill} is what Stripe charges if they stay.`,
+                    () =>
+                      startOpsDeskTrialFn({
+                        data: {
+                          userId: row.id,
+                          email: row.email ?? "",
+                          interval: trialInterval,
+                          length: parsed,
+                          unit: trialUnit,
+                          note: trialNote,
+                        },
+                      }),
+                  );
+                }}
+              >
+                {busy === "trial" ? "Saving…" : "Start Unlimited trial"}
+              </button>
+              <SavedAt at={savedAt.trial} />
+            </div>
           </div>
         </div>
 
