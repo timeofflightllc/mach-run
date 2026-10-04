@@ -4,24 +4,41 @@ import { demoPlan, planHasEntries } from "@/lib/plan/demo-plan";
 import { usePlanStore } from "@/lib/plan/store";
 
 /** Line sketch of a four-ship bomb burst. Tails point back at the laptop; smoke does the rest. */
-export function BombBurstSketch() {
+export function BombBurstSketch({ raised = false }: { raised?: boolean }) {
   return (
     <svg
-      className="pointer-events-none absolute left-1/2 top-0 hidden h-[155%] w-screen -translate-x-1/2 -translate-y-[30%] md:block"
+      className="pointer-events-none absolute left-1/2 top-0 hidden h-[155%] w-screen -translate-x-1/2 -translate-y-[30%] overflow-visible md:block"
       viewBox="0 0 1600 900"
       fill="none"
       aria-hidden
     >
-      <SmokeTrail d="M800 640 C 720 560, 380 280, 150 130" />
-      <SmokeTrail d="M800 640 C 880 560, 1220 280, 1450 130" />
-      <SmokeTrail d="M800 640 C 640 590, 383 373, 304 384 L 165 403" />
-      <SmokeTrail d="M800 640 C 960 590, 1216 381, 1295 392 L 1434 412" />
-      <g stroke="#1a2330" strokeLinecap="round" strokeLinejoin="round">
-        <SketchJet x={118} y={112} rotate={-152} scale={2.35} />
-        <SketchJet x={1482} y={112} rotate={-28} scale={2.35} />
-        <SketchJet x={48} y={424} rotate={172} scale={2.2} />
-        <SketchJet x={1552} y={424} rotate={8} scale={2.2} />
-      </g>
+      {raised ? (
+        <>
+          <SmokeTrail d="M800 640 C 760 450, 560 180, 430 30" />
+          <SmokeTrail d="M800 640 C 840 450, 1040 180, 1170 30" />
+          <SmokeTrail d="M800 640 C 720 560, 380 280, 150 130" />
+          <SmokeTrail d="M800 640 C 880 560, 1220 280, 1450 130" />
+          <g stroke="#1a2330" strokeLinecap="round" strokeLinejoin="round">
+            <SketchJet x={401} y={-4} rotate={-131} scale={2.35} flip />
+            <SketchJet x={1199} y={-4} rotate={-49} scale={2.35} />
+            <SketchJet x={118} y={112} rotate={-147} scale={2.2} flip />
+            <SketchJet x={1482} y={112} rotate={-33} scale={2.2} />
+          </g>
+        </>
+      ) : (
+        <>
+          <SmokeTrail d="M800 640 C 720 560, 380 280, 150 130" />
+          <SmokeTrail d="M800 640 C 880 560, 1220 280, 1450 130" />
+          <SmokeTrail d="M800 640 C 640 590, 383 373, 304 384 L 165 403" />
+          <SmokeTrail d="M800 640 C 960 590, 1216 381, 1295 392 L 1434 412" />
+          <g stroke="#1a2330" strokeLinecap="round" strokeLinejoin="round">
+            <SketchJet x={118} y={112} rotate={-152} scale={2.35} />
+            <SketchJet x={1482} y={112} rotate={-28} scale={2.35} />
+            <SketchJet x={48} y={424} rotate={172} scale={2.2} />
+            <SketchJet x={1552} y={424} rotate={8} scale={2.2} />
+          </g>
+        </>
+      )}
     </svg>
   );
 }
@@ -42,14 +59,17 @@ function SketchJet({
   y,
   rotate,
   scale = 1,
+  flip = false,
 }: {
   x: number;
   y: number;
   rotate: number;
   scale?: number;
+  flip?: boolean;
 }) {
+  const sy = flip ? -scale : scale;
   return (
-    <g transform={`translate(${x} ${y}) rotate(${rotate}) scale(${scale})`}>
+    <g transform={`translate(${x} ${y}) rotate(${rotate}) scale(${scale} ${sy})`}>
       {/* Slight Mach cone. Opens aft of the nose, aircraft sits in front of it. */}
       <g fill="none" stroke="#6a7b8c" strokeLinecap="round">
         <path d="M58 -1 C 22 -20, -16 -36, -48 -30" strokeWidth="1.15" opacity="0.55" />

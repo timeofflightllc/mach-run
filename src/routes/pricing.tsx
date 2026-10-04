@@ -450,7 +450,7 @@ function Pricing() {
         </p>
 
         <div className="relative mt-8">
-          <BombBurstSketch />
+          <BombBurstSketch raised />
           <div className="relative z-10 mx-auto grid w-full max-w-6xl gap-4 md:grid-cols-3">
           <article
             className={cn(
