@@ -1400,7 +1400,7 @@ function Home() {
           ) : null}
         </div>
       </main>
-      {shown === "act" ? <MachFooter variant="full" /> : <MachFooter disclaimer />}
+      <MachFooter disclaimer />
       </div>
       </div>
       {stalePrompt ? (
