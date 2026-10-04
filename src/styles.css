@@ -219,39 +219,55 @@
   animation: mach-comet-spin 2.4s linear infinite;
 }
 
-.mach-comet-arc {
+.mach-contrail,
+.mach-contrail-wash {
   position: absolute;
   inset: 0;
+  pointer-events: none;
+}
+
+.mach-contrail {
+  overflow: visible;
+  color: var(--color-fg);
+}
+
+.mach-contrail-wash {
   border-radius: inherit;
   background: conic-gradient(
     from 0deg,
-    rgba(255, 255, 255, 0) 0deg,
-    rgba(255, 255, 255, 0) 268deg,
-    rgba(90, 112, 128, 0.08) 286deg,
-    rgba(120, 146, 164, 0.45) 322deg,
-    rgba(214, 226, 234, 0.92) 348deg,
-    rgba(255, 255, 255, 1) 357deg,
-    rgba(255, 255, 255, 0) 360deg
+    transparent 0deg,
+    transparent 228deg,
+    color-mix(in srgb, var(--color-fg) 14%, transparent) 270deg,
+    color-mix(in srgb, var(--color-fg) 28%, transparent) 318deg,
+    color-mix(in srgb, var(--color-fg) 36%, transparent) 344deg,
+    transparent 356deg,
+    transparent 360deg
   );
-  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 5px));
-  mask: radial-gradient(farthest-side, transparent calc(100% - 8px), #000 calc(100% - 5px));
-  animation: mach-run-pulse 1.15s ease-in-out infinite;
+  -webkit-mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 18px),
+    #000 calc(100% - 12px),
+    #000 calc(100% - 3px),
+    transparent 100%
+  );
+  mask: radial-gradient(
+    farthest-side,
+    transparent calc(100% - 18px),
+    #000 calc(100% - 12px),
+    #000 calc(100% - 3px),
+    transparent 100%
+  );
 }
 
-.mach-comet-head {
+.mach-jet {
   position: absolute;
   left: 50%;
   top: 0;
-  width: 14px;
-  height: 14px;
-  margin-left: -7px;
-  margin-top: -7px;
-  border-radius: 999px;
-  background: #fff;
-  box-shadow:
-    0 0 8px 3px rgba(232, 240, 246, 0.95),
-    0 0 16px 6px rgba(90, 116, 136, 0.55);
-  animation: mach-run-pulse 1.15s ease-in-out infinite;
+  width: 210px;
+  height: 63px;
+  transform: translate(-67%, -50%);
+  overflow: visible;
+  color: var(--color-fg);
 }
 
 @keyframes mach-comet-spin {
@@ -286,9 +302,7 @@
 @media (prefers-reduced-motion: reduce) {
   .mach-run-pulse,
   .mach-orbit-ring,
-  .mach-comet,
-  .mach-comet-arc,
-  .mach-comet-head {
+  .mach-comet {
     animation: none;
   }
   .mach-run-dots::after {
