@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
+import { BombBurstSketch } from "@/components/meridian/guest-hero";
 import { PrimaryButton, TextInput } from "@/components/ui/field";
 import { peekPromoCode, startBillingPortal, startCheckout } from "@/lib/billing/api";
 import { formatDeskTrialEnd } from "@/lib/billing/desk-trial";
@@ -448,10 +449,12 @@ function Pricing() {
               : copy.intervalNoteMonth}
         </p>
 
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
+        <div className="relative mt-8">
+          <BombBurstSketch />
+          <div className="relative z-10 mx-auto grid w-full max-w-6xl gap-4 md:grid-cols-3">
           <article
             className={cn(
-              "flex flex-col rounded-xl bg-surface p-6 shadow-[0_0_0_1px_var(--color-border)]",
+              "flex flex-col rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]",
               onFree && "shadow-[0_0_0_2px_var(--color-accent)]",
             )}
           >
@@ -496,7 +499,7 @@ function Pricing() {
             <>
           <article
             className={cn(
-              "flex flex-col rounded-xl bg-elevated p-6 shadow-[0_0_0_1px_var(--color-border)]",
+              "flex flex-col rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]",
               onIndividual && "shadow-[0_0_0_2px_var(--color-accent)]",
             )}
           >
@@ -548,7 +551,7 @@ function Pricing() {
 
           <article
             className={cn(
-              "flex flex-col rounded-xl bg-elevated p-6 shadow-[0_0_0_1px_var(--color-border)]",
+              "flex flex-col rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]",
               onUnlimited && "shadow-[0_0_0_2px_var(--color-accent)]",
             )}
           >
@@ -602,7 +605,7 @@ function Pricing() {
             <>
           <article
             className={cn(
-              "flex flex-col rounded-xl bg-elevated p-6 shadow-[0_0_0_1px_var(--color-border)]",
+              "flex flex-col rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]",
               onAdvisorLite && "shadow-[0_0_0_2px_var(--color-accent)]",
             )}
           >
@@ -661,7 +664,7 @@ function Pricing() {
 
           <article
             className={cn(
-              "flex flex-col rounded-xl bg-elevated p-6 shadow-[0_0_0_1px_var(--color-border)]",
+              "flex flex-col rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]",
               onAdvisor && "shadow-[0_0_0_2px_var(--color-accent)]",
             )}
           >
@@ -717,6 +720,7 @@ function Pricing() {
           </article>
             </>
           )}
+          </div>
         </div>
 
         {error ? <p className="mt-6 text-sm text-negative">{error}</p> : null}

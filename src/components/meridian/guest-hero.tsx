@@ -4,7 +4,7 @@ import { demoPlan, planHasEntries } from "@/lib/plan/demo-plan";
 import { usePlanStore } from "@/lib/plan/store";
 
 /** Line sketch of a four-ship bomb burst. Tails point back at the laptop; smoke does the rest. */
-function BombBurstSketch() {
+export function BombBurstSketch() {
   return (
     <svg
       className="pointer-events-none absolute left-1/2 top-0 hidden h-[155%] w-screen -translate-x-1/2 -translate-y-[30%] md:block"
