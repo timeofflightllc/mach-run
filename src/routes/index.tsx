@@ -357,6 +357,7 @@ function Home() {
   const shownIndex = route.findIndex((item) => item.id === shown);
   const shownPhase = PAGES.find((page) => page.id === shown)?.phase ?? "observe";
   const [runError, setRunError] = useState<string | null>(null);
+  const [runStale, setRunStale] = useState(false);
   const activeProfileId = useProfileStore((s) => s.activeId);
   const runKey = activeProfileId || "local";
   const [runs, setRuns] = useState<
@@ -821,6 +822,7 @@ function Home() {
           [key]: expanded ? { ...nextRun, brief: expanded } : nextRun,
         }));
         saveStoredRun(key, { id: runId, plan: snapshot });
+        setRunStale(false);
         setHolding(false);
       }, 3000);
       void saveNow(snapshot);
@@ -1277,6 +1279,11 @@ function Home() {
             </div>
           ) : run ? (
             <div className="flex flex-col gap-4">
+              {runStale ? (
+                <p className="rounded-lg bg-[#e8c547] px-4 py-3 text-sm font-medium leading-relaxed text-[#1a1408]">
+                  This MACH RUN is not current. Changes were saved, but the run has not been executed.
+                </p>
+              ) : null}
               {!ent.paid ? (
                 <div
                   className="flex flex-col gap-3 rounded-xl px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
@@ -1335,6 +1342,10 @@ function Home() {
                       plan={displayPlan}
                       sim={run.sim}
                       onUseRecommended={applyRecommendedDate}
+                      onExecute={() => {
+                        void calculate({ stay: true });
+                      }}
+                      onStale={() => setRunStale(true)}
                     />
                   </div>
                   <div className="flex min-w-0 flex-col gap-4">

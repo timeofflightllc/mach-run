@@ -47,6 +47,7 @@ const INCOME_KNOTS = [
 ];
 
 export interface BriefColumnRow {
+  id: string;
   name: string;
   amount: string;
   window: string;
@@ -456,6 +457,7 @@ export function buildPeerBrief(
       const amt = streamBenefitToday(plan, s, asOf);
       const end = throughPrimaryAge(plan, win.end);
       return {
+        id: s.id,
         name: s.name.trim() || s.kind,
         amount: `${usd(amt, true)}/mo`,
         window: `${formatMonthYear(win.start)} → ${end}`,

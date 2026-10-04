@@ -1,7 +1,8 @@
+import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { downloadAnalysisPdf } from "@/lib/plan/analysis-pdf";
 import type { BriefColumnRow, BriefSection, PeerBrief } from "@/lib/plan/peers";
-import type { Plan, SimResult } from "@/lib/plan/types";
+import type { IncomeStream, Plan, SimResult } from "@/lib/plan/types";
 import { GuestOnly, RealSignedIn } from "@/lib/auth/gates";
 import { MACH_MONTHLY_USD, hasBalanceSheet } from "@/lib/billing/limits";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
@@ -10,7 +11,8 @@ import { NestEggHeadline, RecommendedRetirement } from "@/components/meridian/ve
 import { CashShortNotice } from "@/components/meridian/cash-short-notice";
 import { nestEggTrack } from "@/lib/plan/peers";
 import { annuityEquivalentCopy } from "@/lib/plan/annuity-equivalent";
-import { PrimaryButton } from "@/components/ui/field";
+import { Field, MoneyInput, MonthInput, PrimaryButton, TextInput } from "@/components/ui/field";
+import { usePlanStore } from "@/lib/plan/store";
 import { InstitutionMark } from "@/components/meridian/institution-field";
 
 function Disclaimer() {
@@ -42,6 +44,7 @@ function BriefTable({
   rows,
   logos,
   footer,
+  onRow,
 }: {
   intro: string;
   note?: string;
@@ -49,6 +52,7 @@ function BriefTable({
   rows: string[][];
   logos?: { institutionId: string | null; institutionName: string }[];
   footer?: string[];
+  onRow?: (index: number) => void;
 }) {
   return (
     <div className="mt-1">
@@ -72,7 +76,27 @@ function BriefTable({
           </thead>
           <tbody>
             {rows.map((row, i) => (
-              <tr key={row.join("|") + i} className="border-t border-border/70">
+              <tr
+                key={row.join("|") + i}
+                className={
+                  "border-t border-border/70 " +
+                  (onRow ? "cursor-pointer hover:bg-elevated/70" : "")
+                }
+                onClick={onRow ? () => onRow(i) : undefined}
+                onKeyDown={
+                  onRow
+                    ? (e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          onRow(i);
+                        }
+                      }
+                    : undefined
+                }
+                tabIndex={onRow ? 0 : undefined}
+                role={onRow ? "button" : undefined}
+                aria-label={onRow ? `Edit ${row[0]}` : undefined}
+              >
                 {row.map((cell, j) => {
                   const h = headers[j];
                   return (
@@ -129,26 +153,203 @@ function BriefTable({
   );
 }
 
+type PaycheckDraft = {
+  name: string;
+  monthly: number;
+  start: string;
+  end: string | null;
+};
+
+function amountIsCalculated(kind: IncomeStream["kind"]): boolean {
+  return kind === "ss" || kind === "va";
+}
+
 function PaycheckTable({
   intro,
   note,
   rows,
+  onExecute,
+  onStale,
 }: {
   intro: string;
   note: string;
   rows: BriefColumnRow[];
+  onExecute?: () => void;
+  onStale?: () => void;
 }) {
+  const updateIncome = usePlanStore((s) => s.updateIncome);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraftState] = useState<PaycheckDraft | null>(null);
+  const draftRef = useRef<PaycheckDraft | null>(null);
+  const [ask, setAsk] = useState(false);
+
+  function setDraft(next: PaycheckDraft | null) {
+    draftRef.current = next;
+    setDraftState(next);
+  }
+
+  function patchDraft(patch: Partial<PaycheckDraft>) {
+    const base = draftRef.current;
+    if (!base) return;
+    setDraft({ ...base, ...patch });
+  }
+
+  const income = usePlanStore((s) =>
+    editingId ? s.plan.incomes.find((row) => row.id === editingId) ?? null : null,
+  );
+  const locked = income ? amountIsCalculated(income.kind) : false;
+  const shown = rows.find((row) => row.id === editingId);
+
+  function open(index: number) {
+    const row = rows[index];
+    if (!row?.id) return;
+    const live = usePlanStore.getState().plan.incomes.find((item) => item.id === row.id);
+    if (!live) return;
+    setEditingId(live.id);
+    setDraft({
+      name: live.name,
+      monthly: live.monthlyAmount,
+      start: live.startDate || "",
+      end: live.endDate,
+    });
+  }
+
+  function close() {
+    setEditingId(null);
+    setDraft(null);
+  }
+
+  function save() {
+    const current = draftRef.current;
+    if (!income || !current) return;
+    const name = current.name.trim();
+    const patch: Partial<IncomeStream> = { name: name || income.name };
+    if (!locked) patch.monthlyAmount = current.monthly;
+    if (current.start) {
+      patch.startDate = current.start;
+      if (current.start !== income.startDate) patch.startDayAfterPrevious = false;
+    }
+    patch.endDate = current.end && current.end.trim() ? current.end : null;
+    if (
+      income.kind === "ss" &&
+      (patch.startDate !== income.startDate || patch.endDate !== income.endDate)
+    ) {
+      patch.ssEstimated = false;
+    }
+    updateIncome(income.id, patch);
+    close();
+    setAsk(true);
+  }
+
   return (
-    <BriefTable
-      intro={intro}
-      note={note}
-      headers={[
-        { label: "Income" },
-        { label: "Monthly", align: "right", nowrap: true },
-        { label: "When", nowrap: true },
-      ]}
-      rows={rows.map((r) => [r.name, r.amount, r.window])}
-    />
+    <div>
+      <BriefTable
+        intro={intro}
+        note={note}
+        headers={[
+          { label: "Income" },
+          { label: "Monthly", align: "right", nowrap: true },
+          { label: "When", nowrap: true },
+        ]}
+        rows={rows.map((r) => [r.name, r.amount, r.window])}
+        onRow={open}
+      />
+      {ask ? (
+        <div className="mt-3 flex flex-col gap-2">
+          <p className="text-sm leading-relaxed text-fg">
+            This edit is saved. Re-execute the MACH RUN to score it.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <PrimaryButton
+              className="h-9 w-auto px-3 text-sm"
+              onClick={() => {
+                setAsk(false);
+                onExecute?.();
+              }}
+            >
+              Execute the MACH RUN
+            </PrimaryButton>
+            <button
+              type="button"
+              className="inline-flex h-9 items-center rounded-lg px-3 text-sm text-muted hover:text-fg"
+              onClick={() => {
+                setAsk(false);
+                onStale?.();
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {income && draft ? (
+        <div
+          className="fixed inset-0 z-[140] grid place-items-center bg-black/60 px-4"
+          role="presentation"
+          onMouseDown={close}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="paycheck-edit-title"
+            className="w-full max-w-md rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <p id="paycheck-edit-title" className="font-semibold text-fg">
+              Edit {shown?.name || income.name || "paycheck"}
+            </p>
+            <div className="mt-4 flex flex-col gap-3">
+              <Field label="Name">
+                <TextInput
+                  value={draft.name}
+                  onChange={(e) => patchDraft({ name: e.target.value })}
+                />
+              </Field>
+              {locked ? (
+                <Field
+                  label="Monthly"
+                  hint="This amount comes from the Income section."
+                >
+                  <p className="text-sm tabular-nums text-fg">{shown?.amount}</p>
+                </Field>
+              ) : (
+                <Field label="Monthly">
+                  <MoneyInput
+                    value={draft.monthly}
+                    onValue={(n) => patchDraft({ monthly: n })}
+                  />
+                </Field>
+              )}
+              <Field label="Start">
+                <MonthInput
+                  value={draft.start}
+                  onValue={(v) => patchDraft({ start: v })}
+                />
+              </Field>
+              <Field label="End (blank = keeps paying)">
+                <MonthInput
+                  clearable
+                  value={draft.end}
+                  onValue={(v) => patchDraft({ end: v || null })}
+                />
+              </Field>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <PrimaryButton className="h-9 w-auto px-3 text-sm" onClick={save}>
+                Save
+              </PrimaryButton>
+              <button
+                type="button"
+                className="inline-flex h-9 items-center rounded-lg px-3 text-sm text-muted hover:text-fg"
+                onClick={close}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -158,12 +359,16 @@ export function PeerBriefCard({
   plan,
   sim,
   onUseRecommended,
+  onExecute,
+  onStale,
 }: {
   brief: PeerBrief | null;
   ran: boolean;
   plan?: Plan;
   sim?: SimResult;
   onUseRecommended?: (date: string) => void;
+  onExecute?: () => void;
+  onStale?: () => void;
 }) {
   const ent = useEntitlement();
   const includeNetWorth = hasBalanceSheet(ent.plan);
@@ -275,6 +480,8 @@ export function PeerBriefCard({
                     intro={s.columns.intro}
                     note={s.columns.note}
                     rows={s.columns.rows}
+                    onExecute={onExecute}
+                    onStale={onStale}
                   />
                 ) : (
                   <BriefBody text={s.body} className={s.title ? "mt-1" : undefined} />

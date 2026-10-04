@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { CashShortNotice } from "@/components/meridian/cash-short-notice";
 import { InstitutionMark } from "@/components/meridian/institution-field";
 import { canDownloadInvestmentAudit } from "@/lib/ops/audit-download-api";
@@ -129,6 +129,72 @@ function sumLabeled(
     .sort((a, b) => b.amount - a.amount);
 }
 
+function footerClearance(): number {
+  const view = window.innerHeight - 8;
+  const footer = document.querySelector("footer");
+  if (!footer) return view;
+  const top = footer.getBoundingClientRect().top;
+  if (top > 0 && top < window.innerHeight) return Math.min(view, top - 8);
+  return view;
+}
+
+function AnchoredTip({
+  x,
+  y,
+  className,
+  children,
+}: {
+  x: number;
+  y: number;
+  className: string;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [box, setBox] = useState<{ left: number; top: number; maxHeight: number } | null>(null);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const pad = 14;
+    const margin = 8;
+    const width = el.offsetWidth;
+    const height = el.scrollHeight;
+    const bottomLimit = footerClearance();
+    let left = x + pad;
+    if (left + width > window.innerWidth - margin) left = x - width - pad;
+    left = Math.max(margin, Math.min(left, window.innerWidth - width - margin));
+    const spaceAbove = y - pad - margin;
+    const spaceBelow = bottomLimit - (y + pad);
+    const above = spaceAbove >= height || spaceAbove >= spaceBelow;
+    const room = Math.max(48, above ? spaceAbove : spaceBelow);
+    const maxHeight = Math.min(height, room);
+    const top = above
+      ? Math.max(margin, y - pad - maxHeight)
+      : Math.max(margin, Math.min(y + pad, bottomLimit - maxHeight));
+    setBox((prev) =>
+      prev && prev.left === left && prev.top === top && prev.maxHeight === maxHeight
+        ? prev
+        : { left, top, maxHeight },
+    );
+  }, [x, y]);
+
+  return (
+    <div
+      ref={ref}
+      role="tooltip"
+      className={`${className} overflow-y-auto`}
+      style={{
+        left: box?.left ?? x,
+        top: box?.top ?? -9999,
+        maxHeight: box?.maxHeight,
+        visibility: box ? "visible" : "hidden",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 function LinesTip({
   x,
   y,
@@ -150,10 +216,10 @@ function LinesTip({
   total?: number;
 }) {
   return (
-    <div
-      role="tooltip"
+    <AnchoredTip
+      x={x}
+      y={y}
       className="pointer-events-none fixed z-[80] w-96 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-elevated px-3 py-2.5 text-left shadow-lg"
-      style={{ left: x, top: y }}
     >
       <p className="text-xs font-bold uppercase tracking-wider text-subtle">
         {title}
@@ -188,21 +254,12 @@ function LinesTip({
       {note ? (
         <p className="mt-2 text-xs leading-snug text-muted">{note}</p>
       ) : null}
-    </div>
+    </AnchoredTip>
   );
 }
 
-function tipPoint(
-  e: { clientX: number; clientY: number },
-  height = 200,
-): { x: number; y: number } {
-  const pad = 14;
-  const width = 320;
-  let x = e.clientX + pad;
-  let y = e.clientY + pad;
-  if (x + width > window.innerWidth - 8) x = e.clientX - width - pad;
-  if (y + height > window.innerHeight - 8) y = e.clientY - height - pad;
-  return { x: Math.max(8, x), y: Math.max(8, y) };
+function tipAnchor(e: { clientX: number; clientY: number }): { x: number; y: number } {
+  return { x: e.clientX, y: e.clientY };
 }
 
 export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
@@ -240,7 +297,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
     mode: LedgerTip["mode"],
     e: { clientX: number; clientY: number },
   ) {
-    const pt = tipPoint(e);
+    const pt = tipAnchor(e);
     setTip({ year, mode, ...pt });
   }
 
@@ -539,16 +596,16 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
                   className={cls}
                   onMouseEnter={
                     label === "A.I.R."
-                      ? (e) => setAirTip(tipPoint(e))
+                      ? (e) => setAirTip(tipAnchor(e))
                       : label === "Drawn"
-                        ? (e) => setDrawnTip(tipPoint(e, 280))
+                        ? (e) => setDrawnTip(tipAnchor(e))
                         : undefined
                   }
                   onMouseMove={
                     label === "A.I.R."
-                      ? (e) => setAirTip(tipPoint(e))
+                      ? (e) => setAirTip(tipAnchor(e))
                       : label === "Drawn"
-                        ? (e) => setDrawnTip(tipPoint(e, 280))
+                        ? (e) => setDrawnTip(tipAnchor(e))
                         : undefined
                   }
                   onMouseLeave={
@@ -678,10 +735,10 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
         </table>
       </div>
       {drawnTip ? (
-        <div
-          role="tooltip"
+        <AnchoredTip
+          x={drawnTip.x}
+          y={drawnTip.y}
           className="pointer-events-none fixed z-[80] w-80 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-elevated px-3 py-2.5 text-left shadow-lg"
-          style={{ left: drawnTip.x, top: drawnTip.y }}
         >
           <p className="text-xs font-bold uppercase tracking-wider text-subtle">
             Drawn
@@ -695,13 +752,13 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
             TSP), grossed up for tax, then Roth. A house, a 529, or any
             account not marked spendable is not used.
           </p>
-        </div>
+        </AnchoredTip>
       ) : null}
       {airTip ? (
-        <div
-          role="tooltip"
+        <AnchoredTip
+          x={airTip.x}
+          y={airTip.y}
           className="pointer-events-none fixed z-[80] w-80 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-elevated px-3 py-2.5 text-left shadow-lg"
-          style={{ left: airTip.x, top: airTip.y }}
         >
           <p className="text-xs font-bold uppercase tracking-wider text-subtle">
             A.I.R.
@@ -712,13 +769,13 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
             retirement, plus withdrawals from that month on. Not the job. Not
             the Spendable balance.
           </p>
-        </div>
+        </AnchoredTip>
       ) : null}
       {tip?.mode === "cap" && capLines.length ? (
-        <div
-          role="tooltip"
+        <AnchoredTip
+          x={tip.x}
+          y={tip.y}
           className="pointer-events-none fixed z-[80] w-80 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-elevated px-3 py-2.5 text-left shadow-lg"
-          style={{ left: tip.x, top: tip.y }}
         >
           <p className="text-xs font-bold uppercase tracking-wider text-negative">
             {tip.year} capped
@@ -728,13 +785,13 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
               <li key={line}>{line}</li>
             ))}
           </ul>
-        </div>
+        </AnchoredTip>
       ) : null}
       {tip?.mode === "income" ? (
-        <div
-          role="tooltip"
+        <AnchoredTip
+          x={tip.x}
+          y={tip.y}
           className="pointer-events-none fixed z-[80] w-72 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-elevated px-3 py-2.5 text-left shadow-lg"
-          style={{ left: tip.x, top: tip.y }}
         >
           <p className="text-xs font-bold uppercase tracking-wider text-subtle">
             {tip.year} income
@@ -763,13 +820,13 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
             Paychecks, required minimum distributions, and employer match for
             this year. {dollarsNote()}
           </p>
-        </div>
+        </AnchoredTip>
       ) : null}
       {tip?.mode === "air" ? (
-        <div
-          role="tooltip"
+        <AnchoredTip
+          x={tip.x}
+          y={tip.y}
           className="pointer-events-none fixed z-[80] w-80 max-w-[calc(100vw-16px)] rounded-lg border border-border bg-elevated px-3 py-2.5 text-left shadow-lg"
-          style={{ left: tip.x, top: tip.y }}
         >
           <p className="text-xs font-bold uppercase tracking-wider text-subtle">
             {tip.year} Actual Income Retired
@@ -805,7 +862,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
             pension, other retirement, plus withdrawals from the retirement
             month on. Not the job. Not the Spendable balance. {dollarsNote()}
           </p>
-        </div>
+        </AnchoredTip>
       ) : null}
       {tip && yearRow && tip.mode === "year" ? (
         <LinesTip
