@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/field";
 import type { AccountKind, Mortgage, Plan, Portfolio, TaxBucket } from "@/lib/plan/types";
 import { newId, usePlanStore } from "@/lib/plan/store";
-import { usd } from "@/lib/plan/format";
+import { usd, pct } from "@/lib/plan/format";
 import { startingNetWorth } from "@/lib/plan/engine";
 import {
   emptyMortgage,
@@ -76,7 +76,15 @@ const slotValue = "w-[8rem] max-w-full shrink-0";
 const slotOwner = "w-[8rem] max-w-full shrink-0";
 const control = "h-10 max-w-full";
 const summaryCols =
-  "@min-[46rem]:grid @min-[46rem]:min-w-[72rem] @min-[46rem]:grid-cols-[minmax(9rem,1.15fr)_minmax(7.5rem,0.85fr)_minmax(8rem,10rem)_minmax(6.5rem,0.7fr)_minmax(7rem,0.8fr)_minmax(7rem,0.75fr)_7.25rem] @min-[46rem]:items-center @min-[46rem]:gap-x-4";
+  "grid min-w-[64rem] grid-cols-[minmax(10rem,1.25fr)_minmax(8rem,0.9fr)_minmax(7.5rem,0.8fr)_minmax(6.5rem,0.7fr)_minmax(5.5rem,0.55fr)_minmax(8rem,0.85fr)_minmax(7rem,0.7fr)_6.5rem] items-center gap-x-3";
+
+function asOfLabel(iso: string): string {
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const month = Number(iso.slice(5, 7));
+  const year = iso.slice(0, 4);
+  if (!year || month < 1 || month > 12) return "today";
+  return `${months[month - 1]} ${year}`;
+}
 
 export function PortfolioForm() {
   const plan = usePlanStore((s) => s.plan);
@@ -95,7 +103,7 @@ export function PortfolioForm() {
   const copy = usePlannerCopy();
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
+    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
       {copy.assetsBody.trim() ? (
         <p className="whitespace-pre-wrap text-sm text-muted">
           {fillPlanner(copy.assetsBody, {
@@ -105,15 +113,16 @@ export function PortfolioForm() {
           })}
         </p>
       ) : null}
-      <ul className={`flex flex-col gap-2 overflow-x-auto ${summaryCols}`}>
+      <ul className={`gap-2 overflow-x-auto ${summaryCols}`}>
         {plan.portfolios.length > 0 ? (
-          <li className="col-span-full hidden grid-cols-subgrid items-center text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid">
-            <span className="min-w-0 pl-3">Name</span>
-            <span className="min-w-0">Kind</span>
-            <span className="min-w-0">Value</span>
-            <span className="min-w-0">Tax</span>
-            <span className="min-w-0">Flags</span>
-            <span className="min-w-0">Owner</span>
+          <li className="col-span-full grid grid-cols-subgrid items-end pb-1 text-[0.68rem] font-medium uppercase leading-tight tracking-[0.08em] text-subtle">
+            <span className="min-w-0 pl-3">Account name</span>
+            <span className="min-w-0">Account type</span>
+            <span className="min-w-0">Balance as-of {asOfLabel(plan.assumptions.asOfDate)}</span>
+            <span className="min-w-0">Tax category</span>
+            <span className="min-w-0">Rate of return</span>
+            <span className="min-w-0">Include in</span>
+            <span className="min-w-0">Account owner</span>
             <span className="pr-3" />
           </li>
         ) : null}
@@ -377,9 +386,9 @@ function AccountTile({
   );
 
   return (
-    <li className="col-span-full rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)] @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid @min-[46rem]:items-center @min-[46rem]:px-0">
+    <li className="col-span-full grid grid-cols-subgrid items-center rounded-lg bg-section-lift px-0 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
       <div
-        className="col-span-full grid px-0 transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:px-3"
+        className="col-span-full grid px-3 transition-[grid-template-rows] duration-300 ease-out"
         style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
         inert={!open}
       >
@@ -411,11 +420,11 @@ function AccountTile({
         </div>
       </div>
       <div
-        className="col-span-full grid transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:grid-cols-subgrid"
+        className="col-span-full grid grid-cols-subgrid transition-[grid-template-rows] duration-300 ease-out"
         style={{ gridTemplateRows: open ? "0fr" : "1fr" }}
         inert={open}
       >
-        <div className="col-span-full min-h-0 overflow-hidden @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid">
+        <div className="col-span-full grid min-h-0 grid-cols-subgrid overflow-hidden">
           <AccountSummary
             plan={plan}
             portfolio={p}
@@ -448,66 +457,39 @@ function AccountSummary({
   const owner =
     accountOwnerOptions(plan, p.kind).find((o) => o.value === ownerValue)?.label ??
     "Select owner";
+  const rate = p.returnPct ?? plan.assumptions.defaultReturnPct;
   const flags = [
     p.spendable ? "Spendable" : null,
     showNetWorth && p.includeInNetWorth ? "Net worth" : null,
+    p.kind === "real_estate" && mortgageAssociated(p.mortgage) ? "Mortgage" : null,
   ].filter(Boolean);
-  const mortgage =
-    p.kind === "real_estate" && mortgageAssociated(p.mortgage) ? "mortgage" : null;
   return (
-    <>
-      <div className="col-span-full flex items-center gap-3 @min-[46rem]:hidden">
-        <p className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-sm text-fg">
-          {p.kind === "real_estate" ? null : (
-            <InstitutionMark
-              institutionId={p.institutionId ?? null}
-              institutionName={p.institutionName ?? ""}
-              size={18}
-            />
-          )}
-          <span className="min-w-0 truncate">
-            <span className="font-medium">{p.name.trim() || "Account"}</span>
-            <span className="text-muted"> · {kind}</span>
-            <span className="text-muted"> · {usd(p.currentValue)}</span>
-            <span className="text-muted"> · {tax}</span>
-            <span className="text-muted"> · {flags.length ? flags.join(", ") : "—"}</span>
-            <span className="text-muted"> · {owner}</span>
-            {mortgage ? <span className="text-muted"> · {mortgage}</span> : null}
-          </span>
-        </p>
-        <button type="button" className="shrink-0 text-xs text-muted hover:text-negative" onClick={onRemove}>
+    <div className="col-span-full grid grid-cols-subgrid items-center text-sm">
+      <span className="flex min-w-0 items-center gap-1.5 pl-3 font-medium text-fg">
+        {p.kind === "real_estate" ? null : (
+          <InstitutionMark
+            institutionId={p.institutionId ?? null}
+            institutionName={p.institutionName ?? ""}
+            size={18}
+          />
+        )}
+        <span className="min-w-0 truncate">{p.name.trim() || "Account"}</span>
+      </span>
+      <span className="min-w-0 truncate text-muted">{kind}</span>
+      <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-fg">{usd(p.currentValue)}</span>
+      <span className="min-w-0 truncate text-muted">{tax}</span>
+      <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-muted">{pct(rate)}</span>
+      <span className="min-w-0 truncate text-muted">{flags.length ? flags.join(", ") : "—"}</span>
+      <span className="min-w-0 truncate text-muted">{owner}</span>
+      <span className="flex min-w-0 items-center justify-end gap-3 pr-3">
+        <button type="button" className="text-xs text-muted hover:text-negative" onClick={onRemove}>
           Remove
         </button>
-        <button type="button" className="shrink-0 text-sm font-medium text-fg" onClick={onEdit}>
+        <button type="button" className="font-medium text-fg" onClick={onEdit}>
           Edit
         </button>
-      </div>
-      <div className="col-span-full hidden grid-cols-subgrid items-center text-sm @min-[46rem]:grid">
-        <span className="flex min-w-0 items-center gap-1.5 pl-3 font-medium text-fg">
-          {p.kind === "real_estate" ? null : (
-            <InstitutionMark
-              institutionId={p.institutionId ?? null}
-              institutionName={p.institutionName ?? ""}
-              size={18}
-            />
-          )}
-          <span className="min-w-0 truncate">{p.name.trim() || "Account"}</span>
-        </span>
-        <span className="min-w-0 truncate text-muted">{kind}</span>
-        <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-fg">{usd(p.currentValue)}</span>
-        <span className="min-w-0 truncate text-muted">{tax}</span>
-        <span className="min-w-0 truncate text-muted">{flags.length ? flags.join(", ") : "—"}</span>
-        <span className="min-w-0 truncate text-muted">{owner}</span>
-        <span className="flex min-w-0 items-center justify-end gap-3 pr-3">
-          <button type="button" className="text-xs text-muted hover:text-negative" onClick={onRemove}>
-            Remove
-          </button>
-          <button type="button" className="font-medium text-fg" onClick={onEdit}>
-            Edit
-          </button>
-        </span>
-      </div>
-    </>
+      </span>
+    </div>
   );
 }
 
