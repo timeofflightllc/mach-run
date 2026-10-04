@@ -1,6 +1,10 @@
+import { useState } from "react";
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
 import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from "@/lib/auth/provider";
+import { loadSessionSnapshot } from "@/lib/auth/session-snapshot-api";
+import { SessionSnapshotProvider } from "@/lib/auth/session-snapshot-context";
+import type { SessionSnapshot } from "@/lib/auth/session-snapshot";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { IdleLockGate } from "@/components/meridian/idle-lock";
 import appCss from "../styles.css?url";
@@ -8,6 +12,17 @@ import appCss from "../styles.css?url";
 const APP_NAME = "The Supersonic Retirement Calculator";
 
 export const Route = createRootRoute({
+  // Painted once per document. A later refetch must not flip a name back to
+  // Sign In while the browser session check is still pending.
+  staleTime: Number.POSITIVE_INFINITY,
+  loader: async () => {
+    try {
+      const sessionUser = await loadSessionSnapshot();
+      return { sessionUser: sessionUser ?? null };
+    } catch {
+      return { sessionUser: null as SessionSnapshot | null };
+    }
+  },
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -58,7 +73,13 @@ export const Route = createRootRoute({
       },
     ],
   }),
-  component: () => (
+  component: RootShell,
+});
+
+function RootShell() {
+  const { sessionUser } = Route.useLoaderData();
+  const [snapshot] = useState(sessionUser);
+  return (
     <html
       lang="en"
       className="antialiased"
@@ -69,13 +90,15 @@ export const Route = createRootRoute({
       </head>
       <body className="bg-bg text-fg">
         <PreviewHostBridge />
-        <AuthProvider>
-          <IdleLockGate />
-          <Outlet />
-        </AuthProvider>
+        <SessionSnapshotProvider value={snapshot}>
+          <AuthProvider>
+            <IdleLockGate />
+            <Outlet />
+          </AuthProvider>
+        </SessionSnapshotProvider>
         <Analytics />
         <Scripts />
       </body>
     </html>
-  ),
-});
+  );
+}
