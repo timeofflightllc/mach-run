@@ -104,6 +104,7 @@ const LOCAL_DEV_ORIGINS: string[] = [
   "http://127.0.0.1:8080",
   "http://[::1]:8080",
 ];
+const PUBLIC_ORIGINS: string[] = ["https://machrun.com", "https://www.machrun.com"];
 const baseURL = explicitBaseURL ?? {
   // Include loopback hosts so dynamic baseURL resolves for local email/password
   // (not only the preview wildcard).
@@ -117,12 +118,13 @@ const baseURL = explicitBaseURL ?? {
 // Origins Better Auth accepts on credentialed POSTs (sign-up/sign-in, etc.).
 // Missing entries here surface as FORBIDDEN "Invalid origin".
 const trustedOrigins: string[] = explicitBaseURL
-  ? [explicitBaseURL, ...LOCAL_DEV_ORIGINS]
+  ? [explicitBaseURL, ...PUBLIC_ORIGINS, ...LOCAL_DEV_ORIGINS]
   : [
       // Host wildcards (matched against Origin's host)
       ...previewAllowedHosts,
       // Full-origin wildcards (matched against Origin)
       ...previewAllowedHosts.flatMap((host) => [`https://${host}`, `http://${host}`]),
+      ...PUBLIC_ORIGINS,
       ...LOCAL_DEV_ORIGINS,
     ];
 
@@ -174,6 +176,9 @@ const grokOAuthPlugin = authConfigured
   : null;
 
 const apple = await appleSocialProvider();
+const googleClientId = env("GOOGLE_CLIENT_ID");
+const googleClientSecret = env("GOOGLE_CLIENT_SECRET");
+const googleConfigured = Boolean(googleClientId && googleClientSecret);
 
 export const auth = betterAuth({
   baseURL,
@@ -201,6 +206,7 @@ export const auth = betterAuth({
         ...GROK_PROVIDERS.map((p) => p.providerId),
         GATE_PROVIDER_ID,
         ...(appleConfigured ? ["apple"] : []),
+        ...(googleConfigured ? ["google"] : []),
       ],
       // X's synthetic email is never "verified", so don't gate linking on the
       // local user's email-verified state.
@@ -254,13 +260,25 @@ export const auth = betterAuth({
     },
   },
 
-  ...(apple
+  ...((apple || googleConfigured)
     ? {
         socialProviders: {
-          apple: {
-            clientId: apple.clientId,
-            clientSecret: apple.clientSecret,
-          },
+          ...(apple
+            ? {
+                apple: {
+                  clientId: apple.clientId,
+                  clientSecret: apple.clientSecret,
+                },
+              }
+            : {}),
+          ...(googleConfigured
+            ? {
+                google: {
+                  clientId: googleClientId as string,
+                  clientSecret: googleClientSecret as string,
+                },
+              }
+            : {}),
         },
       }
     : {}),

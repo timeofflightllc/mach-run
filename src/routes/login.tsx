@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
-import { GROK_PROVIDERS, appleSignInEnabled, authClient, authEnabled, signIn, signInWithApple } from "@/lib/auth/client";
+import { GROK_PROVIDERS, appleSignInEnabled, authClient, authEnabled, signIn, signInWithApple, signInWithGoogle } from "@/lib/auth/client";
 import { afterAuthHref, loginSearch, registerForPlanHref } from "@/lib/billing/checkout-intent";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { TurnstileBox, turnstileEnabled } from "@/components/auth/turnstile-box";
@@ -267,7 +267,18 @@ function Login() {
                   <button
                     key={p.providerId}
                     type="button"
-                    onClick={() => void signIn(p.providerId, { callbackURL: next, errorCallbackURL: retry })}
+                    onClick={() => {
+                      setBusy(true);
+                      setError(null);
+                      const start =
+                        p.providerId === "grok-google"
+                          ? signInWithGoogle(next, retry)
+                          : signIn(p.providerId, { callbackURL: next, errorCallbackURL: retry });
+                      void start.catch((err) => {
+                        setError(err instanceof Error ? err.message : "Sign-in failed.");
+                        setBusy(false);
+                      });
+                    }}
                     className="h-11 w-full rounded-lg bg-bg text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
                   >
                     Continue with {p.label}

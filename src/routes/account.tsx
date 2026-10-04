@@ -10,7 +10,7 @@ import { formatDeskTrialEnd } from "@/lib/billing/desk-trial";
 import { canDownloadBackup } from "@/lib/billing/limits";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { sendTestSignupAlert, signupAlertStatus, emailPrefsStatus, setOptionalEmails } from "@/lib/notify/api";
-import { authClient, signIn, signInWithApple, signOut } from "@/lib/auth/client";
+import { authClient, signIn, signInWithApple, signInWithGoogle, signOut } from "@/lib/auth/client";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/auth/email-password";
 import { deleteMyAccount, getDeleteOptions } from "@/lib/auth/delete-account-api";
 import type { DeleteProvider } from "@/lib/auth/delete-account";
@@ -283,7 +283,9 @@ function Account() {
     try {
       const dest = `${window.location.origin}/account?delete=1`;
       if (providerId === "apple") await signInWithApple(dest);
-      else await signIn(providerId, { callbackURL: dest, errorCallbackURL: dest });
+      else if (providerId === "google" || providerId === "grok-google") {
+        await signInWithGoogle(dest, dest);
+      } else await signIn(providerId, { callbackURL: dest, errorCallbackURL: dest });
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : "Could not start sign-in.");
       setDeleteBusy(false);

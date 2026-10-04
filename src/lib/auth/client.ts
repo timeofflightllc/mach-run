@@ -156,10 +156,12 @@ export async function signIn(
   if (data?.url) window.location.href = data.url;
 }
 
-/** Apple is a first-party Better Auth social provider, not the Grok broker. */
-export async function signInWithApple(
-  callbackURL = "/",
-  errorCallbackURL = "/login",
+/** First-party Better Auth social sign-in (Apple, and Google when configured). */
+async function signInWithSocial(
+  provider: "apple" | "google",
+  callbackURL: string,
+  errorCallbackURL: string,
+  notConfigured: string,
 ): Promise<void> {
   await runPreSignInSignOut({
     livePreview: inLivePreview(),
@@ -170,11 +172,11 @@ export async function signInWithApple(
   const social = authClient.signIn.social;
   if (typeof social === "function") {
     const { data, error } = await social({
-      provider: "apple",
+      provider,
       callbackURL,
       errorCallbackURL,
     });
-    if (error) throw new Error(error.message ?? "Apple sign-in failed");
+    if (error) throw new Error(error.message ?? `${provider} sign-in failed`);
     if (data?.url) {
       window.location.href = data.url;
       return;
@@ -185,7 +187,7 @@ export async function signInWithApple(
     credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      provider: "apple",
+      provider,
       callbackURL,
       errorCallbackURL,
     }),
@@ -199,10 +201,38 @@ export async function signInWithApple(
     window.location.href = json.url;
     return;
   }
-  throw new Error(
-    json.error?.message ??
-      json.message ??
-      "Apple sign-in is not configured on the server. Check APPLE_* env vars and redeploy.",
+  throw new Error(json.error?.message ?? json.message ?? notConfigured);
+}
+
+/** Apple is a first-party Better Auth social provider, not the Grok broker. */
+export async function signInWithApple(
+  callbackURL = "/",
+  errorCallbackURL = "/login",
+): Promise<void> {
+  return signInWithSocial(
+    "apple",
+    callbackURL,
+    errorCallbackURL,
+    "Apple sign-in is not configured on the server. Check APPLE_* env vars and redeploy.",
+  );
+}
+
+/**
+ * Production uses the Google Cloud client (GOOGLE_CLIENT_ID / SECRET).
+ * Live preview still goes through the broker, which accepts the sandbox host.
+ */
+export async function signInWithGoogle(
+  callbackURL = "/",
+  errorCallbackURL = "/login",
+): Promise<void> {
+  if (inLivePreview()) {
+    return signIn("grok-google", { callbackURL, errorCallbackURL });
+  }
+  return signInWithSocial(
+    "google",
+    callbackURL,
+    errorCallbackURL,
+    "Google sign-in is not configured. Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET, then redeploy.",
   );
 }
 
