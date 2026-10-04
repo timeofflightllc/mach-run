@@ -139,7 +139,7 @@ function Top3DeskDoor() {
   return (
     <main className="min-h-screen bg-bg text-fg">
       <header className="canopy-bar border-b border-border">
-        <div className="desk-gutter mx-auto flex max-w-6xl items-center justify-between gap-4 py-2.5">
+        <div className="desk-gutter mx-auto flex max-w-[90rem] items-center justify-between gap-4 py-2.5">
           <Link to="/" className="inline-flex shrink-0">
             <BrandLockup framed />
           </Link>
@@ -151,7 +151,7 @@ function Top3DeskDoor() {
           </p>
         </div>
       </header>
-      <div className="desk-gutter mx-auto w-full max-w-6xl space-y-6 py-8">
+      <div className="desk-gutter mx-auto w-full max-w-[90rem] space-y-6 py-8">
         <header>
           <p className="text-sm text-muted">
             {tab === "users"
@@ -172,7 +172,7 @@ function Top3DeskDoor() {
           </p>
         </header>
 
-        <div className="flex max-w-4xl rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+        <div className="flex max-w-[70rem] rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
           {(
             [
               ["roster", "Roster"],
