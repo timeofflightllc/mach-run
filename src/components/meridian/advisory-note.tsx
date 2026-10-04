@@ -266,15 +266,16 @@ function SideEditor({
     <div className="rounded-lg px-3 py-3" style={YELLOW}>
       <p className="text-sm font-semibold text-fg">{title}</p>
       <p className="text-sm text-fg">{side.name}</p>
-      <div className="mt-2 grid gap-3 sm:grid-cols-3">
-        <Field label="$ / month">
+      <div className="mt-2 grid gap-3 sm:grid-cols-[6.5rem_minmax(0,1fr)_minmax(0,1fr)] sm:items-end sm:gap-2">
+        <Field label="$ / month" className="sm:w-[6.5rem]">
           <MoneyInput value={side.amount} onValue={(monthlyAmount) => onPatch({ monthlyAmount })} />
         </Field>
         <Field label="Start">
-          <MonthInput value={side.start} onValue={(startDate) => startDate && onPatch({ startDate })} />
+          <MonthInput compact value={side.start} onValue={(startDate) => startDate && onPatch({ startDate })} />
         </Field>
         <Field label="End">
           <MonthInput
+            compact
             value={side.end}
             clearable
             onValue={(endDate) => onPatch({ endDate: endDate || null })}

@@ -370,11 +370,13 @@ export function MonthInput({
   min,
   max,
   clearable,
+  compact,
   ...props
 }: Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "onChange"> & {
   value: string | null;
   onValue: (v: string) => void;
   clearable?: boolean;
+  compact?: boolean;
 }) {
   const parts = splitIso(value);
   const [yearDraft, setYearDraft] = useState(parts.y);
@@ -426,7 +428,7 @@ export function MonthInput({
           }
           emit(yearDraft.length === 4 ? yearDraft : parts.y, m);
         }}
-        className={cn(datePartClass, "w-[6.25rem] shrink-0 pr-1")}
+        className={cn(datePartClass, compact ? "w-[5.5rem] shrink-0 pr-1" : "w-[6.25rem] shrink-0 pr-1")}
       >
         <option value="">Month</option>
         {MONTHS.map((mo) => (
@@ -450,7 +452,7 @@ export function MonthInput({
           if (y.length === 4) emit(y, monthDraft || "01");
         }}
         onBlur={onYearBlur}
-        className={cn(datePartClass, "w-[4.75rem] px-2 text-center")}
+        className={cn(datePartClass, compact ? "w-[4.25rem] px-2 text-center" : "w-[4.75rem] px-2 text-center")}
       />
       {clearable && (value || yearDraft || monthDraft) ? (
         <button
