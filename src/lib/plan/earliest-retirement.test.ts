@@ -76,3 +76,23 @@ test("salary that is the only cover lasts until the longevity month", () => {
   assert.equal(rec.date, "2030-01-01");
   assert.equal(rec.age, 49);
 });
+
+test("a salary that starts later cannot fund retirement this month", () => {
+  const plan = base();
+  plan.portfolios = [portfolio(1_000)];
+  plan.spending = [spend(8_000)];
+  const later: IncomeStream = {
+    id: "later",
+    name: "Next job",
+    kind: "salary",
+    monthlyAmount: 20_000,
+    startDate: "2028-01-01",
+    endDate: null,
+    colaPct: 0,
+    taxTreatment: "ordinary",
+    person: "primary",
+  };
+  plan.incomes = [later];
+  const rec = earliestWorkableRetirement(plan);
+  assert.equal(rec.date, null);
+});

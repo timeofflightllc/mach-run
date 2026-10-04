@@ -31,7 +31,7 @@ function horizonMonth(plan: Plan, start: Date): Date {
   return monthStart(iso(addYears(start, 40)));
 }
 
-/** Plan as if earned paychecks and retirement-tied contributions stop on this month. */
+/** Plan as if every earned paycheck has stopped by this month. Guaranteed income keeps paying. */
 function planRetiringOn(plan: Plan, retireIso: string): Plan {
   const retire = retireIso.slice(0, 7);
   const incomes = plan.incomes.map((stream) => {
@@ -39,16 +39,28 @@ function planRetiringOn(plan: Plan, retireIso: string): Plan {
     const win = streamWindow(plan, stream);
     const start = (win.start || plan.assumptions.asOfDate).slice(0, 7);
     const end = win.end ? win.end.slice(0, 7) : null;
-    if (start > retire) return stream;
-    if (end && end < retire) return stream;
-    return {
-      ...stream,
-      startDate: win.start || stream.startDate,
-      endDate: retireIso,
+    const untie = {
       tiedToStageId: undefined,
       tiedToCareer: false,
       endMonthsBeforeStage: undefined,
       endMonthsBeforeCareer: undefined,
+    };
+    if (end && end < retire) return stream;
+    if (start > retire) {
+      const opened = win.start || stream.startDate || plan.assumptions.asOfDate;
+      return {
+        ...stream,
+        ...untie,
+        monthlyAmount: 0,
+        startDate: opened,
+        endDate: iso(addMonths(monthStart(opened), -1)),
+      };
+    }
+    return {
+      ...stream,
+      ...untie,
+      startDate: win.start || stream.startDate,
+      endDate: retireIso,
     };
   });
   const contributions = plan.contributions.map((rule) => {
@@ -100,7 +112,7 @@ export function recommendedRetirementCopy(plan: Plan, rec: RecommendedRetirement
   }
   const when = formatMonthYear(rec.date);
   const ageBit = rec.age != null ? ` (age ${rec.age})` : "";
-  const lead = `Earliest date this plan works: ${when}${ageBit}. That is the first month income plus the portfolio covers spending through age ${endAge}.`;
+  const lead = `Earliest earned pay can stop: ${when}${ageBit}. Salary, bonus, allowance, and other income end that month, including paychecks that have not started yet. Pension, military retired pay, VA, Social Security, other retirement income, and the portfolio then have to cover spending through age ${endAge} on their own.`;
   const goal = plan.assumptions.retirementGoalDate;
   if (!goal || !validIso(goal)) return lead;
   const g = goal.slice(0, 7);
