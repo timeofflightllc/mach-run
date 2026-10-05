@@ -20,6 +20,14 @@ const CHOICES: { id: SwingName; label: string }[] = [
   { id: "rough", label: "Rough" },
 ];
 
+function SurvivalTitle() {
+  return (
+    <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
+      Plan Survival (Monte Carlo Simulation)
+    </p>
+  );
+}
+
 export function PlanSurvival({
   locked,
   view,
@@ -36,24 +44,27 @@ export function PlanSurvival({
   if (locked) {
     return (
       <div className={card}>
-        <div className="pointer-events-none select-none opacity-60">
-          <p className="text-sm font-medium leading-relaxed text-slate-900">
-            {survivalSentence(85)}
-          </p>
-          <p className="mt-1 text-xs text-slate-600">
-            Sample only. Your 1,000 futures unlock on Individual Unlimited.
-          </p>
-        </div>
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-canopy/70 p-5">
-          <p className="max-w-none px-2 text-center text-xs font-medium leading-relaxed text-fg sm:text-sm">
-            <span className="block">Unlock Plan Survival with</span>
-            <Link
-              to="/pricing"
-              className="text-[#e8c547] underline decoration-[#e8c547]/80 underline-offset-4 hover:text-[#f6e7b0]"
-            >
-              Individual Unlimited or Advisor
-            </Link>
-          </p>
+        <SurvivalTitle />
+        <div className="relative mt-3">
+          <div className="pointer-events-none select-none opacity-60">
+            <p className="text-sm font-medium leading-relaxed text-slate-900">
+              {survivalSentence(85)}
+            </p>
+            <p className="mt-1 text-xs text-slate-600">
+              Sample only. Your 1,000 futures unlock on Individual Unlimited.
+            </p>
+          </div>
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-canopy/70 p-5">
+            <p className="max-w-none px-2 text-center text-xs font-medium leading-relaxed text-fg sm:text-sm">
+              <span className="block">Unlock Plan Survival with</span>
+              <Link
+                to="/pricing"
+                className="text-[#e8c547] underline decoration-[#e8c547]/80 underline-offset-4 hover:text-[#f6e7b0]"
+              >
+                Individual Unlimited or Advisor
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -61,7 +72,8 @@ export function PlanSurvival({
   if (!view) {
     return (
       <div className={card}>
-        <p className="text-sm leading-relaxed text-slate-800">Hit Calculate to run 1,000 futures.</p>
+        <SurvivalTitle />
+        <p className="mt-3 text-sm leading-relaxed text-slate-800">Hit Calculate to run 1,000 futures.</p>
       </div>
     );
   }
@@ -69,16 +81,17 @@ export function PlanSurvival({
   if (!view.open) {
     return (
       <button type="button" onClick={onOpen} className={cn(card, "w-full text-left")}>
-        <span className="text-sm font-medium text-slate-900">Plan Survival</span>
+        <SurvivalTitle />
       </button>
     );
   }
   const checking = view.status === "running" || !view.score;
   return (
     <div className={card}>
+      <SurvivalTitle />
       <p
         className={cn(
-          "text-sm leading-relaxed",
+          "mt-3 text-sm leading-relaxed",
           checking ? "text-slate-800" : "font-medium text-slate-900",
         )}
       >

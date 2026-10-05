@@ -136,30 +136,15 @@ export const Route = createFileRoute("/")({ component: Home });
 function ActChartColumn({
   plan,
   sim,
-  survival,
-  onSwing,
-  onClose,
-  onOpen,
 }: {
   plan: Plan;
   sim: SimResult;
-  survival: SurvivalView | null;
-  onSwing: (swing: SwingName) => void;
-  onClose: () => void;
-  onOpen: () => void;
 }) {
   const pins = useChartPins();
   const ent = useEntitlement();
   const unlocked = hasBalanceSheet(ent.plan);
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <PlanSurvival
-        locked={!unlocked}
-        view={survival}
-        onSwing={onSwing}
-        onClose={onClose}
-        onOpen={onOpen}
-      />
       <div ref={pins.wealthSlot}>
         <Pinnable pinned={pins.pinWealth} stackTop={pins.wealthTop}>
           <WealthChart
@@ -1508,13 +1493,13 @@ function Home() {
                           Act
                         </p>
                         <KpiStrip plan={displayPlan} sim={run.sim} />
-                        <div className="flex items-center justify-center">
-                          <CalculateButton
-                            label="Execute the MACH RUN"
-                            onCalculate={() => calculate({ stay: true })}
-                            className="h-9 w-auto min-w-[6.8rem] px-5 text-sm"
-                          />
-                        </div>
+                        <PlanSurvival
+                          locked={!sheet}
+                          view={survivalView}
+                          onSwing={chooseSwing}
+                          onClose={() => setSurvivalOpen(false)}
+                          onOpen={() => setSurvivalOpen(true)}
+                        />
                       </div>
                     </div>
                     <PeerBriefCard
@@ -1544,10 +1529,6 @@ function Home() {
                       <ActChartColumn
                         plan={displayPlan}
                         sim={run.sim}
-                        survival={survivalView}
-                        onSwing={chooseSwing}
-                        onClose={() => setSurvivalOpen(false)}
-                        onOpen={() => setSurvivalOpen(true)}
                       />
                     </div>
                     <OodaAiCard
