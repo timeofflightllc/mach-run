@@ -290,9 +290,10 @@ function Pricing() {
   return (
     <main className="min-h-screen bg-bg py-10 text-fg">
       <div className="page-gutter mx-auto w-full">
-        <PageMast />
+        <div className="mx-auto w-full max-w-7xl">
+          <PageMast />
 
-        <header className="mt-10 max-w-[50.5rem]">
+          <header className="mt-10 max-w-2xl">
           <h1 className="font-display text-4xl leading-tight text-fg sm:text-5xl">
             {copy.heroH1.split("\n").map((line, i) => (
               <span key={`${line}-${i}`}>
@@ -359,6 +360,7 @@ function Pricing() {
             ) : null}
           </p>
         </header>
+        </div>
 
         <div className="mt-8 flex justify-center">
           <div className="inline-flex rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
