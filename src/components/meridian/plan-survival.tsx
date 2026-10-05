@@ -23,7 +23,8 @@ const CHOICES: { id: SwingName; label: string }[] = [
 function SurvivalTitle() {
   return (
     <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
-      Plan Survival (Monte Carlo Simulation)
+      Plan Survival
+      <span className="mt-0.5 block tracking-[0.14em]">(Monte Carlo Simulation)</span>
     </p>
   );
 }
