@@ -49,6 +49,7 @@ function Account() {
   const [busy, setBusy] = useState<"profile" | "password" | "billing" | "card" | "alert" | null>(null);
   const [alertOwner, setAlertOwner] = useState(false);
   const [alertReady, setAlertReady] = useState(false);
+  const [alertKnown, setAlertKnown] = useState(false);
   const [optionalOk, setOptionalOk] = useState(true);
   const [prefsReady, setPrefsReady] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -74,9 +75,11 @@ function Account() {
       .then((s) => {
         setAlertOwner(s.owner);
         setAlertReady(s.configured);
+        setAlertKnown(true);
       })
       .catch(() => {
         setAlertOwner(false);
+        setAlertKnown(true);
       });
     void emailPrefsStatus()
       .then((p) => {
@@ -114,14 +117,14 @@ function Account() {
     setDeleteReauthed(true);
   }, [deleteReturn, user]);
 
-  if (isPending) {
+  if (isPending && !user) {
     return (
       <main className="grid min-h-screen place-items-center bg-bg text-muted">
         Loading account…
       </main>
     );
   }
-  if (!user || user.isDevFallback) return <RedirectToSignIn />;
+  if (!isPending && (!user || user.isDevFallback)) return <RedirectToSignIn />;
 
   async function openBilling() {
     setBusy("billing");
@@ -351,23 +354,46 @@ function Account() {
         {error ? <p className="text-sm text-negative">{error}</p> : null}
         {msg ? <p className="text-sm text-muted">{msg}</p> : null}
 
-        {alertOwner ? (
-          <div className="space-y-2 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
-            <p className="font-display text-lg text-fg">Signup alerts</p>
-            <p className="text-sm text-muted">
-              {alertReady
-                ? "This inbox gets an email when someone creates a MACH RUN account. The new user is not copied."
-                : "This inbox is marked as the owner, but Resend is not connected yet. Add RESEND_API_KEY and MACH_NOTIFY_EMAIL in Vercel."}
-            </p>
-            <button
-              type="button"
-              disabled={busy !== null || !alertReady}
-              onClick={() => void sendOwnerAlert()}
-              className="inline-flex h-11 w-full items-center justify-center rounded-lg px-4 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated disabled:opacity-60"
-            >
-              {busy === "alert" ? "Sending…" : "Send a test signup alert"}
-            </button>
-          </div>
+        {showGuestChrome || alertOwner ? (
+          <section className="space-y-5 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
+            <p className="font-display text-lg text-fg">Admin</p>
+            {showGuestChrome ? (
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-fg">Guest chrome preview</p>
+                <p className="text-sm leading-relaxed text-muted">
+                  Stay signed in. When this is on, the main page shows the hero and
+                  the Master Caution strip as if you were logged out. Your plan,
+                  save, and billing do not change. This switch is only on this
+                  browser.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => writeGuestChrome(!guestChrome)}
+                  className="inline-flex h-11 items-center justify-center rounded-lg px-4 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+                >
+                  {guestChrome ? "Turn guest view off" : "Show hero and Master Caution"}
+                </button>
+              </div>
+            ) : null}
+            {showGuestChrome || alertOwner ? (
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-fg">Signup alerts</p>
+                <p className="text-sm text-muted">
+                  {!alertKnown || alertReady
+                    ? "This inbox gets an email when someone creates a MACH RUN account. The new user is not copied."
+                    : "This inbox is marked as the owner, but Resend is not connected yet. Add RESEND_API_KEY and MACH_NOTIFY_EMAIL in Vercel."}
+                </p>
+                <button
+                  type="button"
+                  disabled={busy !== null || !alertReady}
+                  onClick={() => void sendOwnerAlert()}
+                  className="inline-flex h-11 w-full items-center justify-center rounded-lg px-4 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated disabled:opacity-60"
+                >
+                  {busy === "alert" ? "Sending…" : "Send a test signup alert"}
+                </button>
+              </div>
+            ) : null}
+          </section>
         ) : null}
 
         <div className="space-y-2">
@@ -570,25 +596,6 @@ function Account() {
           </button>
         </div>
         </div>
-
-        {showGuestChrome ? (
-          <div className="space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
-            <p className="font-display text-lg text-fg">Guest chrome preview</p>
-            <p className="text-sm leading-relaxed text-muted">
-              Stay signed in. When this is on, the main page shows the hero and
-              the Master Caution strip as if you were logged out. Your plan,
-              save, and billing do not change. This switch is only on this
-              browser.
-            </p>
-            <button
-              type="button"
-              onClick={() => writeGuestChrome(!guestChrome)}
-              className="inline-flex h-11 items-center justify-center rounded-lg px-4 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
-            >
-              {guestChrome ? "Turn guest view off" : "Show hero and Master Caution"}
-            </button>
-          </div>
-        ) : null}
 
         <p className="flex justify-center">
           <Link
