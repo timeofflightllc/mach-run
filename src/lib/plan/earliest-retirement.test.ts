@@ -96,3 +96,53 @@ test("a salary that starts later cannot fund retirement this month", () => {
   const rec = earliestWorkableRetirement(plan);
   assert.equal(rec.date, null);
 });
+
+test("spending dated to the goal is not ignored when work stops early", () => {
+  const plan = base();
+  plan.assumptions.projectionEndAge = 55;
+  plan.assumptions.retirementGoalDate = "2035-01-01";
+  plan.portfolios = [portfolio(200_000)];
+  const job: IncomeStream = {
+    id: "job",
+    name: "Job",
+    kind: "salary",
+    monthlyAmount: 30_000,
+    startDate: "2026-01-01",
+    endDate: "2035-01-01",
+    colaPct: 0,
+    taxTreatment: "ordinary",
+    person: "primary",
+  };
+  plan.incomes = [job];
+  plan.spending = [
+    {
+      id: "retire-spend",
+      label: "Retirement",
+      monthlyAmount: 10_000,
+      startDate: "2035-01-01",
+      endDate: null,
+    },
+  ];
+  const rec = earliestWorkableRetirement(plan);
+  assert.ok(rec.date);
+  assert.ok(rec.date > "2032-01-01");
+});
+
+test("a nest egg that covers the retirement budget can still stop earned pay now", () => {
+  const plan = base();
+  plan.assumptions.projectionEndAge = 55;
+  plan.assumptions.retirementGoalDate = "2035-01-01";
+  plan.portfolios = [portfolio(5_000_000)];
+  plan.spending = [
+    {
+      id: "retire-spend",
+      label: "Retirement",
+      monthlyAmount: 2_000,
+      startDate: "2035-01-01",
+      endDate: null,
+    },
+  ];
+  const rec = earliestWorkableRetirement(plan);
+  assert.equal(rec.date, "2026-01-01");
+});
+

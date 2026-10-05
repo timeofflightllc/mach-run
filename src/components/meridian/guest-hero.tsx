@@ -32,9 +32,9 @@ export function BombBurstSketch({ raised = false }: { raised?: boolean }) {
           <SmokeTrail d="M800 640 C 640 590, 383 373, 304 384 L 165 403" />
           <SmokeTrail d="M800 640 C 960 590, 1216 381, 1295 392 L 1434 412" />
           <g stroke="#1a2330" strokeLinecap="round" strokeLinejoin="round">
-            <SketchJet x={118} y={112} rotate={-152} scale={2.35} />
+            <SketchJet x={118} y={112} rotate={-152} scale={2.35} flip />
             <SketchJet x={1482} y={112} rotate={-28} scale={2.35} />
-            <SketchJet x={48} y={424} rotate={172} scale={2.2} />
+            <SketchJet x={48} y={424} rotate={172} scale={2.2} flip />
             <SketchJet x={1552} y={424} rotate={8} scale={2.2} />
           </g>
         </>
