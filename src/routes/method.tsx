@@ -22,7 +22,7 @@ function Method() {
         <SiteCopyBody
           body={page.body}
           aside={
-            <figure className="float-right mb-2 ml-4 w-36 sm:ml-6 sm:w-52 md:w-60">
+            <figure className="float-right mb-3 ml-4 w-72 sm:ml-6 sm:w-[26rem] md:w-[30rem]">
               <img
                 src="/brand/fa-18-vapor-cone.jpg?v=1"
                 alt="An F/A-18 in a vapor cone against a clear blue sky"

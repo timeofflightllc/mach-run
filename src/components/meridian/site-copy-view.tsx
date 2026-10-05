@@ -49,7 +49,7 @@ export function SiteCopyBody({
           const headingId = idMatch ? idMatch[2] : undefined;
           const rest = lines.slice(1).join(" ").trim();
           return (
-            <section key={i} className={i === 0 && aside ? "flow-root space-y-2" : "space-y-2"}>
+            <section key={i} className="space-y-2">
               <h2 id={headingId} className="scroll-mt-24 text-xl font-medium text-fg">
                 {heading}
               </h2>
