@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { downloadAnalysisPdf } from "@/lib/plan/analysis-pdf";
+import type { SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import type { BriefColumnRow, BriefSection, PeerBrief } from "@/lib/plan/peers";
 import type { IncomeStream, Plan, SimResult } from "@/lib/plan/types";
 import { GuestOnly, RealSignedIn } from "@/lib/auth/gates";
@@ -361,6 +362,7 @@ export function PeerBriefCard({
   onUseRecommended,
   onExecute,
   onStale,
+  survival,
 }: {
   brief: PeerBrief | null;
   ran: boolean;
@@ -369,6 +371,7 @@ export function PeerBriefCard({
   onUseRecommended?: (date: string) => void;
   onExecute?: () => void;
   onStale?: () => void;
+  survival?: SurvivalScore | null;
 }) {
   const ent = useEntitlement();
   const includeNetWorth = hasBalanceSheet(ent.plan);
@@ -413,7 +416,10 @@ export function PeerBriefCard({
         {plan && sim && brief.expanded ? (
           <PrimaryButton
             onClick={() => {
-              void downloadAnalysisPdf(brief, plan, sim, { includeNetWorth });
+              void downloadAnalysisPdf(brief, plan, sim, {
+                includeNetWorth,
+                survival: survival ?? null,
+              });
               void import("@/lib/ops/activity-api").then(({ pingActivity }) => {
                 pingActivity("pdf");
               });

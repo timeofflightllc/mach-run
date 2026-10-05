@@ -1,4 +1,5 @@
 import { addMonths, addYears, format, isBefore } from "date-fns";
+import { applyShock } from "./monte-carlo.ts";
 import { ensurePlan } from "./defaults.ts";
 import { vaPayTodayDollars } from "./va.ts";
 import {
@@ -340,7 +341,12 @@ function drawnBreakdown(months: MonthSnapshot[]): LedgerLine[] {
     .sort((a, b) => b.amount - a.amount);
 }
 
-export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
+export type ReturnShocks = {
+  stdev: number;
+  zForYear: (year: number) => number;
+};
+
+export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnShocks }): SimResult {
   const plan = ensurePlan(raw);
   const wantAudit = Boolean(opts?.audit);
   const audit: PlanAudit | null = wantAudit ? emptyAudit() : null;
@@ -392,6 +398,9 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
 
   let cursor = asOf;
   let guard = 0;
+  const shocks = opts?.shocks;
+  let shockYear = Number.NaN;
+  let shockZ = 0;
   const irsYtd = new Map<string, number>();
   const linkedLiabilityIds = new Set(
     plan.spending.map((phase) => phase.liabilityId).filter((id): id is string => Boolean(id)),
@@ -407,7 +416,17 @@ export function simulate(raw: Plan, opts?: { audit?: boolean }): SimResult {
     const auditAnnuityBasisOut = audit ? new Map<string, number>() : null;
 
     for (const p of plan.portfolios) {
-      const annual = (p.returnPct ?? plan.assumptions.defaultReturnPct) / 100;
+      const stated = (p.returnPct ?? plan.assumptions.defaultReturnPct) / 100;
+      let annual = stated;
+      if (shocks && p.kind !== "real_estate" && stated > 0) {
+        const year = cursor.getFullYear();
+        if (year !== shockYear) {
+          shockYear = year;
+          const z = shocks.zForYear(year);
+          shockZ = Number.isFinite(z) ? z : 0;
+        }
+        annual = applyShock(stated, shockZ, shocks.stdev);
+      }
       const mRet = yearlyRateToMonthly(annual);
       values.set(p.id, (values.get(p.id) ?? 0) * (1 + mRet));
     }

@@ -39,6 +39,7 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
     bullets: [
       "Everything in Individual, plus:",
       "Live Net Worth radar — assets vs liabilities",
+      "Plan Survival — 1,000 futures of this MACH RUN",
       "Liabilities (car, student, HELOC, other)",
       "Encrypted MACH RUN backup download",
       "Pay yearly, we throw in two months",

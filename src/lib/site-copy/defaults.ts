@@ -101,7 +101,7 @@ Free: register in about 30 seconds, save one household, with a limit of 2 accoun
 
 Individual ($4/month or $40/year): one household, unlimited accounts, contributions, and incomes, plus the full MACH OODA Financial Analysis and OODA AI on that MACH RUN. Net Worth stays locked.
 
-Individual Unlimited ($15/month or $150/year): everything in Individual, plus Net Worth (assets vs liabilities), a liabilities list, and encrypted MACH RUN backup download.
+Individual Unlimited ($15/month or $150/year): everything in Individual, plus Net Worth (assets vs liabilities), a liabilities list, Plan Survival, and encrypted MACH RUN backup download.
 
 Advisor Lite and Advisor Unlimited are for professionals who need named client profiles. Details and a 7-day trial live on [Pricing](/pricing). Yearly billing is two months on us.
 

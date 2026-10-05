@@ -7,6 +7,7 @@ import {
 } from "@/lib/plan/earliest-retirement";
 import { monthlyIncomeAt, startingSpendable } from "@/lib/plan/engine";
 import { usd } from "@/lib/plan/format";
+import { survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { nestEggTrack, peerRankLine, type PeerBrief } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
 
@@ -41,11 +42,13 @@ export function Verdict({
   plan,
   sim,
   brief,
+  survival,
   onUseRecommended,
 }: {
   plan: Plan;
   sim: SimResult;
   brief?: PeerBrief | null;
+  survival?: SurvivalScore | null;
   onUseRecommended?: (date: string) => void;
 }) {
   const real = plan.assumptions.dollars === "real";
@@ -104,6 +107,14 @@ export function Verdict({
         {plan.assumptions.projectionEndAge} is {usd(atTerm)} ({unit}).
         {retLine}
       </p>
+      {survival ? (
+        <div className="mt-3 text-sm leading-relaxed text-fg">
+          <p>{survivalSentence(survival.score)}</p>
+          {survival.runOutAge != null ? (
+            <p>In the futures that run out, the middle one runs out at age {survival.runOutAge}.</p>
+          ) : null}
+        </div>
+      ) : null}
       {brief?.recommendedRetirement ? (
         <RecommendedRetirement
           plan={plan}

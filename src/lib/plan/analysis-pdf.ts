@@ -1,6 +1,7 @@
 import type { BriefSection, PeerBrief } from "./peers";
 import type { Plan, SimResult } from "./types";
 import { usd } from "./format";
+import { survivalSentence, type SurvivalScore } from "./monte-carlo-run";
 import { OODA_DISCLAIMER } from "./disclaimer";
 import { startingNetWorth, startingSpendable } from "./engine";
 import { annuityEquivalentCopy } from "./annuity-equivalent";
@@ -309,6 +310,7 @@ function buildBlocks(
   plan: Plan,
   sim: SimResult,
   includeNetWorth: boolean,
+  survival: SurvivalScore | null,
 ): Block[] {
   const who = [plan.primary.name.trim(), plan.spouse.name.trim()].filter(Boolean).join(" & ");
   const blocks: Block[] = [
@@ -334,10 +336,20 @@ function buildBlocks(
           ? `Depletes at age ${sim.depletedAge} (${sim.depletedYear})`
           : `Funds through age ${plan.assumptions.projectionEndAge}`,
     },
-    { kind: "space", h: 6 },
-    { kind: "rule" },
-    { kind: "space", h: 8 },
   ];
+  if (survival) {
+    blocks.push({ kind: "space", h: 4 });
+    blocks.push({ kind: "body", text: survivalSentence(survival.score) });
+    if (survival.runOutAge != null) {
+      blocks.push({
+        kind: "body",
+        text: `In the futures that run out, the middle one runs out at age ${survival.runOutAge}.`,
+      });
+    }
+  }
+  blocks.push({ kind: "space", h: 6 });
+  blocks.push({ kind: "rule" });
+  blocks.push({ kind: "space", h: 8 });
   const radar: Array<ChartSpec | null> = [wealthChart(plan, sim), cashChart(plan, sim)];
   if (includeNetWorth) radar.push(netWorthChart(plan, sim));
   const charts = radar.filter((c): c is ChartSpec => Boolean(c));
@@ -520,7 +532,7 @@ export async function downloadAnalysisPdf(
   brief: PeerBrief,
   plan: Plan,
   sim: SimResult,
-  opts?: { includeNetWorth?: boolean },
+  opts?: { includeNetWorth?: boolean; survival?: SurvivalScore | null },
 ): Promise<void> {
   const logoRaw = await loadLogo();
   let logoDraw: { drawW: number; drawH: number } | null = null;
@@ -530,7 +542,13 @@ export async function downloadAnalysisPdf(
     logoDraw = { drawW, drawH };
   }
 
-  const blocks = buildBlocks(brief, plan, sim, Boolean(opts?.includeNetWorth));
+  const blocks = buildBlocks(
+    brief,
+    plan,
+    sim,
+    Boolean(opts?.includeNetWorth),
+    opts?.survival ?? null,
+  );
   const contentWidth = PAGE_W - MARGIN_X * 2;
   const bodyChars = 92;
   const titleChars = 72;

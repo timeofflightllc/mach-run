@@ -7,6 +7,7 @@ import { StaleRunPrompt } from "@/components/meridian/confirm-remove";
 import { CalculateButton } from "@/components/meridian/calculate-button";
 import { AdvisoryStrip } from "@/components/meridian/advisory-note";
 import { CashChart, NetWorthChart, WealthChart } from "@/components/meridian/charts";
+import { PlanSurvival, type SurvivalView } from "@/components/meridian/plan-survival";
 import { Pinnable, useChartPins } from "@/components/meridian/chart-pin";
 import { ContributionForm } from "@/components/meridian/contribution-form";
 import { AssumptionsForm, HouseholdForm } from "@/components/meridian/household-form";
@@ -27,6 +28,8 @@ import { isRealUser } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useGuestChrome } from "@/lib/auth/guest-chrome";
 import { simulate } from "@/lib/plan/engine";
+import { economicHash, runSurvival } from "@/lib/plan/monte-carlo-run";
+import { DEFAULT_SWING, type SwingName } from "@/lib/plan/monte-carlo";
 import { refreshEstimatedSocialSecurity } from "@/lib/plan/social-security";
 import { planInputSignature } from "@/lib/plan/input-signature";
 import { buildPeerBrief, type PeerBrief } from "@/lib/plan/peers";
@@ -130,12 +133,33 @@ function inputSignature(plan: Plan): string {
 
 export const Route = createFileRoute("/")({ component: Home });
 
-function ActChartColumn({ plan, sim }: { plan: Plan; sim: SimResult }) {
+function ActChartColumn({
+  plan,
+  sim,
+  survival,
+  onSwing,
+  onClose,
+  onOpen,
+}: {
+  plan: Plan;
+  sim: SimResult;
+  survival: SurvivalView | null;
+  onSwing: (swing: SwingName) => void;
+  onClose: () => void;
+  onOpen: () => void;
+}) {
   const pins = useChartPins();
   const ent = useEntitlement();
   const unlocked = hasBalanceSheet(ent.plan);
   return (
     <div className="flex min-w-0 flex-col gap-4">
+      <PlanSurvival
+        locked={!unlocked}
+        view={survival}
+        onSwing={onSwing}
+        onClose={onClose}
+        onOpen={onOpen}
+      />
       <div ref={pins.wealthSlot}>
         <Pinnable pinned={pins.pinWealth} stackTop={pins.wealthTop}>
           <WealthChart
@@ -373,6 +397,16 @@ function Home() {
     >
   >({});
   const run = runs[runKey] ?? null;
+  const [survival, setSurvival] = useState<Record<string, SurvivalView>>({});
+  const survivalTask = useRef<{
+    key: string;
+    runId: number;
+    snapshot: Plan;
+    controller: AbortController;
+  } | null>(null);
+  const survivalView = survival[runKey] ?? null;
+  const survivalRef = useRef(survival);
+  survivalRef.current = survival;
 
   useEffect(() => {
     collapseAllOodSections();
@@ -382,6 +416,9 @@ function Home() {
     if (isPending) return;
     if (!signedIn) {
       setRuns({});
+      survivalTask.current?.controller.abort();
+      survivalTask.current = null;
+      setSurvival({});
       return;
     }
     const stored = loadStoredRuns();
@@ -417,6 +454,9 @@ function Home() {
     function onReset() {
       setRuns({});
       setRunError(null);
+      survivalTask.current?.controller.abort();
+      survivalTask.current = null;
+      setSurvival({});
       clearAllStoredRuns();
     }
     window.addEventListener(MACH_RESET_BASELINE, onReset);
@@ -430,11 +470,22 @@ function Home() {
         return next;
       });
       clearStoredRun(id);
+      if (survivalTask.current?.key === id) {
+        survivalTask.current.controller.abort();
+        survivalTask.current = null;
+      }
+      setSurvival((prev) => {
+        if (!(id in prev)) return prev;
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
     }
     window.addEventListener(MACH_PROFILE_REMOVED, onRemoved);
     return () => {
       window.removeEventListener(MACH_RESET_BASELINE, onReset);
       window.removeEventListener(MACH_PROFILE_REMOVED, onRemoved);
+      survivalTask.current?.controller.abort();
     };
   }, []);
 
@@ -777,7 +828,118 @@ function Home() {
     };
   }
 
+  function startPlanSurvival(
+    key: string,
+    runId: number,
+    snapshot: Plan,
+    swing: SwingName,
+    open: boolean,
+    quiet = false,
+  ) {
+    survivalTask.current?.controller.abort();
+    survivalTask.current = null;
+    if (!hasBalanceSheet(ent.plan)) {
+      setSurvival((prev) => {
+        if (!(key in prev)) return prev;
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+      return;
+    }
+    const controller = new AbortController();
+    survivalTask.current = { key, runId, snapshot, controller };
+    const signal = controller.signal;
+    if (!quiet) {
+      setSurvival((prev) => ({
+        ...prev,
+        [key]: { runId, status: "running", score: null, swing, open },
+      }));
+    }
+    void runSurvival(snapshot, swing, { signal }).then(
+      (score) => {
+        if (survivalTask.current?.controller !== controller) return;
+        const drop = signal.aborted || !score || score.hash !== economicHash(snapshot, swing);
+        setSurvival((prev) => {
+          const cur = prev[key];
+          if (cur && cur.runId !== runId) return prev;
+          if (drop || !score) {
+            const next: SurvivalView = {
+              runId,
+              status: "empty",
+              score: null,
+              swing,
+              open: cur?.open ?? open,
+            };
+            return { ...prev, [key]: next };
+          }
+          const ready: SurvivalView = {
+            runId,
+            status: "ready",
+            score,
+            swing,
+            open: cur?.open ?? open,
+          };
+          return { ...prev, [key]: ready };
+        });
+      },
+      () => {
+        if (survivalTask.current?.controller !== controller) return;
+        setSurvival((prev) => {
+          const cur = prev[key];
+          if (cur && cur.runId !== runId) return prev;
+          const next: SurvivalView = {
+            runId,
+            status: "empty",
+            score: null,
+            swing: cur?.swing ?? swing,
+            open: cur?.open ?? open,
+          };
+          return { ...prev, [key]: next };
+        });
+      },
+    );
+  }
+
+  function chooseSwing(swing: SwingName) {
+    if (!hasBalanceSheet(ent.plan)) return;
+    const view = survival[runKey];
+    if (!view || view.status === "empty" || view.swing === swing) return;
+    const current = runs[runKey];
+    const task = survivalTask.current;
+    const snapshot =
+      current && current.id === view.runId
+        ? current.plan
+        : task && task.key === runKey && task.runId === view.runId
+          ? task.snapshot
+          : null;
+    if (!snapshot) return;
+    startPlanSurvival(runKey, view.runId, snapshot, swing, view.open);
+  }
+
+  function setSurvivalOpen(open: boolean) {
+    setSurvival((prev) => {
+      const cur = prev[runKey];
+      if (!cur || cur.status === "empty") return prev;
+      return { ...prev, [runKey]: { ...cur, open } };
+    });
+  }
+
+  const savedRunId = run?.id;
+  useEffect(() => {
+    if (!sheet || savedRunId == null) return;
+    const key = runKey;
+    const view = survivalRef.current[key];
+    if (view && view.runId === savedRunId) return;
+    const task = survivalTask.current;
+    if (task && task.key === key) return;
+    const snapshot = run?.plan;
+    if (!snapshot || run?.id !== savedRunId) return;
+    startPlanSurvival(key, savedRunId, snapshot, DEFAULT_SWING, true, true);
+  }, [sheet, runKey, savedRunId]);
+
   async function calculate(opts?: { stay?: boolean }) {
+    let survivalJob: { key: string; runId: number; snapshot: Plan } | null = null;
     try {
       setRunError(null);
       const live = refreshEstimatedSocialSecurity(usePlanStore.getState().plan);
@@ -836,6 +998,7 @@ function Home() {
       } catch {
         /* activity is optional */
       }
+      survivalJob = { key, runId, snapshot };
     } catch (err) {
       holdGen.current += 1;
       if (holdTimer.current) window.clearTimeout(holdTimer.current);
@@ -843,6 +1006,15 @@ function Home() {
       console.error("MACH Run calculate failed", err);
       setRunError(
         err instanceof Error ? err.message : "Calculate failed. Check the numbers and try again.",
+      );
+    }
+    if (survivalJob) {
+      startPlanSurvival(
+        survivalJob.key,
+        survivalJob.runId,
+        survivalJob.snapshot,
+        DEFAULT_SWING,
+        true,
       );
     }
   }
@@ -1317,6 +1489,14 @@ function Home() {
                           plan={displayPlan}
                           sim={run.sim}
                           brief={run.brief}
+                          survival={
+                            sheet &&
+                            survivalView?.status === "ready" &&
+                            survivalView.runId === run.id &&
+                            survivalView.score
+                              ? survivalView.score
+                              : null
+                          }
                           onUseRecommended={applyRecommendedDate}
                         />
                       </div>
@@ -1343,6 +1523,14 @@ function Home() {
                       ran
                       plan={displayPlan}
                       sim={run.sim}
+                      survival={
+                        sheet &&
+                        survivalView?.status === "ready" &&
+                        survivalView.runId === run.id &&
+                        survivalView.score
+                          ? survivalView.score
+                          : null
+                      }
                       onUseRecommended={applyRecommendedDate}
                       onExecute={() => {
                         void calculate({ stay: true });
@@ -1353,7 +1541,14 @@ function Home() {
                   <div className="flex min-w-0 flex-col gap-4">
                     <div className="flex min-w-0 flex-col gap-3">
                       <PhaseLabel id="ooda-radar" label="Financial Radar" />
-                      <ActChartColumn plan={displayPlan} sim={run.sim} />
+                      <ActChartColumn
+                        plan={displayPlan}
+                        sim={run.sim}
+                        survival={survivalView}
+                        onSwing={chooseSwing}
+                        onClose={() => setSurvivalOpen(false)}
+                        onOpen={() => setSurvivalOpen(true)}
+                      />
                     </div>
                     <OodaAiCard
                       plan={displayPlan}
