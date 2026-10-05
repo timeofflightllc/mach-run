@@ -16,6 +16,7 @@ import { deleteMyAccount, getDeleteOptions } from "@/lib/auth/delete-account-api
 import type { DeleteProvider } from "@/lib/auth/delete-account";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { RedirectToSignIn } from "@/lib/auth/gates";
+import { isGuestChromeOwner, useGuestChrome, writeGuestChrome } from "@/lib/auth/guest-chrome";
 import {
   backupFileName,
   decryptPlanBackup,
@@ -61,6 +62,8 @@ function Account() {
   const [backupError, setBackupError] = useState<string | null>(null);
   const [pendingImport, setPendingImport] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const guestChrome = useGuestChrome(user?.primaryEmail);
+  const showGuestChrome = isGuestChromeOwner(user?.primaryEmail);
   const backupOk = canDownloadBackup(ent.plan);
 
   useEffect(() => {
@@ -567,6 +570,25 @@ function Account() {
           </button>
         </div>
         </div>
+
+        {showGuestChrome ? (
+          <div className="space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
+            <p className="font-display text-lg text-fg">Guest chrome preview</p>
+            <p className="text-sm leading-relaxed text-muted">
+              Stay signed in. When this is on, the main page shows the hero and
+              the Master Caution strip as if you were logged out. Your plan,
+              save, and billing do not change. This switch is only on this
+              browser.
+            </p>
+            <button
+              type="button"
+              onClick={() => writeGuestChrome(!guestChrome)}
+              className="inline-flex h-11 items-center justify-center rounded-lg px-4 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+            >
+              {guestChrome ? "Turn guest view off" : "Show hero and Master Caution"}
+            </button>
+          </div>
+        ) : null}
 
         <p className="flex justify-center">
           <Link

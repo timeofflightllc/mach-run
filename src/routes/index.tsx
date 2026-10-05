@@ -25,6 +25,7 @@ import { MachFooter, BrandLockup } from "@/components/meridian/mach-mark";
 import { MachOrbit } from "@/components/meridian/mach-orbit";
 import { isRealUser } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { useGuestChrome } from "@/lib/auth/guest-chrome";
 import { simulate } from "@/lib/plan/engine";
 import { refreshEstimatedSocialSecurity } from "@/lib/plan/social-security";
 import { planInputSignature } from "@/lib/plan/input-signature";
@@ -504,7 +505,8 @@ function Home() {
     });
   }, [ent.paid, runKey]);
 
-  const heroOn = !isRealUser(user);
+  const guestChrome = useGuestChrome(user?.primaryEmail);
+  const heroOn = !isRealUser(user) || guestChrome;
   const [demoLoaded, setDemoLoaded] = useState(false);
   const stepsRef = useRef<HTMLDivElement>(null);
   const engagedRef = useRef(false);
