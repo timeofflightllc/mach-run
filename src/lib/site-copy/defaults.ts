@@ -49,9 +49,7 @@ Questions, a bug, or a feature you want on the jet — [Contact](/contact). What
     slug: "method",
     title: "The Method",
     kicker: "How the MACH RUN engine actually flies the numbers you type.",
-    body: `This is the briefing on the engine — not a second legal page. [Legal](/legal) holds the disclaimer. Here is what Calculate does with the numbers in Observe, Orient, and Decide.
-
-# How a MACH RUN works
+    body: `# How a MACH RUN works
 You fill the household as it stands. Observe is family and accounts. Orient is paychecks and spending. Decide is contributions into those accounts. Charts, the ledger, and the MACH OODA Financial Analysis stay frozen until you hit Calculate. That press is the MACH RUN. Change an input after that and Act holds the last run until you Calculate again.
 
 # Rates

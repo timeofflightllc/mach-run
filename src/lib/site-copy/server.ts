@@ -85,6 +85,10 @@ async function seedIfEmpty(): Promise<void> {
 
 function freshenStoredCopy(body: string): string {
   return body
+    .replace(
+      /^This is the briefing on the engine\s*[—–-]\s*not a second legal page\.\s*\[Legal\]\(\/legal\) holds the disclaimer\.\s*Here is what Calculate does with the numbers in Observe, Orient, and Decide\.\s*/m,
+      "",
+    )
     .replaceAll(
       "[Free vs MACH RUN paid](/pricing) — $4/month or $40/year unlocks unlimited accounts, contribution rules, income stages, Net Worth, and the full OODA.",
       "[Free vs MACH RUN paid](/pricing) — Individual ($4/month or $40/year) keeps unlimited accounts, contributions, and incomes. Net Worth stays locked until Individual Unlimited or Advisor.",

@@ -30,9 +30,11 @@ function inline(text: string, underline: boolean): ReactNode[] {
 export function SiteCopyBody({
   body,
   underlineLinks = false,
+  aside,
 }: {
   body: string;
   underlineLinks?: boolean;
+  aside?: ReactNode;
 }) {
   const blocks = body.replace(/\r\n/g, "\n").trim().split(/\n{2,}/);
   if (!blocks[0]) return null;
@@ -47,10 +49,11 @@ export function SiteCopyBody({
           const headingId = idMatch ? idMatch[2] : undefined;
           const rest = lines.slice(1).join(" ").trim();
           return (
-            <section key={i} className="space-y-2">
+            <section key={i} className={i === 0 && aside ? "flow-root space-y-2" : "space-y-2"}>
               <h2 id={headingId} className="scroll-mt-24 text-xl font-medium text-fg">
                 {heading}
               </h2>
+              {i === 0 && aside ? aside : null}
               {rest ? <p>{inline(rest, underlineLinks)}</p> : null}
             </section>
           );
