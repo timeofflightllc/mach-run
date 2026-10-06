@@ -114,15 +114,15 @@ export function GuestHero({
 
   return (
     <section className="overflow-x-clip border-t border-border bg-bg">
-      <div className="page-gutter mx-auto flex max-w-none flex-col items-center pt-10 sm:pt-14">
-        <h2 className="max-w-4xl text-center font-display text-3xl font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
+      <div className="page-gutter mx-auto flex max-w-none flex-col items-center pt-4 sm:pt-14">
+        <h2 className="max-w-4xl text-center font-display text-[1.25rem] font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
           The Supersonic Retirement Calculator built for those who want
           global situational awareness of their finances.
         </h2>
-        <p className="mt-4 max-w-3xl text-center text-base leading-relaxed text-muted sm:text-lg">
+        <p className="mt-1.5 max-w-3xl text-center text-[0.667rem] leading-relaxed text-muted sm:mt-4 sm:text-lg">
           Take ownership of your financial picture — Measure, Allocate, Compound, Harvest — MACH.
         </p>
-        <div className="mt-6 flex w-full max-w-3xl flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap">
+        <div className="mt-3 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:mt-6 sm:flex-row sm:flex-wrap sm:gap-3">
           <PrimaryButton
             className="h-auto min-h-11 whitespace-normal px-4 py-2.5 text-center leading-snug sm:max-w-xs"
             onClick={prefill}
@@ -158,7 +158,7 @@ export function GuestHero({
             </div>
           </div>
         ) : null}
-        <div className="relative mt-10 w-full">
+        <div className="relative mt-4 w-full sm:mt-10">
           <BombBurstSketch />
           <div className="relative z-10 mx-auto w-full max-w-3xl px-2">
             {/* 12.5% of this width is 20% of a 16:10 screen. The extra drops the chin behind the page. */}

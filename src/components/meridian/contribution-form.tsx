@@ -259,7 +259,7 @@ export function ContributionForm() {
                 inert={!open}
               >
                 <div className="min-h-0 overflow-hidden">
-                  <div className="flex flex-wrap items-end gap-x-3 gap-y-3 pb-1">
+                  <div className="card-fields flex flex-wrap items-end gap-x-3 gap-y-3 pb-1">
                     <Field label="Name" className="w-40 shrink-0">
                       <TextInput
                         value={c.label}

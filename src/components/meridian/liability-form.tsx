@@ -199,7 +199,7 @@ function LiabilityRow({
       >
         <div className="min-h-0 overflow-hidden">
           <div className="flex flex-col gap-3 pb-1">
-            <div className="flex flex-wrap items-end gap-x-2 gap-y-2">
+            <div className="card-fields flex flex-wrap items-end gap-x-2 gap-y-2">
               <Field label="Institution" className={slot}>
                 <InstitutionInput
                   institutionId={l.institutionId ?? null}
@@ -269,7 +269,7 @@ function LiabilityRow({
               <p className="mt-1 text-xs leading-relaxed text-[#5c4a18]">
                 Remaining principal is subtracted from net worth. Check the box only if this P&I is not already in Spending.
               </p>
-              <div className="mt-3 flex flex-wrap items-end gap-x-3 gap-y-2">
+              <div className="card-fields mt-3 flex flex-wrap items-end gap-x-3 gap-y-2">
                 <Field label="Origination (month/year)" className="w-auto shrink-0">
                   <MonthInput
                     value={l.originationDate}
@@ -302,7 +302,7 @@ function LiabilityRow({
                     onValue={(n) => updateLiability(l.id, { termYears: n })}
                   />
                 </Field>
-                <div className="w-full min-w-[16rem] max-w-xs shrink-0">
+                <div className="w-full min-w-0 max-w-xs">
                   <p className="text-xs font-medium leading-snug text-[#5c4a18]">
                     Automatically include in spending calculation?
                   </p>

@@ -1164,7 +1164,7 @@ function Home() {
                   Future $
                 </button>
               </div>
-              <SiteMenu align="right" />
+              <SiteMenu align="right" className="z-10" />
             </div>
           </div>
         </div>

@@ -255,7 +255,7 @@ function SpendingRow({
               </PrimaryButton>
             </div>
           ) : (
-          <div className="flex flex-wrap items-end gap-x-3 gap-y-3 pb-1">
+          <div className="card-fields flex flex-wrap items-end gap-x-3 gap-y-3 pb-1">
             <Field label="Name" className="w-44 shrink-0">
               <TextInput
                 value={s.label}

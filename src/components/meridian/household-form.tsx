@@ -195,12 +195,12 @@ export function AssumptionsForm() {
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
   const [editingAsOf, setEditingAsOf] = useState(false);
 
-  const pct = "w-[4.75rem] max-w-none shrink-0";
+  const pct = "w-[4.75rem] max-w-full";
 
   return (
     <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-3 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
       <div className="flex flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
-        <div className="flex flex-wrap items-end gap-x-5 gap-y-3">
+        <div className="card-fields flex flex-wrap items-end gap-x-5 gap-y-3">
           <div className="flex w-auto flex-col gap-1.5">
             <span className="text-xs font-medium tracking-wide text-muted">As-of date</span>
             {editingAsOf ? (
@@ -212,7 +212,7 @@ export function AssumptionsForm() {
               />
             ) : (
               <div className="flex h-11 items-center gap-3">
-                <p className="whitespace-nowrap text-sm text-fg">{longDate(plan.assumptions.asOfDate)}</p>
+                <p className="min-w-0 text-sm text-fg">{longDate(plan.assumptions.asOfDate)}</p>
                 <button
                   type="button"
                   className="shrink-0 text-[11px] text-fg underline-offset-4 hover:underline"
@@ -223,7 +223,7 @@ export function AssumptionsForm() {
               </div>
             )}
           </div>
-          <label className="flex h-11 shrink-0 items-center gap-2 whitespace-nowrap text-sm text-fg">
+          <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fg">
             <span className="text-xs font-medium tracking-wide text-muted">Project through longevity age</span>
             <NumberInput
               min={70}
@@ -240,7 +240,7 @@ export function AssumptionsForm() {
             const already = Boolean(goal && goal.slice(0, 7) <= asOf);
             return (
               <>
-                <label className="flex h-11 shrink-0 items-center gap-2 whitespace-nowrap text-sm text-fg">
+                <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fg">
                   <input
                     type="checkbox"
                     checked={already}
@@ -255,7 +255,7 @@ export function AssumptionsForm() {
                   Already retired
                 </label>
                 {already ? (
-                  <Field label="Retired" className="w-auto shrink-0">
+                  <Field label="Retired" className="w-full min-w-0 max-w-xs">
                     <MonthInput
                       value={goal}
                       onValue={(v) =>
@@ -264,7 +264,7 @@ export function AssumptionsForm() {
                     />
                   </Field>
                 ) : (
-                  <Field label="Retirement goal date" className="w-auto shrink-0">
+                  <Field label="Retirement goal date" className="w-full min-w-0 max-w-xs">
                     <DateInput
                       value={goal}
                       onValue={(v) =>
@@ -273,11 +273,11 @@ export function AssumptionsForm() {
                     />
                   </Field>
                 )}
-                <Field label="Nest egg goal (today $)" className="w-40 shrink-0">
+                <Field label="Nest egg goal (today $)" className="w-full min-w-0 max-w-40">
                   <MoneyInput
                     value={plan.assumptions.nestEggGoal ?? 0}
                     onValue={(n) => patchAssumptions({ nestEggGoal: n > 0 ? n : null })}
-                    className="w-40 max-w-none"
+                    className="w-full max-w-full"
                   />
                 </Field>
               </>
@@ -291,8 +291,8 @@ export function AssumptionsForm() {
       </div>
 
       <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-          <label className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+        <div className="card-fields flex min-w-0 flex-wrap items-center gap-x-5 gap-y-3">
+          <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-xs font-medium tracking-wide text-muted">Nominal return (% / yr)</span>
             <NumberInput
               min={-5}
@@ -313,7 +313,7 @@ export function AssumptionsForm() {
               %
             </span>
           </label>
-          <label className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+          <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-xs font-medium tracking-wide text-muted">Nominal COLA (% / yr)</span>
             <NumberInput
               min={0}
@@ -324,7 +324,7 @@ export function AssumptionsForm() {
               className={pct}
             />
           </label>
-          <label className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+          <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-xs font-medium tracking-wide text-muted">Inflation (% / yr)</span>
             <NumberInput
               min={0}
@@ -340,8 +340,8 @@ export function AssumptionsForm() {
           COLA is the default for every income. It steps up each January and stays flat the rest of
           the year. Set a different COLA on an income in Orient.
         </p>
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-          <label className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+        <div className="card-fields flex min-w-0 flex-wrap items-center gap-x-5 gap-y-3">
+          <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-xs font-medium tracking-wide text-muted">Ordinary tax rate (%)</span>
             <NumberInput
               min={0}
@@ -352,7 +352,7 @@ export function AssumptionsForm() {
               className={pct}
             />
           </label>
-          <label className="flex shrink-0 items-center gap-2 whitespace-nowrap">
+          <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-xs font-medium tracking-wide text-muted">Sweep surplus into</span>
             <SelectInput
               value={plan.assumptions.sweepPortfolioId ?? ""}
@@ -361,7 +361,7 @@ export function AssumptionsForm() {
                   sweepPortfolioId: e.target.value === "" ? null : e.target.value,
                 })
               }
-              className="w-[18rem] max-w-none"
+              className="w-full min-w-0 max-w-[18rem]"
             >
               <option value="">Do not sweep (spend leftover)</option>
               {plan.portfolios.map((p) => (

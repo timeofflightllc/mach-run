@@ -55,6 +55,58 @@ export function InstitutionMark({
   );
 }
 
+type ListPlace = {
+  left: number;
+  width: number;
+  maxHeight: number;
+  top?: number;
+  bottom?: number;
+};
+
+/** Fixed coordinates that stay on the field when the keyboard pans the visual viewport. */
+function measureList(node: HTMLElement): ListPlace {
+  const rect = node.getBoundingClientRect();
+  const vv = window.visualViewport;
+  const offsetTop = vv?.offsetTop ?? 0;
+  const offsetLeft = vv?.offsetLeft ?? 0;
+  const vvHeight = vv?.height ?? window.innerHeight;
+  const vvWidth = vv?.width ?? window.innerWidth;
+  const layoutHeight = document.documentElement.clientHeight || window.innerHeight;
+  const header = document.getElementById("mach-header");
+  const headerBottom = header ? Math.max(0, header.getBoundingClientRect().bottom) : 0;
+  const visibleTop = offsetTop + headerBottom + 4;
+  const visibleBottom = offsetTop + vvHeight - 8;
+  const fieldTop = rect.top + offsetTop;
+  const fieldBottom = rect.bottom + offsetTop;
+  const gap = 4;
+  const cap = 160;
+  const spaceBelow = visibleBottom - fieldBottom - gap;
+  const spaceAbove = fieldTop - gap - visibleTop;
+  const openUp = spaceBelow < 48 && spaceAbove > spaceBelow;
+  const room = Math.max(0, openUp ? spaceAbove : spaceBelow);
+  const maxHeight = Math.min(cap, room > 0 ? room : cap);
+  let left = rect.left + offsetLeft;
+  const width = Math.max(120, rect.width);
+  const minLeft = offsetLeft + 8;
+  const maxLeft = offsetLeft + vvWidth - width - 8;
+  left = Math.min(Math.max(left, minLeft), Math.max(minLeft, maxLeft));
+  if (openUp) {
+    return {
+      left,
+      width,
+      maxHeight,
+      bottom: Math.max(0, layoutHeight - fieldTop + gap),
+    };
+  }
+  const top = Math.max(visibleTop, fieldBottom + gap);
+  return {
+    left,
+    width,
+    maxHeight: Math.min(maxHeight, Math.max(0, visibleBottom - top)),
+    top,
+  };
+}
+
 export function InstitutionInput({
   institutionId,
   institutionName,
@@ -69,7 +121,7 @@ export function InstitutionInput({
   const [text, setText] = useState(institutionName);
   const [open, setOpen] = useState(false);
   const [hi, setHi] = useState(0);
-  const [place, setPlace] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [place, setPlace] = useState<ListPlace | null>(null);
   const focused = useRef(false);
   const results = searchInstitutions(text);
 
@@ -82,15 +134,19 @@ export function InstitutionInput({
     const move = () => {
       const node = box.current;
       if (!node) return;
-      const rect = node.getBoundingClientRect();
-      setPlace({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+      setPlace(measureList(node));
     };
     move();
+    const vv = window.visualViewport;
     window.addEventListener("scroll", move, true);
     window.addEventListener("resize", move);
+    vv?.addEventListener("scroll", move);
+    vv?.addEventListener("resize", move);
     return () => {
       window.removeEventListener("scroll", move, true);
       window.removeEventListener("resize", move);
+      vv?.removeEventListener("scroll", move);
+      vv?.removeEventListener("resize", move);
     };
   }, [open, text]);
 
@@ -159,36 +215,42 @@ export function InstitutionInput({
           }
         }}
       />
-      {open && results.length > 0 && place
+      {open && results.length > 0 && place && place.maxHeight > 0
         ? createPortal(
             <ul
               id={listId}
               role="listbox"
-              style={{ top: place.top, left: place.left, width: place.width }}
-              className="fixed z-50 max-h-40 overflow-auto rounded-lg bg-elevated py-1 shadow-[0_0_0_1px_var(--color-border)]"
+              style={{
+                top: place.top,
+                bottom: place.bottom,
+                left: place.left,
+                width: place.width,
+                maxHeight: place.maxHeight,
+              }}
+              className="fixed z-[80] overflow-auto overscroll-contain rounded-lg bg-elevated py-1 shadow-[0_0_0_1px_var(--color-border)]"
             >
-          {results.map((row, index) => (
-            <li key={row.id} role="option" aria-selected={index === hi}>
-              <button
-                type="button"
-                className={
-                  index === hi
-                    ? "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg bg-surface"
-                    : "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg"
-                }
-                onMouseDown={(e) => e.preventDefault()}
-                onMouseEnter={() => setHi(index)}
-                onClick={() => pick(row)}
-              >
-                <InstitutionMark
-                  institutionId={row.id}
-                  institutionName={row.name}
-                  size={20}
-                />
-                {row.name}
-              </button>
-            </li>
-            ))}
+              {results.map((row, index) => (
+                <li key={row.id} role="option" aria-selected={index === hi}>
+                  <button
+                    type="button"
+                    className={
+                      index === hi
+                        ? "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg bg-surface"
+                        : "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg"
+                    }
+                    onPointerDown={(e) => e.preventDefault()}
+                    onMouseEnter={() => setHi(index)}
+                    onClick={() => pick(row)}
+                  >
+                    <InstitutionMark
+                      institutionId={row.id}
+                      institutionName={row.name}
+                      size={20}
+                    />
+                    {row.name}
+                  </button>
+                </li>
+              ))}
             </ul>,
             document.body,
           )

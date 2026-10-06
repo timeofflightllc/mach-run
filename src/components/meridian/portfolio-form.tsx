@@ -76,7 +76,7 @@ const slotValue = "w-[8rem] max-w-full shrink-0";
 const slotOwner = "w-[8rem] max-w-full shrink-0";
 const control = "h-10 max-w-full";
 const summaryCols =
-  "grid min-w-[64rem] grid-cols-[minmax(10rem,1.25fr)_minmax(8rem,0.9fr)_minmax(7.5rem,0.8fr)_minmax(6.5rem,0.7fr)_minmax(5.5rem,0.55fr)_minmax(8rem,0.85fr)_minmax(7rem,0.7fr)_6.5rem] items-center gap-x-3";
+  "flex w-full min-w-0 flex-col gap-2 @min-[46rem]:grid @min-[46rem]:min-w-[64rem] @min-[46rem]:grid-cols-[minmax(10rem,1.25fr)_minmax(8rem,0.9fr)_minmax(7.5rem,0.8fr)_minmax(6.5rem,0.7fr)_minmax(5.5rem,0.55fr)_minmax(8rem,0.85fr)_minmax(7rem,0.7fr)_6.5rem] @min-[46rem]:items-center @min-[46rem]:gap-x-3";
 
 function asOfLabel(iso: string): string {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -113,9 +113,10 @@ export function PortfolioForm() {
           })}
         </p>
       ) : null}
-      <ul className={`gap-2 overflow-x-auto ${summaryCols}`}>
+      <div className="min-w-0 w-full overflow-x-auto">
+      <ul className={summaryCols}>
         {plan.portfolios.length > 0 ? (
-          <li className="col-span-full grid grid-cols-subgrid items-end pb-1 text-[0.68rem] font-medium uppercase leading-tight tracking-[0.08em] text-subtle">
+          <li className="col-span-full hidden grid-cols-subgrid items-end pb-1 text-[0.68rem] font-medium uppercase leading-tight tracking-[0.08em] text-subtle @min-[46rem]:grid">
             <span className="min-w-0 pl-3">Account name</span>
             <span className="min-w-0">Account type</span>
             <span className="min-w-0">Balance as-of {asOfLabel(plan.assumptions.asOfDate)}</span>
@@ -140,6 +141,7 @@ export function PortfolioForm() {
           />
         ))}
       </ul>
+      </div>
       {capped ? (
         <UpgradeNudge kind="accounts" />
       ) : (
@@ -278,7 +280,7 @@ function AccountTile({
     </Field>
   );
   const include = (
-    <Field label="Include in" className="w-auto max-w-sm shrink-0">
+    <Field label="Include in" className="w-full min-w-0 max-w-sm">
       <div className="flex h-10 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fg">
         <label className="flex items-center gap-1.5">
           <input
@@ -382,13 +384,13 @@ function AccountTile({
     ) : null;
 
   const line = (cells: (ReactNode | null)[]) => (
-    <div className="flex flex-wrap items-end justify-start gap-x-2 gap-y-2">{cells}</div>
+    <div className="card-fields flex w-full min-w-0 flex-wrap items-end justify-start gap-x-2 gap-y-2">{cells}</div>
   );
 
   return (
-    <li className="col-span-full grid grid-cols-subgrid items-center rounded-lg bg-section-lift px-0 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
+    <li className="col-span-full min-w-0 rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)] @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid @min-[46rem]:items-center @min-[46rem]:px-0">
       <div
-        className="col-span-full grid px-3 transition-[grid-template-rows] duration-300 ease-out"
+        className="col-span-full grid min-w-0 px-0 transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:px-3"
         style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
         inert={!open}
       >
@@ -420,11 +422,11 @@ function AccountTile({
         </div>
       </div>
       <div
-        className="col-span-full grid grid-cols-subgrid transition-[grid-template-rows] duration-300 ease-out"
+        className="col-span-full min-w-0 transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid"
         style={{ gridTemplateRows: open ? "0fr" : "1fr" }}
         inert={open}
       >
-        <div className="col-span-full grid min-h-0 grid-cols-subgrid overflow-hidden">
+        <div className="col-span-full min-h-0 min-w-0 overflow-hidden @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid">
           <AccountSummary
             plan={plan}
             portfolio={p}
@@ -464,7 +466,21 @@ function AccountSummary({
     p.kind === "real_estate" && mortgageAssociated(p.mortgage) ? "Mortgage" : null,
   ].filter(Boolean);
   return (
-    <div className="col-span-full grid grid-cols-subgrid items-center text-sm">
+    <>
+      <div className="col-span-full flex min-w-0 items-center gap-3 @min-[46rem]:hidden">
+        <p className="min-w-0 flex-1 truncate text-sm text-fg">
+          <span className="font-medium">{p.name.trim() || "Account"}</span>
+          <span className="text-muted"> · {kind}</span>
+          <span className="text-muted"> · {usd(p.currentValue)}</span>
+        </p>
+        <button type="button" className="shrink-0 text-xs text-muted hover:text-negative" onClick={onRemove}>
+          Remove
+        </button>
+        <button type="button" className="shrink-0 text-sm font-medium text-fg" onClick={onEdit}>
+          Edit
+        </button>
+      </div>
+      <div className="col-span-full hidden grid-cols-subgrid items-center text-sm @min-[46rem]:grid">
       <span className="flex min-w-0 items-center gap-1.5 pl-3 font-medium text-fg">
         {p.kind === "real_estate" ? null : (
           <InstitutionMark
@@ -490,6 +506,7 @@ function AccountSummary({
         </button>
       </span>
     </div>
+    </>
   );
 }
 
@@ -554,7 +571,7 @@ function RealEstateMortgage({
             Remaining principal is subtracted from net worth. Property value still
             grows at the return above. Do not include the P&I amount inputted below in Spending.
           </p>
-          <div className="mt-3 flex flex-wrap items-end gap-x-3 gap-y-2">
+          <div className="card-fields mt-3 flex flex-wrap items-end gap-x-3 gap-y-2">
             <Field label="Institution" className={slot}>
               <InstitutionInput
                 institutionId={mortgage.institutionId ?? null}
