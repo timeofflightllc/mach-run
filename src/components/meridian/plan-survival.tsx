@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import type { SwingName } from "@/lib/plan/monte-carlo";
 import { runOutSentence, survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,25 @@ export type SurvivalView = {
   /** 0 to 1 while status is running. The button fill. */
   progress: number;
 };
+
+const LOCKED_MIN_KEY = "mach-plan-survival-min";
+
+function readLockedMin() {
+  try {
+    return window.localStorage.getItem(LOCKED_MIN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeLockedMin(min: boolean) {
+  try {
+    if (min) window.localStorage.setItem(LOCKED_MIN_KEY, "1");
+    else window.localStorage.removeItem(LOCKED_MIN_KEY);
+  } catch {
+    /* keep the choice for this visit */
+  }
+}
 
 const card =
   "relative rounded-xl bg-white p-4 text-slate-800 shadow-[0_0_0_1px_#c8d2de] sm:p-5";
@@ -118,6 +137,21 @@ export function PlanSurvival({
   onOpen?: () => void;
 }) {
   const quotes = useBoydQuotes();
+  const [lockedMin, setLockedMin] = useState(readLockedMin);
+  if (locked && lockedMin) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setLockedMin(false);
+          writeLockedMin(false);
+        }}
+        className={cn(card, "w-full text-left")}
+      >
+        <SurvivalTitle />
+      </button>
+    );
+  }
   if (locked) {
     return (
       <div className={cn(card, "relative flex flex-col @min-[36rem]:h-full @min-[36rem]:flex-1")}>
@@ -168,6 +202,17 @@ export function PlanSurvival({
             </Link>
           </p>
         </div>
+        <button
+          type="button"
+          aria-label="Minimize Plan Survival"
+          onClick={() => {
+            setLockedMin(true);
+            writeLockedMin(true);
+          }}
+          className="absolute right-2 top-2 z-20 flex h-6 w-6 items-end justify-center rounded-sm border border-slate-500 bg-white pb-[5px] text-slate-900 hover:bg-slate-100"
+        >
+          <span className="block h-[2px] w-2.5 bg-current" />
+        </button>
       </div>
     );
   }
