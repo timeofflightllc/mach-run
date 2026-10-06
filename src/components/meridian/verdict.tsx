@@ -45,7 +45,6 @@ export function Verdict({
   brief,
   survival,
   survivalUnlocked = false,
-  onUseRecommended,
 }: {
   plan: Plan;
   sim: SimResult;
@@ -53,7 +52,6 @@ export function Verdict({
   survival?: SurvivalScore | null;
   /** Individual Unlimited or Advisor. Free and Individual do not get the run. */
   survivalUnlocked?: boolean;
-  onUseRecommended?: (date: string) => void;
 }) {
   const real = plan.assumptions.dollars === "real";
   const atTerm = real ? sim.spendableAtEndReal : sim.spendableAtEnd;
@@ -94,7 +92,16 @@ export function Verdict({
         <p className="mt-2 text-base font-medium leading-snug text-fg">{body}</p>
       ) : null}
       {rank ? (
-        <p className="mt-2 text-sm font-medium leading-relaxed text-fg">{rank}</p>
+        <div className="mt-3 text-center">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-subtle">
+            {rank.title}
+          </p>
+          <ul className="mx-auto mt-1.5 inline-block list-disc space-y-1 pl-5 text-left text-sm leading-snug text-fg">
+            {rank.lines.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
       ) : null}
       {retLine ? (
         <p className="mt-3 text-sm leading-relaxed text-muted">{retLine}</p>
@@ -122,14 +129,6 @@ export function Verdict({
           Upgrade to access Plan Survival (Monte Carlo Simulations)
         </p>
       )}
-      {brief?.recommendedRetirement ? (
-        <RecommendedRetirement
-          plan={plan}
-          rec={brief.recommendedRetirement}
-          onUse={onUseRecommended}
-          bluf
-        />
-      ) : null}
     </div>
   );
 }

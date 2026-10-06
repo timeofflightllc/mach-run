@@ -14,7 +14,7 @@ import { cashShortYears } from "./cash-short.ts";
 import { usd, usdCompact } from "./format.ts";
 import { remainingLiability, liabilityPayoffDate } from "./liability.ts";
 import { monthsBetweenMonths, mortgageAssociated, mortgagePayoffDate, remainingMortgage } from "./mortgage.ts";
-import { recommendedRetirementCopy, type RecommendedRetirement } from "./earliest-retirement.ts";
+import type { RecommendedRetirement } from "./earliest-retirement.ts";
 import type { Liability, LiabilityKind, Plan, SimResult } from "./types.ts";
 
 /** SCF 2022 net worth knots, inflated ~12% into 2026 dollars. Approximate. */
@@ -144,21 +144,20 @@ export function peerRankLine(brief: {
   nwPercentile: number | null;
   incomePercentile: number | null;
   bandLabel: string | null;
-}): string | null {
-  const parts: string[] = [];
+}): { title: string; lines: string[] } | null {
+  const lines: string[] = [];
   if (brief.nwPercentile != null && brief.bandLabel) {
-    parts.push(
-      `net worth in ${standing(brief.nwPercentile)} of U.S. families age ${brief.bandLabel}`,
+    lines.push(
+      `Net worth in ${standing(brief.nwPercentile)} of U.S. families age ${brief.bandLabel}.`,
     );
   }
   if (brief.incomePercentile != null) {
-    parts.push(
-      `income in ${standing(brief.incomePercentile)} of U.S. households`,
-    );
+    lines.push(`Income in ${standing(brief.incomePercentile)} of U.S. households.`);
   }
-  if (!parts.length) return null;
-  const ageBit = brief.age != null ? ` at ${brief.age}` : "";
-  return `Peer rank${ageBit}: ${parts.join("; ")}.`;
+  if (!lines.length) return null;
+  const title =
+    brief.age != null ? `Peer rank at ${brief.age} years old` : "Peer rank";
+  return { title, lines };
 }
 
 function monthsBetween(a: Date, b: Date): number {
@@ -318,8 +317,6 @@ export function buildPeerBrief(
 ): PeerBrief {
   const expanded = Boolean(opts?.expanded);
   const recommended = opts?.recommended;
-  const landing = (body: string) =>
-    recommended ? `${body}\n\n${recommendedRetirementCopy(plan, recommended)}` : body;
   const asOf = monthStart(plan.assumptions.asOfDate);
   const age = validIso(plan.primary.birthDate)
     ? ageYears(plan.primary.birthDate, asOf)
@@ -420,9 +417,7 @@ export function buildPeerBrief(
     if (ret.now) {
       add(
         "Retirement landing",
-        landing(
-          `Retirement goal date is this month (or you're already retired), so “at retirement” is today: spendable ${usd(ret.spendableReal)} in today's dollars. Modeled income in the next twelve months is ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo).`,
-        ),
+        `Retirement goal date is this month (or you're already retired), so “at retirement” is today: spendable ${usd(ret.spendableReal)} in today's dollars. Modeled income in the next twelve months is ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo).`,
       );
     } else {
       const retAge =
@@ -431,17 +426,13 @@ export function buildPeerBrief(
           : null;
       add(
         "Retirement landing",
-        landing(
-          `Retirement goal is ${formatMonthYear(ret.date)}${retAge != null ? ` (age ${retAge})` : ""}. Spendable there: ${usd(ret.spendableReal)} in today's dollars. Modeled retirement income ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo) from the stages you entered.`,
-        ),
+        `Retirement goal is ${formatMonthYear(ret.date)}${retAge != null ? ` (age ${retAge})` : ""}. Spendable there: ${usd(ret.spendableReal)} in today's dollars. Modeled retirement income ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo) from the stages you entered.`,
       );
     }
   } else {
     add(
       "Retirement landing",
-      landing(
-        "No retirement goal date in Family yet, so MACH RUN cannot score the landing. Put a goal date in — or check Already retired — then Calculate again.",
-      ),
+      "No retirement goal date in Family yet, so MACH RUN cannot score the landing. Put a goal date in — or check Already retired — then Calculate again.",
     );
   }
 

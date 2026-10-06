@@ -8,7 +8,7 @@ import { GuestOnly, RealSignedIn } from "@/lib/auth/gates";
 import { MACH_MONTHLY_USD, hasBalanceSheet } from "@/lib/billing/limits";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { OODA_DISCLAIMER } from "@/lib/plan/disclaimer";
-import { NestEggHeadline, RecommendedRetirement } from "@/components/meridian/verdict";
+import { NestEggHeadline } from "@/components/meridian/verdict";
 import { CashShortNotice } from "@/components/meridian/cash-short-notice";
 import { nestEggTrack } from "@/lib/plan/peers";
 import { annuityEquivalentCopy } from "@/lib/plan/annuity-equivalent";
@@ -359,7 +359,6 @@ export function PeerBriefCard({
   ran,
   plan,
   sim,
-  onUseRecommended,
   onExecute,
   onStale,
   survival,
@@ -368,7 +367,6 @@ export function PeerBriefCard({
   ran: boolean;
   plan?: Plan;
   sim?: SimResult;
-  onUseRecommended?: (date: string) => void;
   onExecute?: () => void;
   onStale?: () => void;
   survival?: SurvivalScore | null;
@@ -492,14 +490,6 @@ export function PeerBriefCard({
                 ) : (
                   <BriefBody text={s.body} className={s.title ? "mt-1" : undefined} />
                 )}
-                {s.title === "Retirement landing" && plan && brief.recommendedRetirement ? (
-                  <RecommendedRetirement
-                    plan={plan}
-                    rec={brief.recommendedRetirement}
-                    onUse={onUseRecommended}
-                    copy={false}
-                  />
-                ) : null}
               </>
             )}
           </div>
@@ -519,15 +509,6 @@ export function PeerBriefCard({
               aria-hidden
             />
           </div>
-        ) : null}
-        {!visible.some((s) => s.title === "Retirement landing") &&
-        plan &&
-        brief.recommendedRetirement ? (
-          <RecommendedRetirement
-            plan={plan}
-            rec={brief.recommendedRetirement}
-            onUse={onUseRecommended}
-          />
         ) : null}
       </div>
       {clipped ? (

@@ -1067,18 +1067,6 @@ function Home() {
     }
   }
 
-  function applyRecommendedDate(date: string) {
-    const current = usePlanStore.getState().plan;
-    usePlanStore.getState().setPlan({
-      ...current,
-      assumptions: { ...current.assumptions, retirementGoalDate: date },
-      contributions: current.contributions.map((rule) =>
-        rule.endAtRetirement ? { ...rule, endDate: date, endWithStageId: undefined } : rule,
-      ),
-    });
-    void calculate({ stay: true });
-  }
-
   const inputFrame =
     "mx-auto flex w-full max-w-6xl flex-col gap-3 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]";
   const shell = "flex w-full flex-col";
@@ -1546,7 +1534,6 @@ function Home() {
                               ? survivalView.score
                               : null
                           }
-                          onUseRecommended={applyRecommendedDate}
                         />
                       </div>
                       <div className="flex min-w-0 flex-col gap-3">
@@ -1581,7 +1568,6 @@ function Home() {
                           ? survivalView.score
                           : null
                       }
-                      onUseRecommended={applyRecommendedDate}
                       onExecute={() => {
                         void calculate({ stay: true });
                       }}
