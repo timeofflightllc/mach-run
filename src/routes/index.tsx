@@ -884,12 +884,24 @@ function Home() {
           swing,
           open,
           pass: (prev[key]?.pass ?? 0) + 1,
+          progress: 0,
         },
       }));
     }
     const begin = () => {
       if (survivalTask.current?.controller !== controller) return;
-      void runSurvival(snapshot, swing, { signal }).then(
+      void runSurvival(snapshot, swing, {
+        signal,
+        onProgress: (done, paths) => {
+          if (survivalTask.current?.controller !== controller) return;
+          const progress = paths > 0 ? done / paths : 0;
+          setSurvival((prev) => {
+            const cur = prev[key];
+            if (!cur || cur.status !== "running") return prev;
+            return { ...prev, [key]: { ...cur, progress } };
+          });
+        },
+      }).then(
         (score) => {
           if (survivalTask.current?.controller !== controller) return;
           const drop = signal.aborted || !score || score.hash !== economicHash(snapshot, swing);
@@ -904,6 +916,7 @@ function Home() {
                 swing: cur?.swing ?? swing,
                 open: cur?.open ?? open,
                 pass: cur?.pass ?? 0,
+                progress: 0,
               };
               return { ...prev, [key]: next };
             }
@@ -914,6 +927,7 @@ function Home() {
               swing: cur?.swing ?? swing,
               open: cur?.open ?? open,
               pass: cur?.pass ?? 0,
+              progress: 0,
             };
             return { ...prev, [key]: ready };
           });
@@ -930,6 +944,7 @@ function Home() {
               swing: cur?.swing ?? swing,
               open: cur?.open ?? open,
               pass: cur?.pass ?? 0,
+              progress: 0,
             };
             return { ...prev, [key]: next };
           });
@@ -993,6 +1008,7 @@ function Home() {
         swing: prev[key]?.swing ?? DEFAULT_SWING,
         open: prev[key]?.open ?? true,
         pass: 0,
+        progress: 0,
       },
     }));
   }, [sheet, runKey, savedRunId]);

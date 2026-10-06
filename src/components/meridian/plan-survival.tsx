@@ -13,6 +13,8 @@ export type SurvivalView = {
   open: boolean;
   /** Bumps once per Monte Carlo start. The quote stays until the next bump. */
   pass: number;
+  /** 0 to 1 while status is running. The button fill. */
+  progress: number;
 };
 
 const card =
@@ -57,6 +59,42 @@ function BoydQuote({
         John Boyd
       </p>
     </div>
+  );
+}
+
+function RunMonteCarloButton({
+  running,
+  progress,
+  onClick,
+}: {
+  running: boolean;
+  progress: number;
+  onClick?: () => void;
+}) {
+  const label = "Run Monte Carlo Simulation";
+  const width = `${Math.max(0, Math.min(1, progress)) * 100}%`;
+  if (!running) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className="mt-3 h-10 w-full rounded-lg bg-slate-900 text-sm font-medium text-white hover:bg-slate-800"
+      >
+        {label}
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="@container relative mt-3 h-10 w-full overflow-hidden rounded-lg border border-slate-900 bg-white text-sm font-medium text-slate-900"
+    >
+      <span className="flex h-full items-center justify-center">{label}</span>
+      <span className="absolute inset-y-0 left-0 overflow-hidden bg-slate-900 text-white" style={{ width }}>
+        <span className="flex h-full w-[100cqw] items-center justify-center">{label}</span>
+      </span>
+    </button>
   );
 }
 
@@ -167,13 +205,7 @@ export function PlanSurvival({
         Calm is quieter markets. Typical is the usual swing. Rough is wider markets.
         Choose one, then run it.
       </p>
-      <button
-        type="button"
-        onClick={onRun}
-        className="mt-3 h-10 w-full rounded-lg bg-slate-900 text-sm font-medium text-white hover:bg-slate-800"
-      >
-        Run Monte Carlo Simulation
-      </button>
+      <RunMonteCarloButton running={checking} progress={view.progress} onClick={onRun} />
       <div className="mt-3 flex justify-end border-t border-slate-200 pt-2">
         <button
           type="button"
