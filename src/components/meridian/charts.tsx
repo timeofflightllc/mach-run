@@ -748,7 +748,7 @@ export function NetWorthChart({
       </div>
       {locked ? (
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-canopy/70 p-5">
-          <p className="max-w-none px-2 text-center text-xs font-medium leading-relaxed text-fg sm:text-sm">
+          <p className="max-w-none px-2 text-center text-xs font-medium leading-relaxed text-white sm:text-sm">
             <span className="block whitespace-nowrap">
               Unlock Net Worth Calculations, Graphs and Charts with
             </span>
