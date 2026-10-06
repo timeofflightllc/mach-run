@@ -1554,12 +1554,7 @@ function Home() {
                         <KpiStrip plan={displayPlan} sim={run.sim} />
                       </div>
                       <div className="flex min-w-0 flex-col gap-3 @min-[36rem]:h-full">
-                        <p
-                          aria-hidden="true"
-                          className="invisible hidden font-display text-lg font-semibold tracking-[0.18em] sm:text-xl @min-[36rem]:block"
-                        >
-                          Act
-                        </p>
+                        <PhaseLabel id="ooda-simulator" label="The Simulator" />
                         <PlanSurvival
                           locked={!sheet}
                           view={survivalView}
