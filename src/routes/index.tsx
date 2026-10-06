@@ -1551,6 +1551,7 @@ function Home() {
                               : null
                           }
                         />
+                        <KpiStrip plan={displayPlan} sim={run.sim} />
                       </div>
                       <div className="flex min-w-0 flex-col gap-3">
                         <p
@@ -1559,7 +1560,6 @@ function Home() {
                         >
                           Act
                         </p>
-                        <KpiStrip plan={displayPlan} sim={run.sim} />
                         <PlanSurvival
                           locked={!sheet}
                           view={survivalView}
