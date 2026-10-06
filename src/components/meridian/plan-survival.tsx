@@ -53,8 +53,11 @@ function BoydQuote({
   if (!show || !line) return null;
 
   return (
-    <div className="mt-4 flex min-h-32 flex-col items-center justify-center px-3 text-center">
-      <p className="max-w-xl font-display text-lg leading-snug text-slate-900">{line}</p>
+    <div className="mt-4 flex min-h-32 flex-col items-center justify-center rounded-lg border border-[#e4d5c4] bg-[#f7f1e6] px-4 py-5 text-center">
+      <span aria-hidden="true" className="font-serif text-6xl leading-none text-[#d05838]">
+        “
+      </span>
+      <p className="mt-1 max-w-xl font-display text-lg leading-snug text-slate-900">{line}</p>
       <p className="mt-3 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
         John Boyd
       </p>
@@ -172,7 +175,13 @@ export function PlanSurvival({
       )}
       <BoydQuote quotes={quotes} pass={view.pass} show={view.pass > 0} />
       {!checking && view.score ? (
-        <div className="mt-4 rounded-md bg-[#f4d5cc] px-3 py-3 text-center">
+        <div
+          className="mt-4 rounded-md px-3 py-3 text-center"
+          style={{
+            background: "color-mix(in oklab, #e8c547 22%, white)",
+            boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 45%, white)",
+          }}
+        >
           <p className="text-lg font-bold leading-snug text-slate-900">
             {survivalSentence(view.score.score)}
           </p>
