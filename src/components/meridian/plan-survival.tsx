@@ -120,28 +120,53 @@ export function PlanSurvival({
   const quotes = useBoydQuotes();
   if (locked) {
     return (
-      <div className={card}>
-        <SurvivalTitle />
-        <div className="relative mt-3">
-          <div className="pointer-events-none select-none opacity-60">
-            <p className="text-sm font-medium leading-relaxed text-slate-900">
-              {survivalSentence(85)}
-            </p>
-            <p className="mt-1 text-xs text-slate-600">
-              Sample only. Your 1,000 futures unlock on Individual Unlimited.
-            </p>
-          </div>
-          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-canopy/70 p-5">
-            <p className="max-w-none px-2 text-center text-xs font-medium leading-relaxed text-white sm:text-sm">
-              <span className="block">Unlock Plan Survival with</span>
-              <Link
-                to="/pricing"
-                className="text-[#e8c547] underline decoration-[#e8c547]/80 underline-offset-4 hover:text-[#f6e7b0]"
-              >
-                Individual Unlimited or Advisor
-              </Link>
+      <div className={cn(card, "relative flex flex-col @min-[36rem]:h-full @min-[36rem]:flex-1")}>
+        <div className="pointer-events-none flex flex-1 flex-col select-none" aria-hidden="true">
+          <SurvivalTitle />
+          <div
+            className="mt-4 flex min-h-[11.5rem] flex-1 flex-col items-center justify-center rounded-md px-3 py-3 text-center"
+            style={{
+              background: "color-mix(in oklab, #e8c547 22%, white)",
+              boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 45%, white)",
+            }}
+          >
+            <p className="text-sm leading-relaxed text-slate-800">
+              Press Run Monte Carlo Simulation to check 1,000 futures.
             </p>
           </div>
+          <div className="mt-3 flex justify-center">
+            <div className="inline-flex rounded-lg bg-slate-100 p-1">
+              {CHOICES.map((choice) => (
+                <span
+                  key={choice.id}
+                  className={cn(
+                    "inline-flex h-8 items-center rounded-md px-3 text-xs font-medium",
+                    choice.id === "typical" ? "bg-slate-900 text-white" : "text-slate-600",
+                  )}
+                >
+                  {choice.label}
+                </span>
+              ))}
+            </div>
+          </div>
+          <p className="mt-2 text-center text-xs leading-relaxed text-slate-600">
+            Calm is quieter markets. Typical is the usual swing. Rough is wider markets. Choose one,
+            then run it.
+          </p>
+          <span className="mt-3 flex h-10 w-full items-center justify-center rounded-lg bg-slate-900 text-sm font-medium text-white">
+            Run Monte Carlo Simulation
+          </span>
+        </div>
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-canopy/70 p-5">
+          <p className="max-w-none px-2 text-center text-xs font-medium leading-relaxed text-white sm:text-sm">
+            <span className="block">Unlock Plan Survival (Monte Carlo Simulations) with</span>
+            <Link
+              to="/pricing"
+              className="text-[#e8c547] underline decoration-[#e8c547]/80 underline-offset-4 hover:text-[#f6e7b0]"
+            >
+              Individual Unlimited or Advisor
+            </Link>
+          </p>
         </div>
       </div>
     );
