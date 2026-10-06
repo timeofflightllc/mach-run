@@ -1,14 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { firstFlightEmail, welcomeSignupEmail } from "@/lib/notify/signup";
 
-function isLiveHost(): boolean {
-  if (typeof window === "undefined") return true;
-  const host = window.location.hostname.toLowerCase();
-  return host === "machrun.com" || host === "www.machrun.com";
-}
-
+/**
+ * Opt-in only. Auto-opening on every non-production host covered the
+ * calculator in the live preview and mismatched SSR (window is absent
+ * on the server). Open with ?email=flight or ?email=verify.
+ */
 export function WelcomeEmailPreviewOverlay() {
-  const [open, setOpen] = useState(() => !isLiveHost());
+  const [open, setOpen] = useState(false);
   const [which, setWhich] = useState<"verify" | "flight">("flight");
   const html = useMemo(() => {
     const notice = {
@@ -23,6 +22,16 @@ export function WelcomeEmailPreviewOverlay() {
       "/brand/mach-run-logo.jpg?v=23",
     );
   }, [which]);
+
+  useEffect(() => {
+    const host = window.location.hostname.toLowerCase();
+    if (host === "machrun.com" || host === "www.machrun.com") return;
+    const q = new URLSearchParams(window.location.search).get("email");
+    if (q === "verify" || q === "flight") {
+      setWhich(q);
+      setOpen(true);
+    }
+  }, []);
 
   if (!open) return null;
 

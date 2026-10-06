@@ -36,6 +36,7 @@ import { buildPeerBrief, type PeerBrief } from "@/lib/plan/peers";
 import { earliestWorkableRetirement } from "@/lib/plan/earliest-retirement";
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import { usePlanStore } from "@/lib/plan/store";
+import { createDefaultPlan } from "@/lib/plan/defaults";
 import { MACH_PROFILE_REMOVED, useProfileStore } from "@/lib/plan/profile-store";
 import { useCloudPlan } from "@/lib/plan/use-cloud-plan";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
@@ -184,6 +185,47 @@ const PAGES = [
 ] as const;
 
 type StepId = (typeof PAGES)[number]["id"];
+
+/** Yellow until the page has one real entry, then the site green. */
+function pageStarted(plan: Plan, id: StepId, calculated: boolean): boolean {
+  const a = plan.assumptions;
+  const blank = createDefaultPlan().assumptions;
+  switch (id) {
+    case "family":
+      return Boolean(
+        plan.primary.name.trim() ||
+          plan.primary.birthDate ||
+          plan.spouse.name.trim() ||
+          plan.spouse.birthDate ||
+          plan.children.length,
+      );
+    case "assumptions":
+      return Boolean(
+        a.retirementGoalDate ||
+          (a.nestEggGoal != null && a.nestEggGoal > 0) ||
+          a.sweepPortfolioId ||
+          a.asOfPinned ||
+          a.inflationPct !== blank.inflationPct ||
+          a.defaultColaPct !== blank.defaultColaPct ||
+          a.defaultReturnPct !== blank.defaultReturnPct ||
+          a.ordinaryTaxRatePct !== blank.ordinaryTaxRatePct ||
+          a.ssTaxablePct !== blank.ssTaxablePct ||
+          a.projectionEndAge !== blank.projectionEndAge,
+      );
+    case "assets":
+      return plan.portfolios.length > 0;
+    case "liabilities":
+      return (plan.liabilities?.length ?? 0) > 0;
+    case "income":
+      return plan.incomes.length > 0;
+    case "spending":
+      return plan.spending.some((row) => !row.liabilityId);
+    case "contributions":
+      return plan.contributions.length > 0;
+    case "act":
+      return calculated;
+  }
+}
 
 const PHASES = [
   { id: "observe", label: "Observe", page: "family" },
@@ -1152,21 +1194,21 @@ function Home() {
                   )}
                 >
                   <span>{item.label}</span>
-                  <span className="flex items-center gap-1" aria-hidden="true">
+                  <span
+                    className="flex items-center gap-1 [--color-accent:#3a8a58]"
+                    aria-hidden="true"
+                  >
                     {pages.map((page) => {
                       const index = route.findIndex((entry) => entry.id === page.id);
                       const on = index === shownIndex;
-                      const done = index < shownIndex;
+                      const done = pageStarted(plan, page.id, Boolean(run));
                       return (
                         <span
                           key={page.id}
                           className={cn(
-                            "rounded-full bg-current",
-                            on
-                              ? "h-1.5 w-1.5 opacity-100"
-                              : done
-                                ? "h-1 w-1 opacity-80"
-                                : "h-1 w-1 opacity-35",
+                            "inline-block shrink-0 rounded-full",
+                            done ? "bg-accent" : "bg-[#e8c547]",
+                            on ? "h-2 w-2" : "h-1.5 w-1.5",
                           )}
                         />
                       );
