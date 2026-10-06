@@ -60,7 +60,7 @@ function SurvivalTitle() {
 }
 
 const quoteSlip =
-  "mt-3 flex h-[7.5rem] shrink-0 flex-col items-center justify-center overflow-hidden rounded-lg border border-[#e4d5c4] bg-[#f7f1e6] px-4 text-center";
+  "mt-3 flex h-[calc(7.5rem+24px)] shrink-0 flex-col items-center justify-center overflow-hidden rounded-lg border border-[#e4d5c4] bg-[#f7f1e6] px-4 py-[12px] text-center sm:h-[7.5rem] sm:py-0";
 
 function BoydQuote({
   quotes,
@@ -303,11 +303,15 @@ export function PlanSurvival({
         Choose one, then run it.
       </p>
       <RunMonteCarloButton running={checking} progress={view.progress} onClick={onRun} />
-      <div className="mt-3 flex justify-end border-t border-slate-200 pt-2">
+      <div className="mt-3 flex items-end justify-between gap-3 border-t border-slate-200 pt-2">
+        <p className="max-w-sm text-[11px] leading-snug text-slate-500">
+          Plan Survival is a Monte Carlo rating. It runs 1,000 random market futures. The number
+          is how many of each 100 still have money at the end of the plan.
+        </p>
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex h-8 items-center rounded-lg px-2 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+          className="inline-flex h-8 shrink-0 items-center rounded-lg px-2 text-xs font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-900"
         >
           Close
         </button>
