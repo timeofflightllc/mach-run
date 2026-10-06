@@ -120,7 +120,9 @@ export function Verdict({
             </p>
           ) : (
             <p className="mt-1 text-sm leading-relaxed text-muted">
-              Run Monte Carlo Simulation on the card to the right.
+              Run Monte Carlo Simulation on the card{" "}
+              <span className="@min-[36rem]:hidden">below.</span>
+              <span className="hidden @min-[36rem]:inline">to the right.</span>
             </p>
           )}
         </div>
