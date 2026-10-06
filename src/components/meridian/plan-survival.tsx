@@ -73,12 +73,12 @@ function BoydQuote({
   if (!show || !line) return null;
 
   return (
-    <div className="mt-4 flex min-h-32 flex-col items-center justify-center rounded-lg border border-[#e4d5c4] bg-[#f7f1e6] px-4 py-5 text-center">
-      <span aria-hidden="true" className="font-serif text-6xl leading-none text-[#d05838]">
+    <div className="mt-3 flex flex-col items-center rounded-lg border border-[#e4d5c4] bg-[#f7f1e6] px-4 pb-3 pt-1 text-center">
+      <span aria-hidden="true" className="-mb-5 font-serif text-5xl leading-none text-[#d05838]">
         “
       </span>
-      <p className="mt-1 max-w-xl font-display text-lg leading-snug text-slate-900">{line}</p>
-      <p className="mt-3 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+      <p className="max-w-xl font-display text-lg leading-snug text-slate-900">{line}</p>
+      <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
         John Boyd
       </p>
     </div>
