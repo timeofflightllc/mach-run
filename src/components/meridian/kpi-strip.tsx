@@ -15,7 +15,7 @@ function HoverLabel({ label, tip }: { label: string; tip?: string }) {
     <dt className="text-[13px] font-medium uppercase tracking-wider text-subtle">
       <button
         type="button"
-        className="cursor-help text-left underline decoration-dotted underline-offset-2"
+        className="cursor-help border-0 bg-transparent p-0 text-left font-sans text-[13px] font-medium uppercase tracking-wider text-subtle underline decoration-dotted underline-offset-2"
         onMouseEnter={(e) => setPos({ x: e.clientX, y: e.clientY })}
         onMouseMove={(e) => setPos({ x: e.clientX, y: e.clientY })}
         onMouseLeave={() => setPos(null)}
