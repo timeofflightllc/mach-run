@@ -641,6 +641,25 @@ export function CashChart({
   );
 }
 
+const NET_WORTH_MIN_KEY = "mach-net-worth-min";
+
+function readNetWorthMin() {
+  try {
+    return window.localStorage.getItem(NET_WORTH_MIN_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeNetWorthMin(min: boolean) {
+  try {
+    if (min) window.localStorage.setItem(NET_WORTH_MIN_KEY, "1");
+    else window.localStorage.removeItem(NET_WORTH_MIN_KEY);
+  } catch {
+    /* keep the choice for this visit */
+  }
+}
+
 export function NetWorthChart({
   plan,
   sim,
@@ -657,10 +676,26 @@ export function NetWorthChart({
   const real = plan.assumptions.dollars === "real";
   const [span, setSpan] = useState<ChartSpan>(10);
   const { expanded, toggle, close } = useChartExpanded();
+  const [minimized, setMinimized] = useState(readNetWorthMin);
   const live = netWorthPoints(plan, sim, span);
   const data = locked ? fakeNetWorthPoints(span) : live;
   const hasDebt = data.some((d) => d.liabilities > 1);
   const x = axisProps(span);
+
+  if (locked && minimized) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setMinimized(false);
+          writeNetWorthMin(false);
+        }}
+        className={cn(chartCard, "w-full text-left")}
+      >
+        <h2 className="font-display text-xl font-bold text-slate-900">Net Worth</h2>
+      </button>
+    );
+  }
 
   return (
     <ChartStage expanded={expanded} onClose={close} label="Net Worth">
@@ -747,6 +782,7 @@ export function NetWorthChart({
         </div>
       </div>
       {locked ? (
+        <>
         <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-canopy/70 p-5">
           <p className="max-w-none px-2 text-center text-xs font-medium leading-relaxed text-white sm:text-sm">
             <span className="block whitespace-nowrap">
@@ -760,6 +796,18 @@ export function NetWorthChart({
             </Link>
           </p>
         </div>
+        <button
+          type="button"
+          aria-label="Minimize Net Worth"
+          onClick={() => {
+            setMinimized(true);
+            writeNetWorthMin(true);
+          }}
+          className="absolute right-2 top-2 z-20 flex h-6 w-6 items-end justify-center rounded-sm border border-slate-500 bg-white pb-[5px] text-slate-900 hover:bg-slate-100"
+        >
+          <span className="block h-[2px] w-2.5 bg-current" />
+        </button>
+        </>
       ) : null}
     </div>
     </ChartStage>

@@ -158,7 +158,7 @@ export function PlanSurvival({
         <div className="pointer-events-none flex flex-1 flex-col select-none" aria-hidden="true">
           <SurvivalTitle />
           <div
-            className="mt-4 flex min-h-[11.5rem] flex-1 flex-col items-center justify-center rounded-md px-3 py-3 text-center"
+            className="mt-4 flex h-[9rem] shrink-0 flex-col items-center justify-center overflow-hidden rounded-md px-3 text-center"
             style={{
               background: "color-mix(in oklab, #e8c547 22%, white)",
               boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 45%, white)",
@@ -235,14 +235,11 @@ export function PlanSurvival({
   const checking = view.status === "running";
   const ranOut = view.score ? runOutSentence(view.score) : null;
   return (
-    <div className={cn(card, "flex flex-col @min-[36rem]:h-full @min-[36rem]:flex-1")}>
+    <div className={card}>
       <SurvivalTitle />
-      {checking ? (
-        <p className="mt-3 text-sm leading-relaxed text-slate-800">Checking 1,000 futures…</p>
-      ) : null}
       <BoydQuote quotes={quotes} pass={view.pass} show={view.pass > 0} />
       <div
-        className="mt-4 flex min-h-[11.5rem] flex-col items-center justify-center rounded-md px-3 py-3 text-center @min-[36rem]:flex-1"
+        className="mt-4 flex h-[9rem] shrink-0 flex-col items-center justify-center overflow-hidden rounded-md px-3 text-center"
         style={{
           background: "color-mix(in oklab, #e8c547 22%, white)",
           boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 45%, white)",
