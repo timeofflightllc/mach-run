@@ -167,7 +167,7 @@ export function PlanSurvival({
   }
   if (locked) {
     return (
-      <div className={cn(card, "relative")}>
+      <div className={cn(card, "relative @min-[36rem]:flex @min-[36rem]:min-h-0 @min-[36rem]:flex-1 @min-[36rem]:flex-col")}>
         <div className="pointer-events-none flex flex-1 flex-col select-none" aria-hidden="true">
           <SurvivalTitle />
           <div className={quoteSlip} />
@@ -250,7 +250,7 @@ export function PlanSurvival({
   const checking = view.status === "running";
   const ranOut = view.score ? runOutSentence(view.score) : null;
   return (
-    <div className={card}>
+    <div className={cn(card, "@min-[36rem]:flex @min-[36rem]:min-h-0 @min-[36rem]:flex-1 @min-[36rem]:flex-col")}>
       <SurvivalTitle />
       <BoydQuote quotes={quotes} pass={view.pass} show={view.pass > 0} />
       <div

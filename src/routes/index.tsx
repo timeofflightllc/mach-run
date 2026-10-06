@@ -12,7 +12,7 @@ import { Pinnable, useChartPins } from "@/components/meridian/chart-pin";
 import { ContributionForm } from "@/components/meridian/contribution-form";
 import { AssumptionsForm, HouseholdForm } from "@/components/meridian/household-form";
 import { IncomeForm } from "@/components/meridian/income-form";
-import { KpiStrip, SpendableNote } from "@/components/meridian/kpi-strip";
+import { KpiStrip } from "@/components/meridian/kpi-strip";
 import { PortfolioForm } from "@/components/meridian/portfolio-form";
 import { LiabilityForm } from "@/components/meridian/liability-form";
 import { PeerBriefCard } from "@/components/meridian/peer-brief";
@@ -1541,15 +1541,15 @@ function Home() {
                     <div className="grid grid-cols-1 items-start gap-4 @min-[36rem]:grid-cols-2 @min-[36rem]:items-stretch">
                       <div className={cn(
                         "flex min-w-0 flex-col gap-3",
-                        simulatorFull && "@min-[36rem]:h-0 @min-[36rem]:min-h-full @min-[36rem]:overflow-hidden",
+                        simulatorFull && "@min-[36rem]:h-full",
                       )}>
                         <ActPhase />
-                        <div className={cn("flex flex-col gap-3", simulatorFull && "@min-[36rem]:min-h-0 @min-[36rem]:flex-1")}>
+                        <div className={cn("flex flex-col gap-3", simulatorFull && "@min-[36rem]:flex-1")}>
                           <Verdict
                             plan={displayPlan}
                             sim={run.sim}
                             brief={run.brief}
-                            className={simulatorFull ? "@min-[36rem]:min-h-0 @min-[36rem]:flex-1 @min-[36rem]:overflow-hidden" : undefined}
+                            className={simulatorFull ? "@min-[36rem]:flex-1" : undefined}
                             survivalUnlocked={sheet}
                             survival={
                               sheet &&
@@ -1563,7 +1563,7 @@ function Home() {
                           <KpiStrip plan={displayPlan} sim={run.sim} />
                         </div>
                       </div>
-                      <div className="flex min-w-0 flex-col gap-3">
+                      <div className={cn("flex min-w-0 flex-col gap-3", simulatorFull && "@min-[36rem]:h-full")}>
                         <PhaseLabel id="ooda-simulator" label="The Simulator" />
                         <PlanSurvival
                           locked={!sheet}
@@ -1575,9 +1575,6 @@ function Home() {
                           onLockedMinChange={setSurvivalMinimized}
                         />
                       </div>
-                    </div>
-                    <div className="hidden @min-[36rem]:grid @min-[36rem]:grid-cols-2 @min-[36rem]:gap-4">
-                      <SpendableNote plan={displayPlan} sim={run.sim} />
                     </div>
                     <PeerBriefCard
                       key={run.id}
