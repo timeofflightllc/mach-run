@@ -202,6 +202,23 @@ export function earliestWorkableRetirement(plan: Plan): RecommendedRetirement {
   return { date, age: ageAt(date) };
 }
 
+export function recommendedRetirementBluf(plan: Plan, rec: RecommendedRetirement): string {
+  const endAge = plan.assumptions.projectionEndAge;
+  if (!rec.date) {
+    return `No date lets earned pay stop and still cover spending through age ${endAge}.`;
+  }
+  const when = formatMonthYear(rec.date);
+  const ageBit = rec.age != null ? ` (age ${rec.age})` : "";
+  const lead = `Earliest earned pay can stop: ${when}${ageBit}.`;
+  const goal = plan.assumptions.retirementGoalDate;
+  if (!goal || !validIso(goal)) return lead;
+  const g = goal.slice(0, 7);
+  const r = rec.date.slice(0, 7);
+  if (g === r) return `${lead} That is your goal date.`;
+  if (g > r) return `${lead} Earlier than the goal date you set.`;
+  return `${lead} Your goal date is earlier, so spending does not last to age ${endAge} on that date.`;
+}
+
 export function recommendedRetirementCopy(plan: Plan, rec: RecommendedRetirement): string {
   const endAge = plan.assumptions.projectionEndAge;
   if (!rec.date) {

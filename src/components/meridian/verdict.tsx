@@ -2,10 +2,11 @@ import { useState } from "react";
 import { PrimaryButton } from "@/components/ui/field";
 import { formatMonthYear, monthStart, validIso } from "@/lib/plan/dates";
 import {
+  recommendedRetirementBluf,
   recommendedRetirementCopy,
   type RecommendedRetirement,
 } from "@/lib/plan/earliest-retirement";
-import { monthlyIncomeAt, startingSpendable } from "@/lib/plan/engine";
+import { monthlyIncomeAt } from "@/lib/plan/engine";
 import { usd } from "@/lib/plan/format";
 import { survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { nestEggTrack, peerRankLine, type PeerBrief } from "@/lib/plan/peers";
@@ -54,7 +55,6 @@ export function Verdict({
   const real = plan.assumptions.dollars === "real";
   const atTerm = real ? sim.spendableAtEndReal : sim.spendableAtEnd;
   const unit = real ? "today's dollars" : "nominal";
-  const start = startingSpendable(plan);
   const incomeNow = monthlyIncomeAt(plan, monthStart(plan.assumptions.asOfDate));
   const hasIncome =
     incomeNow > 0 ||
@@ -71,18 +71,9 @@ export function Verdict({
   }
 
   const ret = sim.retirement;
-  let retLine = " Set a retirement goal date in Family to key the Spendable strip.";
-  if (ret) {
-    const pile = usd(real ? ret.spendableReal : ret.spendable);
-    const annual = usd(real ? ret.annualIncomeReal : ret.annualIncome);
-    const monthly = usd(real ? ret.monthlyIncomeReal : ret.monthlyIncome, true);
-    if (ret.now) {
-      retLine = ` Retirement goal is this month, so spendable at retirement is the current pile (${pile}). First-year modeled income is ${annual} (${monthly}/mo average).`;
-    } else {
-      retLine = ` At retirement (${ret.date.slice(0, 7)}) spendable is ${pile} (${unit}). First-year modeled income is ${annual} (${monthly}/mo average).`;
-    }
-  } else if (plan.assumptions.retirementGoalDate) {
-    retLine = "";
+  let retLine = "";
+  if (!ret && !plan.assumptions.retirementGoalDate) {
+    retLine = "Set a retirement goal date in Family to key the Spendable strip.";
   }
 
   const rank = brief ? peerRankLine(brief) : null;
@@ -102,24 +93,23 @@ export function Verdict({
       {rank ? (
         <p className="mt-2 text-sm font-medium leading-relaxed text-fg">{rank}</p>
       ) : null}
-      <p className="mt-3 text-sm leading-relaxed text-muted">
-        Current spendable {usd(start)}. Remaining at age{" "}
-        {plan.assumptions.projectionEndAge} is {usd(atTerm)} ({unit}).
-        {retLine}
-      </p>
+      {retLine ? (
+        <p className="mt-3 text-sm leading-relaxed text-muted">{retLine}</p>
+      ) : null}
       {survival ? (
-        <div className="mt-3 text-sm leading-relaxed text-fg">
-          <p>{survivalSentence(survival.score)}</p>
-          {survival.runOutAge != null ? (
-            <p>In the futures that run out, the middle one runs out at age {survival.runOutAge}.</p>
-          ) : null}
-        </div>
+        <p className="mt-3 text-sm leading-relaxed text-fg">
+          {survivalSentence(survival.score)}
+          {survival.runOutAge != null
+            ? ` The rest run out around age ${survival.runOutAge}.`
+            : ""}
+        </p>
       ) : null}
       {brief?.recommendedRetirement ? (
         <RecommendedRetirement
           plan={plan}
           rec={brief.recommendedRetirement}
           onUse={onUseRecommended}
+          bluf
         />
       ) : null}
     </div>
@@ -131,12 +121,15 @@ export function RecommendedRetirement({
   rec,
   onUse,
   copy = true,
+  bluf = false,
 }: {
   plan: Plan;
   rec: RecommendedRetirement;
   onUse?: (date: string) => void;
   /** Analysis already prints the sentence. The button still sits under that section. */
   copy?: boolean;
+  /** One line in the BLUF. The long note stays in the analysis. */
+  bluf?: boolean;
 }) {
   const [ask, setAsk] = useState(false);
   const goal = plan.assumptions.retirementGoalDate;
@@ -149,7 +142,7 @@ export function RecommendedRetirement({
     <div className={copy ? "mt-3" : "mt-2"}>
       {copy ? (
         <p className="text-sm font-medium leading-relaxed text-fg">
-          {recommendedRetirementCopy(plan, rec)}
+          {bluf ? recommendedRetirementBluf(plan, rec) : recommendedRetirementCopy(plan, rec)}
         </p>
       ) : null}
       {canUse && !ask ? (
