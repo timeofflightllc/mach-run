@@ -28,6 +28,7 @@ interface PlanState {
   updateLiability: (id: string, patch: Partial<Liability>) => void;
   addLiability: (row: Liability) => void;
   removeLiability: (id: string) => void;
+  declareNoLiabilities: () => void;
   updateContribution: (id: string, patch: Partial<ContributionRule>) => void;
   addContribution: (row: ContributionRule) => void;
   removeContribution: (id: string) => void;
@@ -122,13 +123,20 @@ export const usePlanStore = create<PlanState>()(
         addLiability: (row) =>
           edit((plan) => ({
             ...plan,
+            noLiabilities: false,
             liabilities: [...(plan.liabilities ?? []), row],
           })),
         removeLiability: (id) =>
           edit((plan) => ({
             ...plan,
             liabilities: (plan.liabilities ?? []).filter((l) => l.id !== id),
+            noLiabilities: false,
           })),
+        declareNoLiabilities: () =>
+          set((s) => {
+            if ((s.plan.liabilities ?? []).length > 0) return s;
+            return { plan: ensurePlan({ ...s.plan, noLiabilities: true }) };
+          }),
         updateContribution: (id, patch) =>
           edit((plan) => ({
             ...plan,

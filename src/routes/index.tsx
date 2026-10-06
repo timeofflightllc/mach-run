@@ -215,7 +215,7 @@ function pageStarted(plan: Plan, id: StepId, calculated: boolean): boolean {
     case "assets":
       return plan.portfolios.length > 0;
     case "liabilities":
-      return (plan.liabilities?.length ?? 0) > 0;
+      return (plan.liabilities?.length ?? 0) > 0 || plan.noLiabilities === true;
     case "income":
       return plan.incomes.length > 0;
     case "spending":
@@ -347,7 +347,7 @@ function Home() {
   const ent = useEntitlement();
   const [step, setStep] = useState<StepId>("family");
   const sheet = hasBalanceSheet(ent.plan);
-  const route = PAGES.filter((page) => page.id !== "liabilities" || sheet);
+  const route = PAGES;
   const [motion, setMotion] = useState<{
     from: StepId;
     to: StepId;
@@ -542,10 +542,6 @@ function Home() {
       }
     : plan;
   const real = plan.assumptions.dollars === "real";
-
-  useEffect(() => {
-    if (step === "liabilities" && !sheet) setStep("assets");
-  }, [step, sheet]);
 
   useEffect(() => {
     setRunError(null);
@@ -1366,7 +1362,7 @@ function Home() {
               pinned
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
             >
-              <LiabilityForm />
+              <LiabilityForm onNone={() => goStep("income")} />
             </Section>
             </div>
             </div>

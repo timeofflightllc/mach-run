@@ -43,6 +43,16 @@ test("old plans missing liabilities migrate to []", () => {
   delete raw.liabilities;
   const next = ensurePlan(raw as ReturnType<typeof createDefaultPlan>);
   assert.deepEqual(next.liabilities, []);
+  assert.equal(next.noLiabilities, false);
+});
+
+test("no-liabilities confirmation sticks only while the list is empty", () => {
+  const empty = ensurePlan({ ...createDefaultPlan(), noLiabilities: true });
+  assert.equal(empty.noLiabilities, true);
+  const withLoan = ensurePlan({ ...empty, liabilities: [loan] });
+  assert.equal(withLoan.noLiabilities, false);
+  const cleared = ensurePlan({ ...withLoan, liabilities: [], noLiabilities: true });
+  assert.equal(cleared.noLiabilities, true);
 });
 
 test("a checked liability becomes one spending line and is not counted twice", () => {

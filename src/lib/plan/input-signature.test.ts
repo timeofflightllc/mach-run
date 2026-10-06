@@ -65,3 +65,11 @@ test("Today $ / Future $ does not change the signature", () => {
   plan.assumptions = { ...plan.assumptions, dollars: "nominal" };
   assert.equal(planInputSignature(plan), before);
 });
+
+test("confirming no liabilities does not change the signature", () => {
+  const plan = sample();
+  plan.liabilities = [];
+  const before = planInputSignature(plan);
+  plan.noLiabilities = true;
+  assert.equal(planInputSignature(plan), before);
+});

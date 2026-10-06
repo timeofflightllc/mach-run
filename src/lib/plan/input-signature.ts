@@ -7,5 +7,7 @@ import type { Plan } from "./types";
 export function planInputSignature(plan: Plan): string {
   const assumptions = { ...plan.assumptions };
   delete assumptions.dollars;
-  return JSON.stringify({ ...plan, assumptions });
+  const rest = { ...plan, assumptions };
+  delete rest.noLiabilities;
+  return JSON.stringify(rest);
 }

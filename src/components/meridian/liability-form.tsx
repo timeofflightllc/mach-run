@@ -77,10 +77,11 @@ function whenLabel(l: Liability): string {
   return `${start} → ${end}`;
 }
 
-export function LiabilityForm() {
+export function LiabilityForm({ onNone }: { onNone?: () => void }) {
   const plan = usePlanStore((s) => s.plan);
   const addLiability = usePlanStore((s) => s.addLiability);
   const removeLiability = usePlanStore((s) => s.removeLiability);
+  const declareNoLiabilities = usePlanStore((s) => s.declareNoLiabilities);
   const copy = usePlannerCopy();
   const [openId, setOpenId] = useState<string | null>(null);
   const [pendingRemove, setPendingRemove] = useState<string | null>(null);
@@ -121,21 +122,33 @@ export function LiabilityForm() {
           />
         ))}
       </ul>
-      <GhostButton
-        onClick={() => {
-          const id = newId("lia");
-          addLiability({
-            ...emptyLiability(),
-            id,
-            name: "",
-            kind: "car",
-          });
-          setOpenId(id);
-        }}
-      >
-        <Plus className="size-4" />
-        Add liability
-      </GhostButton>
+      <div className="flex flex-wrap items-center gap-2">
+        <GhostButton
+          onClick={() => {
+            const id = newId("lia");
+            addLiability({
+              ...emptyLiability(),
+              id,
+              name: "",
+              kind: "car",
+            });
+            setOpenId(id);
+          }}
+        >
+          <Plus className="size-4" />
+          Add liability
+        </GhostButton>
+        {rows.length === 0 ? (
+          <GhostButton
+            onClick={() => {
+              declareNoLiabilities();
+              onNone?.();
+            }}
+          >
+            I have no liabilities
+          </GhostButton>
+        ) : null}
+      </div>
       {pendingRemove ? (
         <ConfirmRemove
           title="Remove liability"

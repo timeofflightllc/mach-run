@@ -233,6 +233,11 @@ export interface Plan {
   assumptions: Assumptions;
   portfolios: Portfolio[];
   liabilities: Liability[];
+  /**
+   * User said this household has no loans. Cleared when a liability is added
+   * or the last one is removed. Absent means they have not answered.
+   */
+  noLiabilities?: boolean;
   contributions: ContributionRule[];
   incomes: IncomeStream[];
   spending: SpendingPhase[];

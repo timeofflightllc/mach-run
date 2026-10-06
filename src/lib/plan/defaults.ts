@@ -77,6 +77,7 @@ export function ensurePlan(plan: Plan): Plan {
     ...l,
     ...institutionFields(l.institutionId, l.institutionName),
   }));
+  next.noLiabilities = next.liabilities.length === 0 && plan.noLiabilities === true;
   next.contributions = next.contributions.map((c) => ({
     ...c,
     capToIrsLimit: Boolean(c.capToIrsLimit),
