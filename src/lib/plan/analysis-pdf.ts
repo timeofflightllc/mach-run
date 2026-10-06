@@ -1,7 +1,7 @@
 import type { BriefSection, PeerBrief } from "./peers";
 import type { Plan, SimResult } from "./types";
 import { usd } from "./format";
-import { survivalSentence, type SurvivalScore } from "./monte-carlo-run";
+import { runOutSentence, survivalSentence, type SurvivalScore } from "./monte-carlo-run";
 import { OODA_DISCLAIMER } from "./disclaimer";
 import { startingNetWorth, startingSpendable } from "./engine";
 import { annuityEquivalentCopy } from "./annuity-equivalent";
@@ -340,10 +340,11 @@ function buildBlocks(
   if (survival) {
     blocks.push({ kind: "space", h: 4 });
     blocks.push({ kind: "body", text: survivalSentence(survival.score) });
-    if (survival.runOutAge != null) {
+    const ranOut = runOutSentence(survival);
+    if (ranOut) {
       blocks.push({
         kind: "body",
-        text: `In the futures that run out, the middle one runs out at age ${survival.runOutAge}.`,
+        text: ranOut,
       });
     }
   }

@@ -50,6 +50,19 @@ export function survivalSentence(score: number): string {
   return `In ${score} of 100 futures like this one, the money lasts.`;
 }
 
+/** Count of paths that ran out, and the middle age of that group. Not the mean. */
+export function runOutSentence(score: Pick<SurvivalScore, "survived" | "paths" | "runOutAge">): string | null {
+  if (score.runOutAge == null) return null;
+  const failed = score.paths - score.survived;
+  if (failed <= 0) return null;
+  const total = score.paths.toLocaleString("en-US");
+  if (failed === 1) {
+    return `In the 1 of ${total} random futures that runs out of money, it runs out at age ${score.runOutAge}.`;
+  }
+  const n = failed.toLocaleString("en-US");
+  return `In the ${n} of ${total} random futures that run out of money, the middle one runs out at age ${score.runOutAge}.`;
+}
+
 /** Earlier of the two middle ages when the count is even. Whole years only. */
 export function middleRunOutAge(ages: number[]): number | null {
   const usable = ages.filter((age) => Number.isFinite(age));

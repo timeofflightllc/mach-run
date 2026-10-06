@@ -8,7 +8,7 @@ import {
 } from "@/lib/plan/earliest-retirement";
 import { monthlyIncomeAt } from "@/lib/plan/engine";
 import { usd } from "@/lib/plan/format";
-import { survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
+import { runOutSentence, survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { nestEggTrack, peerRankLine, type PeerBrief } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
 
@@ -78,6 +78,7 @@ export function Verdict({
   }
 
   const rank = brief ? peerRankLine(brief) : null;
+  const ranOut = survival ? runOutSentence(survival) : null;
   const egg = nestEggTrack(plan, sim);
 
   return (
@@ -93,7 +94,7 @@ export function Verdict({
       ) : null}
       {rank ? (
         <div className="mt-3 text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-subtle">
+          <p className="font-display text-lg font-semibold uppercase tracking-[0.08em] text-fg">
             {rank.title}
           </p>
           <ul className="mx-auto mt-1.5 inline-block list-disc space-y-1 pl-5 text-left text-sm leading-snug text-fg">
@@ -114,9 +115,7 @@ export function Verdict({
           {survival ? (
             <p className="mt-1 text-sm leading-relaxed text-fg">
               {survivalSentence(survival.score)}
-              {survival.runOutAge != null
-                ? ` The rest run out around age ${survival.runOutAge}.`
-                : ""}
+              {ranOut ? ` ${ranOut}` : ""}
             </p>
           ) : (
             <p className="mt-1 text-sm leading-relaxed text-muted">

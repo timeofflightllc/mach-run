@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useRef } from "react";
 import type { SwingName } from "@/lib/plan/monte-carlo";
-import { survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
+import { runOutSentence, survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { cn } from "@/lib/utils";
 import { useBoydQuotes } from "@/components/meridian/use-boyd-quotes";
 
@@ -159,6 +159,7 @@ export function PlanSurvival({
     );
   }
   const checking = view.status === "running";
+  const ranOut = view.score ? runOutSentence(view.score) : null;
   return (
     <div className={card}>
       <SurvivalTitle />
@@ -175,10 +176,8 @@ export function PlanSurvival({
           <p className="text-lg font-bold leading-snug text-slate-900">
             {survivalSentence(view.score.score)}
           </p>
-          {view.score.runOutAge != null ? (
-            <p className="mt-1 text-base font-semibold leading-snug text-slate-900">
-              In the futures that run out, the middle one runs out at age {view.score.runOutAge}.
-            </p>
+          {ranOut ? (
+            <p className="mt-1 text-base font-semibold leading-snug text-slate-900">{ranOut}</p>
           ) : null}
         </div>
       ) : null}
