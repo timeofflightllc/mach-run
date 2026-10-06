@@ -28,6 +28,10 @@ function readLockedMin() {
   }
 }
 
+export function readPlanSurvivalMinimized() {
+  return readLockedMin();
+}
+
 function writeLockedMin(min: boolean) {
   try {
     if (min) window.localStorage.setItem(LOCKED_MIN_KEY, "1");
@@ -55,6 +59,9 @@ function SurvivalTitle() {
   );
 }
 
+const quoteSlip =
+  "mt-3 flex h-[7.5rem] shrink-0 flex-col items-center justify-center overflow-hidden rounded-lg border border-[#e4d5c4] bg-[#f7f1e6] px-4 text-center";
+
 function BoydQuote({
   quotes,
   pass,
@@ -69,18 +76,21 @@ function BoydQuote({
     const line = quotes[Math.floor(Math.random() * quotes.length)] ?? "";
     if (line) picked.current = { pass, line };
   }
-  const line = picked.current?.pass === pass ? picked.current.line : "";
-  if (!show || !line) return null;
+  const line = show && picked.current?.pass === pass ? picked.current.line : "";
 
   return (
-    <div className="mt-3 flex flex-col items-center rounded-lg border border-[#e4d5c4] bg-[#f7f1e6] px-4 pb-3 pt-1 text-center">
-      <span aria-hidden="true" className="-mb-5 font-serif text-5xl leading-none text-[#d05838]">
-        “
-      </span>
-      <p className="max-w-xl font-display text-lg leading-snug text-slate-900">{line}</p>
-      <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
-        John Boyd
-      </p>
+    <div className={quoteSlip}>
+      {line ? (
+        <>
+          <span aria-hidden="true" className="-mb-5 font-serif text-5xl leading-none text-[#d05838]">
+            “
+          </span>
+          <p className="max-w-xl font-display text-lg leading-snug text-slate-900">{line}</p>
+          <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+            John Boyd
+          </p>
+        </>
+      ) : null}
     </div>
   );
 }
@@ -128,6 +138,7 @@ export function PlanSurvival({
   onRun,
   onClose,
   onOpen,
+  onLockedMinChange,
 }: {
   locked: boolean;
   view: SurvivalView | null;
@@ -135,6 +146,7 @@ export function PlanSurvival({
   onRun?: () => void;
   onClose?: () => void;
   onOpen?: () => void;
+  onLockedMinChange?: (minimized: boolean) => void;
 }) {
   const quotes = useBoydQuotes();
   const [lockedMin, setLockedMin] = useState(readLockedMin);
@@ -145,6 +157,7 @@ export function PlanSurvival({
         onClick={() => {
           setLockedMin(false);
           writeLockedMin(false);
+          onLockedMinChange?.(false);
         }}
         className={cn(card, "w-full text-left")}
       >
@@ -154,9 +167,10 @@ export function PlanSurvival({
   }
   if (locked) {
     return (
-      <div className={cn(card, "relative flex flex-col @min-[36rem]:h-full @min-[36rem]:flex-1")}>
+      <div className={cn(card, "relative")}>
         <div className="pointer-events-none flex flex-1 flex-col select-none" aria-hidden="true">
           <SurvivalTitle />
+          <div className={quoteSlip} />
           <div
             className="mt-4 flex h-[9rem] shrink-0 flex-col items-center justify-center overflow-hidden rounded-md px-3 text-center"
             style={{
@@ -208,6 +222,7 @@ export function PlanSurvival({
           onClick={() => {
             setLockedMin(true);
             writeLockedMin(true);
+            onLockedMinChange?.(true);
           }}
           className="absolute right-2 top-2 z-20 flex h-6 w-6 items-end justify-center rounded-sm border border-slate-500 bg-white pb-[5px] text-slate-900 hover:bg-slate-100"
         >

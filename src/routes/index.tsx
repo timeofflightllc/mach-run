@@ -7,12 +7,12 @@ import { StaleRunPrompt } from "@/components/meridian/confirm-remove";
 import { CalculateButton } from "@/components/meridian/calculate-button";
 import { AdvisoryStrip } from "@/components/meridian/advisory-note";
 import { CashChart, NetWorthChart, WealthChart } from "@/components/meridian/charts";
-import { PlanSurvival, type SurvivalView } from "@/components/meridian/plan-survival";
+import { PlanSurvival, readPlanSurvivalMinimized, type SurvivalView } from "@/components/meridian/plan-survival";
 import { Pinnable, useChartPins } from "@/components/meridian/chart-pin";
 import { ContributionForm } from "@/components/meridian/contribution-form";
 import { AssumptionsForm, HouseholdForm } from "@/components/meridian/household-form";
 import { IncomeForm } from "@/components/meridian/income-form";
-import { KpiStrip } from "@/components/meridian/kpi-strip";
+import { KpiStrip, SpendableNote } from "@/components/meridian/kpi-strip";
 import { PortfolioForm } from "@/components/meridian/portfolio-form";
 import { LiabilityForm } from "@/components/meridian/liability-form";
 import { PeerBriefCard } from "@/components/meridian/peer-brief";
@@ -433,6 +433,10 @@ function Home() {
     timer: number | null;
   } | null>(null);
   const survivalView = survival[runKey] ?? null;
+  const [survivalMinimized, setSurvivalMinimized] = useState(readPlanSurvivalMinimized);
+  const simulatorFull = sheet
+    ? Boolean(survivalView && survivalView.status !== "empty" && survivalView.open)
+    : !survivalMinimized;
   const survivalRef = useRef(survival);
   survivalRef.current = survival;
 
@@ -1535,25 +1539,31 @@ function Home() {
                 <div className="grid grid-cols-1 gap-4 @min-[64rem]:grid-cols-[minmax(0,1.15fr)_minmax(24rem,1fr)] @min-[64rem]:items-start">
                   <div className="flex min-w-0 flex-col gap-4">
                     <div className="grid grid-cols-1 items-start gap-4 @min-[36rem]:grid-cols-2 @min-[36rem]:items-stretch">
-                      <div className="flex min-w-0 flex-col gap-3">
+                      <div className={cn(
+                        "flex min-w-0 flex-col gap-3",
+                        simulatorFull && "@min-[36rem]:h-0 @min-[36rem]:min-h-full @min-[36rem]:overflow-hidden",
+                      )}>
                         <ActPhase />
-                        <Verdict
-                          plan={displayPlan}
-                          sim={run.sim}
-                          brief={run.brief}
-                          survivalUnlocked={sheet}
-                          survival={
-                            sheet &&
-                            survivalView?.status === "ready" &&
-                            survivalView.runId === run.id &&
-                            survivalView.score
-                              ? survivalView.score
-                              : null
-                          }
-                        />
-                        <KpiStrip plan={displayPlan} sim={run.sim} />
+                        <div className={cn("flex flex-col gap-3", simulatorFull && "@min-[36rem]:min-h-0 @min-[36rem]:flex-1")}>
+                          <Verdict
+                            plan={displayPlan}
+                            sim={run.sim}
+                            brief={run.brief}
+                            className={simulatorFull ? "@min-[36rem]:min-h-0 @min-[36rem]:flex-1 @min-[36rem]:overflow-hidden" : undefined}
+                            survivalUnlocked={sheet}
+                            survival={
+                              sheet &&
+                              survivalView?.status === "ready" &&
+                              survivalView.runId === run.id &&
+                              survivalView.score
+                                ? survivalView.score
+                                : null
+                            }
+                          />
+                          <KpiStrip plan={displayPlan} sim={run.sim} />
+                        </div>
                       </div>
-                      <div className="flex min-w-0 flex-col gap-3 @min-[36rem]:h-full">
+                      <div className="flex min-w-0 flex-col gap-3">
                         <PhaseLabel id="ooda-simulator" label="The Simulator" />
                         <PlanSurvival
                           locked={!sheet}
@@ -1562,8 +1572,12 @@ function Home() {
                           onRun={runMonteCarlo}
                           onClose={() => setSurvivalOpen(false)}
                           onOpen={() => setSurvivalOpen(true)}
+                          onLockedMinChange={setSurvivalMinimized}
                         />
                       </div>
+                    </div>
+                    <div className="hidden @min-[36rem]:grid @min-[36rem]:grid-cols-2 @min-[36rem]:gap-4">
+                      <SpendableNote plan={displayPlan} sim={run.sim} />
                     </div>
                     <PeerBriefCard
                       key={run.id}

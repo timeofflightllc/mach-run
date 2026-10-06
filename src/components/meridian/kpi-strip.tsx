@@ -2,6 +2,26 @@ import { usd } from "@/lib/plan/format";
 import { startingNetWorth, startingSpendable } from "@/lib/plan/engine";
 import type { Plan, SimResult } from "@/lib/plan/types";
 
+export function SpendableNote({ plan, sim }: { plan: Plan; sim: SimResult }) {
+  const ret = sim.retirement;
+  if (ret?.now) {
+    return (
+      <p className="text-xs text-subtle">
+        Retirement goal is the as-of month, so spendable-at-retirement matches
+        current spendable. Monthly income is the first-year average (annual ÷
+        12), not the first calendar month. Set a future date in Family if you
+        meant a later retirement.
+      </p>
+    );
+  }
+  return (
+    <p className="text-xs text-subtle">
+      Retirement income is modeled pay in the first twelve months from the
+      goal date (pension, wages, SS, VA). Monthly is that year ÷ 12.
+    </p>
+  );
+}
+
 export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
   const real = plan.assumptions.dollars === "real";
   const ret = sim.retirement;
@@ -61,19 +81,9 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
           </div>
         ))}
       </dl>
-      {ret?.now ? (
-        <p className="text-xs text-subtle">
-          Retirement goal is the as-of month, so spendable-at-retirement matches
-          current spendable. Monthly income is the first-year average (annual ÷
-          12), not the first calendar month. Set a future date in Family if you
-          meant a later retirement.
-        </p>
-      ) : (
-        <p className="text-xs text-subtle">
-          Retirement income is modeled pay in the first twelve months from the
-          goal date (pension, wages, SS, VA). Monthly is that year ÷ 12.
-        </p>
-      )}
+      <div className="@min-[36rem]:hidden">
+        <SpendableNote plan={plan} sim={sim} />
+      </div>
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { usd } from "@/lib/plan/format";
 import { runOutSentence, survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { nestEggTrack, peerRankLine, type PeerBrief } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
+import { cn } from "@/lib/utils";
 
 export function NestEggHeadline({
   egg,
@@ -45,6 +46,7 @@ export function Verdict({
   brief,
   survival,
   survivalUnlocked = false,
+  className,
 }: {
   plan: Plan;
   sim: SimResult;
@@ -52,6 +54,7 @@ export function Verdict({
   survival?: SurvivalScore | null;
   /** Individual Unlimited or Advisor. Free and Individual do not get the run. */
   survivalUnlocked?: boolean;
+  className?: string;
 }) {
   const real = plan.assumptions.dollars === "real";
   const atTerm = real ? sim.spendableAtEndReal : sim.spendableAtEnd;
@@ -82,7 +85,7 @@ export function Verdict({
   const egg = nestEggTrack(plan, sim);
 
   return (
-    <div className="rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]">
+    <div className={cn("rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]", className)}>
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
         BLUF (Bottom Line Up Front)
       </p>
