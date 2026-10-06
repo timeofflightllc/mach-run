@@ -1534,7 +1534,7 @@ function Home() {
               <div className="@container">
                 <div className="grid grid-cols-1 gap-4 @min-[64rem]:grid-cols-[minmax(0,1.15fr)_minmax(24rem,1fr)] @min-[64rem]:items-start">
                   <div className="flex min-w-0 flex-col gap-4">
-                    <div className="grid grid-cols-1 items-start gap-4 @min-[36rem]:grid-cols-2">
+                    <div className="grid grid-cols-1 items-start gap-4 @min-[36rem]:grid-cols-2 @min-[36rem]:items-stretch">
                       <div className="flex min-w-0 flex-col gap-3">
                         <ActPhase />
                         <Verdict
@@ -1553,7 +1553,7 @@ function Home() {
                         />
                         <KpiStrip plan={displayPlan} sim={run.sim} />
                       </div>
-                      <div className="flex min-w-0 flex-col gap-3">
+                      <div className="flex min-w-0 flex-col gap-3 @min-[36rem]:h-full">
                         <p
                           aria-hidden="true"
                           className="invisible hidden font-display text-lg font-semibold tracking-[0.18em] sm:text-xl @min-[36rem]:block"

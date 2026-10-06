@@ -3,6 +3,7 @@ import { useRef } from "react";
 import type { SwingName } from "@/lib/plan/monte-carlo";
 import { runOutSentence, survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { cn } from "@/lib/utils";
+import { MachOrbit } from "@/components/meridian/mach-orbit";
 import { useBoydQuotes } from "@/components/meridian/use-boyd-quotes";
 
 export type SurvivalView = {
@@ -164,32 +165,36 @@ export function PlanSurvival({
   const checking = view.status === "running";
   const ranOut = view.score ? runOutSentence(view.score) : null;
   return (
-    <div className={card}>
+    <div className={cn(card, "flex flex-col @min-[36rem]:h-full @min-[36rem]:flex-1")}>
       <SurvivalTitle />
       {checking ? (
         <p className="mt-3 text-sm leading-relaxed text-slate-800">Checking 1,000 futures…</p>
-      ) : view.score ? null : (
-        <p className="mt-3 text-sm leading-relaxed text-slate-800">
-          Press Run Monte Carlo Simulation to check 1,000 futures.
-        </p>
-      )}
-      <BoydQuote quotes={quotes} pass={view.pass} show={view.pass > 0} />
-      {!checking && view.score ? (
-        <div
-          className="mt-4 rounded-md px-3 py-3 text-center"
-          style={{
-            background: "color-mix(in oklab, #e8c547 22%, white)",
-            boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 45%, white)",
-          }}
-        >
-          <p className="text-lg font-bold leading-snug text-slate-900">
-            {survivalSentence(view.score.score)}
-          </p>
-          {ranOut ? (
-            <p className="mt-1 text-base font-semibold leading-snug text-slate-900">{ranOut}</p>
-          ) : null}
-        </div>
       ) : null}
+      <BoydQuote quotes={quotes} pass={view.pass} show={view.pass > 0} />
+      <div
+        className="mt-4 flex min-h-[11.5rem] flex-col items-center justify-center rounded-md px-3 py-3 text-center @min-[36rem]:flex-1"
+        style={{
+          background: "color-mix(in oklab, #e8c547 22%, white)",
+          boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 45%, white)",
+        }}
+      >
+        {checking ? (
+          <MachOrbit compact />
+        ) : view.score ? (
+          <>
+            <p className="text-lg font-bold leading-snug text-slate-900">
+              {survivalSentence(view.score.score)}
+            </p>
+            {ranOut ? (
+              <p className="mt-1 text-base font-semibold leading-snug text-slate-900">{ranOut}</p>
+            ) : null}
+          </>
+        ) : (
+          <p className="text-sm leading-relaxed text-slate-800">
+            Press Run Monte Carlo Simulation to check 1,000 futures.
+          </p>
+        )}
+      </div>
       <div className="mt-3 flex justify-center">
         <div className="inline-flex rounded-lg bg-slate-100 p-1">
         {CHOICES.map((choice) => {

@@ -204,6 +204,10 @@
   place-items: center;
 }
 
+.mach-orbit-compact {
+  width: min(8.5rem, 100%);
+}
+
 .mach-orbit-logo {
   position: relative;
   z-index: 1;
