@@ -45,6 +45,7 @@ const PAGE_LABEL: Record<SitePageSlug, string> = {
   pricing: "Pricing",
   footer: "Footer content",
   planner: "Calculator",
+  boyd: "Boyd quotes",
 };
 
 function BulletLines({
@@ -484,6 +485,7 @@ export function SiteCopyDesk() {
   const pricingOpen = slug === "pricing";
   const footerOpen = slug === "footer";
   const plannerOpen = slug === "planner";
+  const boydOpen = slug === "boyd";
 
   return (
     <div className="space-y-6">
@@ -496,7 +498,9 @@ export function SiteCopyDesk() {
               ? "Public footer words. Layout and links stay in code."
               : plannerOpen
                 ? "Lines under Family, Accounts, Income, Spending, and Contributions."
-                : "About, The Method, FAQ, Contact intro, Privacy, Legal, and the Updates header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
+                : boydOpen
+                  ? "One John Boyd quote per line. Blank lines are ignored."
+                  : "About, The Method, FAQ, Contact intro, Privacy, Legal, and the Updates header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
         </p>
         <div className="mt-3 inline-flex flex-wrap rounded-lg bg-elevated p-1">
           {SITE_PAGE_SLUGS.map((id) => (
@@ -543,6 +547,26 @@ export function SiteCopyDesk() {
               <SavedAt at={savedAt[slug]} />
             </div>
           </>
+        ) : draft && boydOpen ? (
+          <div className="mt-4 space-y-3">
+            <Field label="Quotes — one per line">
+              <textarea
+                rows={10}
+                value={draft.body}
+                onChange={(e) => setDraft({ ...draft, body: e.target.value })}
+                className="w-full min-w-0 rounded-lg border border-border bg-elevated px-3 py-2 text-sm text-fg outline-none"
+              />
+            </Field>
+            <p className="text-xs text-muted">
+              Blank lines are ignored. The line under the quote will read John Boyd.
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
+                Save Boyd quotes
+              </PrimaryButton>
+              <SavedAt at={savedAt[slug]} />
+            </div>
+          </div>
         ) : draft ? (
           <div className="mt-4 space-y-3">
             <Field label="Title">

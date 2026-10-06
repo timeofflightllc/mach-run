@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import type { SwingName } from "@/lib/plan/monte-carlo";
 import { survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { cn } from "@/lib/utils";
+import { useBoydQuotes } from "@/components/meridian/use-boyd-quotes";
 
 export type SurvivalView = {
   runId: number;
@@ -29,6 +31,48 @@ function SurvivalTitle() {
   );
 }
 
+function BoydQuote({
+  quotes,
+  runId,
+  active,
+}: {
+  quotes: string[];
+  runId: number;
+  active: boolean;
+}) {
+  const [index, setIndex] = useState(0);
+  const count = quotes.length;
+
+  useEffect(() => {
+    if (!active || count === 0) return;
+    setIndex(Math.floor(Math.random() * count));
+  }, [active, runId, count]);
+
+  useEffect(() => {
+    if (!active || count < 2) return;
+    const timer = window.setInterval(() => {
+      setIndex((current) => {
+        const pick = Math.floor(Math.random() * (count - 1));
+        return pick >= current ? pick + 1 : pick;
+      });
+    }, 6000);
+    return () => window.clearInterval(timer);
+  }, [active, runId, count]);
+
+  if (!active || count === 0) return null;
+  const line = quotes[Math.min(index, count - 1)];
+  if (!line) return null;
+
+  return (
+    <div className="mt-4 flex min-h-32 flex-col items-center justify-center px-3 text-center">
+      <p className="max-w-xl font-display text-lg leading-snug text-slate-900">{line}</p>
+      <p className="mt-3 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+        John Boyd
+      </p>
+    </div>
+  );
+}
+
 export function PlanSurvival({
   locked,
   view,
@@ -42,6 +86,7 @@ export function PlanSurvival({
   onClose?: () => void;
   onOpen?: () => void;
 }) {
+  const quotes = useBoydQuotes();
   if (locked) {
     return (
       <div className={card}>
@@ -98,6 +143,7 @@ export function PlanSurvival({
       >
         {checking ? "Checking 1,000 futures…" : survivalSentence(view.score!.score)}
       </p>
+      <BoydQuote quotes={quotes} runId={view.runId} active={checking} />
       {!checking && view.score?.runOutAge != null ? (
         <p className="mt-1 text-sm leading-relaxed text-slate-800">
           In the futures that run out, the middle one runs out at age {view.score.runOutAge}.
