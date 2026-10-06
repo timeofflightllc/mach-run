@@ -171,7 +171,7 @@ export function PlanSurvival({
       )}
       <BoydQuote quotes={quotes} pass={view.pass} show={view.pass > 0} />
       {!checking && view.score ? (
-        <div className="mt-4 text-center">
+        <div className="mt-4 rounded-md bg-[#f4d5cc] px-3 py-3 text-center">
           <p className="text-lg font-bold leading-snug text-slate-900">
             {survivalSentence(view.score.score)}
           </p>
@@ -182,7 +182,8 @@ export function PlanSurvival({
           ) : null}
         </div>
       ) : null}
-      <div className="mt-3 inline-flex rounded-lg bg-slate-100 p-1">
+      <div className="mt-3 flex justify-center">
+        <div className="inline-flex rounded-lg bg-slate-100 p-1">
         {CHOICES.map((choice) => {
           const on = view.swing === choice.id;
           return (
@@ -200,8 +201,9 @@ export function PlanSurvival({
             </button>
           );
         })}
+        </div>
       </div>
-      <p className="mt-2 text-xs leading-relaxed text-slate-600">
+      <p className="mt-2 text-center text-xs leading-relaxed text-slate-600">
         Calm is quieter markets. Typical is the usual swing. Rough is wider markets.
         Choose one, then run it.
       </p>
