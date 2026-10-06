@@ -876,7 +876,14 @@ function Home() {
     if (!quiet) {
       setSurvival((prev) => ({
         ...prev,
-        [key]: { runId, status: "running", score: null, swing, open },
+        [key]: {
+          runId,
+          status: "running",
+          score: null,
+          swing,
+          open,
+          pass: (prev[key]?.pass ?? 0) + 1,
+        },
       }));
     }
     void runSurvival(snapshot, swing, { signal }).then(
@@ -891,8 +898,9 @@ function Home() {
               runId,
               status: "empty",
               score: null,
-              swing,
+              swing: cur?.swing ?? swing,
               open: cur?.open ?? open,
+              pass: cur?.pass ?? 0,
             };
             return { ...prev, [key]: next };
           }
@@ -900,8 +908,9 @@ function Home() {
             runId,
             status: "ready",
             score,
-            swing,
+            swing: cur?.swing ?? swing,
             open: cur?.open ?? open,
+            pass: cur?.pass ?? 0,
           };
           return { ...prev, [key]: ready };
         });
@@ -917,6 +926,7 @@ function Home() {
             score: null,
             swing: cur?.swing ?? swing,
             open: cur?.open ?? open,
+            pass: cur?.pass ?? 0,
           };
           return { ...prev, [key]: next };
         });
@@ -926,8 +936,17 @@ function Home() {
 
   function chooseSwing(swing: SwingName) {
     if (!hasBalanceSheet(ent.plan)) return;
+    setSurvival((prev) => {
+      const view = prev[runKey];
+      if (!view || view.status === "empty" || view.swing === swing) return prev;
+      return { ...prev, [runKey]: { ...view, swing } };
+    });
+  }
+
+  function runMonteCarlo() {
+    if (!hasBalanceSheet(ent.plan)) return;
     const view = survival[runKey];
-    if (!view || view.status === "empty" || view.swing === swing) return;
+    if (!view || view.status === "empty") return;
     const current = runs[runKey];
     const task = survivalTask.current;
     const snapshot =
@@ -937,7 +956,7 @@ function Home() {
           ? task.snapshot
           : null;
     if (!snapshot) return;
-    startPlanSurvival(runKey, view.runId, snapshot, swing, view.open);
+    startPlanSurvival(runKey, view.runId, snapshot, view.swing, true);
   }
 
   function setSurvivalOpen(open: boolean) {
@@ -1535,6 +1554,7 @@ function Home() {
                           locked={!sheet}
                           view={survivalView}
                           onSwing={chooseSwing}
+                          onRun={runMonteCarlo}
                           onClose={() => setSurvivalOpen(false)}
                           onOpen={() => setSurvivalOpen(true)}
                         />

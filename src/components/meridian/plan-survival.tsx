@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SwingName } from "@/lib/plan/monte-carlo";
 import { survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,8 @@ export type SurvivalView = {
   score: SurvivalScore | null;
   swing: SwingName;
   open: boolean;
+  /** Bumps once per Monte Carlo start. The quote stays until the next bump. */
+  pass: number;
 };
 
 const card =
@@ -33,35 +35,24 @@ function SurvivalTitle() {
 
 function BoydQuote({
   quotes,
-  runId,
+  pass,
   active,
 }: {
   quotes: string[];
-  runId: number;
+  pass: number;
   active: boolean;
 }) {
-  const [index, setIndex] = useState(0);
-  const count = quotes.length;
+  const list = useRef(quotes);
+  list.current = quotes;
+  const [line, setLine] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!active || count === 0) return;
-    setIndex(Math.floor(Math.random() * count));
-  }, [active, runId, count]);
+    const quotesNow = list.current;
+    if (pass === 0 || quotesNow.length === 0) return;
+    setLine(quotesNow[Math.floor(Math.random() * quotesNow.length)] ?? null);
+  }, [pass]);
 
-  useEffect(() => {
-    if (!active || count < 2) return;
-    const timer = window.setInterval(() => {
-      setIndex((current) => {
-        const pick = Math.floor(Math.random() * (count - 1));
-        return pick >= current ? pick + 1 : pick;
-      });
-    }, 6000);
-    return () => window.clearInterval(timer);
-  }, [active, runId, count]);
-
-  if (!active || count === 0) return null;
-  const line = quotes[Math.min(index, count - 1)];
-  if (!line) return null;
+  if (!active || !line) return null;
 
   return (
     <div className="mt-4 flex min-h-32 flex-col items-center justify-center px-3 text-center">
@@ -77,12 +68,14 @@ export function PlanSurvival({
   locked,
   view,
   onSwing,
+  onRun,
   onClose,
   onOpen,
 }: {
   locked: boolean;
   view: SurvivalView | null;
   onSwing?: (swing: SwingName) => void;
+  onRun?: () => void;
   onClose?: () => void;
   onOpen?: () => void;
 }) {
@@ -143,7 +136,7 @@ export function PlanSurvival({
       >
         {checking ? "Checking 1,000 futures…" : survivalSentence(view.score!.score)}
       </p>
-      <BoydQuote quotes={quotes} runId={view.runId} active={checking} />
+      <BoydQuote quotes={quotes} pass={view.pass} active={checking} />
       {!checking && view.score?.runOutAge != null ? (
         <p className="mt-1 text-sm leading-relaxed text-slate-800">
           In the futures that run out, the middle one runs out at age {view.score.runOutAge}.
@@ -170,7 +163,15 @@ export function PlanSurvival({
       </div>
       <p className="mt-2 text-xs leading-relaxed text-slate-600">
         Calm is quieter markets. Typical is the usual swing. Rough is wider markets.
+        Choose one, then run it.
       </p>
+      <button
+        type="button"
+        onClick={onRun}
+        className="mt-3 h-10 w-full rounded-lg bg-slate-900 text-sm font-medium text-white hover:bg-slate-800"
+      >
+        Run Monte Carlo Simulation
+      </button>
       <div className="mt-3 flex justify-end border-t border-slate-200 pt-2">
         <button
           type="button"
