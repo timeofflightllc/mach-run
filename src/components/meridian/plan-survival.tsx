@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useRef } from "react";
 import type { SwingName } from "@/lib/plan/monte-carlo";
 import { survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { cn } from "@/lib/utils";
@@ -7,7 +7,7 @@ import { useBoydQuotes } from "@/components/meridian/use-boyd-quotes";
 
 export type SurvivalView = {
   runId: number;
-  status: "running" | "ready" | "empty";
+  status: "idle" | "running" | "ready" | "empty";
   score: SurvivalScore | null;
   swing: SwingName;
   open: boolean;
@@ -36,23 +36,19 @@ function SurvivalTitle() {
 function BoydQuote({
   quotes,
   pass,
-  active,
+  show,
 }: {
   quotes: string[];
   pass: number;
-  active: boolean;
+  show: boolean;
 }) {
-  const list = useRef(quotes);
-  list.current = quotes;
-  const [line, setLine] = useState<string | null>(null);
-
-  useEffect(() => {
-    const quotesNow = list.current;
-    if (pass === 0 || quotesNow.length === 0) return;
-    setLine(quotesNow[Math.floor(Math.random() * quotesNow.length)] ?? null);
-  }, [pass]);
-
-  if (!active || !line) return null;
+  const picked = useRef<{ pass: number; line: string } | null>(null);
+  if (pass > 0 && quotes.length > 0 && picked.current?.pass !== pass) {
+    const line = quotes[Math.floor(Math.random() * quotes.length)] ?? "";
+    if (line) picked.current = { pass, line };
+  }
+  const line = picked.current?.pass === pass ? picked.current.line : "";
+  if (!show || !line) return null;
 
   return (
     <div className="mt-4 flex min-h-32 flex-col items-center justify-center px-3 text-center">
@@ -124,23 +120,29 @@ export function PlanSurvival({
       </button>
     );
   }
-  const checking = view.status === "running" || !view.score;
+  const checking = view.status === "running";
   return (
     <div className={card}>
       <SurvivalTitle />
-      <p
-        className={cn(
-          "mt-3 text-sm leading-relaxed",
-          checking ? "text-slate-800" : "font-medium text-slate-900",
-        )}
-      >
-        {checking ? "Checking 1,000 futures…" : survivalSentence(view.score!.score)}
-      </p>
-      <BoydQuote quotes={quotes} pass={view.pass} active={checking} />
-      {!checking && view.score?.runOutAge != null ? (
-        <p className="mt-1 text-sm leading-relaxed text-slate-800">
-          In the futures that run out, the middle one runs out at age {view.score.runOutAge}.
+      {checking ? (
+        <p className="mt-3 text-sm leading-relaxed text-slate-800">Checking 1,000 futures…</p>
+      ) : view.score ? null : (
+        <p className="mt-3 text-sm leading-relaxed text-slate-800">
+          Press Run Monte Carlo Simulation to check 1,000 futures.
         </p>
+      )}
+      <BoydQuote quotes={quotes} pass={view.pass} show={view.pass > 0} />
+      {!checking && view.score ? (
+        <div className="mt-4 text-center">
+          <p className="text-lg font-bold leading-snug text-slate-900">
+            {survivalSentence(view.score.score)}
+          </p>
+          {view.score.runOutAge != null ? (
+            <p className="mt-1 text-base font-semibold leading-snug text-slate-900">
+              In the futures that run out, the middle one runs out at age {view.score.runOutAge}.
+            </p>
+          ) : null}
+        </div>
       ) : null}
       <div className="mt-3 inline-flex rounded-lg bg-slate-100 p-1">
         {CHOICES.map((choice) => {

@@ -430,6 +430,7 @@ function Home() {
     runId: number;
     snapshot: Plan;
     controller: AbortController;
+    timer: number | null;
   } | null>(null);
   const survivalView = survival[runKey] ?? null;
   const survivalRef = useRef(survival);
@@ -860,6 +861,7 @@ function Home() {
     quiet = false,
   ) {
     survivalTask.current?.controller.abort();
+    if (survivalTask.current?.timer != null) window.clearTimeout(survivalTask.current.timer);
     survivalTask.current = null;
     if (!hasBalanceSheet(ent.plan)) {
       setSurvival((prev) => {
@@ -871,7 +873,6 @@ function Home() {
       return;
     }
     const controller = new AbortController();
-    survivalTask.current = { key, runId, snapshot, controller };
     const signal = controller.signal;
     if (!quiet) {
       setSurvival((prev) => ({
@@ -886,14 +887,42 @@ function Home() {
         },
       }));
     }
-    void runSurvival(snapshot, swing, { signal }).then(
-      (score) => {
-        if (survivalTask.current?.controller !== controller) return;
-        const drop = signal.aborted || !score || score.hash !== economicHash(snapshot, swing);
-        setSurvival((prev) => {
-          const cur = prev[key];
-          if (cur && cur.runId !== runId) return prev;
-          if (drop || !score) {
+    const begin = () => {
+      if (survivalTask.current?.controller !== controller) return;
+      void runSurvival(snapshot, swing, { signal }).then(
+        (score) => {
+          if (survivalTask.current?.controller !== controller) return;
+          const drop = signal.aborted || !score || score.hash !== economicHash(snapshot, swing);
+          setSurvival((prev) => {
+            const cur = prev[key];
+            if (cur && cur.runId !== runId) return prev;
+            if (drop || !score) {
+              const next: SurvivalView = {
+                runId,
+                status: "empty",
+                score: null,
+                swing: cur?.swing ?? swing,
+                open: cur?.open ?? open,
+                pass: cur?.pass ?? 0,
+              };
+              return { ...prev, [key]: next };
+            }
+            const ready: SurvivalView = {
+              runId,
+              status: "ready",
+              score,
+              swing: cur?.swing ?? swing,
+              open: cur?.open ?? open,
+              pass: cur?.pass ?? 0,
+            };
+            return { ...prev, [key]: ready };
+          });
+        },
+        () => {
+          if (survivalTask.current?.controller !== controller) return;
+          setSurvival((prev) => {
+            const cur = prev[key];
+            if (cur && cur.runId !== runId) return prev;
             const next: SurvivalView = {
               runId,
               status: "empty",
@@ -903,35 +932,13 @@ function Home() {
               pass: cur?.pass ?? 0,
             };
             return { ...prev, [key]: next };
-          }
-          const ready: SurvivalView = {
-            runId,
-            status: "ready",
-            score,
-            swing: cur?.swing ?? swing,
-            open: cur?.open ?? open,
-            pass: cur?.pass ?? 0,
-          };
-          return { ...prev, [key]: ready };
-        });
-      },
-      () => {
-        if (survivalTask.current?.controller !== controller) return;
-        setSurvival((prev) => {
-          const cur = prev[key];
-          if (cur && cur.runId !== runId) return prev;
-          const next: SurvivalView = {
-            runId,
-            status: "empty",
-            score: null,
-            swing: cur?.swing ?? swing,
-            open: cur?.open ?? open,
-            pass: cur?.pass ?? 0,
-          };
-          return { ...prev, [key]: next };
-        });
-      },
-    );
+          });
+        },
+      );
+    };
+    // The first batch of futures blocks the thread. Paint the quote first.
+    const timer = window.setTimeout(begin, 0);
+    survivalTask.current = { key, runId, snapshot, controller, timer };
   }
 
   function chooseSwing(swing: SwingName) {
@@ -973,15 +980,24 @@ function Home() {
     const key = runKey;
     const view = survivalRef.current[key];
     if (view && view.runId === savedRunId) return;
-    const task = survivalTask.current;
-    if (task && task.key === key) return;
-    const snapshot = run?.plan;
-    if (!snapshot || run?.id !== savedRunId) return;
-    startPlanSurvival(key, savedRunId, snapshot, DEFAULT_SWING, true, true);
+    if (survivalTask.current?.key === key) {
+      survivalTask.current.controller.abort();
+      survivalTask.current = null;
+    }
+    setSurvival((prev) => ({
+      ...prev,
+      [key]: {
+        runId: savedRunId,
+        status: "idle",
+        score: null,
+        swing: prev[key]?.swing ?? DEFAULT_SWING,
+        open: prev[key]?.open ?? true,
+        pass: 0,
+      },
+    }));
   }, [sheet, runKey, savedRunId]);
 
   async function calculate(opts?: { stay?: boolean }) {
-    let survivalJob: { key: string; runId: number; snapshot: Plan } | null = null;
     try {
       setRunError(null);
       const live = refreshEstimatedSocialSecurity(usePlanStore.getState().plan);
@@ -1040,7 +1056,6 @@ function Home() {
       } catch {
         /* activity is optional */
       }
-      survivalJob = { key, runId, snapshot };
     } catch (err) {
       holdGen.current += 1;
       if (holdTimer.current) window.clearTimeout(holdTimer.current);
@@ -1048,15 +1063,6 @@ function Home() {
       console.error("MACH Run calculate failed", err);
       setRunError(
         err instanceof Error ? err.message : "Calculate failed. Check the numbers and try again.",
-      );
-    }
-    if (survivalJob) {
-      startPlanSurvival(
-        survivalJob.key,
-        survivalJob.runId,
-        survivalJob.snapshot,
-        DEFAULT_SWING,
-        true,
       );
     }
   }
@@ -1531,6 +1537,7 @@ function Home() {
                           plan={displayPlan}
                           sim={run.sim}
                           brief={run.brief}
+                          survivalUnlocked={sheet}
                           survival={
                             sheet &&
                             survivalView?.status === "ready" &&

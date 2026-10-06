@@ -44,12 +44,15 @@ export function Verdict({
   sim,
   brief,
   survival,
+  survivalUnlocked = false,
   onUseRecommended,
 }: {
   plan: Plan;
   sim: SimResult;
   brief?: PeerBrief | null;
   survival?: SurvivalScore | null;
+  /** Individual Unlimited or Advisor. Free and Individual do not get the run. */
+  survivalUnlocked?: boolean;
   onUseRecommended?: (date: string) => void;
 }) {
   const real = plan.assumptions.dollars === "real";
@@ -96,14 +99,29 @@ export function Verdict({
       {retLine ? (
         <p className="mt-3 text-sm leading-relaxed text-muted">{retLine}</p>
       ) : null}
-      {survival ? (
-        <p className="mt-3 text-sm leading-relaxed text-fg">
-          {survivalSentence(survival.score)}
-          {survival.runOutAge != null
-            ? ` The rest run out around age ${survival.runOutAge}.`
-            : ""}
+      {survivalUnlocked ? (
+        <div className="mt-3">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-subtle">
+            Plan Survival
+          </p>
+          {survival ? (
+            <p className="mt-1 text-sm leading-relaxed text-fg">
+              {survivalSentence(survival.score)}
+              {survival.runOutAge != null
+                ? ` The rest run out around age ${survival.runOutAge}.`
+                : ""}
+            </p>
+          ) : (
+            <p className="mt-1 text-sm leading-relaxed text-muted">
+              Run Monte Carlo Simulation on the card to the right.
+            </p>
+          )}
+        </div>
+      ) : (
+        <p className="mt-3 rounded-md px-3 py-2 text-xs leading-relaxed text-subtle opacity-70 shadow-[0_0_0_1px_var(--color-border)]">
+          Upgrade to access Plan Survival (Monte Carlo Simulations)
         </p>
-      ) : null}
+      )}
       {brief?.recommendedRetirement ? (
         <RecommendedRetirement
           plan={plan}
