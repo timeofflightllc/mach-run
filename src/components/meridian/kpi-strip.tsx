@@ -4,7 +4,7 @@ import { startingNetWorth, startingSpendable } from "@/lib/plan/engine";
 import type { Plan, SimResult } from "@/lib/plan/types";
 
 const MONTHLY_TIP =
-  "Retirement income is modeled pay in the first twelve months from the goal date (pension, wages, SS, VA). Monthly is that year ÷ 12.";
+  "That year ÷ 12. Modeled pay over the first twelve months from the goal date: pension, wages, Social Security, VA, and other retirement income. Not a portfolio withdrawal.";
 
 function HoverLabel({ label, tip }: { label: string; tip?: string }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -68,22 +68,37 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
       };
 
   const items = [
-    { label: "Current spendable", value: usd(startingSpendable(plan)) },
-    { label: "Current net worth", value: usd(startingNetWorth(plan)) },
+    {
+      label: "Current spendable",
+      value: usd(startingSpendable(plan)),
+      tip: "Balances marked spendable, as of today. Not grown. A house or other account left unmarked is not included.",
+    },
+    {
+      label: "Current net worth",
+      value: usd(startingNetWorth(plan)),
+      tip: "Accounts counted in net worth, minus remaining loans.",
+    },
     {
       label: retLabel,
       value: spendableAtRet != null ? usd(spendableAtRet) : "Set date in Family",
+      tip: "Spendable balance the month before the goal date, in this run’s dollars.",
     },
     {
       label: "Annual income in retirement",
       value: annual != null ? usd(annual) : "—",
+      tip: "Modeled pay over the first twelve months from the goal date. Pension, wages, Social Security, VA, and other retirement income. Not a portfolio withdrawal.",
     },
     {
       label: "Monthly income in retirement",
       value: monthly != null ? usd(monthly, true) : "—",
       tip: MONTHLY_TIP,
     },
-    lastCell,
+    {
+      ...lastCell,
+      tip: ranOut
+        ? "The month spendable accounts hit zero. Age and year are from this run."
+        : "Spendable balance left at the end of the plan.",
+    },
   ];
 
   return (
@@ -91,7 +106,7 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
       <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-border shadow-[0_0_0_1px_var(--color-border)]">
         {items.map((item) => (
           <div key={item.label} className="bg-surface px-3 py-3 sm:px-4 sm:py-4">
-            <HoverLabel label={item.label} tip={"tip" in item ? item.tip : undefined} />
+            <HoverLabel label={item.label} tip={item.tip} />
             <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg sm:text-xl">
               {item.value}
             </dd>
