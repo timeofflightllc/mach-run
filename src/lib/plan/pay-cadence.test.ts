@@ -8,6 +8,11 @@ test("a $3,000 check every two weeks is $6,500 a month and $78,000 a year", () =
   assert.equal(paycheckFromMonthly(6500, "biweek"), 3000);
 });
 
+test("a $20,000 yearly bonus is one check, spread across the month", () => {
+  assert.equal(monthlyFromPay(20000, "year"), 1666.67);
+  assert.equal(paycheckFromMonthly(1666.67, "year"), 20000.04);
+});
+
 test("weekly pay is 52 checks, monthly pay is unchanged", () => {
   assert.equal(monthlyFromPay(1000, "week"), 4333.33);
   assert.equal(monthlyFromPay(4500, "month"), 4500);

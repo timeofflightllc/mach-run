@@ -153,7 +153,7 @@ export interface IncomeStream {
   /** Monthly amount in as-of (today) dollars. The engine reads this. */
   monthlyAmount: number;
   /** How the paycheck was typed. Missing means monthly. Salary, bonus, and allowance only. */
-  payCadence?: "week" | "biweek" | "month";
+  payCadence?: "week" | "biweek" | "month" | "year";
   /** The amount they typed, in payCadence. Monthly equivalent is monthlyAmount. */
   payAmount?: number;
   startDate: string;

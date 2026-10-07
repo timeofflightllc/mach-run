@@ -1,9 +1,10 @@
-export type PayCadence = "week" | "biweek" | "month";
+export type PayCadence = "week" | "biweek" | "month" | "year";
 
 const PAYS_PER_YEAR: Record<PayCadence, number> = {
   week: 52,
   biweek: 26,
   month: 12,
+  year: 1,
 };
 
 function roundCents(n: number): number {
@@ -12,7 +13,7 @@ function roundCents(n: number): number {
 }
 
 export function isPayCadence(value: unknown): value is PayCadence {
-  return value === "week" || value === "biweek" || value === "month";
+  return value === "week" || value === "biweek" || value === "month" || value === "year";
 }
 
 /** Monthly dollars the engine stores, from the paycheck they typed. */

@@ -228,7 +228,7 @@ function PaycheckTable({
     const patch: Partial<IncomeStream> = { name: name || income.name };
     if (!locked) {
       patch.monthlyAmount = current.monthly;
-      if (income.payCadence === "week" || income.payCadence === "biweek") {
+      if (income.payCadence === "week" || income.payCadence === "biweek" || income.payCadence === "year") {
         patch.payAmount = paycheckFromMonthly(current.monthly, income.payCadence);
       }
     }

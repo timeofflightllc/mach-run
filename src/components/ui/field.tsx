@@ -192,6 +192,7 @@ const PAY_CADENCE_LABEL: Record<PayCadence, string> = {
   week: "$ / week",
   biweek: "$ / two weeks",
   month: "$ / month",
+  year: "$ / year",
 };
 
 /** Salary, bonus, and allowance. Weekly and every two weeks convert into monthlyAmount. */
@@ -243,24 +244,27 @@ export function PaycheckMoney({
           <option value="week">Weekly</option>
           <option value="biweek">Every two weeks</option>
           <option value="month">Monthly</option>
+          <option value="year">Yearly</option>
         </SelectInput>
       </Field>
       <Field label={PAY_CADENCE_LABEL[payCadence]} className={fieldClass}>
         <MoneyInput value={shown} onValue={(n) => commit(payCadence, n)} />
       </Field>
-      <Field label="$ / year" className={fieldClass}>
-        <MoneyInput
-          value={year}
-          onValue={(n) => {
-            const monthlyAmount = monthlyFromYear(n);
-            onChange({
-              payCadence,
-              payAmount: paycheckFromMonthly(monthlyAmount, payCadence),
-              monthlyAmount,
-            });
-          }}
-        />
-      </Field>
+      {payCadence === "year" ? null : (
+        <Field label="$ / year" className={fieldClass}>
+          <MoneyInput
+            value={year}
+            onValue={(n) => {
+              const monthlyAmount = monthlyFromYear(n);
+              onChange({
+                payCadence,
+                payAmount: paycheckFromMonthly(monthlyAmount, payCadence),
+                monthlyAmount,
+              });
+            }}
+          />
+        </Field>
+      )}
     </div>
   );
 }

@@ -83,10 +83,10 @@ function amountLabel(plan: Plan, stream: IncomeStream): string {
   }
   if (
     (stream.kind === "salary" || stream.kind === "bonus" || stream.kind === "allowance") &&
-    (stream.payCadence === "week" || stream.payCadence === "biweek") &&
+    (stream.payCadence === "week" || stream.payCadence === "biweek" || stream.payCadence === "year") &&
     stream.payAmount != null
   ) {
-    const unit = stream.payCadence === "week" ? "wk" : "2 wk";
+    const unit = stream.payCadence === "week" ? "wk" : stream.payCadence === "biweek" ? "2 wk" : "yr";
     return `${usd(stream.payAmount)}/${unit}`;
   }
   return `${usd(stream.monthlyAmount)}/mo`;
