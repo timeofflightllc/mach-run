@@ -9,6 +9,15 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 import { coerceIsoDate } from "@/lib/plan/dates";
+import {
+  isPayCadence,
+  monthlyFromPay,
+  paycheckFromMonthly,
+  type PayCadence,
+} from "@/lib/plan/pay-cadence";
+
+export type { PayCadence };
+export { monthlyFromPay, paycheckFromMonthly };
 
 const controlClass =
   "h-11 w-full max-w-[20rem] min-w-0 rounded-lg border border-border bg-elevated px-3 text-sm text-fg tabular-nums outline-none transition-[box-shadow,border-color] duration-150 placeholder:text-subtle focus:border-accent/40 focus:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-accent)_25%,transparent)] disabled:opacity-50";
@@ -174,6 +183,83 @@ export function MonthYearMoney({
       </Field>
       <Field label={yearLabel} className={fieldClass}>
         <MoneyInput value={year} onValue={(n) => onMonthly(monthlyFromYear(n))} />
+      </Field>
+    </div>
+  );
+}
+
+const PAY_CADENCE_LABEL: Record<PayCadence, string> = {
+  week: "$ / week",
+  biweek: "$ / two weeks",
+  month: "$ / month",
+};
+
+/** Salary, bonus, and allowance. Weekly and every two weeks convert into monthlyAmount. */
+export function PaycheckMoney({
+  monthly,
+  payAmount,
+  cadence,
+  onChange,
+  compact,
+}: {
+  monthly: number;
+  payAmount?: number;
+  cadence?: PayCadence;
+  onChange: (next: { payCadence: PayCadence; payAmount: number; monthlyAmount: number }) => void;
+  compact?: boolean;
+}) {
+  const payCadence: PayCadence = isPayCadence(cadence) ? cadence : "month";
+  const shown =
+    payCadence === "month"
+      ? roundCents(monthly)
+      : payAmount != null && Number.isFinite(payAmount)
+        ? roundCents(payAmount)
+        : paycheckFromMonthly(monthly, payCadence);
+  const year = yearFromMonthly(monthly);
+  const fieldClass = compact ? "w-[8.75rem]" : "min-w-[9.5rem] flex-1";
+
+  function commit(nextCadence: PayCadence, nextPay: number) {
+    onChange({
+      payCadence: nextCadence,
+      payAmount: roundCents(nextPay),
+      monthlyAmount: monthlyFromPay(nextPay, nextCadence),
+    });
+  }
+
+  return (
+    <div className="flex min-w-0 flex-wrap items-end gap-x-3 gap-y-2">
+      <Field label="Paid" className="w-[9.5rem] shrink-0">
+        <SelectInput
+          value={payCadence}
+          onChange={(e) => {
+            const next = isPayCadence(e.target.value) ? e.target.value : "month";
+            onChange({
+              payCadence: next,
+              payAmount: paycheckFromMonthly(monthly, next),
+              monthlyAmount: roundCents(monthly),
+            });
+          }}
+        >
+          <option value="week">Weekly</option>
+          <option value="biweek">Every two weeks</option>
+          <option value="month">Monthly</option>
+        </SelectInput>
+      </Field>
+      <Field label={PAY_CADENCE_LABEL[payCadence]} className={fieldClass}>
+        <MoneyInput value={shown} onValue={(n) => commit(payCadence, n)} />
+      </Field>
+      <Field label="$ / year" className={fieldClass}>
+        <MoneyInput
+          value={year}
+          onValue={(n) => {
+            const monthlyAmount = monthlyFromYear(n);
+            onChange({
+              payCadence,
+              payAmount: paycheckFromMonthly(monthlyAmount, payCadence),
+              monthlyAmount,
+            });
+          }}
+        />
       </Field>
     </div>
   );

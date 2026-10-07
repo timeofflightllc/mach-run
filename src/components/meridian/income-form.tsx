@@ -7,6 +7,7 @@ import {
   GhostButton,
   NumberInput,
   MonthYearMoney,
+  PaycheckMoney,
   MoneyInput,
   PrimaryButton,
   SelectInput,
@@ -79,6 +80,14 @@ function amountLabel(plan: Plan, stream: IncomeStream): string {
   if (stream.kind === "va") {
     const pay = vaPayTodayDollars(plan, stream, monthStart(plan.assumptions.asOfDate));
     if (pay > 0) return `${usd(pay)}/mo`;
+  }
+  if (
+    (stream.kind === "salary" || stream.kind === "bonus" || stream.kind === "allowance") &&
+    (stream.payCadence === "week" || stream.payCadence === "biweek") &&
+    stream.payAmount != null
+  ) {
+    const unit = stream.payCadence === "week" ? "wk" : "2 wk";
+    return `${usd(stream.payAmount)}/${unit}`;
   }
   return `${usd(stream.monthlyAmount)}/mo`;
 }
@@ -502,7 +511,17 @@ function IncomeRow({
                   />
                 </Field>
               </>
-            ) : s.kind === "va" ? null : (
+            ) : s.kind === "va" ? null : s.kind === "salary" ||
+              s.kind === "bonus" ||
+              s.kind === "allowance" ? (
+              <PaycheckMoney
+                compact
+                monthly={s.monthlyAmount}
+                payAmount={s.payAmount}
+                cadence={s.payCadence}
+                onChange={(next) => updateIncome(s.id, next)}
+              />
+            ) : (
               <MonthYearMoney
                 compact
                 monthLabel="$ / month"

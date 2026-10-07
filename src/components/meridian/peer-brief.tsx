@@ -13,7 +13,7 @@ import { CashShortNotice } from "@/components/meridian/cash-short-notice";
 import { nestEggTrack } from "@/lib/plan/peers";
 import { annuityEquivalentCopy } from "@/lib/plan/annuity-equivalent";
 import { Field, MoneyInput, MonthInput, PrimaryButton, TextInput } from "@/components/ui/field";
-import { usePlanStore } from "@/lib/plan/store";
+import { paycheckFromMonthly } from "@/lib/plan/pay-cadence";
 import { InstitutionMark } from "@/components/meridian/institution-field";
 
 function Disclaimer() {
@@ -225,7 +225,12 @@ function PaycheckTable({
     if (!income || !current) return;
     const name = current.name.trim();
     const patch: Partial<IncomeStream> = { name: name || income.name };
-    if (!locked) patch.monthlyAmount = current.monthly;
+    if (!locked) {
+      patch.monthlyAmount = current.monthly;
+      if (income.payCadence === "week" || income.payCadence === "biweek") {
+        patch.payAmount = paycheckFromMonthly(current.monthly, income.payCadence);
+      }
+    }
     if (current.start) {
       patch.startDate = current.start;
       if (current.start !== income.startDate) patch.startDayAfterPrevious = false;

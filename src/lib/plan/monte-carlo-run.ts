@@ -279,6 +279,8 @@ function incomeFields(stream: IncomeStream) {
     id: stream.id,
     kind: stream.kind,
     monthlyAmount: stream.monthlyAmount,
+    payCadence: stream.payCadence ?? null,
+    payAmount: stream.payAmount ?? null,
     startDate: stream.startDate,
     endDate: stream.endDate,
     colaPct: stream.colaPct,

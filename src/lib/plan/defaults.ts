@@ -1,6 +1,7 @@
 import type { Plan } from "./types";
 import { coerceIsoDate, todayIso, validIso } from "./dates.ts";
 import { institutionFields } from "./institutions.ts";
+import { isPayCadence } from "./pay-cadence.ts";
 
 /**
  * Blank household. Observe accounts, income stages, and contribution rules
@@ -55,6 +56,8 @@ export function ensurePlan(plan: Plan): Plan {
     startDate: coerceIsoDate(s.startDate) || s.startDate || asOf,
     endDate: s.endDate ? coerceIsoDate(s.endDate) || s.endDate : null,
     monthlyAmount: Number.isFinite(s.monthlyAmount) ? s.monthlyAmount : 0,
+    payCadence: isPayCadence(s.payCadence) ? s.payCadence : undefined,
+    payAmount: s.payAmount != null && Number.isFinite(s.payAmount) ? s.payAmount : undefined,
   }));
   next.portfolios = next.portfolios.map((p) => ({
     ...p,
