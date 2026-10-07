@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { RefreshCw } from "lucide-react";
 import { useRef, useState } from "react";
 import type { SwingName } from "@/lib/plan/monte-carlo";
 import { runOutSentence, survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
@@ -60,28 +61,36 @@ function SurvivalTitle() {
 }
 
 const quoteSlip =
-  "mt-3 flex h-[calc(7.5rem+24px)] shrink-0 flex-col items-center justify-center overflow-hidden rounded-lg border border-[#e4d5c4] bg-[#f7f1e6] px-4 py-[12px] text-center sm:h-[7.5rem] sm:py-0";
+  "relative mt-3 flex h-[calc(7.5rem+24px)] shrink-0 flex-col items-center justify-center overflow-hidden rounded-lg border border-[#e4d5c4] bg-[#f7f1e6] px-4 py-[12px] text-center sm:h-[7.5rem] sm:py-0";
 
-function BoydQuote({
-  quotes,
-  pass,
-  show,
-}: {
-  quotes: string[];
-  pass: number;
-  show: boolean;
-}) {
-  const picked = useRef<{ pass: number; line: string } | null>(null);
-  if (pass > 0 && quotes.length > 0 && picked.current?.pass !== pass) {
-    const line = quotes[Math.floor(Math.random() * quotes.length)] ?? "";
-    if (line) picked.current = { pass, line };
+function nextBoydLine(quotes: string[], current: string) {
+  if (quotes.length === 0) return "";
+  if (quotes.length === 1) return quotes[0] ?? "";
+  let line = current;
+  for (let i = 0; i < 8 && line === current; i += 1) {
+    line = quotes[Math.floor(Math.random() * quotes.length)] ?? "";
   }
-  const line = show && picked.current?.pass === pass ? picked.current.line : "";
+  return line;
+}
+
+function BoydQuote({ quotes, pulse }: { quotes: string[]; pulse: boolean }) {
+  const [spin, setSpin] = useState(0);
+  const picked = useRef<{ spin: number; line: string } | null>(null);
+  if (
+    quotes.length > 0 &&
+    (picked.current == null ||
+      picked.current.spin !== spin ||
+      !quotes.includes(picked.current.line))
+  ) {
+    const line = nextBoydLine(quotes, picked.current?.line ?? "");
+    if (line) picked.current = { spin, line };
+  }
+  const line = picked.current?.line ?? "";
 
   return (
     <div className={quoteSlip}>
       {line ? (
-        <>
+        <div className={cn("flex flex-col items-center", pulse && "mach-run-pulse")}>
           <span aria-hidden="true" className="-mb-5 font-serif text-5xl leading-none text-[#d05838]">
             “
           </span>
@@ -89,7 +98,17 @@ function BoydQuote({
           <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
             John Boyd
           </p>
-        </>
+        </div>
+      ) : null}
+      {quotes.length > 1 ? (
+        <button
+          type="button"
+          aria-label="Another quote"
+          onClick={() => setSpin((n) => n + 1)}
+          className="absolute bottom-1.5 right-1.5 inline-flex h-6 w-6 items-center justify-center rounded-md text-slate-500 hover:bg-[#efe4d4] hover:text-slate-900"
+        >
+          <RefreshCw className="h-3.5 w-3.5" aria-hidden />
+        </button>
       ) : null}
     </div>
   );
@@ -252,7 +271,7 @@ export function PlanSurvival({
   return (
     <div className={cn(card, "@min-[36rem]:flex @min-[36rem]:min-h-0 @min-[36rem]:flex-1 @min-[36rem]:flex-col")}>
       <SurvivalTitle />
-      <BoydQuote quotes={quotes} pass={view.pass} show={view.pass > 0} />
+      <BoydQuote quotes={quotes} pulse={checking} />
       <div
         className="mt-4 flex h-[9rem] shrink-0 flex-col items-center justify-center overflow-hidden rounded-md px-3 text-center"
         style={{
