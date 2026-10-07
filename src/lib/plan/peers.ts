@@ -417,7 +417,7 @@ export function buildPeerBrief(
     if (ret.now) {
       add(
         "Retirement landing",
-        `Retirement goal date is this month (or you're already retired), so “at retirement” is today: spendable ${usd(ret.spendableReal)} in today's dollars. Modeled income in the next twelve months is ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo).`,
+        `Retirement goal date is this month (or you're already retired), so “at retirement” is today: spendable ${usd(ret.spendableReal)} in today's dollars. First full year of A.I.R. is ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo).`,
       );
     } else {
       const retAge =
@@ -426,7 +426,7 @@ export function buildPeerBrief(
           : null;
       add(
         "Retirement landing",
-        `Retirement goal is ${formatMonthYear(ret.date)}${retAge != null ? ` (age ${retAge})` : ""}. Spendable there: ${usd(ret.spendableReal)} in today's dollars. Modeled retirement income ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo) from the stages you entered.`,
+        `Retirement goal is ${formatMonthYear(ret.date)}${retAge != null ? ` (age ${retAge})` : ""}. Spendable there: ${usd(ret.spendableReal)} in today's dollars. First full year of A.I.R. is ${usd(ret.annualIncomeReal)} a year (${usd(ret.monthlyIncomeReal, true)}/mo).`,
       );
     }
   } else {

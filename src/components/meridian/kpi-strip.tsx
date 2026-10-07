@@ -4,7 +4,10 @@ import { startingNetWorth, startingSpendable } from "@/lib/plan/engine";
 import type { Plan, SimResult } from "@/lib/plan/types";
 
 const MONTHLY_TIP =
-  "That year ÷ 12. Modeled pay over the first twelve months from the goal date: pension, wages, Social Security, VA, and other retirement income. Not a portfolio withdrawal.";
+  "That year ÷ 12. This is A.I.R. for the first full calendar year after the goal date: military retired pay, VA, Social Security, pension, and other retirement, plus withdrawals. Not the job.";
+
+const ANNUAL_TIP =
+  "The first full calendar year of A.I.R. in the year table. Guaranteed retirement pay plus withdrawals. A partial year at the goal date is not this number. Not the job.";
 
 function HoverLabel({ label, tip }: { label: string; tip?: string }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -84,9 +87,11 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
       tip: "Spendable balance the month before the goal date, in this run’s dollars.",
     },
     {
-      label: "Annual income in retirement",
+      label: ret?.incomeYear
+        ? `Annual income in retirement (${ret.incomeYear})`
+        : "Annual income in retirement",
       value: annual != null ? usd(annual) : "—",
-      tip: "Modeled pay over the first twelve months from the goal date. Pension, wages, Social Security, VA, and other retirement income. Not a portfolio withdrawal.",
+      tip: ANNUAL_TIP,
     },
     {
       label: "Monthly income in retirement",

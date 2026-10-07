@@ -1162,13 +1162,19 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
       months.find((row) => row.date >= goal) ??
       last;
     const startIdx = Math.max(0, months.indexOf(m));
-    const window = months.slice(startIdx, startIdx + 12);
-    const annualIncome = window.reduce((s, row) => s + row.income, 0);
-    const annualIncomeReal = window.reduce((s, row, i) => {
-      const idx = startIdx + i;
-      const factor = (1 + mInf) ** idx;
-      return s + row.income / Math.max(factor, 1e-9);
-    }, 0);
+    const fullAir = years.find((y) => {
+      const arr = byYear.get(y.year) ?? [];
+      return (
+        y.air != null &&
+        arr.length === 12 &&
+        arr.every((row) => row.date.slice(0, 7) >= goalKey)
+      );
+    });
+    const airYear = fullAir ?? years.find((y) => y.air != null);
+    const annualIncome = airYear?.air ?? 0;
+    const infl = plan.assumptions.inflationPct / 100;
+    const yearsOut = Math.max(0, (airYear?.year ?? asOf.getFullYear()) - asOf.getFullYear());
+    const annualIncomeReal = annualIncome / (1 + infl) ** yearsOut;
     const atStart = startIdx <= 0;
     const prev = startIdx > 0 ? months[startIdx - 1] : null;
     const pile = atStart ? startingSpendable(plan) : (prev?.spendableEnd ?? 0);
@@ -1184,6 +1190,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
       monthlyIncome: annualIncome / 12,
       annualIncomeReal,
       monthlyIncomeReal: annualIncomeReal / 12,
+      incomeYear: airYear?.year ?? null,
       monthlySpending: m.spending,
     };
   }

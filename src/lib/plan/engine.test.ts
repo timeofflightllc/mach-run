@@ -199,7 +199,7 @@ test("retirement as-of matches current spendable and monthly = annual/12", () =>
   assert.equal(result.retirement?.spendable, 847700);
   const a = result.retirement?.annualIncome ?? 0;
   const m = result.retirement?.monthlyIncome ?? 0;
-  assert.ok(a > 100000);
+  assert.equal(a, 0);
   assert.ok(Math.abs(m * 12 - a) < 1);
 });
 

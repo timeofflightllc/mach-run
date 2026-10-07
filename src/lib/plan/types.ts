@@ -378,6 +378,8 @@ export interface RetirementMark {
   annualIncome: number;
   monthlyIncomeReal: number;
   annualIncomeReal: number;
+  /** Calendar year of annualIncome. The first full year of A.I.R. */
+  incomeYear: number | null;
   monthlySpending: number;
 }
 
