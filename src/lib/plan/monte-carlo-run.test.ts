@@ -62,12 +62,39 @@ test("runOutSentence counts the paths that failed, not the rounded rate", () => 
   assert.equal(runOutSentence({ survived: 1000, paths: 1000, runOutAge: null }, 99), null);
 });
 
+test("year-end bands do not change the survival score", async () => {
+  let i = 0;
+  const score = await runSurvival(shortPlan(), "typical", {
+    runOne: () => {
+      const n = i++;
+      return {
+        depletedAge: null,
+        yearEnds: [{ year: 2026, nominal: n, real: n * 2 }],
+      };
+    },
+  });
+  assert.ok(score);
+  assert.equal(score.score, 100);
+  assert.equal(score.survived, 1000);
+  assert.equal(score.paths, 1000);
+  assert.equal(score.runOutAge, null);
+  assert.equal(score.bands.length, 1);
+  assert.equal(score.bands[0].year, 2026);
+  assert.equal(score.bands[0].p10, 99.9);
+  assert.equal(score.bands[0].p50, 499.5);
+  assert.equal(score.bands[0].p90, 899.1);
+  assert.equal(score.bands[0].p10Real, 199.8);
+  assert.equal(score.bands[0].p50Real, 999);
+  assert.equal(score.bands[0].p90Real, 1798.2);
+});
+
 test("runOutAge is null when every future lasts", async () => {
   const score = await runSurvival(shortPlan(), "typical", {
     runOne: () => ({ depletedAge: null }),
   });
   assert.ok(score);
   assert.equal(score.runOutAge, null);
+  assert.equal(score.bands.length, 0);
 });
 
 test("an odd count of run-out ages keeps the middle age", async () => {

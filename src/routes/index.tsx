@@ -7,7 +7,7 @@ import { MACH_RESET_BASELINE } from "@/components/meridian/account-menu";
 import { StaleRunPrompt } from "@/components/meridian/confirm-remove";
 import { CalculateButton } from "@/components/meridian/calculate-button";
 import { AdvisoryStrip } from "@/components/meridian/advisory-note";
-import { CashChart, NetWorthChart, WealthChart } from "@/components/meridian/charts";
+import { CashChart, MonteCarloBandChart, NetWorthChart, WealthChart } from "@/components/meridian/charts";
 import { PlanSurvival, readPlanSurvivalMinimized, type SurvivalView } from "@/components/meridian/plan-survival";
 import { Pinnable, useChartPins } from "@/components/meridian/chart-pin";
 import { ContributionForm } from "@/components/meridian/contribution-form";
@@ -29,7 +29,7 @@ import { isRealUser } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useGuestChrome } from "@/lib/auth/guest-chrome";
 import { simulate } from "@/lib/plan/engine";
-import { economicHash, runSurvival } from "@/lib/plan/monte-carlo-run";
+import { economicHash, runOutSentence, runSurvival, survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { DEFAULT_SWING, type SwingName } from "@/lib/plan/monte-carlo";
 import { refreshEstimatedSocialSecurity } from "@/lib/plan/social-security";
 import { planInputSignature } from "@/lib/plan/input-signature";
@@ -136,10 +136,59 @@ function inputSignature(plan: Plan): string {
 export const Route = createFileRoute("/")({ component: Home });
 
 type BriefChart = "spendable" | "cash" | "net";
-type ActTab = "brief" | "charts" | "analysis" | "ledger";
+type ActTab = "brief" | "charts" | "analysis" | "ledger" | "monte";
 
-function JetBlast({ className }: { className?: string; strokeWidth?: number }) {
-  return <img src="/brand/takeoff-mark.png" alt="" className={cn("object-contain", className)} />;
+function PocketAces({ className }: { className?: string; strokeWidth?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" overflow="visible" className={className} aria-hidden="true">
+      <g transform="rotate(-14 7.4 12.2)">
+        <rect x="1.5" y="3.8" width="11.4" height="16" rx="1.25" fill="#fff" stroke="#334155" strokeWidth="0.75" />
+        <text
+          x="2.5"
+          y="8.15"
+          fill="#1e293b"
+          fontSize="4.4"
+          fontWeight="700"
+          fontFamily="Georgia, 'Times New Roman', serif"
+        >
+          A
+        </text>
+        <path
+          fill="#1e293b"
+          transform="translate(4.15 10.15) scale(0.62)"
+          d="M5 .4C2.2 3.1.9 4.8.9 6.4c0 1.45 1.25 2.2 2.45 1.85C3.1 8.7 4.05 9.1 4.7 10.4 5.35 9.1 6.3 8.7 6.05 8.25 7.25 8.6 8.5 7.85 8.5 6.4 8.5 4.8 7.2 3.1 5 .4z"
+        />
+      </g>
+      <g transform="rotate(14 16.6 12)">
+        <rect x="10.8" y="3.2" width="11.4" height="16" rx="1.25" fill="#fff" stroke="#334155" strokeWidth="0.75" />
+        <text
+          x="11.8"
+          y="7.55"
+          fill="#c0392b"
+          fontSize="4.4"
+          fontWeight="700"
+          fontFamily="Georgia, 'Times New Roman', serif"
+        >
+          A
+        </text>
+        <path
+          fill="#c0392b"
+          transform="translate(13.55 9.55) scale(0.62)"
+          d="M5 9.2S.6 6.3.6 3.55C.6 2.15 1.7 1.2 2.95 1.2 4 1.2 4.6 1.75 5 2.35 5.4 1.75 6 1.2 7.05 1.2 8.3 1.2 9.4 2.15 9.4 3.55 9.4 6.3 5 9.2 5 9.2z"
+        />
+      </g>
+    </svg>
+  );
+}
+
+function JetBlast({ className, selected }: { className?: string; strokeWidth?: number; selected?: boolean }) {
+  return (
+    <img
+      src={selected ? "/brand/takeoff-on-mark.png" : "/brand/takeoff-off-mark.png"}
+      alt=""
+      className={cn("object-contain", className)}
+    />
+  );
 }
 
 const ACT_TABS: { id: ActTab; label: string; icon: ComponentType<{ className?: string; strokeWidth?: number }> }[] = [
@@ -147,6 +196,7 @@ const ACT_TABS: { id: ActTab; label: string; icon: ComponentType<{ className?: s
   { id: "analysis", label: "Analysis", icon: FileSearch },
   { id: "charts", label: "Charts", icon: ChartLine },
   { id: "ledger", label: "Ledger", icon: Table2 },
+  { id: "monte", label: "Monte Carlo", icon: PocketAces },
 ];
 
 const BRIEF_CHARTS: { id: BriefChart; label: string }[] = [
@@ -210,7 +260,7 @@ function ActTabButton({
   onClick,
 }: {
   label: string;
-  icon: ComponentType<{ className?: string; strokeWidth?: number }>;
+  icon: ComponentType<{ className?: string; strokeWidth?: number; selected?: boolean }>;
   on: boolean;
   onClick: () => void;
 }) {
@@ -230,11 +280,21 @@ function ActTabButton({
       onFocus={(e) => place(e.currentTarget)}
       onBlur={() => setTip(null)}
       className={cn(
-        "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl min-[72rem]:h-14 min-[72rem]:w-14",
-        on ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+        "inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl min-[72rem]:h-14 min-[72rem]:w-14",
+        on ? "bg-canopy text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
       )}
     >
-      <Icon className="size-6 min-[72rem]:size-7" strokeWidth={1.75} />
+      <Icon
+        selected={on}
+        className={
+          label === "Monte Carlo"
+            ? "size-8 min-[72rem]:size-9"
+            : label === "Takeoff"
+              ? "size-8 min-[72rem]:size-10"
+              : "size-6 min-[72rem]:size-7"
+        }
+        strokeWidth={1.75}
+      />
       {tip ? (
         <span
           role="tooltip"
@@ -303,7 +363,7 @@ function OodaDrawer({
       aria-hidden={!open}
       inert={!open}
       className={cn(
-        "fixed bottom-4 z-20 overflow-y-auto rounded-xl bg-bg transition-transform duration-200 top-[calc(var(--mach-header-h,7rem)+0.75rem)] max-[71.99rem]:inset-x-3 max-[71.99rem]:w-auto min-[72rem]:w-[min(24rem,calc(100vw-6rem))] min-[72rem]:right-[4.5rem]",
+        "fixed z-20 h-max max-h-[calc(100dvh-var(--mach-header-h,7rem)-1.5rem)] overflow-y-auto rounded-xl transition-transform duration-200 top-[calc(var(--mach-header-h,7rem)+0.75rem)] max-[71.99rem]:inset-x-3 max-[71.99rem]:w-auto min-[72rem]:w-[min(24rem,calc(100vw-6rem))] min-[72rem]:right-[4.5rem]",
         open ? "translate-x-0" : "pointer-events-none translate-x-[120%]",
       )}
     >
@@ -318,6 +378,59 @@ function OodaDrawer({
           ×
         </span>
       </button>
+    </div>
+  );
+}
+
+function MonteCarloTab({
+  unlocked,
+  real,
+  longevityAge,
+  score,
+  running,
+}: {
+  unlocked: boolean;
+  real: boolean;
+  longevityAge: number;
+  score: SurvivalScore | null;
+  running: boolean;
+}) {
+  const ranOut = score ? runOutSentence(score, longevityAge) : null;
+  return (
+    <div className="flex min-w-0 flex-col gap-3">
+      <PhaseLabel id="ooda-monte" label="Monte Carlo" />
+      <div className="relative">
+        {unlocked && score && score.bands.length > 0 ? (
+          <MonteCarloBandChart bands={score.bands} real={real} />
+        ) : (
+          <div className="flex h-[32rem] items-center justify-center rounded-xl bg-white px-6 text-center shadow-[0_0_0_1px_#c8d2de] sm:h-[40rem]">
+            <p className="max-w-sm text-sm leading-relaxed text-slate-600">
+              {running
+                ? "Monte Carlo is running on Takeoff."
+                : "Run Monte Carlo Simulation on Takeoff."}
+            </p>
+          </div>
+        )}
+        {unlocked ? null : (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-canopy/70 p-5">
+            <p className="max-w-none px-2 text-center text-xs font-medium leading-relaxed text-white sm:text-sm">
+              <span className="block">Unlock Plan Survival (Monte Carlo Simulations) with</span>
+              <Link
+                to="/pricing"
+                className="text-[#e8c547] underline decoration-[#e8c547]/80 underline-offset-4 hover:text-[#f6e7b0]"
+              >
+                Individual Unlimited or Advisor
+              </Link>
+            </p>
+          </div>
+        )}
+      </div>
+      {unlocked && score ? (
+        <div className="text-sm leading-relaxed text-fg">
+          <p>{survivalSentence(score.score, longevityAge)}</p>
+          {ranOut ? <p className="mt-1">{ranOut}</p> : null}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -1701,7 +1814,7 @@ function Home() {
                 <div
                   role="tablist"
                   aria-label="Act"
-                  className="flex flex-row gap-2 min-[72rem]:absolute min-[72rem]:top-0 min-[72rem]:z-20 min-[72rem]:flex-col min-[72rem]:left-[calc(0.5rem-max(1rem,7.5vw))]"
+                  className="flex min-w-0 flex-1 flex-row gap-2 overflow-x-auto min-[72rem]:absolute min-[72rem]:top-0 min-[72rem]:z-20 min-[72rem]:flex-none min-[72rem]:flex-col min-[72rem]:overflow-visible min-[72rem]:left-[calc(0.5rem-max(1rem,7.5vw))]"
                 >
                   {ACT_TABS.map((tab) => (
                     <ActTabButton
@@ -1818,6 +1931,26 @@ function Home() {
                       <PhaseLabel id="ooda-numbers" label="The Numbers" />
                       <YearTable plan={displayPlan} sim={run.sim} />
                     </div>
+                  ) : null}
+                  {actTab === "monte" ? (
+                    <MonteCarloTab
+                      unlocked={sheet}
+                      real={real}
+                      longevityAge={displayPlan.assumptions.projectionEndAge}
+                      score={
+                        sheet &&
+                        survivalView?.status === "ready" &&
+                        survivalView.runId === run.id &&
+                        survivalView.score
+                          ? survivalView.score
+                          : null
+                      }
+                      running={Boolean(
+                        sheet &&
+                          survivalView?.status === "running" &&
+                          survivalView.runId === run.id,
+                      )}
+                    />
                   ) : null}
                 </div>
                 <OodaDrawer

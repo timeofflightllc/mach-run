@@ -552,7 +552,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
               onClick={downloadAudit}
               className="h-11 rounded-lg px-3 text-sm font-medium text-muted transition-colors hover:bg-elevated hover:text-fg"
             >
-              Download Full Investment CSV
+              Download Full Audit CSV
             </button>
           ) : null}
         </div>

@@ -14,6 +14,7 @@ import {
 import { createPortal } from "react-dom";
 import { Maximize2, X } from "lucide-react";
 import { usd, usdCompact } from "@/lib/plan/format";
+import type { SurvivalBand } from "@/lib/plan/monte-carlo-run";
 import { PinToggle } from "@/components/meridian/chart-pin";
 import type { MonthSnapshot, Plan, SimResult, YearSnapshot } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
@@ -823,5 +824,78 @@ export function NetWorthChart({
       ) : null}
     </div>
     </ChartStage>
+  );
+}
+
+export function MonteCarloBandChart({ bands, real }: { bands: SurvivalBand[]; real: boolean }) {
+  const data = bands.map((band) => {
+    const low = real ? band.p10Real : band.p10;
+    const mid = real ? band.p50Real : band.p50;
+    const high = real ? band.p90Real : band.p90;
+    return { t: band.year, low, mid, high, range: [low, high] as [number, number] };
+  });
+  return (
+    <div className={chartCard}>
+      <h2 className="font-display text-xl font-bold text-slate-900">Spendable</h2>
+      <p className="mb-4 mt-1 text-xs text-slate-600">
+        {real ? "Inflation-adjusted (today's dollars)" : "Future dollars"} · Year-end spendable.
+        The line is the 50th percentile. The shade is the 10th to the 90th.
+      </p>
+      <div className="h-[32rem] sm:h-[40rem]">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
+            <CartesianGrid stroke={gridStroke} vertical={false} />
+            <XAxis
+              dataKey="t"
+              tickFormatter={(t) => String(t)}
+              tick={{ fill: tickFill, fontSize: 11 }}
+              tickLine={false}
+              axisLine={{ stroke: gridStroke }}
+              interval="preserveStartEnd"
+              minTickGap={16}
+              height={28}
+            />
+            <YAxis
+              tickFormatter={(v) => usdCompact(v)}
+              tick={{ fill: tickFill, fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+              width={56}
+            />
+            <Tooltip
+              formatter={(value, name) => {
+                if (name === "range" && Array.isArray(value)) {
+                  return [`${usd(Number(value[0]))} – ${usd(Number(value[1]))}`, "10th–90th"];
+                }
+                return [usd(Number(value)), "50th"];
+              }}
+              labelFormatter={(t) => String(t)}
+              contentStyle={tooltipStyle}
+              labelStyle={{ color: "#1a2330" }}
+              itemStyle={{ color: "#4b5b6e" }}
+            />
+            <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
+            <Area
+              type="monotone"
+              dataKey="range"
+              name="10th–90th"
+              stroke="none"
+              fill="var(--color-accent)"
+              fillOpacity={0.18}
+              isAnimationActive={false}
+            />
+            <Line
+              type="monotone"
+              dataKey="mid"
+              name="50th"
+              stroke="var(--color-accent)"
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={false}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
   );
 }

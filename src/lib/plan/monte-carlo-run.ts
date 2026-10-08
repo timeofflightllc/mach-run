@@ -22,6 +22,16 @@ import type {
 const PATHS = 1000;
 const YIELD_EVERY = 25;
 
+export type SurvivalBand = {
+  year: number;
+  p10: number;
+  p50: number;
+  p90: number;
+  p10Real: number;
+  p50Real: number;
+  p90Real: number;
+};
+
 export type SurvivalScore = {
   score: number;
   survived: number;
@@ -30,9 +40,13 @@ export type SurvivalScore = {
   hash: string;
   /** Middle age among futures that run out. Null when every future still has money. */
   runOutAge: number | null;
+  /** Year-end spendable percentiles. Empty when a path did not report balances. */
+  bands: SurvivalBand[];
 };
 
-type PathResult = { depletedAge: number | null };
+type YearEnd = { year: number; nominal: number; real: number };
+
+type PathResult = { depletedAge: number | null; yearEnds?: YearEnd[] };
 
 export type SurvivalOptions = {
   signal?: AbortSignal;
@@ -113,6 +127,7 @@ async function execute(
   const stdev = SWING_PRESETS[swing];
   let survived = 0;
   const runOutAges: number[] = [];
+  const columns = new Map<number, { nominal: number[]; real: number[] }>();
   for (let path = 0; path < PATHS; path++) {
     if (opts?.signal?.aborted) return null;
     const draw = createStandardNormal(mixSeed(hash, path));
@@ -122,14 +137,25 @@ async function execute(
       stdev,
       zForYear: (year) => zByYear.get(year) ?? 0,
     };
-    let depleted: number | null;
+    let result: PathResult;
     try {
-      depleted = runOne(plan, shocks).depletedAge;
+      result = runOne(plan, shocks);
     } catch {
       return null;
     }
-    if (depleted == null) survived += 1;
-    else runOutAges.push(depleted);
+    if (result.depletedAge == null) survived += 1;
+    else runOutAges.push(result.depletedAge);
+    if (result.yearEnds) {
+      for (const row of result.yearEnds) {
+        let col = columns.get(row.year);
+        if (!col) {
+          col = { nominal: [], real: [] };
+          columns.set(row.year, col);
+        }
+        col.nominal.push(row.nominal);
+        col.real.push(row.real);
+      }
+    }
     const done = path + 1;
     if (done % YIELD_EVERY === 0) {
       opts?.onProgress?.(done, PATHS);
@@ -144,11 +170,48 @@ async function execute(
     swing,
     hash,
     runOutAge: middleRunOutAge(runOutAges),
+    bands: bandsFrom(columns),
   };
 }
 
 function defaultRun(plan: Plan, shocks: ReturnShocks): PathResult {
-  return simulate(plan, { shocks });
+  const sim = simulate(plan, { shocks });
+  return {
+    depletedAge: sim.depletedAge,
+    yearEnds: sim.years.map((year) => ({
+      year: year.year,
+      nominal: year.endSpendable,
+      real: year.endSpendableReal,
+    })),
+  };
+}
+
+/** Inclusive percentile. p is 0 to 1. */
+function percentile(sorted: number[], p: number): number {
+  if (sorted.length === 0) return 0;
+  if (sorted.length === 1) return sorted[0];
+  const rank = p * (sorted.length - 1);
+  const lo = Math.floor(rank);
+  const hi = Math.ceil(rank);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] * (hi - rank) + sorted[hi] * (rank - lo);
+}
+
+function bandsFrom(columns: Map<number, { nominal: number[]; real: number[] }>): SurvivalBand[] {
+  return [...columns.keys()].sort((a, b) => a - b).map((year) => {
+    const col = columns.get(year);
+    const nominal = (col?.nominal ?? []).slice().sort((a, b) => a - b);
+    const real = (col?.real ?? []).slice().sort((a, b) => a - b);
+    return {
+      year,
+      p10: percentile(nominal, 0.1),
+      p50: percentile(nominal, 0.5),
+      p90: percentile(nominal, 0.9),
+      p10Real: percentile(real, 0.1),
+      p50Real: percentile(real, 0.5),
+      p90Real: percentile(real, 0.9),
+    };
+  });
 }
 
 function calendarYears(plan: Plan): number[] {
