@@ -828,6 +828,28 @@ export function NetWorthChart({
   );
 }
 
+function atPercent(values: number[], p: number): number {
+  if (values.length === 0) return 0;
+  if (values.length === 1) return values[0];
+  const sorted = values.slice().sort((a, b) => a - b);
+  const rank = p * (sorted.length - 1);
+  const lo = Math.floor(rank);
+  const hi = Math.ceil(rank);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] * (hi - rank) + sorted[hi] * (rank - lo);
+}
+
+function innerAt(series: number[][] | null, yearIndex: number): { low: number; high: number } | null {
+  if (!series || series.length === 0) return null;
+  const values: number[] = [];
+  for (const row of series) {
+    const value = row[yearIndex];
+    if (Number.isFinite(value)) values.push(value);
+  }
+  if (values.length === 0) return null;
+  return { low: atPercent(values, 0.25), high: atPercent(values, 0.75) };
+}
+
 export function MonteCarloBandChart({
   bands,
   traces,
@@ -837,11 +859,21 @@ export function MonteCarloBandChart({
   traces?: SurvivalTraces | null;
   real: boolean;
 }) {
-  const data = bands.map((band) => {
+  const data = bands.map((band, index) => {
     const low = real ? band.p10Real : band.p10;
     const mid = real ? band.p50Real : band.p50;
     const high = real ? band.p90Real : band.p90;
-    return { t: band.year, low, mid, high, range: [low, high] as [number, number] };
+    const inner = innerAt(series, index);
+    return {
+      t: band.year,
+      low,
+      mid,
+      high,
+      innerLow: inner?.low ?? low,
+      innerHigh: inner?.high ?? high,
+      outer: [low, high] as [number, number],
+      inner: [inner?.low ?? low, inner?.high ?? high] as [number, number],
+    };
   });
   const series = traces ? (real ? traces.real : traces.nominal) : null;
   const years = traces?.years ?? [];
@@ -869,17 +901,22 @@ export function MonteCarloBandChart({
       </p>
       <ul className="mb-4 mt-2 space-y-1 text-sm leading-snug text-slate-600">
         <li>
-          <span className="font-semibold text-slate-800">Each thin line</span> is one of the 1,000
-          futures. That is one way the markets could go.
+          <span className="font-semibold text-slate-800">Each thin gray line</span> is one of the
+          1,000 futures. They are faded so the green stays easy to read.
+        </li>
+        <li>
+          <span className="mr-1.5 inline-block h-2.5 w-4 rounded-sm align-middle" style={{ background: "#8fceb0" }} />
+          <span className="font-semibold text-slate-800">Light green</span> is where 8 out of 10
+          futures end. One in ten ends above it. One in ten ends below it.
+        </li>
+        <li>
+          <span className="mr-1.5 inline-block h-2.5 w-4 rounded-sm align-middle" style={{ background: "#3a8a58" }} />
+          <span className="font-semibold text-slate-800">Dark green</span> is the middle half. Half
+          of the futures end inside this darker band.
         </li>
         <li>
           <span className="font-semibold text-slate-800">The dark line</span> is the middle future.
-          Half of the 1,000 end with more than this. Half end with less.
-        </li>
-        <li>
-          <span className="font-semibold text-slate-800">The shade</span> is where most futures
-          land. Eight out of ten end inside it. One in ten ends above it, a strong run of markets.
-          One in ten ends below it, a weak run.
+          Half end with more than this. Half end with less.
         </li>
         <li>{real ? "Dollars are today's dollars." : "Dollars are future dollars, not adjusted for inflation."}</li>
       </ul>
@@ -908,37 +945,48 @@ export function MonteCarloBandChart({
             <Tooltip
               content={({ active, payload, label }) => {
                 const row = payload?.[0]?.payload as
-                  | { low?: number; mid?: number; high?: number }
+                  | { low?: number; mid?: number; high?: number; innerLow?: number; innerHigh?: number }
                   | undefined;
                 if (!active || row?.mid == null || row.low == null || row.high == null) return null;
                 return (
-                  <div style={{ ...tooltipStyle, padding: "8px 10px", maxWidth: 240 }}>
+                  <div style={{ ...tooltipStyle, padding: "8px 10px", maxWidth: 260 }}>
                     <p style={{ margin: 0, fontWeight: 600 }}>{label}</p>
                     <p style={{ margin: "8px 0 0", fontWeight: 600 }}>Middle future</p>
                     <p style={{ margin: 0 }}>{usd(row.mid)}</p>
                     <p style={{ margin: 0, color: "#4b5b6e" }}>Half end with more. Half end with less.</p>
-                    <p style={{ margin: "8px 0 0", fontWeight: 600 }}>Strong run</p>
-                    <p style={{ margin: 0 }}>{usd(row.high)}</p>
-                    <p style={{ margin: 0, color: "#4b5b6e" }}>Only 1 in 10 futures ends higher.</p>
-                    <p style={{ margin: "8px 0 0", fontWeight: 600 }}>Weak run</p>
-                    <p style={{ margin: 0 }}>{usd(row.low)}</p>
-                    <p style={{ margin: 0, color: "#4b5b6e" }}>Only 1 in 10 futures ends lower.</p>
+                    <p style={{ margin: "8px 0 0", fontWeight: 600, color: "#2f6b4a" }}>Dark green, the middle half</p>
+                    <p style={{ margin: 0 }}>{usd(row.innerLow ?? row.low)} – {usd(row.innerHigh ?? row.high)}</p>
+                    <p style={{ margin: 0, color: "#4b5b6e" }}>Half of the futures end in here.</p>
+                    <p style={{ margin: "8px 0 0", fontWeight: 600, color: "#3a8a58" }}>Light green, 8 of 10</p>
+                    <p style={{ margin: 0 }}>{usd(row.low)} – {usd(row.high)}</p>
+                    <p style={{ margin: 0, color: "#4b5b6e" }}>One in ten ends higher. One in ten ends lower.</p>
                   </div>
                 );
               }}
             />
             <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
-            <Area
-              type="monotone"
-              dataKey="range"
-              name="Most futures"
-              stroke="none"
-              fill="var(--color-accent)"
-              fillOpacity={0.12}
-              isAnimationActive={false}
-            />
             {series && years.length > 0 ? (
               <Customized component={FutureLines} years={years} series={series} />
+            ) : null}
+            <Area
+              type="monotone"
+              dataKey="outer"
+              name="Light green: 8 of 10 futures"
+              stroke="none"
+              fill="#3a8a58"
+              fillOpacity={0.28}
+              isAnimationActive={false}
+            />
+            {series && series.length > 0 ? (
+              <Area
+                type="monotone"
+                dataKey="inner"
+                name="Dark green: the middle half"
+                stroke="none"
+                fill="#1f6b40"
+                fillOpacity={0.45}
+                isAnimationActive={false}
+              />
             ) : null}
             <Line
               type="monotone"
@@ -990,7 +1038,7 @@ function FutureLines({
   return (
     <g>
       {pieces.map((d, index) => (
-        <path key={index} d={d} fill="none" stroke="#5c6b7c" strokeWidth={1} strokeOpacity={0.16} />
+        <path key={index} d={d} fill="none" stroke="#8b97a3" strokeWidth={1} strokeOpacity={0.07} />
       ))}
     </g>
   );
