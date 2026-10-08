@@ -4,6 +4,7 @@ import {
   Area,
   CartesianGrid,
   ComposedChart,
+  Customized,
   Legend,
   Line,
   ResponsiveContainer,
@@ -14,7 +15,7 @@ import {
 import { createPortal } from "react-dom";
 import { Maximize2, X } from "lucide-react";
 import { usd, usdCompact } from "@/lib/plan/format";
-import type { SurvivalBand } from "@/lib/plan/monte-carlo-run";
+import type { SurvivalBand, SurvivalTraces } from "@/lib/plan/monte-carlo-run";
 import { PinToggle } from "@/components/meridian/chart-pin";
 import type { MonthSnapshot, Plan, SimResult, YearSnapshot } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
@@ -827,13 +828,38 @@ export function NetWorthChart({
   );
 }
 
-export function MonteCarloBandChart({ bands, real }: { bands: SurvivalBand[]; real: boolean }) {
+export function MonteCarloBandChart({
+  bands,
+  traces,
+  real,
+}: {
+  bands: SurvivalBand[];
+  traces?: SurvivalTraces | null;
+  real: boolean;
+}) {
   const data = bands.map((band) => {
     const low = real ? band.p10Real : band.p10;
     const mid = real ? band.p50Real : band.p50;
     const high = real ? band.p90Real : band.p90;
     return { t: band.year, low, mid, high, range: [low, high] as [number, number] };
   });
+  const series = traces ? (real ? traces.real : traces.nominal) : null;
+  const years = traces?.years ?? [];
+  let yDomain: [number, number] | undefined;
+  if (series && series.length > 0) {
+    let lo = Infinity;
+    let hi = -Infinity;
+    for (const row of series) {
+      for (const value of row) {
+        if (value < lo) lo = value;
+        if (value > hi) hi = value;
+      }
+    }
+    if (Number.isFinite(lo) && Number.isFinite(hi)) {
+      const span = hi - lo || Math.abs(hi) || 1;
+      yDomain = [lo - span * 0.04, hi + span * 0.04];
+    }
+  }
   return (
     <div className={chartCard}>
       <h2 className="font-display text-xl font-bold text-slate-900">Money left to spend</h2>
@@ -843,7 +869,11 @@ export function MonteCarloBandChart({ bands, real }: { bands: SurvivalBand[]; re
       </p>
       <ul className="mb-4 mt-2 space-y-1 text-sm leading-snug text-slate-600">
         <li>
-          <span className="font-semibold text-slate-800">The line</span> is the middle future.
+          <span className="font-semibold text-slate-800">Each thin line</span> is one of the 1,000
+          futures. That is one way the markets could go.
+        </li>
+        <li>
+          <span className="font-semibold text-slate-800">The dark line</span> is the middle future.
           Half of the 1,000 end with more than this. Half end with less.
         </li>
         <li>
@@ -873,6 +903,7 @@ export function MonteCarloBandChart({ bands, real }: { bands: SurvivalBand[]; re
               tickLine={false}
               axisLine={false}
               width={84}
+              domain={yDomain ?? ["auto", "auto"]}
             />
             <Tooltip
               content={({ active, payload, label }) => {
@@ -903,15 +934,18 @@ export function MonteCarloBandChart({ bands, real }: { bands: SurvivalBand[]; re
               name="Most futures"
               stroke="none"
               fill="var(--color-accent)"
-              fillOpacity={0.18}
+              fillOpacity={0.12}
               isAnimationActive={false}
             />
+            {series && years.length > 0 ? (
+              <Customized component={FutureLines} years={years} series={series} />
+            ) : null}
             <Line
               type="monotone"
               dataKey="mid"
               name="Middle future"
-              stroke="var(--color-accent)"
-              strokeWidth={2}
+              stroke="#1a2330"
+              strokeWidth={2.5}
               dot={false}
               isAnimationActive={false}
             />
@@ -919,5 +953,45 @@ export function MonteCarloBandChart({ bands, real }: { bands: SurvivalBand[]; re
         </ResponsiveContainer>
       </div>
     </div>
+  );
+}
+
+function FutureLines({
+  years,
+  series,
+  xAxisMap,
+  yAxisMap,
+}: {
+  years?: number[];
+  series?: number[][];
+  xAxisMap?: Record<string, { scale: ((value: number) => number) & { bandwidth?: () => number } }>;
+  yAxisMap?: Record<string, { scale: (value: number) => number }>;
+}) {
+  const xAxis = xAxisMap ? Object.values(xAxisMap)[0] : undefined;
+  const yAxis = yAxisMap ? Object.values(yAxisMap)[0] : undefined;
+  if (!xAxis || !yAxis || !years || !series || years.length === 0) return null;
+  const x = xAxis.scale;
+  const y = yAxis.scale;
+  const band = typeof x.bandwidth === "function" ? x.bandwidth() / 2 : 0;
+  const pieces: string[] = [];
+  for (const row of series) {
+    let d = "";
+    let started = false;
+    for (let i = 0; i < years.length && i < row.length; i++) {
+      const px = x(years[i]);
+      const py = y(row[i]);
+      if (!Number.isFinite(px) || !Number.isFinite(py)) continue;
+      d += `${started ? "L" : "M"}${px + band},${py}`;
+      started = true;
+    }
+    if (d) pieces.push(d);
+  }
+  if (pieces.length === 0) return null;
+  return (
+    <g>
+      {pieces.map((d, index) => (
+        <path key={index} d={d} fill="none" stroke="#5c6b7c" strokeWidth={1} strokeOpacity={0.16} />
+      ))}
+    </g>
   );
 }

@@ -86,6 +86,12 @@ test("year-end bands do not change the survival score", async () => {
   assert.equal(score.bands[0].p10Real, 199.8);
   assert.equal(score.bands[0].p50Real, 999);
   assert.equal(score.bands[0].p90Real, 1798.2);
+  assert.ok(score.traces);
+  assert.equal(score.traces.years.length, 1);
+  assert.equal(score.traces.nominal.length, 1000);
+  assert.equal(score.traces.nominal[0][0], 0);
+  assert.equal(score.traces.nominal[999][0], 999);
+  assert.equal(score.traces.real[3][0], 6);
 });
 
 test("runOutAge is null when every future lasts", async () => {
@@ -95,6 +101,7 @@ test("runOutAge is null when every future lasts", async () => {
   assert.ok(score);
   assert.equal(score.runOutAge, null);
   assert.equal(score.bands.length, 0);
+  assert.equal(score.traces, null);
 });
 
 test("an odd count of run-out ages keeps the middle age", async () => {

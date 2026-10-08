@@ -405,7 +405,7 @@ function MonteCarloTab({
       <PhaseLabel id="ooda-monte" label="Monte Carlo" />
       <div className="relative">
         {unlocked && score && score.bands.length > 0 ? (
-          <MonteCarloBandChart bands={score.bands} real={real} />
+          <MonteCarloBandChart bands={score.bands} traces={score.traces} real={real} />
         ) : (
           <div className="flex h-[32rem] items-center justify-center rounded-xl bg-white px-6 text-center shadow-[0_0_0_1px_#c8d2de] sm:h-[40rem]">
             <p className="max-w-sm text-sm leading-relaxed text-slate-600">

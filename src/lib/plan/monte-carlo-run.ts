@@ -32,6 +32,13 @@ export type SurvivalBand = {
   p90Real: number;
 };
 
+export type SurvivalTraces = {
+  years: number[];
+  /** One row per future. Year-end spendable, same order as years. */
+  nominal: number[][];
+  real: number[][];
+};
+
 export type SurvivalScore = {
   score: number;
   survived: number;
@@ -42,6 +49,8 @@ export type SurvivalScore = {
   runOutAge: number | null;
   /** Year-end spendable percentiles. Empty when a path did not report balances. */
   bands: SurvivalBand[];
+  /** Every future drawn on the chart. Null when a path did not report balances. */
+  traces: SurvivalTraces | null;
 };
 
 type YearEnd = { year: number; nominal: number; real: number };
@@ -171,6 +180,7 @@ async function execute(
     hash,
     runOutAge: middleRunOutAge(runOutAges),
     bands: bandsFrom(columns),
+    traces: tracesFrom(columns),
   };
 }
 
@@ -195,6 +205,29 @@ function percentile(sorted: number[], p: number): number {
   const hi = Math.ceil(rank);
   if (lo === hi) return sorted[lo];
   return sorted[lo] * (hi - rank) + sorted[hi] * (rank - lo);
+}
+
+function tracesFrom(columns: Map<number, { nominal: number[]; real: number[] }>): SurvivalTraces | null {
+  const years = [...columns.keys()].sort((a, b) => a - b);
+  if (years.length === 0) return null;
+  const first = columns.get(years[0]);
+  const count = first?.nominal.length ?? 0;
+  if (count === 0) return null;
+  for (const year of years) {
+    const col = columns.get(year);
+    if (!col || col.nominal.length !== count || col.real.length !== count) return null;
+  }
+  const nominal: number[][] = Array.from({ length: count }, () => []);
+  const real: number[][] = Array.from({ length: count }, () => []);
+  for (const year of years) {
+    const col = columns.get(year);
+    if (!col) continue;
+    for (let i = 0; i < count; i++) {
+      nominal[i].push(col.nominal[i]);
+      real[i].push(col.real[i]);
+    }
+  }
+  return { years, nominal, real };
 }
 
 function bandsFrom(columns: Map<number, { nominal: number[]; real: number[] }>): SurvivalBand[] {
