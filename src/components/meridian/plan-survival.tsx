@@ -324,11 +324,11 @@ export function PlanSurvival({
           <MachOrbit compact />
         ) : view.score ? (
           <>
-            <p className="text-lg font-bold leading-snug text-slate-900">
+            <p className="text-[13px] font-bold leading-tight text-slate-900 sm:text-lg sm:leading-snug">
               {survivalSentence(view.score.score, longevityAge)}
             </p>
             {ranOut ? (
-              <p className="mt-1 text-base font-semibold leading-snug text-slate-900">{ranOut}</p>
+              <p className="mt-1 text-[12px] font-semibold leading-tight text-slate-900 sm:text-base sm:leading-snug">{ranOut}</p>
             ) : null}
           </>
         ) : (
