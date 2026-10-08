@@ -894,7 +894,7 @@ export function MonteCarloBandChart({
   }
   return (
     <div className={chartCard}>
-      <h2 className="font-display text-xl font-bold text-slate-900">Money left to spend</h2>
+      <h2 className="font-display text-xl font-bold text-slate-900">1000 Spendable Futures</h2>
       <p className="mt-1 text-sm leading-relaxed text-slate-700">
         Your plan is run 1,000 times. The markets are different each time, so each run is one
         possible future. The chart is how much spendable money is left at the end of the year.
