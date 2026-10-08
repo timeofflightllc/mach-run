@@ -859,6 +859,8 @@ export function MonteCarloBandChart({
   traces?: SurvivalTraces | null;
   real: boolean;
 }) {
+  const series = traces ? (real ? traces.real : traces.nominal) : null;
+  const years = traces?.years ?? [];
   const data = bands.map((band, index) => {
     const low = real ? band.p10Real : band.p10;
     const mid = real ? band.p50Real : band.p50;
@@ -875,8 +877,6 @@ export function MonteCarloBandChart({
       inner: [inner?.low ?? low, inner?.high ?? high] as [number, number],
     };
   });
-  const series = traces ? (real ? traces.real : traces.nominal) : null;
-  const years = traces?.years ?? [];
   let yDomain: [number, number] | undefined;
   if (series && series.length > 0) {
     let lo = Infinity;
