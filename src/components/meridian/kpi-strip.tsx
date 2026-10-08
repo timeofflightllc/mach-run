@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { usd } from "@/lib/plan/format";
 import { startingNetWorth, startingSpendable } from "@/lib/plan/engine";
+import { sustainableRetirementIncome, type SustainableIncome } from "@/lib/plan/sustainable-income";
 import type { Plan, SimResult } from "@/lib/plan/types";
 
 const MONTHLY_TIP =
   "That year ÷ 12. This is A.I.R. for the first full calendar year after the goal date: military retired pay, VA, Social Security, pension, and other retirement, plus withdrawals. Not the job.";
 
 const ANNUAL_TIP =
-  "The first full calendar year of A.I.R. in the year table. Guaranteed retirement pay plus withdrawals. A partial year at the goal date is not this number. Not the job.";
+  "The first full calendar year of A.I.R. in the year table. That is the income your spending is scheduled to take: guaranteed retirement pay plus withdrawals. The amount in parentheses is the most that same year could pay and still last to your longevity age. A partial year at the goal date is not this number. Not the job.";
 
 function HoverLabel({ label, tip }: { label: string; tip?: string }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -43,6 +44,10 @@ function HoverLabel({ label, tip }: { label: string; tip?: string }) {
   );
 }
 
+function roomKey(plan: Plan): string {
+  return JSON.stringify({ ...plan, assumptions: { ...plan.assumptions, dollars: "nominal" } });
+}
+
 export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
   const real = plan.assumptions.dollars === "real";
   const ret = sim.retirement;
@@ -53,6 +58,13 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
     : null;
   const annual = ret ? (real ? ret.annualIncomeReal : ret.annualIncome) : null;
   const monthly = ret ? (real ? ret.monthlyIncomeReal : ret.monthlyIncome) : null;
+  const roomCache = useRef<{ key: string; value: SustainableIncome | null } | null>(null);
+  const key = roomKey(plan);
+  if (!roomCache.current || roomCache.current.key !== key) {
+    roomCache.current = { key, value: sustainableRetirementIncome(plan) };
+  }
+  const room = roomCache.current.value;
+  const roomAmount = room ? (real ? room.real : room.nominal) : null;
   const retLabel = !ret
     ? "Spendable at retirement"
     : ret.now
@@ -90,7 +102,19 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
       label: ret?.incomeYear
         ? `Annual income in retirement (${ret.incomeYear})`
         : "Annual income in retirement",
-      value: annual != null ? usd(annual) : "—",
+      value:
+        annual != null ? (
+          <span className="block">
+            {usd(annual)}
+            {roomAmount != null ? (
+              <span className="mt-1 block font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
+                ({usd(roomAmount)} available to withdraw without overspending)
+              </span>
+            ) : null}
+          </span>
+        ) : (
+          "—"
+        ),
       tip: ANNUAL_TIP,
     },
     {
