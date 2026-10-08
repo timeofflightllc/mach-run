@@ -5,7 +5,7 @@ import { sustainableRetirementIncome, type SustainableIncome } from "@/lib/plan/
 import type { Plan, SimResult } from "@/lib/plan/types";
 
 const MONTHLY_TIP =
-  "That year ÷ 12. This is A.I.R. for the first full calendar year after the goal date: military retired pay, VA, Social Security, pension, and other retirement, plus withdrawals. Not the job.";
+  "That year ÷ 12. This is A.I.R. for the first full calendar year after the goal date: military retired pay, VA, Social Security, pension, and other retirement, plus withdrawals. The amount in parentheses is the most that same year could pay per month and still last to your longevity age. Not the job.";
 
 const ANNUAL_TIP =
   "The first full calendar year of A.I.R. in the year table. That is the income your spending is scheduled to take: guaranteed retirement pay plus withdrawals. The amount in parentheses is the most that same year could pay and still last to your longevity age. A partial year at the goal date is not this number. Not the job.";
@@ -119,7 +119,19 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
     },
     {
       label: "Monthly income in retirement",
-      value: monthly != null ? usd(monthly, true) : "—",
+      value:
+        monthly != null ? (
+          <span className="block">
+            {usd(monthly, true)}
+            {roomAmount != null ? (
+              <span className="mt-1 block font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
+                ({usd(roomAmount / 12, true)} available to withdraw without overspending)
+              </span>
+            ) : null}
+          </span>
+        ) : (
+          "—"
+        ),
       tip: MONTHLY_TIP,
     },
     {
