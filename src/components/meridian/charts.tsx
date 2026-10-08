@@ -878,18 +878,18 @@ export function MonteCarloBandChart({
     };
   });
   let yDomain: [number, number] | undefined;
-  if (series && series.length > 0) {
+  if (data.length > 0) {
     let lo = Infinity;
     let hi = -Infinity;
-    for (const row of series) {
-      for (const value of row) {
-        if (value < lo) lo = value;
-        if (value > hi) hi = value;
-      }
+    for (const row of data) {
+      if (row.low < lo) lo = row.low;
+      if (row.high > hi) hi = row.high;
     }
     if (Number.isFinite(lo) && Number.isFinite(hi)) {
       const span = hi - lo || Math.abs(hi) || 1;
-      yDomain = [lo - span * 0.04, hi + span * 0.04];
+      const pad = span * 0.08;
+      const bottom = lo <= span * 0.15 ? 0 : lo - pad;
+      yDomain = [bottom, hi + pad];
     }
   }
   return (
@@ -902,7 +902,8 @@ export function MonteCarloBandChart({
       <ul className="mb-4 mt-2 space-y-1 text-sm leading-snug text-slate-600">
         <li>
           <span className="font-semibold text-slate-800">Each thin gray line</span> is one of the
-          1,000 futures. They are faded so the green stays easy to read.
+          1,000 futures. They are faded so the green stays easy to read. A few of the strongest
+          run off the top. The scale follows the green, not the wildest future.
         </li>
         <li>
           <span className="mr-1.5 inline-block h-2.5 w-4 rounded-sm align-middle" style={{ background: "#8fceb0" }} />
@@ -941,6 +942,7 @@ export function MonteCarloBandChart({
               axisLine={false}
               width={84}
               domain={yDomain ?? ["auto", "auto"]}
+              allowDataOverflow
             />
             <Tooltip
               content={({ active, payload, label }) => {
@@ -1009,11 +1011,13 @@ function FutureLines({
   series,
   xAxisMap,
   yAxisMap,
+  offset,
 }: {
   years?: number[];
   series?: number[][];
   xAxisMap?: Record<string, { scale: ((value: number) => number) & { bandwidth?: () => number } }>;
   yAxisMap?: Record<string, { scale: (value: number) => number }>;
+  offset?: { top: number; left: number; width: number; height: number };
 }) {
   const xAxis = xAxisMap ? Object.values(xAxisMap)[0] : undefined;
   const yAxis = yAxisMap ? Object.values(yAxisMap)[0] : undefined;
@@ -1035,11 +1039,20 @@ function FutureLines({
     if (d) pieces.push(d);
   }
   if (pieces.length === 0) return null;
+  const clip =
+    offset && offset.width > 0 && offset.height > 0 ? (
+      <clipPath id="mc-future-clip">
+        <rect x={offset.left} y={offset.top} width={offset.width} height={offset.height} />
+      </clipPath>
+    ) : null;
   return (
     <g>
-      {pieces.map((d, index) => (
-        <path key={index} d={d} fill="none" stroke="#8b97a3" strokeWidth={1} strokeOpacity={0.07} />
-      ))}
+      {clip ? <defs>{clip}</defs> : null}
+      <g clipPath={clip ? "url(#mc-future-clip)" : undefined}>
+        {pieces.map((d, index) => (
+          <path key={index} d={d} fill="none" stroke="#8b97a3" strokeWidth={1} strokeOpacity={0.07} />
+        ))}
+      </g>
     </g>
   );
 }
