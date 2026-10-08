@@ -8,7 +8,7 @@ import { StaleRunPrompt } from "@/components/meridian/confirm-remove";
 import { CalculateButton } from "@/components/meridian/calculate-button";
 import { AdvisoryStrip } from "@/components/meridian/advisory-note";
 import { CashChart, MonteCarloBandChart, NetWorthChart, WealthChart } from "@/components/meridian/charts";
-import { PlanSurvival, readPlanSurvivalMinimized, type SurvivalView } from "@/components/meridian/plan-survival";
+import { PlanSurvival, readPlanSurvivalMinimized, RunMonteCarloButton, type SurvivalView } from "@/components/meridian/plan-survival";
 import { Pinnable, useChartPins } from "@/components/meridian/chart-pin";
 import { ContributionForm } from "@/components/meridian/contribution-form";
 import { AssumptionsForm, HouseholdForm } from "@/components/meridian/household-form";
@@ -388,12 +388,16 @@ function MonteCarloTab({
   longevityAge,
   score,
   running,
+  progress,
+  onRun,
 }: {
   unlocked: boolean;
   real: boolean;
   longevityAge: number;
   score: SurvivalScore | null;
   running: boolean;
+  progress: number;
+  onRun: () => void;
 }) {
   const ranOut = score ? runOutSentence(score, longevityAge) : null;
   return (
@@ -406,8 +410,8 @@ function MonteCarloTab({
           <div className="flex h-[32rem] items-center justify-center rounded-xl bg-white px-6 text-center shadow-[0_0_0_1px_#c8d2de] sm:h-[40rem]">
             <p className="max-w-sm text-sm leading-relaxed text-slate-600">
               {running
-                ? "Monte Carlo is running on Takeoff."
-                : "Run Monte Carlo Simulation on Takeoff."}
+                ? "Checking 1,000 futures…"
+                : "Run it to see 1,000 possible futures for the money you can spend."}
             </p>
           </div>
         )}
@@ -425,6 +429,9 @@ function MonteCarloTab({
           </div>
         )}
       </div>
+      {unlocked ? (
+        <RunMonteCarloButton running={running} progress={running ? progress : 0} onClick={onRun} />
+      ) : null}
       {unlocked && score ? (
         <div className="text-sm leading-relaxed text-fg">
           <p>{survivalSentence(score.score, longevityAge)}</p>
@@ -1950,6 +1957,12 @@ function Home() {
                           survivalView?.status === "running" &&
                           survivalView.runId === run.id,
                       )}
+                      progress={
+                        survivalView?.status === "running" && survivalView.runId === run.id
+                          ? survivalView.progress
+                          : 0
+                      }
+                      onRun={runMonteCarlo}
                     />
                   ) : null}
                 </div>

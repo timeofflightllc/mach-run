@@ -153,7 +153,7 @@ function BoydQuote({ quotes, pulse }: { quotes: string[]; pulse: boolean }) {
   );
 }
 
-function RunMonteCarloButton({
+export function RunMonteCarloButton({
   running,
   progress,
   onClick,

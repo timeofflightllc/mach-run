@@ -836,14 +836,26 @@ export function MonteCarloBandChart({ bands, real }: { bands: SurvivalBand[]; re
   });
   return (
     <div className={chartCard}>
-      <h2 className="font-display text-xl font-bold text-slate-900">Spendable</h2>
-      <p className="mb-4 mt-1 text-xs text-slate-600">
-        {real ? "Inflation-adjusted (today's dollars)" : "Future dollars"} · Year-end spendable.
-        The line is the 50th percentile. The shade is the 10th to the 90th.
+      <h2 className="font-display text-xl font-bold text-slate-900">Money left to spend</h2>
+      <p className="mt-1 text-sm leading-relaxed text-slate-700">
+        Your plan is run 1,000 times. The markets are different each time, so each run is one
+        possible future. The chart is how much spendable money is left at the end of the year.
       </p>
+      <ul className="mb-4 mt-2 space-y-1 text-sm leading-snug text-slate-600">
+        <li>
+          <span className="font-semibold text-slate-800">The line</span> is the middle future.
+          Half of the 1,000 end with more than this. Half end with less.
+        </li>
+        <li>
+          <span className="font-semibold text-slate-800">The shade</span> is where most futures
+          land. Eight out of ten end inside it. One in ten ends above it, a strong run of markets.
+          One in ten ends below it, a weak run.
+        </li>
+        <li>{real ? "Dollars are today's dollars." : "Dollars are future dollars, not adjusted for inflation."}</li>
+      </ul>
       <div className="h-[32rem] sm:h-[40rem]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
+          <ComposedChart data={data} margin={{ top: 8, right: 12, left: 8, bottom: 4 }}>
             <CartesianGrid stroke={gridStroke} vertical={false} />
             <XAxis
               dataKey="t"
@@ -860,25 +872,35 @@ export function MonteCarloBandChart({ bands, real }: { bands: SurvivalBand[]; re
               tick={{ fill: tickFill, fontSize: 11 }}
               tickLine={false}
               axisLine={false}
-              width={56}
+              width={84}
             />
             <Tooltip
-              formatter={(value, name) => {
-                if (name === "range" && Array.isArray(value)) {
-                  return [`${usd(Number(value[0]))} – ${usd(Number(value[1]))}`, "10th–90th"];
-                }
-                return [usd(Number(value)), "50th"];
+              content={({ active, payload, label }) => {
+                const row = payload?.[0]?.payload as
+                  | { low?: number; mid?: number; high?: number }
+                  | undefined;
+                if (!active || row?.mid == null || row.low == null || row.high == null) return null;
+                return (
+                  <div style={{ ...tooltipStyle, padding: "8px 10px", maxWidth: 240 }}>
+                    <p style={{ margin: 0, fontWeight: 600 }}>{label}</p>
+                    <p style={{ margin: "8px 0 0", fontWeight: 600 }}>Middle future</p>
+                    <p style={{ margin: 0 }}>{usd(row.mid)}</p>
+                    <p style={{ margin: 0, color: "#4b5b6e" }}>Half end with more. Half end with less.</p>
+                    <p style={{ margin: "8px 0 0", fontWeight: 600 }}>Strong run</p>
+                    <p style={{ margin: 0 }}>{usd(row.high)}</p>
+                    <p style={{ margin: 0, color: "#4b5b6e" }}>Only 1 in 10 futures ends higher.</p>
+                    <p style={{ margin: "8px 0 0", fontWeight: 600 }}>Weak run</p>
+                    <p style={{ margin: 0 }}>{usd(row.low)}</p>
+                    <p style={{ margin: 0, color: "#4b5b6e" }}>Only 1 in 10 futures ends lower.</p>
+                  </div>
+                );
               }}
-              labelFormatter={(t) => String(t)}
-              contentStyle={tooltipStyle}
-              labelStyle={{ color: "#1a2330" }}
-              itemStyle={{ color: "#4b5b6e" }}
             />
             <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
             <Area
               type="monotone"
               dataKey="range"
-              name="10th–90th"
+              name="Most futures"
               stroke="none"
               fill="var(--color-accent)"
               fillOpacity={0.18}
@@ -887,7 +909,7 @@ export function MonteCarloBandChart({ bands, real }: { bands: SurvivalBand[]; re
             <Line
               type="monotone"
               dataKey="mid"
-              name="50th"
+              name="Middle future"
               stroke="var(--color-accent)"
               strokeWidth={2}
               dot={false}

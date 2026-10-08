@@ -9,7 +9,7 @@ import { OODA_DISCLAIMER } from "@/lib/plan/disclaimer";
 import type { PeerBrief } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
 
-type Turn = { q: string; a: string };
+type Turn = { q: string; a: string | null };
 
 function Disclaimer() {
   return <p className="text-xs italic leading-relaxed text-subtle">{OODA_DISCLAIMER}</p>;
@@ -36,11 +36,15 @@ export function OodaAiCard({
   async function ask() {
     const q = question.trim();
     if (!q || busy || !paid) return;
+    const prior = turns;
     setBusy(true);
     setError(null);
+    setQuestion("");
+    setTurns((prev) => [...prev, { q, a: null }]);
     try {
-      const history = turns
+      const history = prior
         .slice(-4)
+        .filter((t) => t.a)
         .map((t) => `Q: ${t.q}\nA: ${t.a}`)
         .join("\n\n");
       const result = await askMachOoda({
@@ -52,10 +56,21 @@ export function OodaAiCard({
         },
       });
       if (result.ok) {
-        setTurns((prev) => [...prev, { q, a: result.answer }]);
-        setQuestion("");
-      } else setError(result.error);
+        setTurns((prev) =>
+          prev.map((turn, index) =>
+            index === prev.length - 1 && turn.q === q && turn.a == null
+              ? { q, a: result.answer }
+              : turn,
+          ),
+        );
+      } else {
+        setTurns((prev) => prev.filter((turn, index) => !(index === prev.length - 1 && turn.a == null)));
+        setQuestion(q);
+        setError(result.error);
+      }
     } catch {
+      setTurns((prev) => prev.filter((turn, index) => !(index === prev.length - 1 && turn.a == null)));
+      setQuestion(q);
       setError("OODA AI could not complete that pass.");
     } finally {
       setBusy(false);
@@ -100,13 +115,27 @@ export function OodaAiCard({
       ) : (
         <>
           {turns.length ? (
-            <div className="mt-4 flex flex-col gap-3">
+            <div className="mt-4 flex max-h-[min(24rem,50vh)] flex-col gap-2 overflow-y-auto pr-1">
               {turns.map((t, i) => (
-                <div key={`${i}-${t.q.slice(0, 12)}`} className="space-y-1.5">
-                  <p className="text-sm font-semibold text-fg">You: {t.q}</p>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted">
-                    {t.a}
-                  </p>
+                <div key={`${i}-${t.q.slice(0, 24)}`} className="flex flex-col gap-2">
+                  <div className="flex justify-end">
+                    <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-canopy px-3.5 py-2 text-sm leading-relaxed text-white">
+                      {t.q}
+                    </p>
+                  </div>
+                  {t.a ? (
+                    <div className="flex justify-start">
+                      <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-bl-md bg-white px-3.5 py-2 text-sm leading-relaxed text-slate-800 shadow-[0_0_0_1px_#e2e8f0]">
+                        {t.a}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex justify-start">
+                      <p className="rounded-2xl rounded-bl-md bg-white px-3.5 py-2.5 text-sm tracking-widest text-slate-400 shadow-[0_0_0_1px_#e2e8f0]">
+                        ···
+                      </p>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -115,7 +144,10 @@ export function OodaAiCard({
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) void ask();
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                void ask();
+              }
             }}
             rows={3}
             maxLength={600}
@@ -131,7 +163,7 @@ export function OodaAiCard({
             >
               {busy ? "Briefing…" : "Ask OODA AI"}
             </button>
-            <span className="text-xs text-subtle">Enter + ⌘ to send</span>
+            <span className="text-xs text-subtle">Enter to send</span>
           </div>
           {error ? <p className="mt-4 text-sm text-negative">{error}</p> : null}
         </>
