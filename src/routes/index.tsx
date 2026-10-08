@@ -325,7 +325,7 @@ function OodaRail({ open, onToggle }: { open: boolean; onToggle: () => void }) {
       onFocus={(e) => place(e.currentTarget)}
       onBlur={() => setTip(null)}
       className={cn(
-        "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl min-[72rem]:absolute min-[72rem]:top-0 min-[72rem]:right-[calc(0.5rem-max(1rem,7.5vw))] min-[72rem]:h-14 min-[72rem]:w-14",
+        "fixed z-[24] inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl right-2 top-[calc(var(--mach-header-h,7rem)+0.75rem)] min-[72rem]:h-14 min-[72rem]:w-14",
         open ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
       )}
     >
@@ -1821,7 +1821,7 @@ function Home() {
                 <div
                   role="tablist"
                   aria-label="Act"
-                  className="flex min-w-0 flex-1 flex-row gap-2 overflow-x-auto min-[72rem]:absolute min-[72rem]:top-0 min-[72rem]:z-20 min-[72rem]:flex-none min-[72rem]:flex-col min-[72rem]:overflow-visible min-[72rem]:left-[calc(0.5rem-max(1rem,7.5vw))]"
+                  className="flex min-w-0 flex-1 flex-row gap-2 overflow-x-auto pr-12 min-[72rem]:absolute min-[72rem]:top-0 min-[72rem]:z-20 min-[72rem]:flex-none min-[72rem]:flex-col min-[72rem]:overflow-visible min-[72rem]:pr-0 min-[72rem]:left-[calc(0.5rem-max(1rem,7.5vw))]"
                 >
                   {ACT_TABS.map((tab) => (
                     <ActTabButton
