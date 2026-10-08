@@ -2000,27 +2000,7 @@ function Home() {
               </div>
             </div>
           )}
-          {holding ? null : (
-            <CalculateButton
-              label="Execute the MACH RUN"
-              onCalculate={() => calculate({ stay: true })}
-            />
-          )}
         </div>
-        </div>
-        <div className="mx-auto flex w-full max-w-2xl items-center justify-between gap-8">
-          {shownIndex > 0 ? (
-            <NavButton kind="back" onPress={onBack}>
-              Back
-            </NavButton>
-          ) : (
-            <span />
-          )}
-          {shownIndex >= 0 && shownIndex < route.length - 1 ? (
-            <NavButton kind="next" onPress={onNext}>
-              Next
-            </NavButton>
-          ) : null}
         </div>
       </main>
       <MachFooter disclaimer />
