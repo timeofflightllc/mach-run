@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { RefreshCw } from "lucide-react";
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import type { SwingName } from "@/lib/plan/monte-carlo";
 import { runOutSentence, survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { cn } from "@/lib/utils";
@@ -75,6 +75,9 @@ function nextBoydLine(quotes: string[], current: string) {
 
 function BoydQuote({ quotes, pulse }: { quotes: string[]; pulse: boolean }) {
   const [spin, setSpin] = useState(0);
+  const [px, setPx] = useState(18);
+  const slipRef = useRef<HTMLDivElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const picked = useRef<{ spin: number; line: string } | null>(null);
   if (
     quotes.length > 0 &&
@@ -87,14 +90,50 @@ function BoydQuote({ quotes, pulse }: { quotes: string[]; pulse: boolean }) {
   }
   const line = picked.current?.line ?? "";
 
+  useLayoutEffect(() => {
+    const slip = slipRef.current;
+    const body = bodyRef.current;
+    if (!slip || !body || !line) return;
+    const quote = body.querySelector("p");
+    const mark = body.querySelector("span");
+    const fit = () => {
+      const style = getComputedStyle(slip);
+      const pad = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+      const limit = slip.clientHeight - pad;
+      let size = 18;
+      while (size > 11) {
+        if (quote) quote.style.fontSize = `${size}px`;
+        if (mark) {
+          mark.style.fontSize = `${Math.round(size * 2.4)}px`;
+          mark.style.marginBottom = `${size > 15 ? -20 : -10}px`;
+        }
+        if (body.scrollHeight <= limit) break;
+        size -= 1;
+      }
+      setPx((prev) => (prev === size ? prev : size));
+    };
+    fit();
+    const watch = new ResizeObserver(fit);
+    watch.observe(slip);
+    return () => watch.disconnect();
+  }, [line]);
+
+  const markPx = Math.round(px * 2.4);
+
   return (
-    <div className={quoteSlip}>
+    <div ref={slipRef} className={quoteSlip}>
       {line ? (
-        <div className={cn("flex flex-col items-center", pulse && "mach-run-pulse")}>
-          <span aria-hidden="true" className="-mb-5 font-serif text-5xl leading-none text-[#d05838]">
+        <div ref={bodyRef} className={cn("flex w-full flex-col items-center", pulse && "mach-run-pulse")}>
+          <span
+            aria-hidden="true"
+            className="font-serif leading-none text-[#d05838]"
+            style={{ fontSize: markPx, marginBottom: px > 15 ? -20 : -10 }}
+          >
             “
           </span>
-          <p className="max-w-xl font-display text-lg leading-snug text-slate-900">{line}</p>
+          <p className="max-w-xl font-display leading-snug text-slate-900" style={{ fontSize: px }}>
+            {line}
+          </p>
           <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
             John Boyd
           </p>
