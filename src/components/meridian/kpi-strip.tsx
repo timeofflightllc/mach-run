@@ -109,7 +109,7 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
             {usd(annual)}
             {roomAmount != null ? (
               <span className="mt-1 block font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
-                {usd(roomAmount)} the most all retirement sources can pay that year and still last
+                {usd(roomAmount)} from all income sources in retirement combined without overspending.
               </span>
             ) : null}
             {drawnAmount != null ? (
