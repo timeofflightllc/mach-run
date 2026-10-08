@@ -114,7 +114,7 @@ function Announcements() {
 
   return (
     <main className="min-h-screen bg-bg py-10 text-fg">
-      <div className="page-gutter mx-auto w-full space-y-8">
+      <div className="static-gutter mx-auto w-full space-y-8">
         <PageMast />
         <header>
           <h1 className="font-display text-4xl text-fg sm:text-5xl">{page.title}</h1>
@@ -128,7 +128,7 @@ function Announcements() {
         </ol>
         <EarlierByMonth items={earlier} />
       </div>
-      <MachFooter />
+      <MachFooter staticInset />
     </main>
   );
 }

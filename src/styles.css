@@ -145,6 +145,11 @@
   padding-inline: max(1rem, 7.5vw);
 }
 
+/* Static pages only. Wider inset, about 10% each side. The calculator stays on page-gutter. */
+.static-gutter {
+  padding-inline: max(1rem, 10vw);
+}
+
 /* A fixed field width must not run out of the tan card on a phone. */
 @container (max-width: 45.99rem) {
   .card-fields > * {

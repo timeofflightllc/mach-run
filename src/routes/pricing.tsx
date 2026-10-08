@@ -289,7 +289,7 @@ function Pricing() {
 
   return (
     <main className="min-h-screen bg-bg py-10 text-fg">
-      <div className="page-gutter mx-auto w-full">
+      <div className="static-gutter mx-auto w-full">
         <div className="mx-auto w-full max-w-7xl">
           <PageMast />
 
@@ -759,7 +759,7 @@ function Pricing() {
           </Link>
         </p>
       </div>
-      <MachFooter />
+      <MachFooter staticInset />
     </main>
   );
 }

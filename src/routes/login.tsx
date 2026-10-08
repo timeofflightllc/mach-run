@@ -100,7 +100,7 @@ function Login() {
 
   return (
     <main className="relative flex min-h-screen flex-col bg-bg py-10 text-fg">
-      <div className="page-gutter mx-auto w-full">
+      <div className="static-gutter mx-auto w-full">
         <PageMast />
       </div>
       <div className="flex flex-1 items-center justify-center">
@@ -305,7 +305,7 @@ function Login() {
         </p>
       </div>
       </div>
-      <MachFooter />
+      <MachFooter staticInset />
     </main>
   );
 }

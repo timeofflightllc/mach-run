@@ -161,7 +161,7 @@ function VerifyEmail() {
 
   return (
     <main className="flex min-h-screen flex-col bg-bg py-10 text-fg">
-      <div className="page-gutter mx-auto w-full">
+      <div className="static-gutter mx-auto w-full">
         <PageMast />
       </div>
       <div className="flex flex-1 items-center justify-center">
@@ -221,7 +221,7 @@ function VerifyEmail() {
         </form>
       </div>
       </div>
-      <MachFooter />
+      <MachFooter staticInset />
     </main>
   );
 }
