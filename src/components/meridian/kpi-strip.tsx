@@ -95,9 +95,26 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
       tip: "Accounts counted in net worth, minus remaining loans.",
     },
     {
-      label: retLabel,
-      value: spendableAtRet != null ? usd(spendableAtRet) : "Set date in Family",
-      tip: "Spendable balance the month before the goal date, in this run’s dollars.",
+      label: "Monthly income in retirement",
+      value:
+        monthly != null ? (
+          <span className="block">
+            {usd(monthly, true)}
+            {roomAmount != null ? (
+              <span className="mt-1 block font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
+                {usd(roomAmount / 12, true)} the most all retirement sources can pay per month and still last
+              </span>
+            ) : null}
+            {drawnAmount != null ? (
+              <span className="mt-1 block font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
+                {usd(drawnAmount / 12, true)} available for withdrawal from investments without overspending
+              </span>
+            ) : null}
+          </span>
+        ) : (
+          "—"
+        ),
+      tip: MONTHLY_TIP,
     },
     {
       label: ret?.incomeYear
@@ -124,26 +141,9 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
       tip: ANNUAL_TIP,
     },
     {
-      label: "Monthly income in retirement",
-      value:
-        monthly != null ? (
-          <span className="block">
-            {usd(monthly, true)}
-            {roomAmount != null ? (
-              <span className="mt-1 block font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
-                {usd(roomAmount / 12, true)} the most all retirement sources can pay per month and still last
-              </span>
-            ) : null}
-            {drawnAmount != null ? (
-              <span className="mt-1 block font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
-                {usd(drawnAmount / 12, true)} available for withdrawal from investments without overspending
-              </span>
-            ) : null}
-          </span>
-        ) : (
-          "—"
-        ),
-      tip: MONTHLY_TIP,
+      label: retLabel,
+      value: spendableAtRet != null ? usd(spendableAtRet) : "Set date in Family",
+      tip: "Spendable balance the month before the goal date, in this run’s dollars.",
     },
     {
       ...lastCell,
