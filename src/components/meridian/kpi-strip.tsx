@@ -5,10 +5,10 @@ import { sustainableRetirementIncome, type SustainableIncome } from "@/lib/plan/
 import type { Plan, SimResult } from "@/lib/plan/types";
 
 const MONTHLY_TIP =
-  "That year ÷ 12. This is A.I.R. for the first full calendar year after the goal date: military retired pay, VA, Social Security, pension, and other retirement, plus withdrawals. The amount in parentheses is the most that same year could pay per month and still last to your longevity age. Not the job.";
+  "That year ÷ 12. This is A.I.R. for the first full calendar year after the goal date: military retired pay, VA, Social Security, pension, and other retirement, plus withdrawals. The amount in parentheses is the most those sources together could pay per month and still last to your longevity age. Not the job.";
 
 const ANNUAL_TIP =
-  "The first full calendar year of A.I.R. in the year table. That is the income your spending is scheduled to take: guaranteed retirement pay plus withdrawals. The amount in parentheses is the most that same year could pay and still last to your longevity age. A partial year at the goal date is not this number. Not the job.";
+  "The first full calendar year of A.I.R. in the year table. That is the income your spending is scheduled to take: guaranteed retirement pay plus withdrawals. The amount in parentheses is the most those sources together could pay that year and still last to your longevity age. A partial year at the goal date is not this number. Not the job.";
 
 function HoverLabel({ label, tip }: { label: string; tip?: string }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -65,6 +65,7 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
   }
   const room = roomCache.current.value;
   const roomAmount = room ? (real ? room.real : room.nominal) : null;
+  const drawnAmount = room ? (real ? room.withdrawalReal : room.withdrawalNominal) : null;
   const retLabel = !ret
     ? "Spendable at retirement"
     : ret.now
@@ -108,7 +109,12 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
             {usd(annual)}
             {roomAmount != null ? (
               <span className="mt-1 block font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
-                ({usd(roomAmount)} available to withdraw without overspending)
+                ({usd(roomAmount)} the most all retirement sources can pay that year and still last)
+              </span>
+            ) : null}
+            {drawnAmount != null ? (
+              <span className="mt-1 block font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
+                {usd(drawnAmount)} available for withdrawal from investments without overspending
               </span>
             ) : null}
           </span>
@@ -125,7 +131,12 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
             {usd(monthly, true)}
             {roomAmount != null ? (
               <span className="mt-1 block font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
-                ({usd(roomAmount / 12, true)} available to withdraw without overspending)
+                ({usd(roomAmount / 12, true)} the most all retirement sources can pay per month and still last)
+              </span>
+            ) : null}
+            {drawnAmount != null ? (
+              <span className="mt-1 block font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
+                {usd(drawnAmount / 12, true)} available for withdrawal from investments without overspending
               </span>
             ) : null}
           </span>

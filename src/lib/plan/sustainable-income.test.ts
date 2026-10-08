@@ -37,4 +37,6 @@ test("a funded plan can withdraw more than the spending it scheduled", () => {
   assert.ok(room);
   assert.ok(scheduled > 0);
   assert.ok(room.nominal + 1 >= scheduled);
+  assert.ok(room.withdrawalNominal >= 0);
+  assert.ok(room.withdrawalNominal <= room.nominal + 1);
 });
