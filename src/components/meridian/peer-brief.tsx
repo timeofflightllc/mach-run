@@ -521,7 +521,7 @@ export function PeerBriefCard({
         <div className="mt-4 flex flex-col items-center gap-2 border-t border-border pt-4 text-center">
           <GuestOnly>
             <p className="text-sm text-muted">
-              The rest of this OODA is behind a login.
+              Sign in or create an account to view your MACH Analysis.
             </p>
             <Link
               to="/login"
