@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { PrimaryButton } from "@/components/ui/field";
 import { formatMonthYear, monthStart, validIso } from "@/lib/plan/dates";
 import {
@@ -81,7 +82,8 @@ export function Verdict({
   }
 
   const rank = brief ? peerRankLine(brief) : null;
-  const ranOut = survival ? runOutSentence(survival) : null;
+  const longevityAge = plan.assumptions.projectionEndAge;
+  const ranOut = survival ? runOutSentence(survival, longevityAge) : null;
   const egg = nestEggTrack(plan, sim);
 
   return (
@@ -117,7 +119,7 @@ export function Verdict({
           </p>
           {survival ? (
             <p className="mt-1 text-sm leading-relaxed text-fg">
-              {survivalSentence(survival.score)}
+              {survivalSentence(survival.score, longevityAge)}
               {ranOut ? ` ${ranOut}` : ""}
             </p>
           ) : (
@@ -129,8 +131,14 @@ export function Verdict({
           )}
         </div>
       ) : (
-        <p className="mt-3 rounded-md px-3 py-2 text-xs leading-relaxed text-subtle opacity-70 shadow-[0_0_0_1px_var(--color-border)]">
-          Upgrade to access Plan Survival (Monte Carlo Simulations)
+        <p className="mt-3 rounded-md px-3 py-2 text-xs leading-relaxed text-subtle shadow-[0_0_0_1px_var(--color-border)]">
+          <Link
+            to="/pricing"
+            className="font-medium text-accent underline underline-offset-2 hover:text-fg"
+          >
+            Upgrade
+          </Link>{" "}
+          <span className="opacity-70">to access Plan Survival (Monte Carlo Simulations)</span>
         </p>
       )}
     </div>

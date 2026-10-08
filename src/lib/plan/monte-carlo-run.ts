@@ -46,21 +46,24 @@ export function survivalPercent(survived: number, paths: number): number {
   return Math.round((survived / paths) * 100);
 }
 
-export function survivalSentence(score: number): string {
-  return `In ${score} of 100 futures like this one, the money lasts.`;
+export function survivalSentence(score: number, longevityAge: number): string {
+  return `In ${score} of 100 futures like this one, your money lasts through your longevity age (${longevityAge}).`;
 }
 
 /** Count of paths that ran out, and the middle age of that group. Not the mean. */
-export function runOutSentence(score: Pick<SurvivalScore, "survived" | "paths" | "runOutAge">): string | null {
+export function runOutSentence(
+  score: Pick<SurvivalScore, "survived" | "paths" | "runOutAge">,
+  longevityAge: number,
+): string | null {
   if (score.runOutAge == null) return null;
   const failed = score.paths - score.survived;
   if (failed <= 0) return null;
   const total = score.paths.toLocaleString("en-US");
   if (failed === 1) {
-    return `In the 1 of ${total} random futures that runs out of money, it runs out at age ${score.runOutAge}.`;
+    return `In the 1 of ${total} random futures that did run out of money prior to longevity age, it runs out at age ${score.runOutAge}.`;
   }
   const n = failed.toLocaleString("en-US");
-  return `In the ${n} of ${total} random futures that run out of money, the middle one runs out at age ${score.runOutAge}.`;
+  return `In the ${n} of ${total} random futures that did run out of money prior to longevity age, the middle one runs out at age ${score.runOutAge}.`;
 }
 
 /** Earlier of the two middle ages when the count is even. Whole years only. */

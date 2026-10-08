@@ -28,6 +28,12 @@ const tooltipStyle = {
 
 const chartCard =
   "rounded-xl bg-white p-4 text-slate-800 shadow-[0_0_0_1px_#c8d2de] sm:p-5";
+
+function plotHeight(expanded: boolean, tall?: boolean) {
+  if (expanded) return "h-[calc(100svh-12rem)]";
+  if (tall) return "h-[32rem] sm:h-[40rem]";
+  return "h-64 sm:h-80";
+}
 const tickFill = "#4b5b6e";
 const gridStroke = "#d5dde6";
 
@@ -433,11 +439,13 @@ export function WealthChart({
   sim,
   pinned,
   onPin,
+  tall,
 }: {
   plan: Plan;
   sim: SimResult;
   pinned?: boolean;
   onPin?: () => void;
+  tall?: boolean;
 }) {
   const real = plan.assumptions.dollars === "real";
   const [span, setSpan] = useState<ChartSpan>("horizon");
@@ -464,7 +472,7 @@ export function WealthChart({
         expanded={expanded}
         onExpand={toggle}
       />
-      <div className={expanded ? "h-[calc(100svh-12rem)]" : "h-64 sm:h-80"}>
+      <div className={plotHeight(expanded, tall)}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
             <CartesianGrid stroke={gridStroke} vertical={false} />
@@ -528,11 +536,13 @@ export function CashChart({
   sim,
   pinned,
   onPin,
+  tall,
 }: {
   plan: Plan;
   sim: SimResult;
   pinned?: boolean;
   onPin?: () => void;
+  tall?: boolean;
 }) {
   const real = plan.assumptions.dollars === "real";
   const [span, setSpan] = useState<ChartSpan>("horizon");
@@ -565,7 +575,7 @@ export function CashChart({
         expanded={expanded}
         onExpand={toggle}
       />
-      <div className={expanded ? "h-[calc(100svh-12rem)]" : "h-64 sm:h-80"}>
+      <div className={plotHeight(expanded, tall)}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
             <CartesianGrid stroke={gridStroke} vertical={false} />
@@ -666,12 +676,14 @@ export function NetWorthChart({
   pinned,
   onPin,
   locked = false,
+  tall,
 }: {
   plan: Plan;
   sim: SimResult;
   pinned?: boolean;
   onPin?: () => void;
   locked?: boolean;
+  tall?: boolean;
 }) {
   const real = plan.assumptions.dollars === "real";
   const [span, setSpan] = useState<ChartSpan>(10);
@@ -717,7 +729,7 @@ export function NetWorthChart({
           expanded={expanded}
           onExpand={locked ? undefined : toggle}
         />
-        <div className={expanded ? "h-[calc(100svh-12rem)]" : "h-64 sm:h-80"}>
+        <div className={plotHeight(expanded, tall)}>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid stroke="var(--color-border)" vertical={false} />

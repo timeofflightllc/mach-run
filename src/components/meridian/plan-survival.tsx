@@ -197,6 +197,7 @@ export function PlanSurvival({
   onClose,
   onOpen,
   onLockedMinChange,
+  longevityAge,
 }: {
   locked: boolean;
   view: SurvivalView | null;
@@ -205,6 +206,7 @@ export function PlanSurvival({
   onClose?: () => void;
   onOpen?: () => void;
   onLockedMinChange?: (minimized: boolean) => void;
+  longevityAge: number;
 }) {
   const quotes = useBoydQuotes();
   const [lockedMin, setLockedMin] = useState(readLockedMin);
@@ -306,7 +308,7 @@ export function PlanSurvival({
     );
   }
   const checking = view.status === "running";
-  const ranOut = view.score ? runOutSentence(view.score) : null;
+  const ranOut = view.score ? runOutSentence(view.score, longevityAge) : null;
   return (
     <div className={cn(card, "@min-[36rem]:flex @min-[36rem]:min-h-0 @min-[36rem]:flex-1 @min-[36rem]:flex-col")}>
       <SurvivalTitle />
@@ -323,7 +325,7 @@ export function PlanSurvival({
         ) : view.score ? (
           <>
             <p className="text-lg font-bold leading-snug text-slate-900">
-              {survivalSentence(view.score.score)}
+              {survivalSentence(view.score.score, longevityAge)}
             </p>
             {ranOut ? (
               <p className="mt-1 text-base font-semibold leading-snug text-slate-900">{ranOut}</p>

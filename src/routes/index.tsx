@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ChartLine, FileSearch, Sparkles, Table2 } from "lucide-react";
+import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { AuthSlot } from "@/components/meridian/auth-slot";
 import { ProfileSwitcher } from "@/components/meridian/profile-switcher";
 import { MACH_RESET_BASELINE } from "@/components/meridian/account-menu";
@@ -134,41 +135,189 @@ function inputSignature(plan: Plan): string {
 
 export const Route = createFileRoute("/")({ component: Home });
 
+type BriefChart = "spendable" | "cash" | "net";
+type ActTab = "brief" | "charts" | "analysis" | "ledger";
+
+function JetBlast({ className }: { className?: string; strokeWidth?: number }) {
+  return <img src="/brand/takeoff-mark.png" alt="" className={cn("object-contain", className)} />;
+}
+
+const ACT_TABS: { id: ActTab; label: string; icon: ComponentType<{ className?: string; strokeWidth?: number }> }[] = [
+  { id: "brief", label: "Takeoff", icon: JetBlast },
+  { id: "analysis", label: "Analysis", icon: FileSearch },
+  { id: "charts", label: "Charts", icon: ChartLine },
+  { id: "ledger", label: "Ledger", icon: Table2 },
+];
+
+const BRIEF_CHARTS: { id: BriefChart; label: string }[] = [
+  { id: "spendable", label: "Spendable" },
+  { id: "cash", label: "Cash" },
+  { id: "net", label: "Net worth" },
+];
+
 function ActChartColumn({
   plan,
   sim,
+  tall,
+  only,
 }: {
   plan: Plan;
   sim: SimResult;
+  tall?: boolean;
+  only?: BriefChart;
 }) {
   const pins = useChartPins();
   const ent = useEntitlement();
   const unlocked = hasBalanceSheet(ent.plan);
+  const show = (id: BriefChart) => !only || only === id;
   return (
     <div className="flex min-w-0 flex-col gap-4">
-      <div ref={pins.wealthSlot}>
-        <Pinnable pinned={pins.pinWealth} stackTop={pins.wealthTop}>
-          <WealthChart
+      {show("spendable") ? (
+        <div ref={pins.wealthSlot}>
+          <Pinnable pinned={pins.pinWealth} stackTop={pins.wealthTop}>
+            <WealthChart
+              plan={plan}
+              sim={sim}
+              pinned={pins.pinWealth}
+              onPin={pins.toggleWealth}
+              tall={tall}
+            />
+          </Pinnable>
+        </div>
+      ) : null}
+      {show("cash") ? (
+        <Pinnable pinned={pins.pinCash} stackTop={pins.cashTop}>
+          <CashChart
             plan={plan}
             sim={sim}
-            pinned={pins.pinWealth}
-            onPin={pins.toggleWealth}
+            pinned={pins.pinCash}
+            onPin={pins.toggleCash}
+            tall={tall}
           />
         </Pinnable>
-      </div>
-      <Pinnable pinned={pins.pinCash} stackTop={pins.cashTop}>
-        <CashChart
-          plan={plan}
-          sim={sim}
-          pinned={pins.pinCash}
-          onPin={pins.toggleCash}
-        />
-      </Pinnable>
-      <NetWorthChart
-        plan={plan}
-        sim={sim}
-        locked={!unlocked}
-      />
+      ) : null}
+      {show("net") ? (
+        <NetWorthChart plan={plan} sim={sim} locked={!unlocked} tall={tall} />
+      ) : null}
+    </div>
+  );
+}
+
+function ActTabButton({
+  label,
+  icon: Icon,
+  on,
+  onClick,
+}: {
+  label: string;
+  icon: ComponentType<{ className?: string; strokeWidth?: number }>;
+  on: boolean;
+  onClick: () => void;
+}) {
+  const [tip, setTip] = useState<{ x: number; y: number } | null>(null);
+  function place(el: HTMLButtonElement) {
+    const r = el.getBoundingClientRect();
+    setTip({ x: r.left + r.width / 2, y: r.bottom + 8 });
+  }
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      aria-label={label}
+      onClick={onClick}
+      onMouseEnter={(e) => place(e.currentTarget)}
+      onMouseLeave={() => setTip(null)}
+      onFocus={(e) => place(e.currentTarget)}
+      onBlur={() => setTip(null)}
+      className={cn(
+        "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl min-[72rem]:h-14 min-[72rem]:w-14",
+        on ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+      )}
+    >
+      <Icon className="size-6 min-[72rem]:size-7" strokeWidth={1.75} />
+      {tip ? (
+        <span
+          role="tooltip"
+          className="pointer-events-none fixed z-[80] -translate-x-1/2 rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white shadow-lg"
+          style={{ left: Math.min(Math.max(tip.x, 36), window.innerWidth - 36), top: tip.y }}
+        >
+          {label}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function OodaRail({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  const [tip, setTip] = useState<{ x: number; y: number } | null>(null);
+  function place(el: HTMLButtonElement) {
+    const r = el.getBoundingClientRect();
+    setTip({ x: r.left + r.width / 2, y: r.bottom + 8 });
+  }
+  return (
+    <button
+      type="button"
+      aria-expanded={open}
+      aria-label="OODA AI"
+      onClick={onToggle}
+      onMouseEnter={(e) => place(e.currentTarget)}
+      onMouseLeave={() => setTip(null)}
+      onFocus={(e) => place(e.currentTarget)}
+      onBlur={() => setTip(null)}
+      className={cn(
+        "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl min-[72rem]:absolute min-[72rem]:top-0 min-[72rem]:right-[calc(0.5rem-max(1rem,7.5vw))] min-[72rem]:h-14 min-[72rem]:w-14",
+        open ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
+      )}
+    >
+      <Sparkles className="size-6 min-[72rem]:size-7" strokeWidth={1.75} />
+      {tip && !open ? (
+        <span
+          role="tooltip"
+          className="pointer-events-none fixed z-[80] -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white shadow-lg"
+          style={{ left: Math.min(Math.max(tip.x, 48), window.innerWidth - 48), top: tip.y }}
+        >
+          OODA AI
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function OodaDrawer({
+  open,
+  onClose,
+  plan,
+  sim,
+  brief,
+}: {
+  open: boolean;
+  onClose: () => void;
+  plan: Plan;
+  sim: SimResult;
+  brief: PeerBrief;
+}) {
+  return (
+    <div
+      role="dialog"
+      aria-label="OODA AI"
+      aria-hidden={!open}
+      inert={!open}
+      className={cn(
+        "fixed bottom-4 z-20 overflow-y-auto rounded-xl bg-bg transition-transform duration-200 top-[calc(var(--mach-header-h,7rem)+0.75rem)] max-[71.99rem]:inset-x-3 max-[71.99rem]:w-auto min-[72rem]:w-[min(24rem,calc(100vw-6rem))] min-[72rem]:right-[4.5rem]",
+        open ? "translate-x-0" : "pointer-events-none translate-x-[120%]",
+      )}
+    >
+      <OodaAiCard plan={plan} sim={sim} brief={brief} />
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close OODA AI"
+        className="absolute right-3 top-3 inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100 hover:text-slate-900"
+      >
+        <span aria-hidden="true" className="text-lg leading-none">
+          ×
+        </span>
+      </button>
     </div>
   );
 }
@@ -434,6 +583,9 @@ function Home() {
   } | null>(null);
   const survivalView = survival[runKey] ?? null;
   const [survivalMinimized, setSurvivalMinimized] = useState(readPlanSurvivalMinimized);
+  const [actTab, setActTab] = useState<ActTab>("brief");
+  const [briefChart, setBriefChart] = useState<BriefChart>("spendable");
+  const [oodaOpen, setOodaOpen] = useState(false);
   const simulatorFull = sheet
     ? Boolean(survivalView && survivalView.status !== "empty" && survivalView.open)
     : !survivalMinimized;
@@ -443,6 +595,15 @@ function Home() {
   useEffect(() => {
     collapseAllOodSections();
   }, []);
+
+  useEffect(() => {
+    if (!oodaOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOodaOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [oodaOpen]);
 
   useEffect(() => {
     if (isPending) return;
@@ -1535,84 +1696,138 @@ function Home() {
                   </Link>
                 </div>
               ) : null}
-              <div className="@container">
-                <div className="grid grid-cols-1 gap-4 @min-[64rem]:grid-cols-[minmax(0,1.15fr)_minmax(24rem,1fr)] @min-[64rem]:items-start">
-                  <div className="flex min-w-0 flex-col gap-4">
-                    <div className="grid grid-cols-1 items-start gap-4 @min-[36rem]:grid-cols-2 @min-[36rem]:items-stretch">
-                      <div className={cn(
-                        "flex min-w-0 flex-col gap-3",
-                        simulatorFull && "@min-[36rem]:h-full",
-                      )}>
-                        <ActPhase />
-                        <div className={cn("flex flex-col gap-3", simulatorFull && "@min-[36rem]:flex-1")}>
-                          <Verdict
-                            plan={displayPlan}
-                            sim={run.sim}
-                            brief={run.brief}
-                            className={simulatorFull ? "@min-[36rem]:flex-1" : undefined}
-                            survivalUnlocked={sheet}
-                            survival={
-                              sheet &&
-                              survivalView?.status === "ready" &&
-                              survivalView.runId === run.id &&
-                              survivalView.score
-                                ? survivalView.score
-                                : null
-                            }
+              <div className="relative">
+                <div className="mb-3 flex items-center justify-between gap-2 min-[72rem]:mb-0 min-[72rem]:h-0">
+                <div
+                  role="tablist"
+                  aria-label="Act"
+                  className="flex flex-row gap-2 min-[72rem]:absolute min-[72rem]:top-0 min-[72rem]:z-20 min-[72rem]:flex-col min-[72rem]:left-[calc(0.5rem-max(1rem,7.5vw))]"
+                >
+                  {ACT_TABS.map((tab) => (
+                    <ActTabButton
+                      key={tab.id}
+                      label={tab.label}
+                      icon={tab.icon}
+                      on={actTab === tab.id}
+                      onClick={() => setActTab(tab.id)}
+                    />
+                  ))}
+                </div>
+                <OodaRail open={oodaOpen} onToggle={() => setOodaOpen((open) => !open)} />
+                </div>
+                <div>
+                  {actTab === "brief" ? (
+                    <div className="@container flex flex-col gap-4">
+                      <div className="grid grid-cols-1 items-start gap-4 @min-[36rem]:grid-cols-2 @min-[36rem]:items-stretch">
+                        <div className={cn(
+                          "flex min-w-0 flex-col gap-3",
+                          simulatorFull && "@min-[36rem]:h-full",
+                        )}>
+                          <ActPhase />
+                          <div className={cn("flex flex-col gap-3", simulatorFull && "@min-[36rem]:flex-1")}>
+                            <Verdict
+                              plan={displayPlan}
+                              sim={run.sim}
+                              brief={run.brief}
+                              className={simulatorFull ? "@min-[36rem]:flex-1" : undefined}
+                              survivalUnlocked={sheet}
+                              survival={
+                                sheet &&
+                                survivalView?.status === "ready" &&
+                                survivalView.runId === run.id &&
+                                survivalView.score
+                                  ? survivalView.score
+                                  : null
+                              }
+                            />
+                            <KpiStrip plan={displayPlan} sim={run.sim} />
+                          </div>
+                        </div>
+                        <div className={cn("flex min-w-0 flex-col gap-3", simulatorFull && "@min-[36rem]:h-full")}>
+                          <PhaseLabel id="ooda-simulator" label="The Simulator" />
+                          <PlanSurvival
+                            locked={!sheet}
+                            view={survivalView}
+                            onSwing={chooseSwing}
+                            onRun={runMonteCarlo}
+                            onClose={() => setSurvivalOpen(false)}
+                            onOpen={() => setSurvivalOpen(true)}
+                            onLockedMinChange={setSurvivalMinimized}
+                            longevityAge={displayPlan.assumptions.projectionEndAge}
                           />
-                          <KpiStrip plan={displayPlan} sim={run.sim} />
                         </div>
                       </div>
-                      <div className={cn("flex min-w-0 flex-col gap-3", simulatorFull && "@min-[36rem]:h-full")}>
-                        <PhaseLabel id="ooda-simulator" label="The Simulator" />
-                        <PlanSurvival
-                          locked={!sheet}
-                          view={survivalView}
-                          onSwing={chooseSwing}
-                          onRun={runMonteCarlo}
-                          onClose={() => setSurvivalOpen(false)}
-                          onOpen={() => setSurvivalOpen(true)}
-                          onLockedMinChange={setSurvivalMinimized}
-                        />
+                      <div>
+                        <div className="mb-2 inline-flex rounded-lg bg-slate-100 p-1">
+                          {BRIEF_CHARTS.map((choice) => {
+                            const on = briefChart === choice.id;
+                            return (
+                              <button
+                                key={choice.id}
+                                type="button"
+                                aria-pressed={on}
+                                onClick={() => setBriefChart(choice.id)}
+                                className={cn(
+                                  "h-8 rounded-md px-3 text-xs font-medium",
+                                  on ? "bg-slate-900 text-white" : "text-slate-600 hover:text-slate-900",
+                                )}
+                              >
+                                {choice.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <ActChartColumn plan={displayPlan} sim={run.sim} only={briefChart} />
                       </div>
                     </div>
-                    <PeerBriefCard
-                      key={run.id}
-                      brief={run.brief}
-                      ran
-                      plan={displayPlan}
-                      sim={run.sim}
-                      survival={
-                        sheet &&
-                        survivalView?.status === "ready" &&
-                        survivalView.runId === run.id &&
-                        survivalView.score
-                          ? survivalView.score
-                          : null
-                      }
-                      onExecute={() => {
-                        void calculate({ stay: true });
-                      }}
-                      onStale={() => setRunStale(true)}
-                    />
-                  </div>
-                  <div className="flex min-w-0 flex-col gap-4">
+                  ) : null}
+                  {actTab === "charts" ? (
                     <div className="flex min-w-0 flex-col gap-3">
                       <PhaseLabel id="ooda-radar" label="Financial Radar" />
-                      <ActChartColumn
+                      <ActChartColumn plan={displayPlan} sim={run.sim} tall />
+                    </div>
+                  ) : null}
+                  {actTab === "analysis" ? (
+                    <div className="flex min-w-0 flex-col gap-3">
+                      <PhaseLabel id="ooda-analysis" label="Mach Analysis" />
+                      <div className="flex min-w-0 flex-col gap-4">
+                      <PeerBriefCard
+                        key={run.id}
+                        brief={run.brief}
+                        ran
                         plan={displayPlan}
                         sim={run.sim}
+                        survival={
+                          sheet &&
+                          survivalView?.status === "ready" &&
+                          survivalView.runId === run.id &&
+                          survivalView.score
+                            ? survivalView.score
+                            : null
+                        }
+                        onExecute={() => {
+                          void calculate({ stay: true });
+                        }}
+                        onStale={() => setRunStale(true)}
                       />
+                      </div>
                     </div>
-                    <OodaAiCard
-                      plan={displayPlan}
-                      sim={run.sim}
-                      brief={run.brief}
-                    />
-                  </div>
+                  ) : null}
+                  {actTab === "ledger" ? (
+                    <div className="flex min-w-0 flex-col gap-3">
+                      <PhaseLabel id="ooda-numbers" label="The Numbers" />
+                      <YearTable plan={displayPlan} sim={run.sim} />
+                    </div>
+                  ) : null}
                 </div>
+                <OodaDrawer
+                  open={oodaOpen}
+                  onClose={() => setOodaOpen(false)}
+                  plan={displayPlan}
+                  sim={run.sim}
+                  brief={run.brief}
+                />
               </div>
-              <YearTable plan={displayPlan} sim={run.sim} />
             </div>
           ) : (
             <div className="flex flex-col gap-4">

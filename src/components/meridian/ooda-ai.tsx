@@ -136,9 +136,6 @@ export function OodaAiCard({
           {error ? <p className="mt-4 text-sm text-negative">{error}</p> : null}
         </>
       )}
-      <div className="mt-4 border-t border-border pt-4">
-        <Disclaimer />
-      </div>
     </div>
   );
 }

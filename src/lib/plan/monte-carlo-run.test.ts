@@ -40,17 +40,26 @@ test("survivalPercent rounds half up to a whole number of 100", () => {
 });
 
 test("survivalSentence is a whole number of 100", () => {
-  assert.equal(survivalSentence(0), "In 0 of 100 futures like this one, the money lasts.");
-  assert.equal(survivalSentence(85), "In 85 of 100 futures like this one, the money lasts.");
-  assert.equal(survivalSentence(100), "In 100 of 100 futures like this one, the money lasts.");
+  assert.equal(
+    survivalSentence(0, 99),
+    "In 0 of 100 futures like this one, your money lasts through your longevity age (99).",
+  );
+  assert.equal(
+    survivalSentence(85, 99),
+    "In 85 of 100 futures like this one, your money lasts through your longevity age (99).",
+  );
+  assert.equal(
+    survivalSentence(100, 95),
+    "In 100 of 100 futures like this one, your money lasts through your longevity age (95).",
+  );
 });
 
 test("runOutSentence counts the paths that failed, not the rounded rate", () => {
   assert.equal(
-    runOutSentence({ survived: 960, paths: 1000, runOutAge: 92 }),
-    "In the 40 of 1,000 random futures that run out of money, the middle one runs out at age 92.",
+    runOutSentence({ survived: 960, paths: 1000, runOutAge: 92 }, 99),
+    "In the 40 of 1,000 random futures that did run out of money prior to longevity age, the middle one runs out at age 92.",
   );
-  assert.equal(runOutSentence({ survived: 1000, paths: 1000, runOutAge: null }), null);
+  assert.equal(runOutSentence({ survived: 1000, paths: 1000, runOutAge: null }, 99), null);
 });
 
 test("runOutAge is null when every future lasts", async () => {

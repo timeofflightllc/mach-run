@@ -339,8 +339,8 @@ function buildBlocks(
   ];
   if (survival) {
     blocks.push({ kind: "space", h: 4 });
-    blocks.push({ kind: "body", text: survivalSentence(survival.score) });
-    const ranOut = runOutSentence(survival);
+    blocks.push({ kind: "body", text: survivalSentence(survival.score, plan.assumptions.projectionEndAge) });
+    const ranOut = runOutSentence(survival, plan.assumptions.projectionEndAge);
     if (ranOut) {
       blocks.push({
         kind: "body",
