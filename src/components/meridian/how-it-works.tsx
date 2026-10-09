@@ -63,7 +63,7 @@ function Phase({
 export function OodaLoop() {
   return (
     <div className="@container grid h-full min-h-0 w-full grid-cols-[1fr_1.16fr_1fr] grid-rows-[auto_auto_auto_minmax(0,1fr)] items-center gap-x-1 gap-y-1 overflow-hidden">
-      <div className="col-start-2">
+      <div className="col-span-3">
         <Phase
           title="Observe"
           items={["Family & Assumptions", "Assets & Liabilities"]}
@@ -77,7 +77,7 @@ export function OodaLoop() {
           </p>
           <ul className="space-y-0">
             {["Takeoff & Analysis", "Charts, Ledgers & Monte Carlo"].map((item) => (
-              <li key={item} className="text-[clamp(0.62rem,2.15cqi,0.95rem)] leading-tight text-[#5c6b7a]">
+              <li key={item} className="whitespace-nowrap text-[clamp(0.62rem,2.15cqi,0.95rem)] leading-tight text-[#5c6b7a]">
                 {item}
               </li>
             ))}
@@ -85,7 +85,7 @@ export function OodaLoop() {
         </div>
       </div>
       <div className="relative col-start-2 row-start-2 flex w-full -translate-y-3 justify-center">
-        <div className="relative aspect-square w-[60%] @min-[24rem]:w-[92%]">
+        <div className="relative aspect-square w-[92%]">
           <svg viewBox="0 0 200 200" className="h-full w-full" aria-hidden="true">
             <circle cx="100" cy="100" r="62" fill="#fffdf8" stroke="#e8c547" strokeWidth="1.25" />
             <circle cx="100" cy="100" r="78" fill="none" stroke="#1a2330" strokeOpacity="0.08" strokeWidth="10" />
