@@ -30,11 +30,7 @@ function inline(text: string, underline: boolean): ReactNode[] {
         key={`l-${i++}`}
         href={href}
         {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-        className={
-          underline
-            ? "text-fg underline underline-offset-4 hover:text-accent"
-            : "text-fg underline-offset-4 hover:underline"
-        }
+        className="text-fg underline underline-offset-4 hover:text-accent"
       >
         {m[1]}
       </a>,
@@ -43,6 +39,16 @@ function inline(text: string, underline: boolean): ReactNode[] {
   }
   if (last < text.length) parts.push(...emphasis(text.slice(last), `t-${i}`));
   return parts;
+}
+
+function withBreaks(text: string, underline: boolean): ReactNode[] {
+  const rows = text.split("\n");
+  const out: ReactNode[] = [];
+  rows.forEach((row, index) => {
+    if (index > 0) out.push(<br key={`br-${index}`} />);
+    out.push(...inline(row, underline));
+  });
+  return out;
 }
 
 export function SiteCopyBody({
@@ -65,18 +71,18 @@ export function SiteCopyBody({
           const idMatch = raw.match(/^(.*?)\s*\{#([a-z0-9\-]+)\}$/i);
           const heading = (idMatch ? idMatch[1] : raw).trim();
           const headingId = idMatch ? idMatch[2] : undefined;
-          const rest = lines.slice(1).join(" ").trim();
+          const rest = lines.slice(1).join("\n").trim();
           return (
             <section key={i} className="space-y-2">
               <h2 id={headingId} className="scroll-mt-24 text-xl font-medium text-fg">
                 {heading}
               </h2>
               {i === 0 && aside ? aside : null}
-              {rest ? <p>{inline(rest, underlineLinks)}</p> : null}
+              {rest ? <p>{withBreaks(lines.slice(1).join("\n"), underlineLinks)}</p> : null}
             </section>
           );
         }
-        return <p key={i}>{inline(block.replace(/\n/g, " "), underlineLinks)}</p>;
+        return <p key={i}>{withBreaks(block, underlineLinks)}</p>;
       })}
     </div>
   );
