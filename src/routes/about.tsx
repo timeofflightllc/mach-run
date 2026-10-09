@@ -20,12 +20,19 @@ function About() {
           {page.kicker ? <p className="mt-2 text-lg text-muted">{page.kicker}</p> : null}
         </header>
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(14rem,20rem)_minmax(0,1fr)] lg:gap-10">
-          <figure className="order-last lg:order-none lg:sticky lg:top-6">
+          <figure className="order-last flex flex-col gap-4 lg:order-none lg:sticky lg:top-6">
             <img
               src="/brand/about-wingman.jpg?v=1"
               alt="A pilot in flight gear kneeling with a small child on the flight line."
               width={2278}
               height={2592}
+              className="w-full rounded-lg"
+            />
+            <img
+              src="/brand/about-flightline.jpg?v=1"
+              alt="A pilot standing in front of an F-15 with the canopy open."
+              width={1755}
+              height={1790}
               className="w-full rounded-lg"
             />
           </figure>
