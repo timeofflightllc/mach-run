@@ -238,6 +238,15 @@ export function MachFooter({
               <Link to="/privacy" className="font-medium text-fg underline underline-offset-4 hover:text-accent">Privacy</Link>
               <span className="px-4">|</span>
               <Link to="/legal" className="font-medium text-fg underline underline-offset-4 hover:text-accent">Legal</Link>
+              <span className="px-4">|</span>
+              <a
+                href="https://www.linkedin.com/company/machrun-com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-fg underline underline-offset-4 hover:text-accent"
+              >
+                LinkedIn
+              </a>
             </p>
             <p className="mt-2 w-full text-center text-[11px] leading-snug text-muted">Copyright © MACHRUN.com</p>
             <FooterMark />
