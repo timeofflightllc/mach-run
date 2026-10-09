@@ -85,7 +85,7 @@ export function OodaLoop() {
         </div>
       </div>
       <div className="relative col-start-2 row-start-2 flex w-full -translate-y-3 justify-center">
-        <div className="relative aspect-square w-[92%]">
+        <div className="relative aspect-square w-[60%] @min-[24rem]:w-[92%]">
           <svg viewBox="0 0 200 200" className="h-full w-full" aria-hidden="true">
             <circle cx="100" cy="100" r="62" fill="#fffdf8" stroke="#e8c547" strokeWidth="1.25" />
             <circle cx="100" cy="100" r="78" fill="none" stroke="#1a2330" strokeOpacity="0.08" strokeWidth="10" />

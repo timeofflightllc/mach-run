@@ -98,39 +98,49 @@ export function GuestHero({
   onDemo: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
-  const [screen, setScreen] = useState<0 | 1>(0);
-  const [shift, setShift] = useState<-1 | 0 | 1>(0);
+  const [index, setIndex] = useState(2);
   const [motion, setMotion] = useState(true);
-  const screenRef = useRef(screen);
-  const shiftRef = useRef(shift);
-  screenRef.current = screen;
-  shiftRef.current = shift;
+  const indexRef = useRef(2);
+  const sliding = useRef(false);
+  indexRef.current = index;
 
   useEffect(() => {
-    if (shift !== 0 || motion) return;
+    if (motion) {
+      sliding.current = false;
+      return;
+    }
     const frame = requestAnimationFrame(() => {
       requestAnimationFrame(() => setMotion(true));
     });
     return () => cancelAnimationFrame(frame);
-  }, [shift, motion]);
+  }, [motion]);
 
   function go(direction: "left" | "right") {
-    if (shiftRef.current !== 0) return;
+    if (sliding.current) return;
+    const delta = direction === "left" ? 1 : -1;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) {
-      setScreen((current) => (current === 0 ? 1 : 0));
+      const landed = indexRef.current + delta;
+      const which = ((landed % 2) + 2) % 2;
+      setMotion(false);
+      setIndex(which === 0 ? 2 : 1);
       return;
     }
+    sliding.current = true;
     setMotion(true);
-    setShift(direction === "left" ? -1 : 1);
+    setIndex((current) => current + delta);
   }
 
   function onSwipeEnd(event: TransitionEvent<HTMLDivElement>) {
     if (event.target !== event.currentTarget || event.propertyName !== "transform") return;
-    if (shiftRef.current === 0) return;
-    setMotion(false);
-    setScreen(screenRef.current === 0 ? 1 : 0);
-    setShift(0);
+    if (!sliding.current) return;
+    const landed = indexRef.current;
+    if (landed === 0 || landed === 3) {
+      setMotion(false);
+      setIndex(landed === 0 ? 2 : 1);
+      return;
+    }
+    sliding.current = false;
   }
 
   function fill() {
@@ -188,7 +198,7 @@ export function GuestHero({
         <button
           type="button"
           onClick={() => {
-            if (screen === 0) go("left");
+            if (indexRef.current % 2 === 0) go("left");
           }}
           className="mt-3 font-display text-4xl font-semibold tracking-wide text-[#1a2330] underline decoration-[#3a8a58] decoration-2 underline-offset-[6px] hover:text-[#3a8a58] sm:text-5xl"
         >
@@ -239,18 +249,16 @@ export function GuestHero({
                   <div
                     className={
                       motion
-                        ? "flex h-full w-[300%] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
-                        : "flex h-full w-[300%]"
+                        ? "flex h-full w-[400%] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                        : "flex h-full w-[400%]"
                     }
-                    style={{
-                      transform:
-                        shift === 1 ? "translateX(0%)" : shift === -1 ? "translateX(-66.666%)" : "translateX(-33.333%)",
-                    }}
+                    style={{ transform: `translateX(${-index * 25}%)` }}
                     onTransitionEnd={onSwipeEnd}
                   >
-                    <LaptopPane which={screen === 0 ? 1 : 0} />
-                    <LaptopPane which={screen} />
-                    <LaptopPane which={screen === 0 ? 1 : 0} />
+                    <LaptopPane which={0} />
+                    <LaptopPane which={1} />
+                    <LaptopPane which={0} />
+                    <LaptopPane which={1} />
                   </div>
                 </div>
               </div>
@@ -267,7 +275,7 @@ export function GuestHero({
 function LaptopPane({ which }: { which: 0 | 1 }) {
   if (which === 0) {
     return (
-      <div className="relative h-full w-1/3 shrink-0">
+      <div className="relative h-full w-1/4 shrink-0">
         <img
           src="/brand/mach-run-demo.png?v=3"
           alt="A MACH RUN for the Hale household, on track for $2,500,000."
@@ -277,7 +285,7 @@ function LaptopPane({ which }: { which: 0 | 1 }) {
     );
   }
   return (
-    <div className="h-full w-1/3 shrink-0 bg-[#e4ebf2] p-2 sm:p-3">
+    <div className="h-full w-1/4 shrink-0 bg-[#e4ebf2] p-2 sm:p-3">
       <OodaLoop />
     </div>
   );
