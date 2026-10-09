@@ -182,7 +182,7 @@ export function GuestHero({
             an example MACH RUN
           </PrimaryButton>
           <PrimaryButton
-            className="h-auto min-h-11 whitespace-normal px-4 py-2.5 text-center leading-snug sm:whitespace-nowrap"
+            className="h-auto min-h-11 whitespace-normal px-4 py-2.5 text-center leading-snug sm:whitespace-nowrap sm:text-base"
             onClick={() => {
               setConfirming(false);
               onShowFamily();
