@@ -3,7 +3,16 @@ import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { SiteCopyBody } from "@/components/meridian/site-copy-view";
 import { loadPublicSiteCopy, pageBySlug } from "@/lib/site-copy/api";
 
+import { pageHead } from "@/lib/seo";
+
 export const Route = createFileRoute("/about")({
+  head: () =>
+    pageHead({
+      title: "About | MACH RUN",
+      description:
+        "MACH RUN was built by a retired Air Force fighter pilot. One place for income, contributions, and a nest-egg goal.",
+      path: "/about",
+    }),
   loader: () => loadPublicSiteCopy(),
   component: About,
 });

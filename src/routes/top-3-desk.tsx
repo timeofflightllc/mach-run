@@ -39,7 +39,16 @@ import {
 } from "@/lib/ops/roster";
 import { RISK_GRADE_CLASS, type RiskGrade } from "@/lib/ops/risk";
 
+import { pageHead } from "@/lib/seo";
+
 export const Route = createFileRoute("/top-3-desk")({
+  head: () =>
+    pageHead({
+      title: "Desk | MACH RUN",
+      description: "MACH RUN operations desk.",
+      path: "/top-3-desk",
+      noindex: true,
+    }),
   component: Top3DeskDoor,
 });
 

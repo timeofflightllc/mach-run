@@ -29,8 +29,17 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { cn } from "@/lib/utils";
 import { loadPublicSiteCopy, pageBySlug } from "@/lib/site-copy/api";
 import { parsePricingCopy } from "@/lib/site-copy/pricing-copy";
+import { pageHead, productSchema } from "@/lib/seo";
 
 export const Route = createFileRoute("/pricing")({
+  head: () =>
+    pageHead({
+      title: "Pricing | MACH RUN Retirement Calculator",
+      description:
+        "Individual is $4 a month. Individual Unlimited adds net worth and Plan Survival. Advisor plans cover a book of clients.",
+      path: "/pricing",
+      jsonLd: [productSchema("/pricing")],
+    }),
   validateSearch: (search: Record<string, unknown>) => pricingSearch(search),
   loader: () => loadPublicSiteCopy(),
   component: Pricing,
@@ -304,6 +313,10 @@ function Pricing() {
           </h1>
           <p className="mt-5 font-display text-2xl leading-snug text-fg sm:text-3xl">
             {copy.heroSub}
+          </p>
+          <p className="mt-4 text-base leading-relaxed text-muted">
+            Military and veteran households: TSP, military retired pay, and VA are first-class
+            incomes, blended into one projection.
           </p>
           {audience === "advisor" ? (
             <>

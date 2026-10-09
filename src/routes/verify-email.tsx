@@ -15,11 +15,19 @@ import {
 } from "@/lib/auth/email-verify-api";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { afterAuthHref, registerForPlanHref, verifySearch } from "@/lib/billing/checkout-intent";
+import { pageHead } from "@/lib/seo";
 
 const PENDING_EMAIL = "mach-pending-email";
 const PENDING_PASSWORD = "mach-pending-password";
 
 export const Route = createFileRoute("/verify-email")({
+  head: () =>
+    pageHead({
+      title: "Verify Email | MACH RUN",
+      description: "Enter the code sent to your email.",
+      path: "/verify-email",
+      noindex: true,
+    }),
   validateSearch: (search: Record<string, unknown>) => verifySearch(search),
   component: VerifyEmail,
 });

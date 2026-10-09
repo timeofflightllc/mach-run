@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /account
+Disallow: /login
+Disallow: /verify-email
+Disallow: /top-3-desk
+Disallow: /api/
+
+Sitemap: https://machrun.com/sitemap.xml

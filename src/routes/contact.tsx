@@ -6,7 +6,15 @@ import { cn } from "@/lib/utils";
 import type { ContactTopic } from "@/lib/notify/contact";
 import { loadPublicSiteCopy, pageBySlug } from "@/lib/site-copy/api";
 
+import { pageHead } from "@/lib/seo";
+
 export const Route = createFileRoute("/contact")({
+  head: () =>
+    pageHead({
+      title: "Contact | MACH RUN",
+      description: "Ask about the retirement calculator, billing, or your MACH RUN account.",
+      path: "/contact",
+    }),
   loader: () => loadPublicSiteCopy(),
   component: Contact,
 });

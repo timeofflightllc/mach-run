@@ -3,7 +3,16 @@ import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { SiteCopyBody } from "@/components/meridian/site-copy-view";
 import { loadPublicSiteCopy, pageBySlug } from "@/lib/site-copy/api";
 
+import { pageHead } from "@/lib/seo";
+
 export const Route = createFileRoute("/legal")({
+  head: () =>
+    pageHead({
+      title: "Legal | MACH RUN",
+      description:
+        "Terms and the disclaimer. MACH RUN is a planning sketch, not financial, tax, or legal advice.",
+      path: "/legal",
+    }),
   loader: () => loadPublicSiteCopy(),
   component: Legal,
 });

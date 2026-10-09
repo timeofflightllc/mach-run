@@ -27,7 +27,16 @@ import { clearIdleLockPrefs } from "@/lib/idle-lock";
 import { clearLocalMachRunWorkspace } from "@/lib/plan/clear-local";
 import { usePlanStore } from "@/lib/plan/store";
 
+import { pageHead } from "@/lib/seo";
+
 export const Route = createFileRoute("/account")({
+  head: () =>
+    pageHead({
+      title: "Account | MACH RUN",
+      description: "Your MACH RUN account, billing, and backup.",
+      path: "/account",
+      noindex: true,
+    }),
   validateSearch: (search: Record<string, unknown>) => ({
     delete: search.delete === "1" || search.delete === "true" ? "1" : undefined,
   }),

@@ -3,7 +3,16 @@ import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { SiteCopyBody } from "@/components/meridian/site-copy-view";
 import { loadPublicSiteCopy, pageBySlug } from "@/lib/site-copy/api";
 
+import { pageHead } from "@/lib/seo";
+
 export const Route = createFileRoute("/method")({
+  head: () =>
+    pageHead({
+      title: "How the Retirement Calculator Works | MACH RUN",
+      description:
+        "How a MACH RUN turns family, accounts, paychecks, spending, and contributions into a monthly retirement projection.",
+      path: "/method",
+    }),
   loader: () => loadPublicSiteCopy(),
   component: Method,
 });

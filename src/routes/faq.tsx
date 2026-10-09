@@ -3,7 +3,16 @@ import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { SiteCopyBody } from "@/components/meridian/site-copy-view";
 import { loadPublicSiteCopy, pageBySlug } from "@/lib/site-copy/api";
 
+import { pageHead } from "@/lib/seo";
+
 export const Route = createFileRoute("/faq")({
+  head: () =>
+    pageHead({
+      title: "FAQ | MACH RUN Retirement Calculator",
+      description:
+        "Answers on Social Security, VA, military retired pay, accounts, and what Calculate does with the numbers you type.",
+      path: "/faq",
+    }),
   loader: () => loadPublicSiteCopy(),
   component: Faq,
 });

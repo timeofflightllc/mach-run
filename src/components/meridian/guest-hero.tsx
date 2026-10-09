@@ -98,9 +98,9 @@ export function GuestHero({
   onDemo: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
-  const [index, setIndex] = useState(2);
+  const [index, setIndex] = useState(3);
   const [motion, setMotion] = useState(true);
-  const indexRef = useRef(2);
+  const indexRef = useRef(3);
   const sliding = useRef(false);
   indexRef.current = index;
 
@@ -120,10 +120,9 @@ export function GuestHero({
     const delta = direction === "left" ? 1 : -1;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) {
-      const landed = indexRef.current + delta;
-      const which = ((landed % 2) + 2) % 2;
+      const which = (((indexRef.current + delta) % 3) + 3) % 3;
       setMotion(false);
-      setIndex(which === 0 ? 2 : 1);
+      setIndex(3 + which);
       return;
     }
     sliding.current = true;
@@ -135,9 +134,10 @@ export function GuestHero({
     if (event.target !== event.currentTarget || event.propertyName !== "transform") return;
     if (!sliding.current) return;
     const landed = indexRef.current;
-    if (landed === 0 || landed === 3) {
+    if (landed <= 0 || landed >= 6) {
+      const which = ((landed % 3) + 3) % 3;
       setMotion(false);
-      setIndex(landed === 0 ? 2 : 1);
+      setIndex(3 + which);
       return;
     }
     sliding.current = false;
@@ -160,12 +160,12 @@ export function GuestHero({
   return (
     <section className="overflow-x-clip border-t border-border bg-bg">
       <div className="page-gutter mx-auto flex max-w-none flex-col items-center pt-2 sm:pt-7">
-        <h2 className="max-w-4xl text-center font-display text-[1.25rem] font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
-          The Supersonic Retirement Calculator built for global situational
+        <h1 className="max-w-4xl text-center font-display text-[1.25rem] font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
+          The Supersonic Retirement Calculator built to allow global situational
           awareness of your finances.
           <br />
           Trusted by individuals and professionals -- free to start!
-        </h2>
+        </h1>
         <div className="mt-1.5 max-w-3xl text-center text-[0.667rem] leading-relaxed text-muted sm:mt-4 sm:text-lg">
           <p>
             See your whole household's retirement in one place - income, investments, and your
@@ -206,7 +206,9 @@ export function GuestHero({
         <button
           type="button"
           onClick={() => {
-            if (indexRef.current % 2 === 0) go("left");
+            const which = ((indexRef.current % 3) + 3) % 3;
+            if (which === 1) return;
+            go(which === 0 ? "left" : "right");
           }}
           className="mt-3 font-display text-4xl font-semibold tracking-wide text-[#1a2330] underline decoration-[#3a8a58] decoration-2 underline-offset-[6px] hover:text-[#3a8a58] sm:text-5xl"
         >
@@ -257,16 +259,19 @@ export function GuestHero({
                   <div
                     className={
                       motion
-                        ? "flex h-full w-[400%] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
-                        : "flex h-full w-[400%]"
+                        ? "flex h-full w-[700%] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                        : "flex h-full w-[700%]"
                     }
-                    style={{ transform: `translateX(${-index * 25}%)` }}
+                    style={{ transform: `translateX(${-index * (100 / 7)}%)` }}
                     onTransitionEnd={onSwipeEnd}
                   >
                     <LaptopPane which={0} />
                     <LaptopPane which={1} />
+                    <LaptopPane which={2} />
                     <LaptopPane which={0} />
                     <LaptopPane which={1} />
+                    <LaptopPane which={2} />
+                    <LaptopPane which={0} />
                   </div>
                 </div>
               </div>
@@ -280,10 +285,10 @@ export function GuestHero({
   );
 }
 
-function LaptopPane({ which }: { which: 0 | 1 }) {
+function LaptopPane({ which }: { which: 0 | 1 | 2 }) {
   if (which === 0) {
     return (
-      <div className="relative h-full w-1/4 shrink-0">
+      <div className="relative h-full shrink-0" style={{ width: `${100 / 7}%` }}>
         <img
           src="/brand/mach-run-demo.png?v=3"
           alt="A MACH RUN for the Hale household, on track for $2,500,000."
@@ -292,8 +297,19 @@ function LaptopPane({ which }: { which: 0 | 1 }) {
       </div>
     );
   }
+  if (which === 2) {
+    return (
+      <div className="relative h-full shrink-0 bg-[#f4f1ea]" style={{ width: `${100 / 7}%` }}>
+        <img
+          src="/brand/laptop-monte-carlo.png?v=1"
+          alt="Monte Carlo chart of 1,000 spendable futures."
+          className="absolute inset-0 h-full w-full object-contain object-top"
+        />
+      </div>
+    );
+  }
   return (
-    <div className="h-full w-1/4 shrink-0 bg-[#e4ebf2] p-2 sm:p-3">
+    <div className="h-full shrink-0 bg-[#e4ebf2] p-2 sm:p-3" style={{ width: `${100 / 7}%` }}>
       <OodaLoop />
     </div>
   );
@@ -308,5 +324,98 @@ function ScreenArrow({ direction }: { direction: "left" | "right" }) {
         <path d="M7.5 4 L13.5 10 L7.5 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
       )}
     </svg>
+  );
+}
+
+const MILITARY_SAMPLE = [
+  {
+    id: "military",
+    label: "Military retired pay",
+    amount: "$3,200",
+    value: "$1,280,125",
+    kicker: "Zero-risk annuity",
+    note: "Military retired pay at age 50, paid through age 95. Discounted at 4% with a 2.5% COLA.",
+  },
+  {
+    id: "va",
+    label: "VA",
+    amount: "$1,800",
+    value: "$720,070",
+    kicker: "Zero-risk annuity",
+    note: "VA at age 50, paid through age 95. Discounted at 4% with a 2.5% COLA.",
+  },
+  {
+    id: "tsp",
+    label: "TSP withdrawal",
+    amount: "$1,500",
+    value: "$442,800",
+    kicker: "TSP at required withdrawal",
+    note: "Estimated Traditional TSP balance at age 75, assuming $1,500 a month withdrawal. Roth has other rules.",
+  },
+] as const;
+
+/** Guest homepage only. Names the three military incomes and a sample blend. */
+export function MilitaryHousehold() {
+  const [open, setOpen] = useState<(typeof MILITARY_SAMPLE)[number]["id"] | null>(null);
+  const active = MILITARY_SAMPLE.find((row) => row.id === open);
+  return (
+    <section className="border-t border-border bg-bg">
+      <div className="page-gutter mx-auto flex w-full max-w-none flex-col items-center py-8 text-center sm:py-12">
+        <p className="font-display text-lg font-semibold uppercase tracking-[0.14em] text-[#3a8a58] sm:text-2xl">
+          For military and veteran households
+        </p>
+        <h2 className="mt-2 max-w-3xl font-display text-2xl font-semibold leading-tight text-[#1a2330] sm:text-4xl">
+          TSP, military retired pay, and VA on one strip
+        </h2>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
+          MACH RUN blends them with the rest of the household, and with nominal rates of returns,
+          the Monte Carlo engine, and a few moments of your time, shows what that mix can pay in
+          retirement.
+        </p>
+        <div className="mt-6 grid w-full max-w-3xl gap-3 sm:grid-cols-3">
+          {MILITARY_SAMPLE.map((row) => (
+            <div
+              key={row.id}
+              onMouseEnter={() => setOpen(row.id)}
+              onMouseLeave={() => setOpen(null)}
+              className="rounded-lg bg-white px-4 py-4 shadow-[0_0_0_1px_var(--color-border)]"
+            >
+              <p className="text-sm text-muted">{row.label}</p>
+              <p className="mt-1 font-display text-2xl font-semibold text-[#1a2330] underline decoration-[#3a8a58] decoration-2 underline-offset-4">{row.amount}</p>
+              <p className="text-xs text-muted">a month</p>
+            </div>
+          ))}
+        </div>
+        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
+          MACH RUN can also estimate what your military retired pay and VA are worth today — the
+          lump sum a zero-risk annuity would need to pay the same checks.
+        </p>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+          Mouse over a payment above. Military retired pay and VA show the zero-risk annuity at age 50.
+          TSP shows the balance at the required-withdrawal age, 75.
+        </p>
+        <div className="mt-3 w-full max-w-3xl rounded-lg bg-[#1a2330] px-4 py-4 text-white">
+          {active ? (
+            <>
+              <p className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-[#e8c547]">
+                {active.kicker}
+              </p>
+              <p className="mt-1 font-display text-3xl font-semibold">{active.value}</p>
+              <p className="mt-1 text-sm leading-relaxed text-white/80">{active.note}</p>
+            </>
+          ) : (
+            <>
+              <p className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-[#e8c547]">
+                Sample blend
+              </p>
+              <p className="mt-1 font-display text-3xl font-semibold">$6,500 a month</p>
+              <p className="mt-1 text-sm leading-relaxed text-white/80">
+                $78,000 in the first year of this example. Your MACH RUN uses the numbers you type.
+              </p>
+            </>
+          )}
+        </div>
+      </div>
+    </section>
   );
 }

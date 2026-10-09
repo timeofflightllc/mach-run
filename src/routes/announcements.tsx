@@ -6,7 +6,15 @@ import { loadPublicSiteCopy, pageBySlug } from "@/lib/site-copy/api";
 import type { SiteAnnouncement } from "@/lib/site-copy/types";
 import { cn } from "@/lib/utils";
 
+import { pageHead } from "@/lib/seo";
+
 export const Route = createFileRoute("/announcements")({
+  head: () =>
+    pageHead({
+      title: "Updates | MACH RUN",
+      description: "What shipped recently on the MACH RUN retirement calculator.",
+      path: "/announcements",
+    }),
   loader: () => loadPublicSiteCopy(),
   component: Announcements,
 });

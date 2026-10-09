@@ -3,7 +3,16 @@ import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { SiteCopyBody } from "@/components/meridian/site-copy-view";
 import { loadPublicSiteCopy, pageBySlug } from "@/lib/site-copy/api";
 
+import { pageHead } from "@/lib/seo";
+
 export const Route = createFileRoute("/privacy")({
+  head: () =>
+    pageHead({
+      title: "Privacy | MACH RUN",
+      description:
+        "How MACH RUN handles the household numbers you type. Encrypted in transit and at rest. We do not sell them.",
+      path: "/privacy",
+    }),
   loader: () => loadPublicSiteCopy(),
   component: Privacy,
 });

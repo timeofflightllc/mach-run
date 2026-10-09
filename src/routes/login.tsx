@@ -9,7 +9,16 @@ import { suggestEmailFix } from "@/lib/auth/email-domain-typo";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/auth/email-password";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 
+import { pageHead } from "@/lib/seo";
+
 export const Route = createFileRoute("/login")({
+  head: () =>
+    pageHead({
+      title: "Sign In | MACH RUN",
+      description: "Sign in or create a MACH RUN account.",
+      path: "/login",
+      noindex: true,
+    }),
   validateSearch: (search: Record<string, unknown>) => loginSearch(search),
   component: Login,
 });

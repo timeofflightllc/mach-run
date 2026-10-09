@@ -53,7 +53,8 @@ import {
 import { cn } from "@/lib/utils";
 import { WelcomeEmailPreviewOverlay } from "@/components/meridian/welcome-email-preview";
 import { EmailVerifyBanner } from "@/components/meridian/email-verify-banner";
-import { GuestHero } from "@/components/meridian/guest-hero";
+import { GuestHero, MilitaryHousehold } from "@/components/meridian/guest-hero";
+import { homeJsonLd, pageHead } from "@/lib/seo";
 import { GhostButton, PrimaryButton } from "@/components/ui/field";
 
 /** Charts need the months. Drop the ledger detail so the run stays light. */
@@ -133,7 +134,17 @@ function inputSignature(plan: Plan): string {
   return planInputSignature(plan);
 }
 
-export const Route = createFileRoute("/")({ component: Home });
+export const Route = createFileRoute("/")({
+  head: () =>
+    pageHead({
+      title: "MACH RUN | The Supersonic Retirement Calculator",
+      description:
+        "See a household retirement in one place: income, TSP, military retired pay, VA, and a nest-egg goal. Free to start. Monte Carlo included.",
+      path: "/",
+      jsonLd: homeJsonLd,
+    }),
+  component: Home,
+});
 
 type BriefChart = "spendable" | "cash" | "net";
 type ActTab = "brief" | "charts" | "analysis" | "ledger" | "monte";
@@ -1562,6 +1573,7 @@ function Home() {
           </div>
         </div>
       ) : null}
+      {heroOn ? <MilitaryHousehold /> : null}
       <div
         ref={stepsRef}
         className={stepsH != null ? "overflow-y-auto overscroll-contain bg-bg" : undefined}
