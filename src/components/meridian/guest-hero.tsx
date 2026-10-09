@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { OodaLoop } from "@/components/meridian/how-it-works";
 import { PrimaryButton } from "@/components/ui/field";
 import { demoPlan, planHasEntries } from "@/lib/plan/demo-plan";
 import { usePlanStore } from "@/lib/plan/store";
@@ -97,6 +98,7 @@ export function GuestHero({
   onDemo: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const [screen, setScreen] = useState<0 | 1>(0);
 
   function fill() {
     usePlanStore.getState().setPlan(demoPlan());
@@ -114,25 +116,27 @@ export function GuestHero({
 
   return (
     <section className="overflow-x-clip border-t border-border bg-bg">
-      <div className="page-gutter mx-auto flex max-w-none flex-col items-center pt-4 sm:pt-14">
+      <div className="page-gutter mx-auto flex max-w-none flex-col items-center pt-2 sm:pt-7">
         <h2 className="max-w-4xl text-center font-display text-[1.25rem] font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
           The Supersonic Retirement Calculator built for those who want
           global situational awareness of their finances. Trusted by individuals
-          and professionals.
+          and professionals -- free to start!
         </h2>
         <div className="mt-1.5 max-w-3xl text-center text-[0.667rem] leading-relaxed text-muted sm:mt-4 sm:text-lg">
-          <p>Measure, Allocate, Compound, Harvest — MACH.</p>
-          <p className="mt-1">
-            Use the fighter pilot's OODA Loop (Observe, Orient, Decide, Act) to inform your path.
+          <p>
+            See your whole household's retirement in one place - income, investments, and your
+            nest-egg goal, with unlimited what-if runs. Free to start. $4 a month unlocks incredible
+            features.
           </p>
-          <p className="mt-1">Free to start, just $4/month unlocks incredible features!</p>
         </div>
         <div className="mt-3 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:mt-6 sm:flex-row sm:flex-wrap sm:gap-3">
           <PrimaryButton
-            className="h-auto min-h-11 whitespace-normal px-4 py-2.5 text-center leading-snug sm:max-w-xs"
+            className="h-auto min-h-11 whitespace-normal border border-[#3a8a58] bg-white px-4 py-2.5 text-center leading-snug text-[#3a8a58] hover:bg-[#f3faf6] sm:max-w-xs"
             onClick={prefill}
           >
-            Pre-Fill MACH RUN with Demo Information
+            Use Pre-Filled Demo for
+            <br />
+            an example MACH RUN
           </PrimaryButton>
           <PrimaryButton
             className="h-auto min-h-11 whitespace-normal px-4 py-2.5 text-center leading-snug sm:max-w-xs"
@@ -141,9 +145,22 @@ export function GuestHero({
               onShowFamily();
             }}
           >
-            Try MACH RUN with your information
+            Start free with your info,
+            <br />
+            no credit card needed.
           </PrimaryButton>
         </div>
+        <p className="mt-3 max-w-3xl text-center text-[0.667rem] leading-relaxed text-muted sm:mt-4 sm:text-lg">
+          Use the fighter pilot's OODA Loop and Monte Carlo Simulator to inform your financial
+          path.
+        </p>
+        <button
+          type="button"
+          onClick={() => setScreen(1)}
+          className="mt-3 font-display text-4xl font-semibold tracking-wide text-[#1a2330] underline decoration-[#3a8a58] decoration-2 underline-offset-[6px] hover:text-[#3a8a58] sm:text-5xl"
+        >
+          How It Works
+        </button>
         {confirming ? (
           <div className="mt-4 w-full max-w-xl rounded-lg bg-surface px-4 py-3 text-center shadow-[0_0_0_1px_var(--color-border)]">
             <p className="text-sm text-fg">
@@ -163,17 +180,41 @@ export function GuestHero({
             </div>
           </div>
         ) : null}
-        <div className="relative mt-4 w-full sm:mt-10">
+        <div className="relative mt-2 w-full sm:mt-5">
           <BombBurstSketch />
           <div className="relative z-10 mx-auto w-full max-w-3xl px-2">
+            <button
+              type="button"
+              aria-label="Previous laptop screen"
+              onClick={() => setScreen((current) => (current === 0 ? 1 : 0))}
+              className="absolute left-1 top-[40%] z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#1a2330] bg-white text-[#1a2330] shadow-sm hover:bg-[#f3faf6] sm:left-0"
+            >
+              <ScreenArrow direction="left" />
+            </button>
+            <button
+              type="button"
+              aria-label="Next laptop screen"
+              onClick={() => setScreen((current) => (current === 0 ? 1 : 0))}
+              className="absolute right-1 top-[40%] z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#1a2330] bg-white text-[#1a2330] shadow-sm hover:bg-[#f3faf6] sm:right-0"
+            >
+              <ScreenArrow direction="right" />
+            </button>
             {/* 12.5% of this width is 20% of a 16:10 screen. The extra drops the chin behind the page. */}
             <div style={{ marginBottom: "calc(-12.5% - 1.125rem)" }}>
               <div className="overflow-hidden rounded-t-xl border-8 border-[#1a2330] bg-[#fffcf6] sm:border-[12px]">
-                <img
-                  src="/brand/mach-run-demo.png?v=3"
-                  alt="A MACH RUN for the Hale household, on track for $2,500,000."
-                  className="aspect-[16/10] w-full object-cover object-top"
-                />
+                <div className="relative aspect-[16/10]">
+                  {screen === 0 ? (
+                    <img
+                      src="/brand/mach-run-demo.png?v=3"
+                      alt="A MACH RUN for the Hale household, on track for $2,500,000."
+                      className="absolute inset-0 h-full w-full object-cover object-top"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-[#e4ebf2] p-2 sm:p-3">
+                      <OodaLoop />
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="h-3 rounded-b-lg bg-[#1a2330]" />
               <div className="mx-auto h-1.5 w-28 rounded-b-md bg-[#243044]" />
@@ -182,5 +223,17 @@ export function GuestHero({
         </div>
       </div>
     </section>
+  );
+}
+
+function ScreenArrow({ direction }: { direction: "left" | "right" }) {
+  return (
+    <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true">
+      {direction === "left" ? (
+        <path d="M12.5 4 L6.5 10 L12.5 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      ) : (
+        <path d="M7.5 4 L13.5 10 L7.5 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      )}
+    </svg>
   );
 }
