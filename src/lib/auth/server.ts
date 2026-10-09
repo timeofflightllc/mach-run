@@ -41,6 +41,7 @@ import { appleConfigured, appleSocialProvider } from "./apple";
 import { GATE_PROVIDER_ID, gateIdentitySessions } from "./gate-session.server";
 import { GROK_PROVIDERS } from "./providers";
 import { pgliteDialect } from "./pglite-dialect";
+import { analytics } from "@/lib/heycatch.server";
 import {
   GROK_ISSUER_DEFAULT,
   PREVIEW_ALLOWED_HOSTS,
@@ -241,6 +242,24 @@ export const auth = betterAuth({
           } catch (err) {
             console.warn(
               "[signup] owner notify failed:",
+              err instanceof Error ? err.message : err,
+            );
+          }
+          try {
+            const props: { email?: string; name?: string } = {};
+            if (user.email) props.email = user.email;
+            if (user.name) props.name = user.name;
+            const created =
+              user.createdAt instanceof Date
+                ? user.createdAt.toISOString()
+                : typeof user.createdAt === "string"
+                  ? user.createdAt
+                  : new Date().toISOString();
+            await analytics.setIdentity(user.id, props, { signup_date: created });
+            await analytics.trackEvent("signup_completed", {}, { userId: user.id });
+          } catch (err) {
+            console.warn(
+              "[signup] analytics failed:",
               err instanceof Error ? err.message : err,
             );
           }

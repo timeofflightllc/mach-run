@@ -1,13 +1,25 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import { analytics } from "@heycatch/sdk";
 import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from "@/lib/auth/provider";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { loadSessionSnapshot } from "@/lib/auth/session-snapshot-api";
 import { SessionSnapshotProvider } from "@/lib/auth/session-snapshot-context";
 import type { SessionSnapshot } from "@/lib/auth/session-snapshot";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { IdleLockGate } from "@/components/meridian/idle-lock";
 import appCss from "../styles.css?url";
+
+analytics.init({
+  projectKey: "hck_pk_2Y58GjA3r428b2BKcI78Y0sR-KRY4GpW",
+  install: {
+    framework: "vite-react",
+    frameworkVersion: "8",
+    agent: "other",
+  },
+});
 
 const APP_NAME = "The Supersonic Retirement Calculator";
 
@@ -76,6 +88,25 @@ export const Route = createRootRoute({
   component: RootShell,
 });
 
+function HeyCatchPerson() {
+  const { user, isPending } = useCurrentUserState();
+  const { plan, pending } = useEntitlement();
+  const seen = useRef("");
+  useEffect(() => {
+    if (isPending || pending) return;
+    if (!user || user.isDevFallback) return;
+    const mark = `${user.id}|${plan}`;
+    if (seen.current === mark) return;
+    seen.current = mark;
+    analytics.setIdentity(user.id, {
+      ...(user.primaryEmail ? { email: user.primaryEmail } : {}),
+      ...(user.displayName ? { name: user.displayName } : {}),
+      plan,
+    });
+  }, [user, isPending, plan, pending]);
+  return null;
+}
+
 function RootShell() {
   const { sessionUser } = Route.useLoaderData();
   const [snapshot] = useState(sessionUser);
@@ -92,6 +123,7 @@ function RootShell() {
         <PreviewHostBridge />
         <SessionSnapshotProvider value={snapshot}>
           <AuthProvider>
+            <HeyCatchPerson />
             <IdleLockGate />
             <Outlet />
           </AuthProvider>

@@ -1,3 +1,4 @@
+import { analytics } from "@/lib/heycatch.server";
 import { getSql } from "@/lib/db";
 import { paidFromStatus } from "./limits";
 import { ensureSubscriptionsTable } from "./schema.server";
@@ -366,6 +367,9 @@ export async function applyStripeEvent(event: StripeEvent): Promise<void> {
       priceId,
       periodEnd,
     });
+    const plan = (session.metadata?.package || "").trim();
+    if (plan) await analytics.setIdentity(userId, { plan });
+    await analytics.trackEvent("subscription_started", plan ? { plan } : {}, { userId });
     return;
   }
 
@@ -392,5 +396,15 @@ export async function applyStripeEvent(event: StripeEvent): Promise<void> {
       priceId: sub.items.data[0]?.price.id ?? null,
       periodEnd: periodEndOf(sub),
     });
+    const plan = (sub.metadata?.package || "").trim();
+    if (event.type === "customer.subscription.deleted") {
+      await analytics.setIdentity(userId, { plan: "free" });
+      await analytics.trackEvent("subscription_canceled", {}, { userId });
+    } else if (event.type === "customer.subscription.created" && (sub.metadata?.deskTrial || "").trim()) {
+      if (plan) await analytics.setIdentity(userId, { plan });
+      await analytics.trackEvent("subscription_started", plan ? { plan } : {}, { userId });
+    } else if (plan) {
+      await analytics.setIdentity(userId, { plan });
+    }
   }
 }

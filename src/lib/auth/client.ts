@@ -1,3 +1,4 @@
+import { analytics } from "@heycatch/sdk";
 import { genericOAuthClient } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { runPreSignInSignOut, runSignOut } from "../../../scripts/sign-out-plan.mjs";
@@ -121,7 +122,10 @@ export async function signIn(
     livePreview: inLivePreview(),
     hasBearer: Boolean(getBearerToken()),
     requestSignOut: () => authClient.signOut(),
-    clearToken: () => setBearerToken(null),
+    clearToken: () => {
+      setBearerToken(null);
+      analytics.resetIdentity();
+    },
   });
 
   if (inLivePreview()) {
@@ -167,7 +171,10 @@ async function signInWithSocial(
     livePreview: inLivePreview(),
     hasBearer: Boolean(getBearerToken()),
     requestSignOut: () => authClient.signOut(),
-    clearToken: () => setBearerToken(null),
+    clearToken: () => {
+      setBearerToken(null);
+      analytics.resetIdentity();
+    },
   });
   const social = authClient.signIn.social;
   if (typeof social === "function") {
@@ -335,6 +342,7 @@ export async function signOut(redirectTo = "/"): Promise<void> {
     clearToken: () => {
       setBearerToken(null);
       clearLocalMachRunWorkspace();
+      analytics.resetIdentity();
     },
     redirect: () => {
       window.location.href = redirectTo;
