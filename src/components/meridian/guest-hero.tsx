@@ -182,13 +182,20 @@ export function GuestHero({
             an example MACH RUN
           </PrimaryButton>
           <PrimaryButton
-            className="h-auto min-h-11 whitespace-nowrap px-4 py-2.5 text-center leading-snug"
+            className="h-auto min-h-11 whitespace-normal px-4 py-2.5 text-center leading-snug sm:whitespace-nowrap"
             onClick={() => {
               setConfirming(false);
               onShowFamily();
             }}
           >
-            Start with your info -- no credit card needed.
+            <span className="sm:hidden">
+              Click here to start with your info --
+              <br />
+              no credit card needed.
+            </span>
+            <span className="hidden sm:inline">
+              Click here to start with your info -- no credit card needed.
+            </span>
           </PrimaryButton>
         </div>
         <p className="mt-3 max-w-3xl text-center text-[0.667rem] leading-relaxed text-muted sm:mt-4 sm:text-lg">
