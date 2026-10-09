@@ -221,7 +221,7 @@ export function GuestHero({
             <button
               type="button"
               aria-label="Previous laptop screen"
-              onClick={() => go("left")}
+              onClick={() => go("right")}
               className="absolute left-1 top-[40%] z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#1a2330] bg-white text-[#1a2330] shadow-sm hover:bg-[#f3faf6] sm:left-0"
             >
               <ScreenArrow direction="left" />
