@@ -99,7 +99,6 @@ function HeyCatchPerson() {
     if (seen.current === mark) return;
     seen.current = mark;
     analytics.setIdentity(user.id, {
-      ...(user.primaryEmail ? { email: user.primaryEmail } : {}),
       ...(user.displayName ? { name: user.displayName } : {}),
       plan,
     });

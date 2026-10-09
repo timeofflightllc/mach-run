@@ -246,8 +246,7 @@ export const auth = betterAuth({
             );
           }
           try {
-            const props: { email?: string; name?: string } = {};
-            if (user.email) props.email = user.email;
+            const props: { name?: string } = {};
             if (user.name) props.name = user.name;
             const created =
               user.createdAt instanceof Date
