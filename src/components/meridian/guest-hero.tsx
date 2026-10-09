@@ -117,11 +117,16 @@ export function GuestHero({
       <div className="page-gutter mx-auto flex max-w-none flex-col items-center pt-4 sm:pt-14">
         <h2 className="max-w-4xl text-center font-display text-[1.25rem] font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
           The Supersonic Retirement Calculator built for those who want
-          global situational awareness of their finances.
+          global situational awareness of their finances. Trusted by individuals
+          and professionals.
         </h2>
-        <p className="mt-1.5 max-w-3xl text-center text-[0.667rem] leading-relaxed text-muted sm:mt-4 sm:text-lg">
-          Take ownership of your financial picture — Measure, Allocate, Compound, Harvest — MACH.
-        </p>
+        <div className="mt-1.5 max-w-3xl text-center text-[0.667rem] leading-relaxed text-muted sm:mt-4 sm:text-lg">
+          <p>Measure, Allocate, Compound, Harvest — MACH.</p>
+          <p className="mt-1">
+            Use the fighter pilot's OODA Loop (Observe, Orient, Decide, Act) to inform your path.
+          </p>
+          <p className="mt-1">Free to start, just $4/month unlocks incredible features!</p>
+        </div>
         <div className="mt-3 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:mt-6 sm:flex-row sm:flex-wrap sm:gap-3">
           <PrimaryButton
             className="h-auto min-h-11 whitespace-normal px-4 py-2.5 text-center leading-snug sm:max-w-xs"
