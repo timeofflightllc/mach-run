@@ -42,6 +42,7 @@ import { GATE_PROVIDER_ID, gateIdentitySessions } from "./gate-session.server";
 import { GROK_PROVIDERS } from "./providers";
 import { pgliteDialect } from "./pglite-dialect";
 import { analytics } from "@/lib/heycatch.server";
+import { heycatchName } from "@/lib/heycatch-name";
 import {
   GROK_ISSUER_DEFAULT,
   PREVIEW_ALLOWED_HOSTS,
@@ -246,8 +247,9 @@ export const auth = betterAuth({
             );
           }
           try {
+            const shortName = heycatchName(user.name);
             const props: { name?: string } = {};
-            if (user.name) props.name = user.name;
+            if (shortName) props.name = shortName;
             const created =
               user.createdAt instanceof Date
                 ? user.createdAt.toISOString()

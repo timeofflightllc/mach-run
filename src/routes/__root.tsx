@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from "@/lib/auth/provider";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
+import { heycatchName } from "@/lib/heycatch-name";
 import { loadSessionSnapshot } from "@/lib/auth/session-snapshot-api";
 import { SessionSnapshotProvider } from "@/lib/auth/session-snapshot-context";
 import type { SessionSnapshot } from "@/lib/auth/session-snapshot";
@@ -98,8 +99,9 @@ function HeyCatchPerson() {
     const mark = `${user.id}|${plan}`;
     if (seen.current === mark) return;
     seen.current = mark;
+    const shortName = heycatchName(user.displayName);
     analytics.setIdentity(user.id, {
-      ...(user.displayName ? { name: user.displayName } : {}),
+      ...(shortName ? { name: shortName } : {}),
       plan,
     });
   }, [user, isPending, plan, pending]);
