@@ -33,10 +33,10 @@ const ARROWS = [
 ];
 
 const MOBILE_ARROWS = [
-  ringArrow(18, 78, 16, 9),
-  ringArrow(108, 168, 16, 9),
-  ringArrow(198, 258, 16, 9),
-  ringArrow(288, 348, 16, 9),
+  ringArrow(18, 78, 22, 12),
+  ringArrow(108, 168, 22, 12),
+  ringArrow(198, 258, 22, 12),
+  ringArrow(288, 348, 22, 12),
 ];
 
 const TIPS = {
@@ -183,12 +183,22 @@ export function OodaLoop() {
           <svg viewBox="0 0 200 200" className="h-full w-full" aria-hidden="true">
             <circle cx="100" cy="100" r="62" fill="#fffdf8" stroke="#e8c547" strokeWidth="1.25" />
             <circle cx="100" cy="100" r="78" fill="none" stroke="#1a2330" strokeOpacity="0.08" strokeWidth="10" />
-            {ARROWS.map((arrow) => (
-              <g key={arrow.d}>
-                <path d={arrow.d} fill="none" stroke="#1a2330" strokeWidth="2.4" strokeLinecap="round" />
-                <polygon points={arrow.points} fill="#3a8a58" />
-              </g>
-            ))}
+            <g className="sm:hidden">
+              {MOBILE_ARROWS.map((arrow) => (
+                <g key={arrow.d}>
+                  <path d={arrow.d} fill="none" stroke="#1a2330" strokeWidth="7" strokeLinecap="round" />
+                  <polygon points={arrow.points} fill="#3a8a58" />
+                </g>
+              ))}
+            </g>
+            <g className="hidden sm:block">
+              {ARROWS.map((arrow) => (
+                <g key={`desk-${arrow.d}`}>
+                  <path d={arrow.d} fill="none" stroke="#1a2330" strokeWidth="2.4" strokeLinecap="round" />
+                  <polygon points={arrow.points} fill="#3a8a58" />
+                </g>
+              ))}
+            </g>
           </svg>
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
             <div className="flex w-[54%] flex-col items-center">

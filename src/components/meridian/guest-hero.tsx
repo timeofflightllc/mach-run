@@ -162,8 +162,9 @@ export function GuestHero({
       <div className="page-gutter mx-auto flex max-w-none flex-col items-center pt-2 sm:pt-7">
         <h2 className="max-w-4xl text-center font-display text-[1.25rem] font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
           The Supersonic Retirement Calculator built for global situational
-          awareness of your finances. Trusted by individuals and professionals
-          -- free to start!
+          awareness of your finances.
+          <br />
+          Trusted by individuals and professionals -- free to start!
         </h2>
         <div className="mt-1.5 max-w-3xl text-center text-[0.667rem] leading-relaxed text-muted sm:mt-4 sm:text-lg">
           <p>
