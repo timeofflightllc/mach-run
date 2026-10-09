@@ -1,5 +1,20 @@
 import type { ReactNode } from "react";
 
+function emphasis(text: string, keyPrefix: string): ReactNode[] {
+  const parts: ReactNode[] = [];
+  const re = /\*([^*\n]+)\*/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  let i = 0;
+  while ((m = re.exec(text))) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    parts.push(<em key={`${keyPrefix}-e-${i++}`}>{m[1]}</em>);
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) parts.push(text.slice(last));
+  return parts;
+}
+
 function inline(text: string, underline: boolean): ReactNode[] {
   const parts: ReactNode[] = [];
   const re = /\[([^\]]+)\]\((\/[a-z0-9\-/?#]*)\)/gi;
@@ -7,7 +22,7 @@ function inline(text: string, underline: boolean): ReactNode[] {
   let m: RegExpExecArray | null;
   let i = 0;
   while ((m = re.exec(text))) {
-    if (m.index > last) parts.push(text.slice(last, m.index));
+    if (m.index > last) parts.push(...emphasis(text.slice(last, m.index), `t-${i}`));
     parts.push(
       <a
         key={`l-${i++}`}
@@ -23,7 +38,7 @@ function inline(text: string, underline: boolean): ReactNode[] {
     );
     last = m.index + m[0].length;
   }
-  if (last < text.length) parts.push(text.slice(last));
+  if (last < text.length) parts.push(...emphasis(text.slice(last), `t-${i}`));
   return parts;
 }
 

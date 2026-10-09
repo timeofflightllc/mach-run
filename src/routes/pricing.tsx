@@ -726,11 +726,6 @@ function Pricing() {
         </div>
 
         {error ? <p className="mt-6 text-sm text-negative">{error}</p> : null}
-        {!ent.stripeConfigured ? (
-          <p className="mt-6 text-sm text-subtle">
-            Individual checkout turns on when MACH RUN is published with Stripe.
-          </p>
-        ) : null}
         {ent.stripeConfigured && !ent.unlimitedStripeConfigured ? (
           <p className="mt-3 text-sm text-subtle">
             Individual Unlimited checkout needs STRIPE_PRICE_UNLIMITED_MONTHLY and
