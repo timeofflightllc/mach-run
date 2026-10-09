@@ -202,18 +202,22 @@ export function GuestHero({
             {/* 12.5% of this width is 20% of a 16:10 screen. The extra drops the chin behind the page. */}
             <div style={{ marginBottom: "calc(-12.5% - 1.125rem)" }}>
               <div className="overflow-hidden rounded-t-xl border-8 border-[#1a2330] bg-[#fffcf6] sm:border-[12px]">
-                <div className="relative aspect-[16/10]">
-                  {screen === 0 ? (
-                    <img
-                      src="/brand/mach-run-demo.png?v=3"
-                      alt="A MACH RUN for the Hale household, on track for $2,500,000."
-                      className="absolute inset-0 h-full w-full object-cover object-top"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-[#e4ebf2] p-2 sm:p-3">
+                <div className="relative aspect-[16/10] overflow-hidden">
+                  <div
+                    className="flex h-full w-[200%] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                    style={{ transform: screen === 0 ? "translateX(0%)" : "translateX(-50%)" }}
+                  >
+                    <div className="relative h-full w-1/2 shrink-0">
+                      <img
+                        src="/brand/mach-run-demo.png?v=3"
+                        alt="A MACH RUN for the Hale household, on track for $2,500,000."
+                        className="absolute inset-0 h-full w-full object-cover object-top"
+                      />
+                    </div>
+                    <div className="h-full w-1/2 shrink-0 bg-[#e4ebf2] p-2 sm:p-3">
                       <OodaLoop />
                     </div>
-                  )}
+                  </div>
                 </div>
               </div>
               <div className="h-3 rounded-b-lg bg-[#1a2330]" />
