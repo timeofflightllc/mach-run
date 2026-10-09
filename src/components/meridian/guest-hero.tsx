@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, type TransitionEvent } from "react";
 import { OodaLoop } from "@/components/meridian/how-it-works";
 import { PrimaryButton } from "@/components/ui/field";
 import { demoPlan, planHasEntries } from "@/lib/plan/demo-plan";
@@ -99,6 +99,39 @@ export function GuestHero({
 }) {
   const [confirming, setConfirming] = useState(false);
   const [screen, setScreen] = useState<0 | 1>(0);
+  const [shift, setShift] = useState<-1 | 0 | 1>(0);
+  const [motion, setMotion] = useState(true);
+  const screenRef = useRef(screen);
+  const shiftRef = useRef(shift);
+  screenRef.current = screen;
+  shiftRef.current = shift;
+
+  useEffect(() => {
+    if (shift !== 0 || motion) return;
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setMotion(true));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [shift, motion]);
+
+  function go(direction: "left" | "right") {
+    if (shiftRef.current !== 0) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setScreen((current) => (current === 0 ? 1 : 0));
+      return;
+    }
+    setMotion(true);
+    setShift(direction === "left" ? -1 : 1);
+  }
+
+  function onSwipeEnd(event: TransitionEvent<HTMLDivElement>) {
+    if (event.target !== event.currentTarget || event.propertyName !== "transform") return;
+    if (shiftRef.current === 0) return;
+    setMotion(false);
+    setScreen(screenRef.current === 0 ? 1 : 0);
+    setShift(0);
+  }
 
   function fill() {
     usePlanStore.getState().setPlan(demoPlan());
@@ -156,7 +189,9 @@ export function GuestHero({
         </p>
         <button
           type="button"
-          onClick={() => setScreen(1)}
+          onClick={() => {
+            if (screen === 0) go("left");
+          }}
           className="mt-3 font-display text-4xl font-semibold tracking-wide text-[#1a2330] underline decoration-[#3a8a58] decoration-2 underline-offset-[6px] hover:text-[#3a8a58] sm:text-5xl"
         >
           How It Works
@@ -186,7 +221,7 @@ export function GuestHero({
             <button
               type="button"
               aria-label="Previous laptop screen"
-              onClick={() => setScreen((current) => (current === 0 ? 1 : 0))}
+              onClick={() => go("left")}
               className="absolute left-1 top-[40%] z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#1a2330] bg-white text-[#1a2330] shadow-sm hover:bg-[#f3faf6] sm:left-0"
             >
               <ScreenArrow direction="left" />
@@ -194,7 +229,7 @@ export function GuestHero({
             <button
               type="button"
               aria-label="Next laptop screen"
-              onClick={() => setScreen((current) => (current === 0 ? 1 : 0))}
+              onClick={() => go("right")}
               className="absolute right-1 top-[40%] z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#1a2330] bg-white text-[#1a2330] shadow-sm hover:bg-[#f3faf6] sm:right-0"
             >
               <ScreenArrow direction="right" />
@@ -204,19 +239,20 @@ export function GuestHero({
               <div className="overflow-hidden rounded-t-xl border-8 border-[#1a2330] bg-[#fffcf6] sm:border-[12px]">
                 <div className="relative aspect-[16/10] overflow-hidden">
                   <div
-                    className="flex h-full w-[200%] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
-                    style={{ transform: screen === 0 ? "translateX(0%)" : "translateX(-50%)" }}
+                    className={
+                      motion
+                        ? "flex h-full w-[300%] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                        : "flex h-full w-[300%]"
+                    }
+                    style={{
+                      transform:
+                        shift === 1 ? "translateX(0%)" : shift === -1 ? "translateX(-66.666%)" : "translateX(-33.333%)",
+                    }}
+                    onTransitionEnd={onSwipeEnd}
                   >
-                    <div className="relative h-full w-1/2 shrink-0">
-                      <img
-                        src="/brand/mach-run-demo.png?v=3"
-                        alt="A MACH RUN for the Hale household, on track for $2,500,000."
-                        className="absolute inset-0 h-full w-full object-cover object-top"
-                      />
-                    </div>
-                    <div className="h-full w-1/2 shrink-0 bg-[#e4ebf2] p-2 sm:p-3">
-                      <OodaLoop />
-                    </div>
+                    <LaptopPane which={screen === 0 ? 1 : 0} />
+                    <LaptopPane which={screen} />
+                    <LaptopPane which={screen === 0 ? 1 : 0} />
                   </div>
                 </div>
               </div>
@@ -227,6 +263,25 @@ export function GuestHero({
         </div>
       </div>
     </section>
+  );
+}
+
+function LaptopPane({ which }: { which: 0 | 1 }) {
+  if (which === 0) {
+    return (
+      <div className="relative h-full w-1/3 shrink-0">
+        <img
+          src="/brand/mach-run-demo.png?v=3"
+          alt="A MACH RUN for the Hale household, on track for $2,500,000."
+          className="absolute inset-0 h-full w-full object-cover object-top"
+        />
+      </div>
+    );
+  }
+  return (
+    <div className="h-full w-1/3 shrink-0 bg-[#e4ebf2] p-2 sm:p-3">
+      <OodaLoop />
+    </div>
   );
 }
 
