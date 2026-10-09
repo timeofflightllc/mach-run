@@ -22,10 +22,10 @@ function About() {
         <div className="grid items-start gap-8 lg:grid-cols-[minmax(14rem,20rem)_minmax(0,1fr)] lg:gap-10">
           <figure className="order-last lg:order-none lg:sticky lg:top-6">
             <img
-              src="/brand/f-15qa-blue74.jpg"
-              alt="F-15QA climbing through cloud, afterburners lit"
-              width={960}
-              height={1439}
+              src="/brand/about-wingman.jpg?v=1"
+              alt="A pilot in flight gear kneeling with a small child on the flight line."
+              width={2278}
+              height={2592}
               className="w-full rounded-lg"
             />
           </figure>
