@@ -172,15 +172,13 @@ export function GuestHero({
             an example MACH RUN
           </PrimaryButton>
           <PrimaryButton
-            className="h-auto min-h-11 whitespace-normal px-4 py-2.5 text-center leading-snug sm:max-w-xs"
+            className="h-auto min-h-11 whitespace-nowrap px-4 py-2.5 text-center leading-snug"
             onClick={() => {
               setConfirming(false);
               onShowFamily();
             }}
           >
-            Start free with your info,
-            <br />
-            no credit card needed.
+            Start with your info -- no credit card needed.
           </PrimaryButton>
         </div>
         <p className="mt-3 max-w-3xl text-center text-[0.667rem] leading-relaxed text-muted sm:mt-4 sm:text-lg">
