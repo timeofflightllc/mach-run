@@ -268,8 +268,14 @@ function detectCustomOgCard(cwd = process.cwd(), site = {}) {
 /** Snapshot for Vite/Nitro to bake into the server bundle (Vercel has no workspace FS). */
 export function snapshotOgIdentity(cwd = process.cwd()) {
   const site = { ...readOgSite(cwd) };
+  const version = String(site.imageVersion ?? "").trim();
+  const versionedRel = version ? `og-v${version}.jpg` : "";
+  const versioned = versionedRel && existsSync(join(cwd, "public", versionedRel));
   const disk = ogCardPublicPath(cwd);
-  if (disk) {
+  if (versioned) {
+    site.card = "custom";
+    site.image = `/${versionedRel}`;
+  } else if (disk) {
     site.card = "custom";
     site.image = disk;
   } else {
