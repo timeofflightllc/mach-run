@@ -17,16 +17,19 @@ function emphasis(text: string, keyPrefix: string): ReactNode[] {
 
 function inline(text: string, underline: boolean): ReactNode[] {
   const parts: ReactNode[] = [];
-  const re = /\[([^\]]+)\]\((\/[a-z0-9\-/?#]*)\)/gi;
+  const re = /\[([^\]]+)\]\((\/[a-z0-9\-/?#]*|https?:\/\/[^\s)]+)\)/gi;
   let last = 0;
   let m: RegExpExecArray | null;
   let i = 0;
   while ((m = re.exec(text))) {
     if (m.index > last) parts.push(...emphasis(text.slice(last, m.index), `t-${i}`));
+    const href = m[2];
+    const external = /^https?:\/\//i.test(href);
     parts.push(
       <a
         key={`l-${i++}`}
-        href={m[2]}
+        href={href}
+        {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
         className={
           underline
             ? "text-fg underline underline-offset-4 hover:text-accent"
