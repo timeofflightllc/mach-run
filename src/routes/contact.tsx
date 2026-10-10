@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
+import { PieceCrumbs, RelatedPieces } from "@/components/meridian/piece-links";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import { cn } from "@/lib/utils";
 import type { ContactTopic } from "@/lib/notify/contact";
@@ -74,6 +75,7 @@ function Contact() {
     <main className="min-h-screen bg-bg py-10 text-fg">
       <div className="static-gutter mx-auto w-full space-y-8">
         <PageMast />
+        <PieceCrumbs path="/contact" />
         <header>
           <h1 className="font-display text-4xl text-fg sm:text-5xl">{page.title}</h1>
           {page.kicker ? <p className="mt-2 text-lg text-muted">{page.kicker}</p> : null}
@@ -148,6 +150,7 @@ function Contact() {
             {busy ? "Sending…" : "Send"}
           </PrimaryButton>
         </form>
+        <RelatedPieces path="/contact" />
       </div>
       <MachFooter staticInset />
     </main>

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
+import { PieceCrumbs, RelatedPieces } from "@/components/meridian/piece-links";
 import { BombBurstSketch } from "@/components/meridian/guest-hero";
 import { PrimaryButton, TextInput } from "@/components/ui/field";
 import { peekPromoCode, startBillingPortal, startCheckout } from "@/lib/billing/api";
@@ -301,6 +302,7 @@ function Pricing() {
       <div className="static-gutter mx-auto w-full">
         <div className="mx-auto w-full max-w-7xl">
           <PageMast />
+          <PieceCrumbs path="/pricing" />
 
           <header className="mt-10 max-w-2xl">
           <h1 className="font-display text-4xl leading-tight text-fg sm:text-5xl">
@@ -766,6 +768,7 @@ function Pricing() {
             Back to MACH Run
           </Link>
         </p>
+        <RelatedPieces path="/pricing" />
       </div>
       <MachFooter staticInset />
     </main>
