@@ -9,12 +9,14 @@ export type HeroCopy = {
 export const DEFAULT_HERO_COPY: HeroCopy = {
   headline:
     "One place to see your whole household's retirement - income, TSP, military retired pay, VA, and your nest-egg goal.",
-  text: "Change the savings rate and watch that date move. Free to start. $4 a month.",
+  text: "Change the savings rate and contributions, and watch that date and FIRE number move. Free to start. $4 a month gets you more.",
 };
 
 const STALE_HEADLINE = "Years to your FIRE number, with TSP, military retired pay, and VA.";
-const STALE_TEXT =
-  "See your whole household's retirement in one place - income, investments, and your nest-egg goal, with unlimited what-if runs. Free to start. $4 a month unlocks incredible features.";
+const STALE_TEXT = [
+  "See your whole household's retirement in one place - income, investments, and your nest-egg goal, with unlimited what-if runs. Free to start. $4 a month unlocks incredible features.",
+  "Change the savings rate and watch that date move. Free to start. $4 a month.",
+];
 
 export function serializeHeroCopy(copy: HeroCopy): string {
   return JSON.stringify(copy);
@@ -33,7 +35,7 @@ export function parseHeroCopy(raw: string): HeroCopy {
       ? src.headline
       : DEFAULT_HERO_COPY.headline;
   const text =
-    typeof src.text === "string" && src.text.trim() !== STALE_TEXT
+    typeof src.text === "string" && !STALE_TEXT.includes(src.text.trim())
       ? src.text
       : DEFAULT_HERO_COPY.text;
   return { headline, text };

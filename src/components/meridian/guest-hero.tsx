@@ -91,6 +91,12 @@ function SketchJet({
   );
 }
 
+const LAPTOP_SLIDES = ["act", "ooda", "futures", "analysis", "radar", "ledger"] as const;
+type LaptopSlide = (typeof LAPTOP_SLIDES)[number];
+const SLIDE_COUNT = LAPTOP_SLIDES.length;
+const STRIP_COUNT = SLIDE_COUNT * 2 + 1;
+const LAPTOP_STRIP: LaptopSlide[] = [...LAPTOP_SLIDES, ...LAPTOP_SLIDES, LAPTOP_SLIDES[0]];
+
 export function GuestHero({
   onShowFamily,
   onDemo,
@@ -100,9 +106,9 @@ export function GuestHero({
 }) {
   const [confirming, setConfirming] = useState(false);
   const hero = useHeroCopy();
-  const [index, setIndex] = useState(3);
+  const [index, setIndex] = useState(SLIDE_COUNT);
   const [motion, setMotion] = useState(true);
-  const indexRef = useRef(3);
+  const indexRef = useRef(SLIDE_COUNT);
   const sliding = useRef(false);
   indexRef.current = index;
 
@@ -117,14 +123,13 @@ export function GuestHero({
     return () => cancelAnimationFrame(frame);
   }, [motion]);
 
-  function go(direction: "left" | "right") {
-    if (sliding.current) return;
-    const delta = direction === "left" ? 1 : -1;
+  function step(delta: number) {
+    if (delta === 0 || sliding.current) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) {
-      const which = (((indexRef.current + delta) % 3) + 3) % 3;
+      const which = (((indexRef.current + delta) % SLIDE_COUNT) + SLIDE_COUNT) % SLIDE_COUNT;
       setMotion(false);
-      setIndex(3 + which);
+      setIndex(SLIDE_COUNT + which);
       return;
     }
     sliding.current = true;
@@ -132,14 +137,18 @@ export function GuestHero({
     setIndex((current) => current + delta);
   }
 
+  function go(direction: "left" | "right") {
+    step(direction === "left" ? 1 : -1);
+  }
+
   function onSwipeEnd(event: TransitionEvent<HTMLDivElement>) {
     if (event.target !== event.currentTarget || event.propertyName !== "transform") return;
     if (!sliding.current) return;
     const landed = indexRef.current;
-    if (landed <= 0 || landed >= 6) {
-      const which = ((landed % 3) + 3) % 3;
+    if (landed <= 0 || landed >= SLIDE_COUNT * 2) {
+      const which = ((landed % SLIDE_COUNT) + SLIDE_COUNT) % SLIDE_COUNT;
       setMotion(false);
-      setIndex(3 + which);
+      setIndex(SLIDE_COUNT + which);
       return;
     }
     sliding.current = false;
@@ -205,9 +214,11 @@ export function GuestHero({
         <button
           type="button"
           onClick={() => {
-            const which = ((indexRef.current % 3) + 3) % 3;
-            if (which === 1) return;
-            go(which === 0 ? "left" : "right");
+            const slide = ((indexRef.current % SLIDE_COUNT) + SLIDE_COUNT) % SLIDE_COUNT;
+            if (slide === 1) return;
+            const forward = (1 - slide + SLIDE_COUNT) % SLIDE_COUNT;
+            const back = (slide - 1 + SLIDE_COUNT) % SLIDE_COUNT;
+            step(forward <= back ? forward : -back);
           }}
           className="mt-3 font-display text-4xl font-semibold tracking-wide text-[#1a2330] underline decoration-[#3a8a58] decoration-2 underline-offset-[6px] hover:text-[#3a8a58] sm:text-5xl"
         >
@@ -239,7 +250,7 @@ export function GuestHero({
               type="button"
               aria-label="Previous laptop screen"
               onClick={() => go("right")}
-              className="absolute left-1 top-[40%] z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#1a2330] bg-white text-[#1a2330] shadow-sm hover:bg-[#f3faf6] sm:left-0"
+              className="absolute left-1 top-[62.5%] z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#1a2330] bg-white text-[#1a2330] shadow-sm hover:bg-[#f3faf6] sm:left-0"
             >
               <ScreenArrow direction="left" />
             </button>
@@ -247,35 +258,35 @@ export function GuestHero({
               type="button"
               aria-label="Next laptop screen"
               onClick={() => go("left")}
-              className="absolute right-1 top-[40%] z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#1a2330] bg-white text-[#1a2330] shadow-sm hover:bg-[#f3faf6] sm:right-0"
+              className="absolute right-1 top-[62.5%] z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-[#1a2330] bg-white text-[#1a2330] shadow-sm hover:bg-[#f3faf6] sm:right-0"
             >
               <ScreenArrow direction="right" />
             </button>
             {/* 12.5% of this width is 20% of a 16:10 screen. The extra drops the chin behind the page. */}
-            <div style={{ marginBottom: "calc(-12.5% - 1.125rem)" }}>
+            <div className="mx-[3px]" style={{ marginBottom: "calc(-12.5% - 1.625rem)" }}>
               <div className="overflow-hidden rounded-t-xl border-8 border-[#1a2330] bg-[#fffcf6] sm:border-[12px]">
-                <div className="relative aspect-[16/10] overflow-hidden">
+                <div className="relative aspect-[2230/1296] overflow-hidden">
                   <div
                     className={
                       motion
-                        ? "flex h-full w-[700%] transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
-                        : "flex h-full w-[700%]"
+                        ? "flex h-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                        : "flex h-full"
                     }
-                    style={{ transform: `translateX(${-index * (100 / 7)}%)` }}
+                    style={{
+                      width: `${STRIP_COUNT * 100}%`,
+                      transform: `translateX(${-index * (100 / STRIP_COUNT)}%)`,
+                    }}
                     onTransitionEnd={onSwipeEnd}
                   >
-                    <LaptopPane which={0} />
-                    <LaptopPane which={1} />
-                    <LaptopPane which={2} />
-                    <LaptopPane which={0} />
-                    <LaptopPane which={1} />
-                    <LaptopPane which={2} />
-                    <LaptopPane which={0} />
+                    {LAPTOP_STRIP.map((slide, slot) => (
+                      <LaptopPane key={`${slide}-${slot}`} slide={slide} />
+                    ))}
                   </div>
                 </div>
               </div>
               <div className="h-3 rounded-b-lg bg-[#1a2330]" />
-              <div className="mx-auto h-1.5 w-28 rounded-b-md bg-[#243044]" />
+              <div className="mx-auto h-2.5 w-[68%] rounded-b-md bg-[#243044]" />
+              <div className="mx-auto h-1 w-[42%] rounded-b-sm bg-[#1a2330]" />
             </div>
           </div>
         </div>
@@ -294,32 +305,26 @@ function HeroLines({ text }: { text: string }) {
   ));
 }
 
-function LaptopPane({ which }: { which: 0 | 1 | 2 }) {
-  if (which === 0) {
+function LaptopPane({ slide }: { slide: LaptopSlide }) {
+  const frame = "relative h-full shrink-0";
+  const width = { width: `${100 / STRIP_COUNT}%` };
+  if (slide === "ooda") {
     return (
-      <div className="relative h-full shrink-0" style={{ width: `${100 / 7}%` }}>
-        <img
-          src="/brand/mach-run-demo.png?v=3"
-          alt="A MACH RUN for the Hale household, on track for $2,500,000."
-          className="absolute inset-0 h-full w-full object-cover object-top"
-        />
+      <div className="h-full shrink-0 bg-[#e4ebf2] p-2 sm:p-3" style={width}>
+        <OodaLoop />
       </div>
     );
   }
-  if (which === 2) {
-    return (
-      <div className="relative h-full shrink-0 bg-[#f4f1ea]" style={{ width: `${100 / 7}%` }}>
-        <img
-          src="/brand/laptop-monte-carlo.png?v=1"
-          alt="Monte Carlo chart of 1,000 spendable futures."
-          className="absolute inset-0 h-full w-full object-contain object-top"
-        />
-      </div>
-    );
-  }
+  const shot = {
+    futures: ["/brand/laptop-futures.png?v=2", "Monte Carlo chart of 1,000 spendable futures."],
+    act: ["/brand/laptop-act.png?v=2", "Act screen for a household on track for $2,500,000."],
+    analysis: ["/brand/laptop-analysis.png?v=2", "MACH Analysis for the sample household."],
+    radar: ["/brand/laptop-radar.png?v=2", "Spendable wealth chart for the sample household."],
+    ledger: ["/brand/laptop-ledger.png?v=2", "Yearly ledger for the sample household."],
+  }[slide];
   return (
-    <div className="h-full shrink-0 bg-[#e4ebf2] p-2 sm:p-3" style={{ width: `${100 / 7}%` }}>
-      <OodaLoop />
+    <div className={`${frame} bg-[#f7f4ee]`} style={width}>
+      <img src={shot[0]} alt={shot[1]} className="absolute inset-0 h-full w-full object-contain object-center" />
     </div>
   );
 }
@@ -392,9 +397,13 @@ export function MilitaryHousehold() {
   return (
     <section className="bg-bg">
       <div className="mx-auto w-full max-w-3xl px-2" aria-hidden="true">
-        <div style={{ paddingTop: "calc(12.5% + 1.125rem)" }} />
+        <div style={{ paddingTop: "calc(12.5% + 1.625rem)" }} />
       </div>
-      <div className="page-gutter mx-auto flex w-full max-w-none flex-col items-center py-8 text-center sm:py-12">
+      <div className="page-gutter relative mx-auto flex w-full max-w-none flex-col items-center py-8 text-center sm:py-12">
+        <p className="pointer-events-none absolute inset-x-4 top-1 text-center text-[0.65rem] leading-tight text-muted sm:top-2 sm:text-xs">
+          This sample household is on track for more than $2,500,000 in retirement. The third screen
+          is 1,000 futures of that same run.
+        </p>
         <p className="font-display text-lg font-semibold uppercase tracking-[0.14em] text-[#3a8a58] sm:text-2xl">
           For military and veteran households
         </p>

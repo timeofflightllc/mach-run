@@ -5,38 +5,41 @@ function ringArrow(start: number, tip: number, len = 10, wid = 5.2) {
   const cx = 100;
   const cy = 100;
   const r = 78;
-  const pt = (deg: number) => {
-    const t = (deg * Math.PI) / 180;
+  const rad = (deg: number) => (deg * Math.PI) / 180;
+  const at = (deg: number) => {
+    const t = rad(deg);
     return [cx + r * Math.sin(t), cy - r * Math.cos(t)] as const;
   };
-  const [x0, y0] = pt(start);
-  const [x1, y1] = pt(tip - len);
-  const d = `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${r} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
-  const t = (tip * Math.PI) / 180;
-  const x = cx + r * Math.sin(t);
-  const y = cy - r * Math.cos(t);
+  const span = (len / r) * (180 / Math.PI);
+  const baseDeg = tip - span;
+  const [x0, y0] = at(start);
+  const joinDeg = baseDeg + span * 0.42;
+  const [jx, jy] = at(joinDeg);
+  const d = `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${r} ${r} 0 0 1 ${jx.toFixed(2)} ${jy.toFixed(2)}`;
+  const t = rad(tip);
   const tx = Math.cos(t);
   const ty = Math.sin(t);
-  const tipPt = [x + tx * 0.6, y + ty * 0.6];
-  const base = [x - tx * len, y - ty * len];
-  const left = [base[0] - ty * wid, base[1] + tx * wid];
-  const right = [base[0] + ty * wid, base[1] - tx * wid];
-  const points = [tipPt, left, right].map((p) => `${p[0].toFixed(2)},${p[1].toFixed(2)}`).join(" ");
+  const [bx, by] = at(baseDeg);
+  const tipPt = at(tip);
+  const left = [bx - ty * wid, by + tx * wid];
+  const right = [bx + ty * wid, by - tx * wid];
+  const nudge = 1.6;
+  const points = [tipPt, left, right].map((p) => `${(p[0] + nudge).toFixed(2)},${p[1].toFixed(2)}`).join(" ");
   return { d, points };
 }
 
 const ARROWS = [
-  ringArrow(18, 78),
-  ringArrow(108, 168),
-  ringArrow(198, 258),
-  ringArrow(288, 348),
+  ringArrow(18, 78, 20, 7.5),
+  ringArrow(108, 168, 20, 7.5),
+  ringArrow(198, 258, 20, 7.5),
+  ringArrow(288, 348, 20, 7.5),
 ];
 
 const MOBILE_ARROWS = [
-  ringArrow(18, 78, 22, 12),
-  ringArrow(108, 168, 22, 12),
-  ringArrow(198, 258, 22, 12),
-  ringArrow(288, 348, 22, 12),
+  ringArrow(18, 78, 26, 10),
+  ringArrow(108, 168, 26, 10),
+  ringArrow(198, 258, 26, 10),
+  ringArrow(288, 348, 26, 10),
 ];
 
 const TIPS = {
@@ -49,7 +52,7 @@ const TIPS = {
 type TipId = keyof typeof TIPS;
 
 const titleClass =
-  "font-display text-[clamp(1.05rem,4.8cqi,1.9rem)] font-semibold uppercase leading-none tracking-[0.12em] text-[#1a2330]";
+  "font-display text-[clamp(1.25rem,6.6cqi,2.5rem)] font-semibold uppercase leading-none tracking-[0.12em] text-[#1a2330]";
 
 function Phase({
   title,
@@ -117,7 +120,7 @@ function SideLabel({
       >
         {title}
       </button>
-      <ul className="hidden space-y-0 sm:block">
+      <ul className="-mt-2 hidden space-y-0 sm:block">
         {TIPS[tip].map((item) => (
           <li key={item} className="text-[clamp(0.62rem,2.15cqi,0.95rem)] leading-tight text-[#5c6b7a]">
             {item}
@@ -171,15 +174,15 @@ export function OodaLoop() {
   }
 
   return (
-    <div className="@container grid h-full min-h-0 w-full grid-cols-[1fr_1.16fr_1fr] grid-rows-[auto_auto_auto_minmax(0,1fr)] items-center gap-x-1 gap-y-1 overflow-hidden">
+    <div className="@container grid h-full min-h-0 w-full grid-cols-[0.9fr_1.35fr_0.9fr] grid-rows-[auto_auto_auto] items-center gap-x-1 gap-y-1 overflow-hidden">
       <div className="col-span-3">
         <Phase title="Observe" tip="observe" align="center" open={open} onToggle={onToggle} />
       </div>
-      <div className="relative col-start-1 row-start-2 min-w-0 self-stretch pr-1">
+      <div className="relative col-start-1 row-start-2 min-w-0 self-stretch -translate-y-3 pr-1">
         <SideLabel title="Act" tip="act" align="right" open={open} onToggle={onToggle} />
       </div>
-      <div className="relative col-start-2 row-start-2 flex w-full -translate-y-3 justify-center">
-        <div className="relative aspect-square w-[92%]">
+      <div className="relative col-start-2 row-start-2 flex w-full -translate-y-4 justify-center">
+        <div className="relative aspect-square w-full">
           <svg viewBox="0 0 200 200" className="h-full w-full" aria-hidden="true">
             <circle cx="100" cy="100" r="62" fill="#fffdf8" stroke="#e8c547" strokeWidth="1.25" />
             <circle cx="100" cy="100" r="78" fill="none" stroke="#1a2330" strokeOpacity="0.08" strokeWidth="10" />
@@ -218,10 +221,10 @@ export function OodaLoop() {
           </div>
         </div>
       </div>
-      <div className="relative col-start-3 row-start-2 min-w-0 self-stretch pl-1">
+      <div className="relative col-start-3 row-start-2 min-w-0 self-stretch -translate-y-3 pl-1">
         <SideLabel title="Orient" tip="orient" align="left" open={open} onToggle={onToggle} />
       </div>
-      <div className="col-start-2 row-start-3 -translate-y-4 text-center">
+      <div className="col-start-2 row-start-3 -translate-y-12 text-center">
         <p className={`hidden pl-[0.12em] sm:block ${titleClass}`}>Decide</p>
         <button
           type="button"
