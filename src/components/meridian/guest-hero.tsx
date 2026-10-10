@@ -161,10 +161,8 @@ export function GuestHero({
     <section className="overflow-x-clip border-t border-border bg-bg">
       <div className="page-gutter mx-auto flex max-w-none flex-col items-center pt-2 sm:pt-7">
         <h1 className="max-w-4xl text-center font-display text-[1.25rem] font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
-          The Supersonic Retirement Calculator built to allow global situational
-          awareness of your finances.
-          <br />
-          Trusted by individuals and professionals -- free to start!
+          One place to see your whole household's retirement - income, TSP, military retired pay, VA,
+          and your nest-egg goal.
         </h1>
         <div className="mt-1.5 max-w-3xl text-center text-[0.667rem] leading-relaxed text-muted sm:mt-4 sm:text-lg">
           <p>
