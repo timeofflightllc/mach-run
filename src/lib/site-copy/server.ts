@@ -1,4 +1,5 @@
 import { getSql } from "@/lib/db";
+import { pathsForSlug, pingIndexNow } from "@/lib/seo/sitemap";
 import { DEFAULT_PAGES, defaultAnnouncements } from "./defaults";
 import {
   SITE_PAGE_SLUGS,
@@ -184,6 +185,7 @@ export async function saveSitePage(page: SitePage): Promise<string | null> {
          updated_at = now()`,
       [page.slug, page.title.trim() || page.slug, page.kicker.trim() || null, page.body],
     );
+    void pingIndexNow(pathsForSlug(page.slug));
     return null;
   } catch {
     return "Could not save that page.";
@@ -209,6 +211,10 @@ export async function saveAnnouncement(item: SiteAnnouncement): Promise<string |
          sort_order = excluded.sort_order`,
       [id, item.at.trim() || new Date().toISOString().slice(0, 10), title, blurb, item.sortOrder],
     );
+    await sql.query(
+      "update mach_site_pages set updated_at = now() where slug = 'announcements'",
+    );
+    void pingIndexNow(["/announcements"]);
     return null;
   } catch {
     return "Could not save that feature.";
@@ -222,6 +228,10 @@ export async function deleteAnnouncement(id: string): Promise<string | null> {
   try {
     const sql = await getSql();
     await sql.query("delete from mach_announcements where id = $1", [id]);
+    await sql.query(
+      "update mach_site_pages set updated_at = now() where slug = 'announcements'",
+    );
+    void pingIndexNow(["/announcements"]);
     return null;
   } catch {
     return "Could not delete that feature.";
