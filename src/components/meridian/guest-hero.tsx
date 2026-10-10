@@ -197,8 +197,10 @@ export function GuestHero({
           </PrimaryButton>
         </div>
         <p className="mt-3 max-w-3xl text-center text-[0.667rem] leading-relaxed text-muted sm:mt-4 sm:text-lg">
-          Use the fighter pilot's OODA Loop and Monte Carlo Simulator to inform your financial
-          path.
+          Spreadsheets take time you'll never get back, and FIRECalc isn't built for TSP, military,
+          and veterans. MACH RUN saves that time and is built for those paychecks. Use the fighter
+          pilot's OODA Loop and Monte Carlo Simulator to inform your financial path quickly and
+          efficiently, <span className="font-bold">giving you time back</span>.
         </p>
         <button
           type="button"
@@ -364,7 +366,29 @@ const MILITARY_SAMPLE = [
 /** Guest homepage only. Names the three military incomes and a sample blend. */
 export function MilitaryHousehold() {
   const [open, setOpen] = useState<(typeof MILITARY_SAMPLE)[number]["id"] | null>(null);
+  const [finePointer, setFinePointer] = useState(false);
+  const gridRef = useRef<HTMLDivElement>(null);
   const active = MILITARY_SAMPLE.find((row) => row.id === open);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const apply = () => setFinePointer(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
+
+  useEffect(() => {
+    if (!open || finePointer) return;
+    function close(event: PointerEvent) {
+      const target = event.target;
+      if (target instanceof Node && gridRef.current?.contains(target)) return;
+      setOpen(null);
+    }
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [open, finePointer]);
+
   return (
     <section className="bg-bg">
       <div className="mx-auto w-full max-w-3xl px-2" aria-hidden="true">
@@ -382,13 +406,23 @@ export function MilitaryHousehold() {
           the Monte Carlo engine, and a few moments of your time, shows what that mix can pay in
           retirement.
         </p>
-        <div className="mt-6 grid w-full max-w-3xl gap-3 sm:grid-cols-3">
+        <div ref={gridRef} className="mt-6 grid w-full max-w-3xl gap-3 sm:grid-cols-3">
           {MILITARY_SAMPLE.map((row) => (
             <div
               key={row.id}
-              onMouseEnter={() => setOpen(row.id)}
-              onMouseLeave={() => setOpen(null)}
-              className="rounded-lg bg-white px-4 py-4 shadow-[0_0_0_1px_var(--color-border)]"
+              onPointerEnter={(event) => {
+                if (event.pointerType !== "mouse") return;
+                setOpen(row.id);
+              }}
+              onPointerLeave={(event) => {
+                if (event.pointerType !== "mouse") return;
+                setOpen(null);
+              }}
+              onClick={() => {
+                if (finePointer) return;
+                setOpen((current) => (current === row.id ? null : row.id));
+              }}
+              className="touch-pan-y rounded-lg bg-white px-4 py-4 shadow-[0_0_0_1px_var(--color-border)]"
             >
               <p className="text-sm text-muted">{row.label}</p>
               <p className="mt-1 font-display text-2xl font-semibold text-[#1a2330] underline decoration-[#3a8a58] decoration-2 underline-offset-4">{row.amount}</p>
@@ -401,8 +435,9 @@ export function MilitaryHousehold() {
           lump sum a zero-risk annuity would need to pay the same checks.
         </p>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
-          Mouse over a payment above. Military retired pay and VA show the zero-risk annuity at age 50.
-          TSP shows the balance at the required-withdrawal age, 75.
+          {finePointer
+            ? "Mouse over a payment above. Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at the required-withdrawal age, 75."
+            : "Tap a payment above. Tap it again, or tap outside the cards, to return to the sample. Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at the required-withdrawal age, 75."}
         </p>
         <div className="mt-3 w-full max-w-3xl rounded-lg bg-[#1a2330] px-4 py-4 text-white">
           {active ? (
