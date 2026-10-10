@@ -100,7 +100,27 @@ function freshenStoredCopy(body: string): string {
     .replaceAll("Project through primary age", "Project through longevity age")
     .replaceAll("project through primary age", "project through longevity age")
     .replaceAll("“project through” age", "longevity age")
-    .replaceAll("For financial professionals, or nerds", "For financial professionals");
+    .replaceAll("For financial professionals, or nerds", "For financial professionals")
+    .replaceAll(
+      "Individual ($4/month or $40/year): one household, unlimited accounts, contributions, and incomes, plus the full MACH OODA Financial Analysis and OODA AI on that MACH RUN.",
+      "Individual ($4/month or $40/year) is one household with unlimited accounts, contributions, and incomes. It adds the full MACH OODA Financial Analysis and OODA AI on that MACH RUN.",
+    )
+    .replaceAll(
+      "In Family, set the retirement goal date — there is an “already retired” path so you can put the month and year you left work.",
+      "In Family, set the retirement goal date. An already-retired path lets you enter the month and year you left work.",
+    )
+    .replaceAll(
+      "For tax-qualified accounts, required minimum distributions are modeled in the background when the rules say they apply, and called out in the analysis.",
+      "For tax-qualified accounts, required minimum distributions are modeled when the rules say they apply. The analysis calls them out.",
+    )
+    .replaceAll(
+      "Individual Unlimited and Advisor can download a password-protected .machrun backup — that password is not the site login, and MACH RUN does not keep it.",
+      "Individual Unlimited and Advisor can download a password-protected .machrun backup. That password is not the site login. MACH RUN does not keep it.",
+    )
+    .replaceAll(
+      "A retired U.S. Air Force fighter pilot who wanted one system for multiple stages of income, numerous types of accounts and contributions, a nest-egg goal, and math-driven estimations of date the money runs out.",
+      "A retired U.S. Air Force fighter pilot wanted one system for staged income, accounts, and contributions. It also holds a nest-egg goal and estimates the date the money runs out.",
+    );
 }
 
 function preferCurrentLegal(page: SitePage): SitePage {
