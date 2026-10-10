@@ -32,7 +32,7 @@ export function MachOrbit({ compact = false }: { compact?: boolean }) {
       </div>
       <img
         src="/brand/mach-run-logo.jpg?v=23"
-        alt=""
+        alt="MACH RUN"
         width={887}
         height={271}
         className="mach-run-pulse mach-orbit-logo"

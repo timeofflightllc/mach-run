@@ -121,7 +121,7 @@ function FooterMark() {
   return (
     <img
       src="/brand/mach-mark.png"
-      alt=""
+      alt="MACH RUN monogram, an M and R with a chevron between them"
       width={373}
       height={354}
       className="mx-auto mt-3 h-12 w-12 rounded-lg object-cover"
@@ -219,7 +219,7 @@ export function MachFooter({
             <Link to="/" className="inline-flex shrink-0 items-center" aria-label="MACH RUN">
               <img
                 src="/brand/mach-run-logo.jpg?v=23"
-                alt=""
+                alt="MACH RUN"
                 width={887}
                 height={271}
                 className="h-9 w-auto sm:h-11"
