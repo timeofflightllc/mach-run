@@ -1,3 +1,4 @@
+import { contentPageSchema } from "@/lib/content-page-schema";
 import {
   ADVISOR_MONTHLY_USD,
   ADVISOR_UNLIMITED_MONTHLY_USD,
@@ -64,6 +65,8 @@ export function pageHead({
   jsonLd?: JsonLd[];
 }) {
   const url = `${SITE}${path}`;
+  const pageSchema = !noindex && jsonLd.length === 0 ? contentPageSchema(title, path) : null;
+  const blocks = pageSchema ? [...jsonLd, pageSchema] : jsonLd;
   return {
     meta: [
       { title },
@@ -74,7 +77,7 @@ export function pageHead({
       { property: "og:url", content: url },
       { name: "twitter:title", content: title },
       { name: "twitter:description", content: description },
-      ...jsonLd.map((data) => ({ "script:ld+json": data })),
+      ...blocks.map((data) => ({ "script:ld+json": data })),
     ],
     links: [{ rel: "canonical", href: url }],
   };
