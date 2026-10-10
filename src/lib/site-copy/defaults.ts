@@ -39,13 +39,26 @@ export const DEFAULT_PAGES: SitePage[] = [
     slug: "about",
     title: "About",
     kicker: "",
-    body: `MACH RUN is The Supersonic Retirement Calculator. You type the household as it stands — family, accounts, paychecks, spending, contributions — then hit Calculate. The engine runs an OODA Loop: Observe, Orient, Decide, Act.
+    body: `FIGHTS ON!
 
-It was built by a retired U.S. Air Force fighter pilot who wanted one place to see income sources, investment contributions (all types), and a nest-egg goal on the same strip. The name is Measure, Allocate, Compound, Harvest — MACH. The method is Boyd’s OODA loop, used here as a way to look at money — but was first used in teaching younger fighter pilots how to excel at dogfighting.
+MACH RUN is *The Supersonic Retirement Calculator*.
 
-Free gets you in the cockpit with limits. Paid plans unlock the full ledger, Net Worth, encrypted backups, and OODA AI. None of it is financial, tax, legal, or investment advice. It is a planning sketch from the numbers you type.
+I wanted one concise place to see income, investments, and a nest-egg goal, at a fair price. None existed. So I built it.
 
-Questions, a bug, or a feature you want on the jet — [Contact](/contact). What shipped recently lives on [Updates](/announcements). Common how-to lives on [FAQ](/faq).`,
+The name is MACH RUN - Measure, Allocate, Compound, Harvest. The method is Colonel John Boyd's OODA loop. John Boyd was one of the greatest fighter pilots in U.S. Air Force history. As a retired U.S. Air Force fighter pilot, I found it useful to apply OODA to my finances and financial planning. Boyd created OODA to teach young fighter pilots how to kill and survive. I use it here as a way to look at your money.
+
+Join for free. Type your numbers, run it, change an input, and run it again. Iterate as many times as you want. All data is encrypted in transit and at rest.
+
+Paid plans unlock Net Worth, encrypted/downloadable backups, and OODA AI. MACH RUN is not a financial advisor, and it does not sell financial products. It is a tool in your toolkit. Like how an advanced radar in a fighter jet increases the pilot's situational awareness (SA), a robust retirement calculator -- with unlimited iterations -- can do the same for SA of your finances. Greater SA of your family's financial position raises the odds you hit your retirement goal.
+
+You alone own the decisions. Talk to a professional fiduciary before you act on them.
+
+Thanks for checking out MACH RUN. Find me on [LinkedIn](https://www.linkedin.com/in/cainf-15advanced/).
+
+ONWARD!
+
+Matthew "Cain" Olde
+Founder, MACHRUN.com`,
   },
   {
     slug: "method",

@@ -128,6 +128,7 @@ function preferCurrentLegal(page: SitePage): SitePage {
   if (!fresh) return page;
   if (page.slug === "privacy" && !page.body.includes("Cloudflare Turnstile")) return fresh;
   if (page.slug === "legal" && !page.body.includes("Florida law governs")) return fresh;
+  if (page.slug === "about" && !page.body.includes("FIGHTS ON!")) return fresh;
   return page;
 }
 
