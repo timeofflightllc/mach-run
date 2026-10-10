@@ -12,7 +12,7 @@ import { pageHead } from "@/lib/seo";
 export const Route = createFileRoute("/announcements")({
   head: () =>
     pageHead({
-      title: "Updates | MACH RUN",
+      title: "Updates to the retirement calculator | MACH RUN",
       description: "What shipped recently on the MACH RUN retirement calculator.",
       path: "/announcements",
     }),

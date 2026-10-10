@@ -44,7 +44,7 @@ import { pageHead } from "@/lib/seo";
 export const Route = createFileRoute("/top-3-desk")({
   head: () =>
     pageHead({
-      title: "Desk | MACH RUN",
+      title: "Top 3 desk for site copy | MACH RUN",
       description: "MACH RUN operations desk.",
       path: "/top-3-desk",
       noindex: true,

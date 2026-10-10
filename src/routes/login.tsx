@@ -14,7 +14,7 @@ import { pageHead } from "@/lib/seo";
 export const Route = createFileRoute("/login")({
   head: () =>
     pageHead({
-      title: "Sign In | MACH RUN",
+      title: "Sign in to the retirement calculator | MACH RUN",
       description: "Sign in or create a MACH RUN account.",
       path: "/login",
       noindex: true,

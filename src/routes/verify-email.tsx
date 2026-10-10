@@ -23,7 +23,7 @@ const PENDING_PASSWORD = "mach-pending-password";
 export const Route = createFileRoute("/verify-email")({
   head: () =>
     pageHead({
-      title: "Verify Email | MACH RUN",
+      title: "Verify your MACH RUN email address | MACH RUN",
       description: "Enter the code sent to your email.",
       path: "/verify-email",
       noindex: true,

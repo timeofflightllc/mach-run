@@ -12,7 +12,7 @@ import { pageHead } from "@/lib/seo";
 export const Route = createFileRoute("/contact")({
   head: () =>
     pageHead({
-      title: "Contact | MACH RUN",
+      title: "Contact the retirement calculator | MACH RUN",
       description: "Ask about the retirement calculator, billing, or your MACH RUN account.",
       path: "/contact",
     }),

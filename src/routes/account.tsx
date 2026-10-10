@@ -32,7 +32,7 @@ import { pageHead } from "@/lib/seo";
 export const Route = createFileRoute("/account")({
   head: () =>
     pageHead({
-      title: "Account | MACH RUN",
+      title: "Your MACH RUN account settings | MACH RUN",
       description: "Your MACH RUN account, billing, and backup.",
       path: "/account",
       noindex: true,

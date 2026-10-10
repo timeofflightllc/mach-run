@@ -9,7 +9,7 @@ import { pageHead } from "@/lib/seo";
 export const Route = createFileRoute("/legal")({
   head: () =>
     pageHead({
-      title: "Legal | MACH RUN",
+      title: "Legal terms for the calculator | MACH RUN",
       description:
         "Terms and the disclaimer. MACH RUN is a planning sketch, not financial, tax, or legal advice.",
       path: "/legal",

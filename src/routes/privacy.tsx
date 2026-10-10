@@ -9,7 +9,7 @@ import { pageHead } from "@/lib/seo";
 export const Route = createFileRoute("/privacy")({
   head: () =>
     pageHead({
-      title: "Privacy | MACH RUN",
+      title: "Privacy policy for the calculator | MACH RUN",
       description:
         "How MACH RUN handles the household numbers you type. Encrypted in transit and at rest. We do not sell them.",
       path: "/privacy",
