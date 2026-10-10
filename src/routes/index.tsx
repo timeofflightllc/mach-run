@@ -1544,6 +1544,7 @@ function Home() {
       </header>
       {heroOn ? <GuestHero onShowFamily={showFamily} onDemo={showDemo} /> : null}
       <div id={heroOn ? "guest-dock" : undefined}>
+      {heroOn ? <MilitaryHousehold /> : null}
       {heroOn ? (
         <div id="master-caution" className="relative z-20 border-t border-[#8a7020] bg-[#2c220e]">
           <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-2 py-4 text-center">
@@ -1573,7 +1574,6 @@ function Home() {
           </div>
         </div>
       ) : null}
-      {heroOn ? <MilitaryHousehold /> : null}
       <div
         ref={stepsRef}
         className={stepsH != null ? "overflow-y-auto overscroll-contain bg-bg" : undefined}

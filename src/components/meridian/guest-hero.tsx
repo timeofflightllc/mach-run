@@ -366,7 +366,10 @@ export function MilitaryHousehold() {
   const [open, setOpen] = useState<(typeof MILITARY_SAMPLE)[number]["id"] | null>(null);
   const active = MILITARY_SAMPLE.find((row) => row.id === open);
   return (
-    <section className="border-t border-border bg-bg">
+    <section className="bg-bg">
+      <div className="mx-auto w-full max-w-3xl px-2" aria-hidden="true">
+        <div style={{ paddingTop: "calc(12.5% + 1.125rem)" }} />
+      </div>
       <div className="page-gutter mx-auto flex w-full max-w-none flex-col items-center py-8 text-center sm:py-12">
         <p className="font-display text-lg font-semibold uppercase tracking-[0.14em] text-[#3a8a58] sm:text-2xl">
           For military and veteran households
