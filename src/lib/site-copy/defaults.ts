@@ -2,6 +2,7 @@ import { ANNOUNCEMENTS } from "@/lib/announcements";
 import { DEFAULT_FOOTER_COPY, serializeFooterCopy } from "./footer-copy";
 import { DEFAULT_PLANNER_COPY, serializePlannerCopy } from "./planner-copy";
 import { DEFAULT_BOYD_QUOTES } from "./boyd-quotes";
+import { DEFAULT_HERO_COPY, serializeHeroCopy } from "./hero-copy";
 import { DEFAULT_PRICING_COPY, serializePricingCopy } from "./pricing-copy";
 import type { SiteAnnouncement, SitePage } from "./types";
 
@@ -266,6 +267,12 @@ If this policy changes in a material way, we will update this page and the date 
     title: "Boyd quotes",
     kicker: "",
     body: DEFAULT_BOYD_QUOTES.join("\n"),
+  },
+  {
+    slug: "hero",
+    title: "Hero",
+    kicker: "",
+    body: serializeHeroCopy(DEFAULT_HERO_COPY),
   },
 ];
 

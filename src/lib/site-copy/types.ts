@@ -10,6 +10,7 @@ export const SITE_PAGE_SLUGS = [
   "footer",
   "planner",
   "boyd",
+  "hero",
 ] as const;
 export type SitePageSlug = (typeof SITE_PAGE_SLUGS)[number];
 

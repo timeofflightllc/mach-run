@@ -3,6 +3,7 @@ import { OodaLoop } from "@/components/meridian/how-it-works";
 import { PrimaryButton } from "@/components/ui/field";
 import { demoPlan, planHasEntries } from "@/lib/plan/demo-plan";
 import { usePlanStore } from "@/lib/plan/store";
+import { useHeroCopy } from "@/components/meridian/use-hero-copy";
 
 /** Line sketch of a four-ship bomb burst. Tails point back at the laptop; smoke does the rest. */
 export function BombBurstSketch({ raised = false }: { raised?: boolean }) {
@@ -98,6 +99,7 @@ export function GuestHero({
   onDemo: () => void;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const hero = useHeroCopy();
   const [index, setIndex] = useState(3);
   const [motion, setMotion] = useState(true);
   const indexRef = useRef(3);
@@ -161,14 +163,11 @@ export function GuestHero({
     <section className="overflow-x-clip border-t border-border bg-bg">
       <div className="page-gutter mx-auto flex max-w-none flex-col items-center pt-2 sm:pt-7">
         <h1 className="max-w-4xl text-center font-display text-[1.25rem] font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
-          One place to see your whole household's retirement - income, TSP, military retired pay, VA,
-          and your nest-egg goal.
+          <HeroLines text={hero.headline} />
         </h1>
         <div className="mt-1.5 max-w-3xl text-center text-[0.667rem] leading-relaxed text-muted sm:mt-4 sm:text-lg">
           <p>
-            See your whole household's retirement in one place - income, investments, and your
-            nest-egg goal, with unlimited what-if runs. Free to start. $4 a month unlocks incredible
-            features.
+            <HeroLines text={hero.text} />
           </p>
         </div>
         <div className="mt-3 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:mt-6 sm:flex-row sm:flex-wrap sm:gap-3">
@@ -281,6 +280,16 @@ export function GuestHero({
       </div>
     </section>
   );
+}
+
+function HeroLines({ text }: { text: string }) {
+  const rows = text.split("\n");
+  return rows.map((row, index) => (
+    <span key={index}>
+      {index > 0 ? <br /> : null}
+      {row}
+    </span>
+  ));
 }
 
 function LaptopPane({ which }: { which: 0 | 1 | 2 }) {

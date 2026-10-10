@@ -27,6 +27,12 @@ import {
   type PlannerCopy,
 } from "@/lib/site-copy/planner-copy";
 import {
+  DEFAULT_HERO_COPY,
+  parseHeroCopy,
+  serializeHeroCopy,
+  type HeroCopy,
+} from "@/lib/site-copy/hero-copy";
+import {
   bulletsFromText,
   bulletsToText,
   DEFAULT_PRICING_COPY,
@@ -46,6 +52,7 @@ const PAGE_LABEL: Record<SitePageSlug, string> = {
   footer: "Footer content",
   planner: "Calculator",
   boyd: "Boyd quotes",
+  hero: "Hero",
 };
 
 function BulletLines({
@@ -352,6 +359,7 @@ export function SiteCopyDesk() {
   const [pricing, setPricing] = useState<PricingCopy>(DEFAULT_PRICING_COPY);
   const [footer, setFooter] = useState<FooterCopy>(DEFAULT_FOOTER_COPY);
   const [planner, setPlanner] = useState<PlannerCopy>(DEFAULT_PLANNER_COPY);
+  const [hero, setHero] = useState<HeroCopy>(DEFAULT_HERO_COPY);
   const [status, setStatus] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Partial<Record<SitePageSlug | string, Date>>>({});
   const [busy, setBusy] = useState(false);
@@ -387,6 +395,7 @@ export function SiteCopyDesk() {
     if (draft?.slug === "pricing") setPricing(parsePricingCopy(draft.body));
     if (draft?.slug === "footer") setFooter(parseFooterCopy(draft.body));
     if (draft?.slug === "planner") setPlanner(parsePlannerCopy(draft.body));
+    if (draft?.slug === "hero") setHero(parseHeroCopy(draft.body));
   }, [draft]);
 
   function onPricingChange(next: PricingCopy) {
@@ -410,6 +419,13 @@ export function SiteCopyDesk() {
     );
   }
 
+  function onHeroChange(next: HeroCopy) {
+    setHero(next);
+    setDraft((d) =>
+      d ? { ...d, title: "Hero", kicker: "", body: serializeHeroCopy(next) } : d,
+    );
+  }
+
   async function savePage() {
     if (!draft) return;
     setBusy(true);
@@ -422,7 +438,9 @@ export function SiteCopyDesk() {
             ? { ...draft, title: "Footer content", kicker: "", body: serializeFooterCopy(footer) }
             : draft.slug === "planner"
               ? { ...draft, title: "Calculator", kicker: "", body: serializePlannerCopy(planner) }
-              : draft;
+              : draft.slug === "hero"
+                ? { ...draft, title: "Hero", kicker: "", body: serializeHeroCopy(hero) }
+                : draft;
       const r = await saveOpsSitePageFn({ data: payload });
       if (r.ok) {
         setSavedAt((prev) => ({ ...prev, [draft.slug]: new Date() }));
@@ -486,6 +504,7 @@ export function SiteCopyDesk() {
   const footerOpen = slug === "footer";
   const plannerOpen = slug === "planner";
   const boydOpen = slug === "boyd";
+  const heroOpen = slug === "hero";
 
   return (
     <div className="space-y-6">
@@ -500,7 +519,9 @@ export function SiteCopyDesk() {
                 ? "Lines under Family, Accounts, Income, Spending, and Contributions."
                 : boydOpen
                   ? "One John Boyd quote per line. Blank lines are ignored."
-                  : "About, The Method, FAQ, Contact intro, Privacy, Legal, and the Updates header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
+                  : heroOpen
+                    ? "The big line on the homepage, and the paragraph under it. A new line in the box starts a new line on the page."
+                    : "About, The Method, FAQ, Contact intro, Privacy, Legal, and the Updates header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
         </p>
         <div className="mt-3 inline-flex flex-wrap rounded-lg bg-elevated p-1">
           {SITE_PAGE_SLUGS.map((id) => (
@@ -567,6 +588,23 @@ export function SiteCopyDesk() {
               <SavedAt at={savedAt[slug]} />
             </div>
           </div>
+        ) : draft && heroOpen ? (
+          <>
+            <div className="mt-4 space-y-4">
+              <Field label="Hero headline">
+                <Area rows={3} value={hero.headline} onChange={(headline) => onHeroChange({ ...hero, headline })} />
+              </Field>
+              <Field label="Hero text">
+                <Area rows={4} value={hero.text} onChange={(text) => onHeroChange({ ...hero, text })} />
+              </Field>
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
+                Save Hero
+              </PrimaryButton>
+              <SavedAt at={savedAt[slug]} />
+            </div>
+          </>
         ) : draft ? (
           <div className="mt-4 space-y-3">
             <Field label="Title">
