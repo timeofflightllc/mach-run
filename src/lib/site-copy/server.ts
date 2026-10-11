@@ -129,6 +129,20 @@ function preferCurrentLegal(page: SitePage): SitePage {
   if (page.slug === "privacy" && !page.body.includes("Cloudflare Turnstile")) return fresh;
   if (page.slug === "legal" && !page.body.includes("Florida law governs")) return fresh;
   if (page.slug === "about" && !page.body.includes("FIGHTS ON!")) return fresh;
+  return freshenKicker(page);
+}
+
+function freshenKicker(page: SitePage): SitePage {
+  const fresh = DEFAULT_PAGES.find((item) => item.slug === page.slug);
+  if (!fresh) return page;
+  const oldMethod = new Set([
+    "How the MACH RUN engine actually flies the numbers you type.",
+    "How the supersonic engine generates your MACH RUN.",
+  ]);
+  if (page.slug === "method" && oldMethod.has(page.kicker)) return { ...page, kicker: fresh.kicker };
+  if (page.slug === "faq" && page.kicker === "Kick the tires. Then light the fires.") {
+    return { ...page, kicker: fresh.kicker };
+  }
   return page;
 }
 

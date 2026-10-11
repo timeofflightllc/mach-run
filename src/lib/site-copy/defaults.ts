@@ -63,7 +63,8 @@ Founder, MACHRUN.com`,
   {
     slug: "method",
     title: "The Method",
-    kicker: "How the MACH RUN engine actually flies the numbers you type.",
+    kicker:
+      "A MACH RUN is the press of Calculate. Observe is family and accounts. Orient is paychecks and spending. Decide is contributions. Act is the charts, the ledger, and the analysis. The engine runs one month at a time through the longevity age you set. Change an input and Act holds the last run until you calculate again.",
     body: `# How a MACH RUN works
 You fill the household as it stands. Observe is family and accounts. Orient is paychecks and spending. Decide is contributions into those accounts. Charts, the ledger, and the MACH OODA Financial Analysis stay frozen until you hit Calculate. That press is the MACH RUN. Change an input after that and Act holds the last run until you Calculate again.
 
@@ -96,7 +97,8 @@ Fill Observe, Orient, and Decide. Hit Calculate. That is the method.`,
   {
     slug: "faq",
     title: "FAQ",
-    kicker: "Kick the tires. Then light the fires.",
+    kicker:
+      "MACH RUN is a retirement calculator. You type the household, hit Calculate, and read the ledger. These answers cover how to start, what is free, Social Security, VA, military retired pay, and what is not advice. It is a planning snapshot from the numbers you type, not financial advice.",
     body: `MACH RUN is a calculator, not a crystal ball. These answers match how the site works today. None of it is financial, tax, legal, or investment advice — it is a planning sketch from the numbers you type.
 
 # What is MACH RUN?
