@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { PieceCrumbs, RelatedPieces } from "@/components/meridian/piece-links";
@@ -7,6 +7,13 @@ import { contentPageSchema } from "@/lib/content-page-schema";
 import { pageHead } from "@/lib/seo";
 import { loadPublicSiteCopy, pageBySlug } from "@/lib/site-copy/api";
 import { COMPARE_COLUMNS, parseCompareCopy } from "@/lib/site-copy/compare-copy";
+
+const PHONE_LABEL: Record<(typeof COMPARE_COLUMNS)[number], string> = {
+  "MACHRUN.com": "MACH RUN",
+  FIRECalc: "FIRECalc",
+  "MS Excel spreadsheet": "Excel",
+  "Quicken.com": "Quicken",
+};
 
 const COMPARE_TITLE = "Compare MACH RUN to FIRECalc and Quicken | MACH RUN";
 
@@ -91,6 +98,80 @@ function Mark({ on }: { on: boolean }) {
   );
 }
 
+function ProductStack({
+  name,
+  children,
+}: {
+  name: (typeof COMPARE_COLUMNS)[number];
+  children: ReactNode;
+}) {
+  const art = COLUMN_ART[name];
+  return (
+    <div className="flex min-w-0 flex-col items-center gap-1 px-0.5 text-center">
+      {art.logo ? (
+        <img
+          src={art.logo}
+          alt=""
+          className={
+            art.wide ? "h-5 w-auto max-w-full object-contain" : "h-6 w-6 object-contain"
+          }
+        />
+      ) : (
+        <span className="h-6" aria-hidden="true" />
+      )}
+      <span className="text-[0.7rem] font-semibold leading-tight text-[#1a2330]">{PHONE_LABEL[name]}</span>
+      {children}
+    </div>
+  );
+}
+
+function ComparePhone({
+  copy,
+  rows,
+  mid,
+}: {
+  copy: ReturnType<typeof parseCompareCopy>;
+  rows: ReturnType<typeof parseCompareCopy>["rows"];
+  mid: number;
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg bg-white shadow-[0_0_0_1px_var(--color-border)]">
+      {rows.map((row, rowIndex) => (
+        <Fragment key={`phone-${rowIndex}-${row.feature}`}>
+          <div className="border-b border-border">
+            <p className="bg-[#efe6d4] px-3 py-3 text-sm font-semibold leading-snug text-fg">
+              {row.feature}
+            </p>
+            <div className="grid grid-cols-4 bg-[#f7f2e6] px-1 py-2">
+              {row.marks.map((on, index) => (
+                <ProductStack key={COMPARE_COLUMNS[index]} name={COMPARE_COLUMNS[index]}>
+                  <Mark on={on} />
+                  <span className="sr-only">{on ? "Yes" : "No"}</span>
+                </ProductStack>
+              ))}
+            </div>
+          </div>
+          {rowIndex === mid ? (
+            <div className="border-b border-border bg-[#efe6d4] px-3 py-4 text-center">
+              <StartButton label={copy.button} />
+            </div>
+          ) : null}
+        </Fragment>
+      ))}
+      <div>
+        <p className="bg-[#efe6d4] px-3 py-3 text-center text-xl font-semibold text-fg">PRICING:</p>
+        <div className="grid grid-cols-4 bg-[#f7f2e6] px-1 py-3">
+          {copy.prices.map((price, index) => (
+            <ProductStack key={COMPARE_COLUMNS[index]} name={COMPARE_COLUMNS[index]}>
+              <span className="text-[0.7rem] font-semibold leading-tight text-fg">{price}</span>
+            </ProductStack>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Compare() {
   const copy = parseCompareCopy(pageBySlug(Route.useLoaderData(), "compare").body);
   const rows = copy.rows.filter((row) => row.feature.trim());
@@ -105,19 +186,28 @@ function Compare() {
           {copy.kicker ? <p className="mt-2 text-lg text-muted">{copy.kicker}</p> : null}
         </header>
         {copy.intro || rows.length ? (
-          <div className="grid w-full grid-cols-[1fr_1fr_minmax(0,max-content)_1fr_1fr] gap-y-8">
-            {copy.intro ? (
-              <p className="col-span-4 col-start-2 min-w-0 text-base leading-relaxed text-fg">
-                <SiteCopyText text={copy.intro} />
-              </p>
-            ) : null}
-            <div
-              className={
-                copy.intro
-                  ? "col-start-3 row-start-2 w-max min-w-0 max-w-full overflow-x-auto rounded-lg bg-white shadow-[0_0_0_1px_var(--color-border)]"
-                  : "col-start-3 row-start-1 w-max min-w-0 max-w-full overflow-x-auto rounded-lg bg-white shadow-[0_0_0_1px_var(--color-border)]"
-              }
-            >
+          <div className="@container w-full">
+            <div className="space-y-8 @[48rem]:hidden">
+              {copy.intro ? (
+                <p className="text-base leading-relaxed text-fg">
+                  <SiteCopyText text={copy.intro} />
+                </p>
+              ) : null}
+              <ComparePhone copy={copy} rows={rows} mid={mid} />
+            </div>
+            <div className="hidden w-full grid-cols-[1fr_1fr_minmax(0,max-content)_1fr_1fr] gap-y-8 @[48rem]:grid">
+              {copy.intro ? (
+                <p className="col-span-4 col-start-2 min-w-0 text-base leading-relaxed text-fg">
+                  <SiteCopyText text={copy.intro} />
+                </p>
+              ) : null}
+              <div
+                className={
+                  copy.intro
+                    ? "col-start-3 row-start-2 w-max min-w-0 max-w-full overflow-x-auto rounded-lg bg-white shadow-[0_0_0_1px_var(--color-border)]"
+                    : "col-start-3 row-start-1 w-max min-w-0 max-w-full overflow-x-auto rounded-lg bg-white shadow-[0_0_0_1px_var(--color-border)]"
+                }
+              >
           <table className="w-max border-collapse text-left">
             <caption className="sr-only">
               MACH RUN compared with FIRECalc, a spreadsheet, and Quicken
@@ -205,6 +295,7 @@ function Compare() {
               </tr>
             </tbody>
           </table>
+              </div>
             </div>
           </div>
         ) : null}
