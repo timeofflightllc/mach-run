@@ -565,6 +565,31 @@ function netWorthPoints(plan: Plan, sim: SimResult, span: ChartSpan): NwPoint[] 
   );
 }
 
+function netWorthYDomain(
+  data: NwPoint[],
+  positiveKeys: string[] | null,
+): [number, number] | undefined {
+  let min = 0;
+  let max = 0;
+  for (const point of data) {
+    min = Math.min(min, point.liabilities, point.netWorth);
+    let top = Math.max(0, point.netWorth);
+    if (positiveKeys) {
+      let sum = 0;
+      for (const key of positiveKeys) sum += Number(point[key] ?? 0);
+      top = Math.max(top, sum);
+    } else {
+      top = Math.max(top, point.assets);
+    }
+    max = Math.max(max, top);
+  }
+  if (!(max > min)) return undefined;
+  // Pad each side by its own size. A full tick step would stretch a small loan
+  // down as far as the first positive step.
+  const below = min < 0 ? min - Math.abs(min) * 0.1 : 0;
+  return [below, max + max * 0.04];
+}
+
 function fakeNetWorthPoints(span: ChartSpan): NwPoint[] {
   if (span === 5) {
     const out: NwPoint[] = [];
@@ -1031,6 +1056,7 @@ export function NetWorthChart({
 }) {
   const real = plan.assumptions.dollars === "real";
   const [span, setSpan] = useState<ChartSpan>(10);
+  const [shape, setShape] = useState<WealthShape>("stacked");
   const { expanded, toggle, close } = useChartExpanded();
   const [minimized, setMinimized] = useState(readNetWorthMin);
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
@@ -1038,6 +1064,9 @@ export function NetWorthChart({
   const live = netWorthPoints(plan, sim, span);
   const data = locked ? fakeNetWorthPoints(span) : live;
   const hasDebt = data.some((d) => Math.abs(d.liabilities) > 1);
+  const accountsLive =
+    !locked &&
+    accounts.some((account) => data.some((point) => Math.abs(Number(point[account.key] ?? 0)) > 1));
   const x = axisProps(span);
   const shown = (id: string) => !hidden.has(id);
   const flip = (id: string) => {
@@ -1054,6 +1083,19 @@ export function NetWorthChart({
     { id: "netWorth", label: "Net worth" },
   ];
   const debtOn = !locked && shown("liabilities") && hasDebt;
+  const visibleKeys = accountsLive
+    ? accounts.filter((account) => shown(account.id)).map((account) => account.key)
+    : [];
+  const chartData = accountsLive
+    ? data.map((point) => {
+        let assetsShown = 0;
+        for (const key of visibleKeys) assetsShown += Number(point[key] ?? 0);
+        return { ...point, assetsShown };
+      })
+    : data;
+  const yDomain = (locked ? hasDebt : debtOn)
+    ? netWorthYDomain(data, accountsLive ? visibleKeys : null)
+    : undefined;
 
   if (locked && minimized) {
     return (
@@ -1089,6 +1131,8 @@ export function NetWorthChart({
           onPin={onPin}
           expanded={expanded}
           onExpand={locked ? undefined : toggle}
+          shape={locked ? undefined : shape}
+          onShape={locked ? undefined : setShape}
           leading={
             locked ? undefined : (
               <span className="inline-flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2">
@@ -1115,7 +1159,7 @@ export function NetWorthChart({
         />
         <div className={plotHeight(expanded, tall)}>
           <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
+            <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid stroke="var(--color-border)" vertical={false} />
               <XAxis
                 dataKey="t"
@@ -1134,7 +1178,9 @@ export function NetWorthChart({
                 tick={{ fill: tickFill, fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
-                width={debtOn ? 64 : 56}
+                width={yDomain ? 64 : 56}
+                domain={yDomain}
+                allowDataOverflow={Boolean(yDomain)}
               />
               <Tooltip
                 formatter={formatTip}
@@ -1179,34 +1225,54 @@ export function NetWorthChart({
               ) : (
                 <>
                   {debtOn ? <ReferenceLine y={0} stroke="#94a3b8" /> : null}
-                  {accounts.map((account) =>
-                    shown(account.id) ? (
-                      <Area
-                        key={account.id}
-                        type="monotone"
-                        dataKey={account.key}
-                        name={account.name}
-                        stackId="networth"
-                        stroke={account.color}
-                        fill={account.color}
-                        fillOpacity={0.72}
-                        strokeWidth={1.5}
+                  {shape === "stacked" && accountsLive
+                    ? accounts.map((account) =>
+                        shown(account.id) ? (
+                          <Bar
+                            key={account.id}
+                            dataKey={account.key}
+                            name={account.name}
+                            stackId="networth"
+                            fill={account.color}
+                            maxBarSize={22}
+                            isAnimationActive={false}
+                          />
+                        ) : null,
+                      )
+                    : (
+                        <Area
+                          type="monotone"
+                          dataKey={accountsLive ? "assetsShown" : "assets"}
+                          name="Assets"
+                          stroke="var(--color-positive)"
+                          fill="var(--color-positive)"
+                          fillOpacity={0.18}
+                          strokeWidth={2}
+                          isAnimationActive={false}
+                        />
+                      )}
+                  {shown("liabilities") ? (
+                    shape === "stacked" ? (
+                      <Bar
+                        dataKey="liabilities"
+                        name="Liabilities"
+                        fill="var(--color-negative)"
+                        maxBarSize={22}
                         isAnimationActive={false}
                       />
-                    ) : null,
-                  )}
-                  {shown("liabilities") ? (
-                    <Area
-                      type="monotone"
-                      dataKey="liabilities"
-                      name="Liabilities"
-                      stroke="var(--color-negative)"
-                      fill="var(--color-negative)"
-                      fillOpacity={0.18}
-                      strokeWidth={2}
-                      baseValue={0}
-                      isAnimationActive={false}
-                    />
+                    ) : (
+                      <Area
+                        type="monotone"
+                        dataKey="liabilities"
+                        name="Liabilities"
+                        stroke="var(--color-negative)"
+                        fill="var(--color-negative)"
+                        fillOpacity={0.18}
+                        strokeWidth={2}
+                        baseValue={0}
+                        isAnimationActive={false}
+                      />
+                    )
                   ) : null}
                   {shown("netWorth") ? (
                     <Line

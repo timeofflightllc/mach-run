@@ -57,13 +57,34 @@ import { GuestHero, MilitaryHousehold } from "@/components/meridian/guest-hero";
 import { homeJsonLd, pageHead } from "@/lib/seo";
 import { GhostButton, PrimaryButton } from "@/components/ui/field";
 
-/** Charts need the months. Drop the ledger detail so the run stays light. */
+/** Charts need the months. Keep the ledger the year table reads, including the account balances. */
 function simForCharts(sim: SimResult): SimResult {
   return {
     ...sim,
     months: sim.months.map((month) => {
-      const { detail: _detail, ...rest } = month;
-      return rest;
+      const detail = month.detail;
+      if (!detail) {
+        const { detail: _drop, ...rest } = month;
+        return rest;
+      }
+      return {
+        ...month,
+        detail: {
+          ordinaryTaxable: detail.ordinaryTaxable,
+          ssBenefit: detail.ssBenefit,
+          ssTaxable: detail.ssTaxable,
+          rmdTaxable: detail.rmdTaxable,
+          taxRatePct: detail.taxRatePct,
+          spendingLines: detail.spendingLines,
+          unallocatedSpent: detail.unallocatedSpent,
+          savedLines: detail.savedLines,
+          sweep: detail.sweep,
+          matchLines: detail.matchLines,
+          drawnLines: detail.drawnLines,
+          spendableLines: detail.spendableLines,
+          netWorthLines: detail.netWorthLines,
+        },
+      };
     }),
   };
 }
