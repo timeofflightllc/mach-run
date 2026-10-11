@@ -1191,101 +1191,72 @@ export function NetWorthChart({
                 itemStyle={{ color: "#4b5b6e" }}
               />
               <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
+              {debtOn ? <ReferenceLine y={0} stroke="#94a3b8" /> : null}
               {locked ? (
-                <>
-                  <Area
-                    type="monotone"
-                    dataKey="assets"
-                    name="Assets"
-                    stroke="var(--color-positive)"
-                    fill="var(--color-positive)"
-                    fillOpacity={0.14}
-                    strokeWidth={2}
-                    isAnimationActive={false}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="liabilities"
-                    name="Liabilities"
-                    stroke="var(--color-negative)"
-                    fill="var(--color-negative)"
-                    fillOpacity={0.18}
-                    strokeWidth={2}
-                    isAnimationActive={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="netWorth"
-                    name="Net worth"
-                    stroke="var(--color-accent)"
-                    strokeWidth={2.5}
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                </>
+                <Area
+                  type="monotone"
+                  dataKey="assets"
+                  name="Assets"
+                  stroke="var(--color-positive)"
+                  fill="var(--color-positive)"
+                  fillOpacity={0.14}
+                  strokeWidth={2}
+                  isAnimationActive={false}
+                />
+              ) : shape === "stacked" && accountsLive ? (
+                accounts
+                  .filter((account) => shown(account.id))
+                  .map((account) => (
+                    <Area
+                      key={account.id}
+                      type="monotone"
+                      dataKey={account.key}
+                      name={account.name}
+                      stackId="networth"
+                      stroke={account.color}
+                      fill={account.color}
+                      fillOpacity={0.82}
+                      strokeWidth={1.5}
+                      isAnimationActive={false}
+                    />
+                  ))
               ) : (
-                <>
-                  {[
-                    debtOn ? <ReferenceLine key="zero" y={0} stroke="#94a3b8" /> : null,
-                    ...(shape === "stacked" && accountsLive
-                      ? accounts
-                          .filter((account) => shown(account.id))
-                          .map((account) => (
-                            <Area
-                              key={account.id}
-                              type="monotone"
-                              dataKey={account.key}
-                              name={account.name}
-                              stackId="networth"
-                              stroke={account.color}
-                              fill={account.color}
-                              fillOpacity={0.82}
-                              strokeWidth={1.5}
-                              isAnimationActive={false}
-                            />
-                          ))
-                      : [
-                          <Area
-                            key="assets"
-                            type="monotone"
-                            dataKey={accountsLive ? "assetsShown" : "assets"}
-                            name="Assets"
-                            stroke="var(--color-positive)"
-                            fill="var(--color-positive)"
-                            fillOpacity={0.18}
-                            strokeWidth={2}
-                            isAnimationActive={false}
-                          />,
-                        ]),
-                    shown("liabilities") ? (
-                      <Area
-                        key="liabilities"
-                        type="monotone"
-                        dataKey="liabilities"
-                        name="Liabilities"
-                        stroke="var(--color-negative)"
-                        fill="var(--color-negative)"
-                        fillOpacity={0.18}
-                        strokeWidth={2}
-                        baseValue={0}
-                        isAnimationActive={false}
-                      />
-                    ) : null,
-                    shown("netWorth") ? (
-                      <Line
-                        key="netWorth"
-                        type="monotone"
-                        dataKey="netWorth"
-                        name="Net worth"
-                        stroke="var(--color-accent)"
-                        strokeWidth={2.5}
-                        dot={false}
-                        isAnimationActive={false}
-                      />
-                    ) : null,
-                  ].filter((node) => node != null)}
-                </>
+                <Area
+                  key="assets"
+                  type="monotone"
+                  dataKey={accountsLive ? "assetsShown" : "assets"}
+                  name="Assets"
+                  stroke="var(--color-positive)"
+                  fill="var(--color-positive)"
+                  fillOpacity={0.18}
+                  strokeWidth={2}
+                  isAnimationActive={false}
+                />
               )}
+              {locked || shown("liabilities") ? (
+                <Area
+                  type="monotone"
+                  dataKey="liabilities"
+                  name="Liabilities"
+                  stroke="var(--color-negative)"
+                  fill="var(--color-negative)"
+                  fillOpacity={0.18}
+                  strokeWidth={2}
+                  baseValue={0}
+                  isAnimationActive={false}
+                />
+              ) : null}
+              {locked || shown("netWorth") ? (
+                <Line
+                  type="monotone"
+                  dataKey="netWorth"
+                  name="Net worth"
+                  stroke="var(--color-accent)"
+                  strokeWidth={2.5}
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              ) : null}
             </ComposedChart>
           </ResponsiveContainer>
         </div>
