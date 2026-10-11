@@ -102,12 +102,10 @@ function Compare() {
         <PieceCrumbs path="/compare" />
         <header>
           <h1 className="font-display text-4xl text-fg sm:text-5xl">{copy.title}</h1>
-          {copy.kicker ? (
-            <h2 className="mt-2 max-w-3xl text-lg font-normal text-muted">{copy.kicker}</h2>
-          ) : null}
+          {copy.kicker ? <p className="mt-2 text-lg text-muted">{copy.kicker}</p> : null}
         </header>
         {copy.intro ? (
-          <p className="max-w-3xl text-base leading-relaxed text-fg">
+          <p className="text-base leading-relaxed text-fg">
             <SiteCopyText text={copy.intro} />
           </p>
         ) : null}
