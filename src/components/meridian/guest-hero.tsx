@@ -432,7 +432,36 @@ export function MilitaryHousehold() {
           the Monte Carlo engine, and a few moments of your time, shows what that mix can pay in
           retirement.
         </p>
-        <div ref={gridRef} className="mt-6 grid w-full max-w-3xl gap-3 sm:grid-cols-3">
+        <div className="mt-6 w-full max-w-3xl rounded-lg bg-[#1a2330] px-4 py-4 text-white">
+          <div className="grid">
+            <div className={active ? "invisible col-start-1 row-start-1" : "col-start-1 row-start-1"}>
+              <p className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-[#e8c547]">
+                Sample blend
+              </p>
+              <p className="mt-1 font-display text-3xl font-semibold">$6,500 a month</p>
+              <p className="mt-1 text-sm leading-relaxed text-white/80">
+                $78,000 in the first year of this example. Your MACH RUN uses the numbers you type.
+              </p>
+            </div>
+            {MILITARY_SAMPLE.map((row) => (
+              <div
+                key={row.id}
+                className={
+                  active?.id === row.id
+                    ? "col-start-1 row-start-1"
+                    : "invisible col-start-1 row-start-1"
+                }
+              >
+                <p className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-[#e8c547]">
+                  {row.kicker}
+                </p>
+                <p className="mt-1 font-display text-3xl font-semibold">{row.value}</p>
+                <p className="mt-1 text-sm leading-relaxed text-white/80">{row.note}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div ref={gridRef} className="mt-3 grid w-full max-w-3xl gap-3 sm:grid-cols-3">
           {MILITARY_SAMPLE.map((row) => (
             <div
               key={row.id}
@@ -465,27 +494,6 @@ export function MilitaryHousehold() {
             ? "Mouse over a payment above. Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at the required-withdrawal age, 75."
             : "Tap a payment above. Tap it again, or tap outside the cards, to return to the sample. Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at the required-withdrawal age, 75."}
         </p>
-        <div className="mt-3 w-full max-w-3xl rounded-lg bg-[#1a2330] px-4 py-4 text-white">
-          {active ? (
-            <>
-              <p className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-[#e8c547]">
-                {active.kicker}
-              </p>
-              <p className="mt-1 font-display text-3xl font-semibold">{active.value}</p>
-              <p className="mt-1 text-sm leading-relaxed text-white/80">{active.note}</p>
-            </>
-          ) : (
-            <>
-              <p className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-[#e8c547]">
-                Sample blend
-              </p>
-              <p className="mt-1 font-display text-3xl font-semibold">$6,500 a month</p>
-              <p className="mt-1 text-sm leading-relaxed text-white/80">
-                $78,000 in the first year of this example. Your MACH RUN uses the numbers you type.
-              </p>
-            </>
-          )}
-        </div>
       </div>
     </section>
   );
