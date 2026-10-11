@@ -2,11 +2,13 @@ import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
 import {
   Area,
+  Bar,
   CartesianGrid,
   ComposedChart,
   Customized,
   Legend,
   Line,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -17,6 +19,8 @@ import { Maximize2, X } from "lucide-react";
 import { usd, usdCompact } from "@/lib/plan/format";
 import type { SurvivalBand, SurvivalTraces } from "@/lib/plan/monte-carlo-run";
 import { PinToggle } from "@/components/meridian/chart-pin";
+import { hasBalanceSheet } from "@/lib/billing/limits";
+import { useEntitlement } from "@/lib/billing/use-entitlement";
 import type { MonthSnapshot, Plan, SimResult, YearSnapshot } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 
@@ -222,6 +226,9 @@ function ChartSpanBar({
   onPin,
   expanded,
   onExpand,
+  shape,
+  onShape,
+  leading,
 }: {
   span: ChartSpan;
   endAge: number;
@@ -230,9 +237,39 @@ function ChartSpanBar({
   onPin?: () => void;
   expanded?: boolean;
   onExpand?: () => void;
+  shape?: WealthShape;
+  onShape?: (next: WealthShape) => void;
+  leading?: ReactNode;
 }) {
   return (
     <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
+      {leading}
+      {leading ? (
+        <span className="h-8 w-px shrink-0 bg-slate-300" aria-hidden="true" />
+      ) : null}
+      {onShape ? (
+        <div className="inline-flex rounded-md bg-slate-100 p-0.5 shadow-[0_0_0_1px_#c8d2de]">
+          {(
+            [
+              { id: "stacked", label: "Stacked" },
+              { id: "area", label: "Area" },
+            ] as const
+          ).map((o) => (
+            <button
+              key={o.id}
+              type="button"
+              aria-pressed={shape === o.id}
+              onClick={() => onShape(o.id)}
+              className={cn(
+                "h-7 rounded px-2 text-[11px] font-medium leading-none",
+                shape === o.id ? "bg-accent text-accent-fg" : "text-slate-600 hover:text-slate-900",
+              )}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+      ) : null}
       <div className="inline-flex rounded-md bg-slate-100 p-0.5 shadow-[0_0_0_1px_#c8d2de]">
         {spanOptions(endAge).map((o) => (
           <button
@@ -265,16 +302,82 @@ function ChartSpanBar({
   );
 }
 
-type WealthPoint = { t: string | number; spendable: number; netWorth: number };
+type WealthShape = "stacked" | "area";
+
+type WealthPoint = {
+  t: string | number;
+  spendable: number;
+  netWorth: number;
+  [key: string]: string | number;
+};
+
+const STACK_COLORS = [
+  "#1f6f8b",
+  "#c4a15a",
+  "#3a8a58",
+  "#c46b4a",
+  "#6b5b95",
+  "#4f7cac",
+  "#8a6a3b",
+  "#b85c6a",
+  "#3d7a6a",
+  "#7a8f3a",
+  "#5c4a3a",
+  "#3d5a80",
+];
+
+function stackColor(index: number): string {
+  if (index < STACK_COLORS.length) return STACK_COLORS[index];
+  const hue = (index * 47) % 360;
+  return `hsl(${hue} 42% 42%)`;
+}
+
+function spendableSeries(plan: Plan) {
+  return plan.portfolios
+    .filter((p) => p.spendable)
+    .map((p, index) => ({
+      id: p.id,
+      name: p.name.trim() || "Account",
+      key: `s${index}`,
+      color: stackColor(index),
+    }));
+}
+
+function accountDollars(amount: number, nominalTotal: number, realTotal: number, real: boolean) {
+  if (!real) return Math.round(amount);
+  if (nominalTotal <= 0) return 0;
+  return Math.round(amount * (realTotal / nominalTotal));
+}
 
 function wealthPoints(plan: Plan, sim: SimResult, span: ChartSpan): WealthPoint[] {
   const real = plan.assumptions.dollars === "real";
+  const series = spendableSeries(plan);
+  const fill = (
+    point: WealthPoint,
+    lines: { id: string; amount: number }[] | undefined,
+    nominalTotal: number,
+    realTotal: number,
+  ) => {
+    const byId = new Map((lines ?? []).map((line) => [line.id, line.amount]));
+    for (const account of series) {
+      point[account.key] = accountDollars(byId.get(account.id) ?? 0, nominalTotal, realTotal, real);
+    }
+    return point;
+  };
   if (span === 5) {
-    return monthsInSpan(sim, plan.assumptions.asOfDate, 5).map((m) => ({
-      t: `${m.year}-${pad2(m.month)}`,
-      spendable: Math.round(real ? m.spendableEndReal : m.spendableEnd),
-      netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
-    }));
+    return monthsInSpan(sim, plan.assumptions.asOfDate, 5).map((m) =>
+      fill(
+        {
+          t: `${m.year}-${pad2(m.month)}`,
+          spendable: Math.round(real ? m.spendableEndReal : m.spendableEnd),
+          netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
+          liabilities: -Math.round(real ? m.liabilitiesEndReal : m.liabilitiesEnd),
+        },
+        m.detail?.spendableLines,
+        m.spendableEnd,
+        m.spendableEndReal,
+      ),
+    );
   }
   if (span === 10) {
     const byQ = new Map<string, MonthSnapshot>();
@@ -282,17 +385,33 @@ function wealthPoints(plan: Plan, sim: SimResult, span: ChartSpan): WealthPoint[
       const q = Math.ceil(m.month / 3);
       byQ.set(`${m.year}-Q${q}`, m);
     }
-    return [...byQ.entries()].map(([t, m]) => ({
-      t,
-      spendable: Math.round(real ? m.spendableEndReal : m.spendableEnd),
-      netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
-    }));
+    return [...byQ.entries()].map(([t, m]) =>
+      fill(
+        {
+          t,
+          spendable: Math.round(real ? m.spendableEndReal : m.spendableEnd),
+          netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
+          liabilities: -Math.round(real ? m.liabilitiesEndReal : m.liabilitiesEnd),
+        },
+        m.detail?.spendableLines,
+        m.spendableEnd,
+        m.spendableEndReal,
+      ),
+    );
   }
-  return yearsInView(sim, plan.assumptions.asOfDate, span).map((y) => ({
-    t: y.year,
-    spendable: Math.round(real ? y.endSpendableReal : y.endSpendable),
-    netWorth: Math.round(real ? y.endNetWorthReal : y.endNetWorth),
-  }));
+  return yearsInView(sim, plan.assumptions.asOfDate, span).map((y) =>
+    fill(
+      {
+        t: y.year,
+        spendable: Math.round(real ? y.endSpendableReal : y.endSpendable),
+        netWorth: Math.round(real ? y.endNetWorthReal : y.endNetWorth),
+        liabilities: -Math.round(real ? y.endLiabilitiesReal : y.endLiabilities),
+      },
+      y.spendableBalances,
+      y.endSpendable,
+      y.endSpendableReal,
+    ),
+  );
 }
 
 type CashPoint = {
@@ -436,6 +555,62 @@ function fakeNetWorthPoints(span: ChartSpan): NwPoint[] {
   });
 }
 
+function LiabilitiesToggle({
+  unlocked,
+  on,
+  onToggle,
+}: {
+  unlocked: boolean;
+  on: boolean;
+  onToggle: () => void;
+}) {
+  const [tip, setTip] = useState(false);
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setTip(true)}
+      onMouseLeave={() => setTip(false)}
+      onFocus={() => setTip(true)}
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setTip(false);
+      }}
+    >
+      <button
+        type="button"
+        aria-pressed={unlocked ? on : undefined}
+        aria-disabled={!unlocked}
+        onClick={() => {
+          if (unlocked) onToggle();
+        }}
+        className={cn(
+          "h-7 rounded px-2 text-[11px] font-medium leading-none shadow-[0_0_0_1px_#c8d2de]",
+          !unlocked
+            ? "cursor-not-allowed bg-slate-100 text-slate-400"
+            : on
+              ? "bg-accent text-accent-fg shadow-none"
+              : "bg-slate-100 text-slate-600 hover:text-slate-900",
+        )}
+      >
+        Liabilities
+      </button>
+      {!unlocked && tip ? (
+        <Link
+          to="/pricing"
+          className="absolute left-0 top-full z-30 block pt-1"
+        >
+          <span
+            role="tooltip"
+            className="block whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white shadow-lg"
+          >
+            <span className="underline decoration-white/70 underline-offset-2">Upgrade</span>
+            {" to make net worth available."}
+          </span>
+        </Link>
+      ) : null}
+    </div>
+  );
+}
+
 export function WealthChart({
   plan,
   sim,
@@ -450,10 +625,16 @@ export function WealthChart({
   tall?: boolean;
 }) {
   const real = plan.assumptions.dollars === "real";
+  const ent = useEntitlement();
+  const netWorthPaid = hasBalanceSheet(ent.plan);
   const [span, setSpan] = useState<ChartSpan>("horizon");
+  const [shape, setShape] = useState<WealthShape>("stacked");
+  const [showLiabilities, setShowLiabilities] = useState(false);
   const { expanded, toggle, close } = useChartExpanded();
   const data = wealthPoints(plan, sim, span);
+  const accounts = spendableSeries(plan);
   const x = axisProps(span);
+  const debtOn = netWorthPaid && showLiabilities;
 
   return (
     <ChartStage expanded={expanded} onClose={close} label="Spendable Wealth">
@@ -473,6 +654,18 @@ export function WealthChart({
         onPin={onPin}
         expanded={expanded}
         onExpand={toggle}
+        shape={shape}
+        onShape={setShape}
+        leading={
+          <span className="inline-flex items-center gap-2">
+            <span className="text-[11px] font-medium text-slate-600">Include In graph:</span>
+            <LiabilitiesToggle
+              unlocked={netWorthPaid}
+              on={showLiabilities}
+              onToggle={() => setShowLiabilities((open) => !open)}
+            />
+          </span>
+        }
       />
       <div className={plotHeight(expanded, tall)}>
         <ResponsiveContainer width="100%" height="100%">
@@ -495,7 +688,7 @@ export function WealthChart({
               tick={{ fill: tickFill, fontSize: 11 }}
               tickLine={false}
               axisLine={false}
-              width={56}
+              width={debtOn ? 64 : 56}
             />
             <Tooltip
               formatter={formatTip}
@@ -505,16 +698,65 @@ export function WealthChart({
               itemStyle={{ color: "#4b5b6e" }}
             />
             <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
-            <Area
-              type="monotone"
-              dataKey="spendable"
-              name="Spendable"
-              stroke="var(--color-accent)"
-              fill="var(--color-accent)"
-              fillOpacity={0.18}
-              strokeWidth={2}
-              isAnimationActive={false}
-            />
+            {debtOn ? <ReferenceLine y={0} stroke="#94a3b8" /> : null}
+            {shape === "stacked"
+              ? accounts.map((account) => (
+                  <Bar
+                    key={account.id}
+                    dataKey={account.key}
+                    name={account.name}
+                    stackId="spendable"
+                    fill={account.color}
+                    maxBarSize={22}
+                    isAnimationActive={false}
+                  />
+                ))
+              : (
+                  <Area
+                    type="monotone"
+                    dataKey="spendable"
+                    name="Spendable"
+                    stroke="var(--color-accent)"
+                    fill="var(--color-accent)"
+                    fillOpacity={0.18}
+                    strokeWidth={2}
+                    isAnimationActive={false}
+                  />
+                )}
+            {shape === "stacked" ? (
+              <Line
+                type="monotone"
+                dataKey="spendable"
+                name="Total"
+                stroke="#1a2330"
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
+            ) : null}
+            {debtOn ? (
+              shape === "stacked" ? (
+                <Bar
+                  dataKey="liabilities"
+                  name="Liabilities"
+                  fill="var(--color-negative)"
+                  maxBarSize={22}
+                  isAnimationActive={false}
+                />
+              ) : (
+                <Area
+                  type="monotone"
+                  dataKey="liabilities"
+                  name="Liabilities"
+                  stroke="var(--color-negative)"
+                  fill="var(--color-negative)"
+                  fillOpacity={0.18}
+                  strokeWidth={2}
+                  baseValue={0}
+                  isAnimationActive={false}
+                />
+              )
+            ) : null}
             <Line
               type="monotone"
               dataKey="netWorth"
@@ -546,11 +788,24 @@ export function CashChart({
   onPin?: () => void;
   tall?: boolean;
 }) {
-  const real = plan.assumptions.dollars === "real";
   const [span, setSpan] = useState<ChartSpan>("horizon");
+  const [shown, setShown] = useState({
+    income: true,
+    spending: true,
+    contributions: true,
+    guaranteed: true,
+  });
   const { expanded, toggle, close } = useChartExpanded();
   const data = cashPoints(plan, sim, span);
   const x = axisProps(span);
+  const flip = (key: keyof typeof shown) =>
+    setShown((current) => ({ ...current, [key]: !current[key] }));
+  const series = [
+    { key: "income" as const, label: "Income" },
+    { key: "spending" as const, label: "Spending" },
+    { key: "contributions" as const, label: "Contributions" },
+    { key: "guaranteed" as const, label: "Guaranteed" },
+  ];
 
   return (
     <ChartStage expanded={expanded} onClose={close} label="Annual Cash Flow">
@@ -576,6 +831,27 @@ export function CashChart({
         onPin={onPin}
         expanded={expanded}
         onExpand={toggle}
+        leading={
+          <span className="inline-flex items-center gap-2">
+            <span className="text-[11px] font-medium text-slate-600">Include In graph:</span>
+            {series.map((item) => (
+              <button
+                key={item.key}
+                type="button"
+                aria-pressed={shown[item.key]}
+                onClick={() => flip(item.key)}
+                className={cn(
+                  "h-7 rounded px-2 text-[11px] font-medium leading-none",
+                  shown[item.key]
+                    ? "bg-accent text-accent-fg"
+                    : "bg-slate-100 text-slate-600 shadow-[0_0_0_1px_#c8d2de] hover:text-slate-900",
+                )}
+              >
+                {item.label}
+              </button>
+            ))}
+          </span>
+        }
       />
       <div className={plotHeight(expanded, tall)}>
         <ResponsiveContainer width="100%" height="100%">
@@ -608,43 +884,51 @@ export function CashChart({
               itemStyle={{ color: "#4b5b6e" }}
             />
             <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
-            <Area
-              type="monotone"
-              dataKey="income"
-              name="Income"
-              stroke="var(--color-positive)"
-              fill="var(--color-positive)"
-              fillOpacity={0.16}
-              strokeWidth={2}
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="spending"
-              name="Spending"
-              stroke="var(--color-negative)"
-              strokeWidth={2}
-              dot={false}
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="contributions"
-              name="Contributions"
-              stroke="#1a2330"
-              strokeWidth={1.5}
-              dot={false}
-              isAnimationActive={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="guaranteed"
-              name="Guaranteed (pension / VA / SS)"
-              stroke="var(--color-accent)"
-              strokeWidth={1.5}
-              dot={false}
-              isAnimationActive={false}
-            />
+            {shown.income ? (
+              <Area
+                type="monotone"
+                dataKey="income"
+                name="Income"
+                stroke="var(--color-positive)"
+                fill="var(--color-positive)"
+                fillOpacity={0.16}
+                strokeWidth={2}
+                isAnimationActive={false}
+              />
+            ) : null}
+            {shown.spending ? (
+              <Line
+                type="monotone"
+                dataKey="spending"
+                name="Spending"
+                stroke="var(--color-negative)"
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
+            ) : null}
+            {shown.contributions ? (
+              <Line
+                type="monotone"
+                dataKey="contributions"
+                name="Contributions"
+                stroke="#1a2330"
+                strokeWidth={1.5}
+                dot={false}
+                isAnimationActive={false}
+              />
+            ) : null}
+            {shown.guaranteed ? (
+              <Line
+                type="monotone"
+                dataKey="guaranteed"
+                name="Guaranteed (pension / VA / SS)"
+                stroke="var(--color-accent)"
+                strokeWidth={1.5}
+                dot={false}
+                isAnimationActive={false}
+              />
+            ) : null}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
