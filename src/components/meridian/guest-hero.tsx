@@ -91,7 +91,7 @@ function SketchJet({
   );
 }
 
-const LAPTOP_SLIDES = ["act", "ooda", "futures", "analysis", "radar", "ledger"] as const;
+const LAPTOP_SLIDES = ["ooda", "act", "analysis", "radar", "ledger", "futures"] as const;
 type LaptopSlide = (typeof LAPTOP_SLIDES)[number];
 const SLIDE_COUNT = LAPTOP_SLIDES.length;
 const STRIP_COUNT = SLIDE_COUNT * 2 + 1;
@@ -374,7 +374,7 @@ export function GuestHero({
                   <div
                     className={
                       motion
-                        ? "flex h-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+                        ? "flex h-full transition-transform duration-[1100ms] ease-[cubic-bezier(0.4,0,0.2,1)] motion-reduce:transition-none"
                         : "flex h-full"
                     }
                     style={{
