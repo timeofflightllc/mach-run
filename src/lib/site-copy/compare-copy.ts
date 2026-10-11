@@ -92,7 +92,7 @@ export const DEFAULT_COMPARE_COPY: CompareCopy = {
   title: "Compare",
   kicker: "How does MACH RUN compare to other common retirement calculators?",
   intro:
-    "MACH RUN is the only column with a monthly projection from the numbers you type, 1,000 futures, and COLA on military retired pay, VA, and Social Security. FIRECalc is free and runs what-ifs. A spreadsheet has only the rows you build. Quicken Classic can hold some of the same pay. The checks below are what each one includes today.",
+    "MACH RUN is the only column with a monthly projection from the numbers you type, 1,000 futures, and COLA on military retired pay, VA, and Social Security. FIRECalc is free and runs what-ifs. A spreadsheet has only the rows you build, and lacks Monte Carlo and a seamless user interface. Quicken Classic can hold some of the same pay, but is not focused on retirement planning and is not made by veterans for veterans. Please see the table below for a robust comparison of MACH RUN to the other common products.",
   rows: DEFAULT_ROWS,
   prices: ["Free, then $4/mo", "Free", "Cost of the sheet", "$6.99/mo, billed yearly"],
   noteStar:

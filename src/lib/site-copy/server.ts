@@ -120,6 +120,10 @@ function freshenStoredCopy(body: string): string {
     .replaceAll(
       "A retired U.S. Air Force fighter pilot who wanted one system for multiple stages of income, numerous types of accounts and contributions, a nest-egg goal, and math-driven estimations of date the money runs out.",
       "A retired U.S. Air Force fighter pilot wanted one system for staged income, accounts, and contributions. It also holds a nest-egg goal and estimates the date the money runs out.",
+    )
+    .replaceAll(
+      "A spreadsheet has only the rows you build. Quicken Classic can hold some of the same pay. The checks below are what each one includes today.",
+      "A spreadsheet has only the rows you build, and lacks Monte Carlo and a seamless user interface. Quicken Classic can hold some of the same pay, but is not focused on retirement planning and is not made by veterans for veterans. Please see the table below for a robust comparison of MACH RUN to the other common products.",
     );
 }
 

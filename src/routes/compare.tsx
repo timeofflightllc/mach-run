@@ -104,12 +104,20 @@ function Compare() {
           <h1 className="font-display text-4xl text-fg sm:text-5xl">{copy.title}</h1>
           {copy.kicker ? <p className="mt-2 text-lg text-muted">{copy.kicker}</p> : null}
         </header>
-        {copy.intro ? (
-          <p className="text-base leading-relaxed text-fg">
-            <SiteCopyText text={copy.intro} />
-          </p>
-        ) : null}
-        <div className="mx-auto w-fit max-w-full overflow-x-auto rounded-lg bg-white shadow-[0_0_0_1px_var(--color-border)]">
+        {copy.intro || rows.length ? (
+          <div className="grid w-full grid-cols-[1fr_1fr_minmax(0,max-content)_1fr_1fr] gap-y-8">
+            {copy.intro ? (
+              <p className="col-span-4 col-start-2 min-w-0 text-base leading-relaxed text-fg">
+                <SiteCopyText text={copy.intro} />
+              </p>
+            ) : null}
+            <div
+              className={
+                copy.intro
+                  ? "col-start-3 row-start-2 w-max min-w-0 max-w-full overflow-x-auto rounded-lg bg-white shadow-[0_0_0_1px_var(--color-border)]"
+                  : "col-start-3 row-start-1 w-max min-w-0 max-w-full overflow-x-auto rounded-lg bg-white shadow-[0_0_0_1px_var(--color-border)]"
+              }
+            >
           <table className="w-max border-collapse text-left">
             <caption className="sr-only">
               MACH RUN compared with FIRECalc, a spreadsheet, and Quicken
@@ -197,7 +205,9 @@ function Compare() {
               </tr>
             </tbody>
           </table>
-        </div>
+            </div>
+          </div>
+        ) : null}
         <div className="flex justify-center">
           <StartButton label={copy.button} />
         </div>
