@@ -51,6 +51,10 @@ function withBreaks(text: string, underline: boolean): ReactNode[] {
   return out;
 }
 
+export function SiteCopyText({ text }: { text: string }) {
+  return <>{withBreaks(text, false)}</>;
+}
+
 export function SiteCopyBody({
   body,
   underlineLinks = false,
