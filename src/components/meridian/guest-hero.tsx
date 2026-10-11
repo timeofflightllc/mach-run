@@ -281,7 +281,13 @@ export function GuestHero({
             </button>
             {/* 12.5% of this width is 20% of a 16:10 screen. The extra drops the chin behind the page. */}
             <div className="mx-[3px]" style={{ marginBottom: "calc(-12.5% - 1.625rem)" }}>
-              <div className="overflow-hidden rounded-t-xl border-8 border-[#1a2330] bg-[#fffcf6] sm:border-[12px]">
+              <div
+                className="overflow-hidden rounded-t-xl border-8 border-transparent sm:border-[12px]"
+                style={{
+                  background:
+                    "linear-gradient(#fffcf6, #fffcf6) padding-box, linear-gradient(165deg, #b8bec4 0%, #8e959c 32%, #6e767e 70%, #5e666e 100%) border-box",
+                }}
+              >
                 <div className="relative aspect-[2230/1296] overflow-hidden">
                   <div
                     className={
@@ -301,9 +307,9 @@ export function GuestHero({
                   </div>
                 </div>
               </div>
-              <div className="h-3 rounded-b-lg bg-[#1a2330]" />
-              <div className="mx-auto h-2.5 w-[68%] rounded-b-md bg-[#243044]" />
-              <div className="mx-auto h-1 w-[42%] rounded-b-sm bg-[#1a2330]" />
+              <div className="h-3 rounded-b-lg bg-gradient-to-b from-[#868d94] to-[#aeb4ba]" />
+              <div className="mx-auto h-2.5 w-[68%] rounded-b-md bg-[#9aa1a8]" />
+              <div className="mx-auto h-1 w-[42%] rounded-b-sm bg-[#7e868d]" />
             </div>
           </div>
         </div>
@@ -341,7 +347,7 @@ function LaptopPane({ slide }: { slide: LaptopSlide }) {
   }[slide];
   return (
     <div className={`${frame} bg-[#f7f4ee]`} style={width}>
-      <img src={shot[0]} alt={shot[1]} className="absolute inset-0 h-full w-full object-contain object-center" />
+      <img src={shot[0]} alt={shot[1]} className="absolute inset-0 h-full w-full object-cover object-center" />
     </div>
   );
 }
