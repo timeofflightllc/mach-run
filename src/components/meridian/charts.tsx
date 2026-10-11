@@ -565,10 +565,29 @@ function netWorthPoints(plan: Plan, sim: SimResult, span: ChartSpan): NwPoint[] 
   );
 }
 
+function niceStep(raw: number): number {
+  if (!(raw > 0) || !Number.isFinite(raw)) return 1;
+  const pow = 10 ** Math.floor(Math.log10(raw));
+  const n = raw / pow;
+  const nice = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+  return nice * pow;
+}
+
+/** Axis for a chart that dips below zero. The negative end is the loan, not one asset-sized step. */
+function signedAxis(min: number, max: number): { lo: number; hi: number; ticks: number[] } {
+  const lo = min < 0 ? min - Math.abs(min) * 0.12 : 0;
+  const hi = max > 0 ? max * 1.04 : 1;
+  const step = niceStep(Math.max(hi, 1) / 4);
+  const ticks: number[] = [];
+  for (let v = 0; v <= hi + step * 0.01; v += step) ticks.push(v);
+  if (lo < 0) ticks.unshift(lo);
+  return { lo, hi, ticks };
+}
+
 function netWorthYDomain(
   data: NwPoint[],
   positiveKeys: string[] | null,
-): [number, number] | undefined {
+): { lo: number; hi: number; ticks: number[] } | undefined {
   let min = 0;
   let max = 0;
   for (const point of data) {
@@ -584,10 +603,7 @@ function netWorthYDomain(
     max = Math.max(max, top);
   }
   if (!(max > min)) return undefined;
-  // Pad each side by its own size. A full tick step would stretch a small loan
-  // down as far as the first positive step.
-  const below = min < 0 ? min - Math.abs(min) * 0.1 : 0;
-  return [below, max + max * 0.04];
+  return signedAxis(min, max);
 }
 
 function fakeNetWorthPoints(span: ChartSpan): NwPoint[] {
@@ -718,6 +734,21 @@ export function WealthChart({
   const accounts = spendableSeries(plan);
   const x = axisProps(span);
   const debtOn = netWorthPaid && showLiabilities;
+  const wealthAxis = debtOn
+    ? signedAxis(
+        Math.min(0, ...data.map((point) => Math.min(point.liabilities, point.netWorth))),
+        Math.max(
+          0,
+          ...data.map((point) => {
+            let stacked = 0;
+            if (shape === "stacked") {
+              for (const account of accounts) stacked += Number(point[account.key] ?? 0);
+            }
+            return Math.max(stacked, point.spendable, point.netWorth);
+          }),
+        ),
+      )
+    : undefined;
 
   return (
     <ChartStage expanded={expanded} onClose={close} label="Spendable Wealth">
@@ -771,7 +802,10 @@ export function WealthChart({
               tick={{ fill: tickFill, fontSize: 11 }}
               tickLine={false}
               axisLine={false}
-              width={debtOn ? 64 : 56}
+              width={debtOn ? 72 : 56}
+              domain={wealthAxis ? [wealthAxis.lo, wealthAxis.hi] : undefined}
+              ticks={wealthAxis?.ticks}
+              allowDataOverflow={Boolean(wealthAxis)}
             />
             <Tooltip
               formatter={formatTip}
@@ -1178,8 +1212,9 @@ export function NetWorthChart({
                 tick={{ fill: tickFill, fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
-                width={yDomain ? 64 : 56}
-                domain={yDomain}
+                width={yDomain ? 72 : 56}
+                domain={yDomain ? [yDomain.lo, yDomain.hi] : undefined}
+                ticks={yDomain?.ticks}
                 allowDataOverflow={Boolean(yDomain)}
               />
               <Tooltip
