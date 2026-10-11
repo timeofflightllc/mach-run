@@ -26,7 +26,15 @@ export function contentPageSchema(title: string, path: string): JsonLd | null {
     url,
     mainEntityOfPage: url,
     image: `${SITE}/brand/mach-run-logo.jpg?v=23`,
-    author: { "@type": "Organization", name: "MACH RUN", url: SITE },
+    author: {
+      "@type": "Person",
+      "@id": `${SITE}/about#matthew-cain-olde`,
+      name: "Matthew \"Cain\" Olde",
+      url: `${SITE}/about`,
+      jobTitle: "Founder, MACH RUN",
+      sameAs: ["https://www.linkedin.com/in/cainf-15advanced/"],
+      worksFor: { "@type": "Organization", name: "MACH RUN", url: SITE },
+    },
     datePublished: dates.published,
     dateModified: dates.modified,
   };

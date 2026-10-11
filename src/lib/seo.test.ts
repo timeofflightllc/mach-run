@@ -11,7 +11,11 @@ test("Article headline is the page title, and private paths get nothing", () => 
   assert.equal(block.headline, title);
   assert.equal(block.datePublished, "2026-09-07");
   assert.equal(block.dateModified, "2026-10-10");
-  assert.equal((block.author as { name: string }).name, "MACH RUN");
+  const author = block.author as { "@type": string; name: string; url: string; sameAs: string[] };
+  assert.equal(author["@type"], "Person");
+  assert.equal(author.name, "Matthew \"Cain\" Olde");
+  assert.equal(author.url, "https://machrun.com/about");
+  assert.deepEqual(author.sameAs, ["https://www.linkedin.com/in/cainf-15advanced/"]);
   assert.equal(contentPageSchema("MACH RUN", "/top-3-desk"), null);
   assert.equal(contentPageSchema("Home", "/"), null);
 });
