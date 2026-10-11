@@ -179,6 +179,23 @@ export function GuestHero({
             <HeroLines text={hero.text} />
           </p>
         </div>
+        <p className="mt-4 max-w-none px-4 text-center text-lg font-medium italic leading-snug text-[#1a2330] sm:mt-5 sm:text-2xl">
+          <span className="sm:whitespace-nowrap">
+            “Households that plan arrive with three times the wealth
+          </span>
+          <br className="hidden sm:inline" />
+          <span className="sm:whitespace-nowrap"> of households that do not.”</span>
+        </p>
+        <p className="mt-1 max-w-3xl text-center text-xs text-muted sm:text-sm">
+          <a
+            href="https://www.nber.org/papers/w17078"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="italic underline underline-offset-4 hover:text-fg"
+          >
+            Lusardi and Mitchell, National Bureau of Economic Research, Working Paper 17078 (2011).
+          </a>
+        </p>
         <div className="mt-3 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:mt-6 sm:flex-row sm:flex-wrap sm:gap-3">
           <PrimaryButton
             className="h-auto min-h-11 whitespace-normal border border-[#3a8a58] bg-white px-4 py-2.5 text-center leading-snug text-[#3a8a58] hover:bg-[#f3faf6] sm:max-w-xs"

@@ -52,7 +52,7 @@ const TIPS = {
 type TipId = keyof typeof TIPS;
 
 const titleClass =
-  "font-display text-[clamp(1.25rem,6.6cqi,2.5rem)] font-semibold uppercase leading-none tracking-[0.12em] text-[#1a2330]";
+  "font-display text-[clamp(1.25rem,6.6cqi,2.5rem)] font-semibold uppercase leading-none tracking-[0.12em] text-[#1a2330] underline underline-offset-4";
 
 function Phase({
   title,
@@ -174,14 +174,14 @@ export function OodaLoop() {
   }
 
   return (
-    <div className="@container grid h-full min-h-0 w-full grid-cols-[0.9fr_1.35fr_0.9fr] grid-rows-[auto_auto_auto] items-center gap-x-1 gap-y-1 overflow-hidden">
+    <div className="@container grid h-full min-h-0 w-full grid-cols-[0.9fr_1.35fr_0.9fr] grid-rows-[auto_auto_auto] items-center gap-x-1 gap-y-1 overflow-visible sm:overflow-hidden">
       <div className="col-span-3">
         <Phase title="Observe" tip="observe" align="center" open={open} onToggle={onToggle} />
       </div>
       <div className="relative col-start-1 row-start-2 min-w-0 self-stretch -translate-y-3 pr-1">
         <SideLabel title="Act" tip="act" align="right" open={open} onToggle={onToggle} />
       </div>
-      <div className="relative col-start-2 row-start-2 flex w-full -translate-y-4 justify-center">
+      <div className="relative col-start-2 row-start-2 flex w-full -translate-y-3 justify-center sm:-translate-y-4">
         <div className="relative aspect-square w-full">
           <svg viewBox="0 0 200 200" className="h-full w-full" aria-hidden="true">
             <circle cx="100" cy="100" r="62" fill="#fffdf8" stroke="#e8c547" strokeWidth="1.25" />
@@ -219,6 +219,17 @@ export function OodaLoop() {
               </p>
             </div>
           </div>
+          <button
+            type="button"
+            className={`absolute left-1/2 top-full z-10 -translate-x-1/2 -translate-y-1 whitespace-nowrap sm:hidden ${titleClass}`}
+            aria-expanded={open === "decide"}
+            onClick={(event) => {
+              event.stopPropagation();
+              onToggle("decide", event.currentTarget.getBoundingClientRect());
+            }}
+          >
+            Decide
+          </button>
         </div>
       </div>
       <div className="relative col-start-3 row-start-2 min-w-0 self-stretch -translate-y-3 pl-1">
@@ -226,17 +237,6 @@ export function OodaLoop() {
       </div>
       <div className="col-start-2 row-start-3 -translate-y-12 text-center">
         <p className={`hidden pl-[0.12em] sm:block ${titleClass}`}>Decide</p>
-        <button
-          type="button"
-          className={`pl-[0.12em] sm:hidden ${titleClass}`}
-          aria-expanded={open === "decide"}
-          onClick={(event) => {
-            event.stopPropagation();
-            onToggle("decide", event.currentTarget.getBoundingClientRect());
-          }}
-        >
-          Decide
-        </button>
         <p className="mt-0.5 hidden text-[clamp(0.62rem,2.15cqi,0.95rem)] leading-tight text-[#5c6b7a] sm:block">
           Contributions
         </p>
