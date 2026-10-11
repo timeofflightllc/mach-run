@@ -97,6 +97,8 @@ const SLIDE_COUNT = LAPTOP_SLIDES.length;
 const STRIP_COUNT = SLIDE_COUNT * 2 + 1;
 const LAPTOP_STRIP: LaptopSlide[] = [...LAPTOP_SLIDES, ...LAPTOP_SLIDES, LAPTOP_SLIDES[0]];
 
+const SLIDE_HOLD_MS = 4000;
+
 export function GuestHero({
   onShowFamily,
   onDemo,
@@ -110,21 +112,42 @@ export function GuestHero({
   const [motion, setMotion] = useState(true);
   const indexRef = useRef(SLIDE_COUNT);
   const sliding = useRef(false);
+  const pending = useRef(0);
+  const timer = useRef<number | null>(null);
+  const dueAt = useRef(0);
+  const holdLeft = useRef(SLIDE_HOLD_MS);
+  const stepRef = useRef<(delta: number) => void>(() => {});
+  const armRef = useRef<(ms?: number) => void>(() => {});
   indexRef.current = index;
 
-  useEffect(() => {
-    if (motion) {
-      sliding.current = false;
-      return;
+  function clearTimer() {
+    if (timer.current != null) {
+      window.clearTimeout(timer.current);
+      timer.current = null;
     }
-    const frame = requestAnimationFrame(() => {
-      requestAnimationFrame(() => setMotion(true));
-    });
-    return () => cancelAnimationFrame(frame);
-  }, [motion]);
+  }
+
+  function armTimer(ms = SLIDE_HOLD_MS) {
+    clearTimer();
+    const wait = Math.max(0, ms);
+    holdLeft.current = wait;
+    dueAt.current = Date.now() + wait;
+    if (document.hidden) return;
+    timer.current = window.setTimeout(() => {
+      timer.current = null;
+      stepRef.current(1);
+    }, wait);
+  }
+
+  function pauseTimer() {
+    if (timer.current == null) return;
+    holdLeft.current = Math.max(0, dueAt.current - Date.now());
+    clearTimer();
+  }
 
   function step(delta: number) {
     if (delta === 0 || sliding.current) return;
+    clearTimer();
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) {
       const which = (((indexRef.current + delta) % SLIDE_COUNT) + SLIDE_COUNT) % SLIDE_COUNT;
@@ -137,8 +160,79 @@ export function GuestHero({
     setIndex((current) => current + delta);
   }
 
+  stepRef.current = step;
+  armRef.current = armTimer;
+
+  useEffect(() => {
+    if (!motion) {
+      const frame = requestAnimationFrame(() => {
+        requestAnimationFrame(() => setMotion(true));
+      });
+      return () => cancelAnimationFrame(frame);
+    }
+    sliding.current = false;
+    const jump = pending.current;
+    if (jump) {
+      pending.current = 0;
+      stepRef.current(jump);
+      return;
+    }
+    armRef.current();
+    return () => {
+      if (timer.current != null) {
+        window.clearTimeout(timer.current);
+        timer.current = null;
+      }
+    };
+  }, [motion]);
+
+  useEffect(() => {
+    function onVis() {
+      if (document.hidden) {
+        pauseTimer();
+        return;
+      }
+      if (sliding.current || pending.current !== 0) return;
+      const left = holdLeft.current;
+      if (left <= 0) {
+        stepRef.current(1);
+        return;
+      }
+      armRef.current(left);
+    }
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      if (timer.current != null) {
+        window.clearTimeout(timer.current);
+        timer.current = null;
+      }
+    };
+  }, []);
+
   function go(direction: "left" | "right") {
+    if (sliding.current) return;
+    pending.current = 0;
     step(direction === "left" ? 1 : -1);
+  }
+
+  function goTo(target: number) {
+    if (sliding.current) return;
+    const current = ((indexRef.current % SLIDE_COUNT) + SLIDE_COUNT) % SLIDE_COUNT;
+    if (target === current) return;
+    const forward = (target - current + SLIDE_COUNT) % SLIDE_COUNT;
+    const back = (current - target + SLIDE_COUNT) % SLIDE_COUNT;
+    const delta = forward <= back ? forward : -back;
+    const base = delta > 0 ? current : SLIDE_COUNT + current;
+    if (indexRef.current !== base) {
+      pending.current = delta;
+      sliding.current = true;
+      clearTimer();
+      setMotion(false);
+      setIndex(base);
+      return;
+    }
+    step(delta);
   }
 
   function onSwipeEnd(event: TransitionEvent<HTMLDivElement>) {
@@ -152,6 +246,7 @@ export function GuestHero({
       return;
     }
     sliding.current = false;
+    armTimer();
   }
 
   function fill() {
@@ -222,25 +317,12 @@ export function GuestHero({
             </span>
           </PrimaryButton>
         </div>
-        <p className="mt-3 max-w-3xl text-center text-[0.667rem] leading-relaxed text-muted sm:mt-4 sm:text-lg">
+        <p className="mt-3 w-full max-w-3xl px-6 text-center text-[calc(0.667rem-1pt)] leading-relaxed text-muted sm:mt-4 sm:px-10 sm:text-[calc(1.125rem-1pt)]">
           Spreadsheets take time you'll never get back, and FIRECalc isn't built for TSP, military,
           and veterans. MACH RUN saves that time and is built for those paychecks. Use the fighter
           pilot's OODA Loop and Monte Carlo Simulator to inform your financial path quickly and
           efficiently, <span className="font-bold">giving you time back</span>.
         </p>
-        <button
-          type="button"
-          onClick={() => {
-            const slide = ((indexRef.current % SLIDE_COUNT) + SLIDE_COUNT) % SLIDE_COUNT;
-            if (slide === 1) return;
-            const forward = (1 - slide + SLIDE_COUNT) % SLIDE_COUNT;
-            const back = (slide - 1 + SLIDE_COUNT) % SLIDE_COUNT;
-            step(forward <= back ? forward : -back);
-          }}
-          className="mt-3 font-display text-4xl font-semibold tracking-wide text-[#1a2330] underline decoration-[#3a8a58] decoration-2 underline-offset-[6px] hover:text-[#3a8a58] sm:text-5xl"
-        >
-          How It Works
-        </button>
         {confirming ? (
           <div className="mt-4 w-full max-w-xl rounded-lg bg-surface px-4 py-3 text-center shadow-[0_0_0_1px_var(--color-border)]">
             <p className="text-sm text-fg">
@@ -304,6 +386,29 @@ export function GuestHero({
                     {LAPTOP_STRIP.map((slide, slot) => (
                       <LaptopPane key={`${slide}-${slot}`} slide={slide} />
                     ))}
+                  </div>
+                  <div
+                    className="absolute inset-x-0 bottom-2 z-10 flex items-center justify-center gap-1.5"
+                    role="group"
+                    aria-label="Laptop screens"
+                  >
+                    {LAPTOP_SLIDES.map((slide, slot) => {
+                      const on = slot === ((index % SLIDE_COUNT) + SLIDE_COUNT) % SLIDE_COUNT;
+                      return (
+                        <button
+                          key={slide}
+                          type="button"
+                          aria-label={`Show laptop screen ${slot + 1} of ${SLIDE_COUNT}`}
+                          aria-current={on ? "true" : undefined}
+                          onClick={() => goTo(slot)}
+                          className={
+                            on
+                              ? "h-2 w-2 rounded-full bg-[#1a2330] shadow-[0_0_0_1px_#fff]"
+                              : "h-2 w-2 rounded-full bg-white/40 shadow-[inset_0_0_0_1.5px_#fff,0_0_0_1px_rgba(26,35,48,0.55)]"
+                          }
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               </div>

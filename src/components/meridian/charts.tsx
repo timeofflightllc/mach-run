@@ -343,6 +343,24 @@ function spendableSeries(plan: Plan) {
     }));
 }
 
+function netWorthAccountSeries(plan: Plan) {
+  const spendable = plan.portfolios.filter((p) => p.spendable);
+  const spendableIndex = new Map(spendable.map((p, index) => [p.id, index]));
+  let next = spendable.length;
+  return plan.portfolios
+    .filter((p) => p.includeInNetWorth)
+    .map((p, index) => {
+      const shared = spendableIndex.get(p.id);
+      const colorIndex = shared === undefined ? next++ : shared;
+      return {
+        id: p.id,
+        name: p.name.trim() || "Account",
+        key: `a${index}`,
+        color: stackColor(colorIndex),
+      };
+    });
+}
+
 function accountDollars(amount: number, nominalTotal: number, realTotal: number, real: boolean) {
   if (!real) return Math.round(amount);
   if (nominalTotal <= 0) return 0;
@@ -475,36 +493,76 @@ function cashPoints(plan: Plan, sim: SimResult, span: ChartSpan): CashPoint[] {
   });
 }
 
-type NwPoint = { t: string | number; assets: number; liabilities: number; netWorth: number };
+type NwPoint = {
+  t: string | number;
+  assets: number;
+  liabilities: number;
+  netWorth: number;
+  [key: string]: string | number;
+};
 
 function netWorthPoints(plan: Plan, sim: SimResult, span: ChartSpan): NwPoint[] {
   const real = plan.assumptions.dollars === "real";
+  const accounts = netWorthAccountSeries(plan);
+  const fill = (
+    point: NwPoint,
+    lines: { id: string; amount: number }[] | undefined,
+    nominalTotal: number,
+    realTotal: number,
+  ) => {
+    const byId = new Map((lines ?? []).map((line) => [line.id, line.amount]));
+    for (const account of accounts) {
+      point[account.key] = accountDollars(byId.get(account.id) ?? 0, nominalTotal, realTotal, real);
+    }
+    return point;
+  };
   if (span === 5) {
-    return monthsInSpan(sim, plan.assumptions.asOfDate, 5).map((m) => ({
-      t: `${m.year}-${pad2(m.month)}`,
-      assets: Math.round(real ? m.assetsEndReal : m.assetsEnd),
-      liabilities: Math.round(real ? m.liabilitiesEndReal : m.liabilitiesEnd),
-      netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
-    }));
+    return monthsInSpan(sim, plan.assumptions.asOfDate, 5).map((m) =>
+      fill(
+        {
+          t: `${m.year}-${pad2(m.month)}`,
+          assets: Math.round(real ? m.assetsEndReal : m.assetsEnd),
+          liabilities: -Math.round(real ? m.liabilitiesEndReal : m.liabilitiesEnd),
+          netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
+        },
+        m.detail?.netWorthLines,
+        m.assetsEnd,
+        m.assetsEndReal,
+      ),
+    );
   }
   if (span === 10) {
     const byQ = new Map<string, MonthSnapshot>();
     for (const m of monthsInSpan(sim, plan.assumptions.asOfDate, 10)) {
       byQ.set(`${m.year}-Q${Math.ceil(m.month / 3)}`, m);
     }
-    return [...byQ.entries()].map(([t, m]) => ({
-      t,
-      assets: Math.round(real ? m.assetsEndReal : m.assetsEnd),
-      liabilities: Math.round(real ? m.liabilitiesEndReal : m.liabilitiesEnd),
-      netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
-    }));
+    return [...byQ.entries()].map(([t, m]) =>
+      fill(
+        {
+          t,
+          assets: Math.round(real ? m.assetsEndReal : m.assetsEnd),
+          liabilities: -Math.round(real ? m.liabilitiesEndReal : m.liabilitiesEnd),
+          netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
+        },
+        m.detail?.netWorthLines,
+        m.assetsEnd,
+        m.assetsEndReal,
+      ),
+    );
   }
-  return yearsInView(sim, plan.assumptions.asOfDate, span).map((y) => ({
-    t: y.year,
-    assets: Math.round(real ? y.endAssetsReal : y.endAssets),
-    liabilities: Math.round(real ? y.endLiabilitiesReal : y.endLiabilities),
-    netWorth: Math.round(real ? y.endNetWorthReal : y.endNetWorth),
-  }));
+  return yearsInView(sim, plan.assumptions.asOfDate, span).map((y) =>
+    fill(
+      {
+        t: y.year,
+        assets: Math.round(real ? y.endAssetsReal : y.endAssets),
+        liabilities: -Math.round(real ? y.endLiabilitiesReal : y.endLiabilities),
+        netWorth: Math.round(real ? y.endNetWorthReal : y.endNetWorth),
+      },
+      y.netWorthBalances,
+      y.endAssets,
+      y.endAssetsReal,
+    ),
+  );
 }
 
 function fakeNetWorthPoints(span: ChartSpan): NwPoint[] {
@@ -975,10 +1033,27 @@ export function NetWorthChart({
   const [span, setSpan] = useState<ChartSpan>(10);
   const { expanded, toggle, close } = useChartExpanded();
   const [minimized, setMinimized] = useState(readNetWorthMin);
+  const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
+  const accounts = netWorthAccountSeries(plan);
   const live = netWorthPoints(plan, sim, span);
   const data = locked ? fakeNetWorthPoints(span) : live;
-  const hasDebt = data.some((d) => d.liabilities > 1);
+  const hasDebt = data.some((d) => Math.abs(d.liabilities) > 1);
   const x = axisProps(span);
+  const shown = (id: string) => !hidden.has(id);
+  const flip = (id: string) => {
+    setHidden((current) => {
+      const next = new Set(current);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+  const switches = [
+    ...accounts.map((account) => ({ id: account.id, label: account.name })),
+    { id: "liabilities", label: "Liabilities" },
+    { id: "netWorth", label: "Net worth" },
+  ];
+  const debtOn = !locked && shown("liabilities") && hasDebt;
 
   if (locked && minimized) {
     return (
@@ -1014,6 +1089,29 @@ export function NetWorthChart({
           onPin={onPin}
           expanded={expanded}
           onExpand={locked ? undefined : toggle}
+          leading={
+            locked ? undefined : (
+              <span className="inline-flex min-w-0 max-w-full flex-wrap items-center justify-end gap-2">
+                <span className="text-[11px] font-medium text-slate-600">Include In graph:</span>
+                {switches.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    aria-pressed={shown(item.id)}
+                    onClick={() => flip(item.id)}
+                    className={cn(
+                      "h-7 rounded px-2 text-[11px] font-medium leading-none",
+                      shown(item.id)
+                        ? "bg-accent text-accent-fg"
+                        : "bg-slate-100 text-slate-600 shadow-[0_0_0_1px_#c8d2de] hover:text-slate-900",
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </span>
+            )
+          }
         />
         <div className={plotHeight(expanded, tall)}>
           <ResponsiveContainer width="100%" height="100%">
@@ -1036,7 +1134,7 @@ export function NetWorthChart({
                 tick={{ fill: tickFill, fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
-                width={56}
+                width={debtOn ? 64 : 56}
               />
               <Tooltip
                 formatter={formatTip}
@@ -1046,35 +1144,83 @@ export function NetWorthChart({
                 itemStyle={{ color: "#4b5b6e" }}
               />
               <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
-              <Area
-                type="monotone"
-                dataKey="assets"
-                name="Assets"
-                stroke="var(--color-positive)"
-                fill="var(--color-positive)"
-                fillOpacity={0.14}
-                strokeWidth={2}
-                isAnimationActive={false}
-              />
-              <Area
-                type="monotone"
-                dataKey="liabilities"
-                name="Liabilities"
-                stroke="var(--color-negative)"
-                fill="var(--color-negative)"
-                fillOpacity={0.18}
-                strokeWidth={2}
-                isAnimationActive={false}
-              />
-              <Line
-                type="monotone"
-                dataKey="netWorth"
-                name="Net worth"
-                stroke="var(--color-accent)"
-                strokeWidth={2.5}
-                dot={false}
-                isAnimationActive={false}
-              />
+              {locked ? (
+                <>
+                  <Area
+                    type="monotone"
+                    dataKey="assets"
+                    name="Assets"
+                    stroke="var(--color-positive)"
+                    fill="var(--color-positive)"
+                    fillOpacity={0.14}
+                    strokeWidth={2}
+                    isAnimationActive={false}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="liabilities"
+                    name="Liabilities"
+                    stroke="var(--color-negative)"
+                    fill="var(--color-negative)"
+                    fillOpacity={0.18}
+                    strokeWidth={2}
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="netWorth"
+                    name="Net worth"
+                    stroke="var(--color-accent)"
+                    strokeWidth={2.5}
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </>
+              ) : (
+                <>
+                  {debtOn ? <ReferenceLine y={0} stroke="#94a3b8" /> : null}
+                  {accounts.map((account) =>
+                    shown(account.id) ? (
+                      <Area
+                        key={account.id}
+                        type="monotone"
+                        dataKey={account.key}
+                        name={account.name}
+                        stackId="networth"
+                        stroke={account.color}
+                        fill={account.color}
+                        fillOpacity={0.72}
+                        strokeWidth={1.5}
+                        isAnimationActive={false}
+                      />
+                    ) : null,
+                  )}
+                  {shown("liabilities") ? (
+                    <Area
+                      type="monotone"
+                      dataKey="liabilities"
+                      name="Liabilities"
+                      stroke="var(--color-negative)"
+                      fill="var(--color-negative)"
+                      fillOpacity={0.18}
+                      strokeWidth={2}
+                      baseValue={0}
+                      isAnimationActive={false}
+                    />
+                  ) : null}
+                  {shown("netWorth") ? (
+                    <Line
+                      type="monotone"
+                      dataKey="netWorth"
+                      name="Net worth"
+                      stroke="var(--color-accent)"
+                      strokeWidth={2.5}
+                      dot={false}
+                      isAnimationActive={false}
+                    />
+                  ) : null}
+                </>
+              )}
             </ComposedChart>
           </ResponsiveContainer>
         </div>

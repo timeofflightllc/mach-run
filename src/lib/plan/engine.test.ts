@@ -659,6 +659,14 @@ test("house mortgage plus car loan: net worth is assets minus both remaining pri
   assert.ok(Math.abs(first.netWorthEnd - expected) < 2);
   assert.ok(Math.abs(first.assetsEnd - 400_000) < 2);
   assert.ok(Math.abs(first.liabilitiesEnd - (houseDebt + carDebt)) < 2);
+  const lines = first.detail?.netWorthLines ?? [];
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0]?.id, "house");
+  assert.ok(Math.abs((lines[0]?.amount ?? 0) - 400_000) < 2);
+  const year = result.years[0];
+  assert.equal(year?.netWorthBalances?.length, 1);
+  assert.equal(year?.netWorthBalances?.[0]?.id, "house");
+  assert.equal(year?.spendableBalances?.length ?? 0, 0);
 });
 
 test("audit trail does not change the run and account months balance", () => {

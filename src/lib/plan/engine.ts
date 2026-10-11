@@ -862,6 +862,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
     let assetsEnd = 0;
     let liabilitiesEnd = 0;
     const spendableLines: { id: string; label: string; amount: number }[] = [];
+    const netWorthLines: { id: string; label: string; amount: number }[] = [];
     for (const p of plan.portfolios) {
       const v = values.get(p.id) ?? 0;
       byBucket[p.taxBucket] += v;
@@ -870,6 +871,11 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
         assetsEnd += v;
         liabilitiesEnd += debt;
         netWorthEnd += v - debt;
+        netWorthLines.push({
+          id: p.id,
+          label: p.name.trim() || "Account",
+          amount: v,
+        });
       }
       if (p.spendable) {
         spendableEnd += v;
@@ -1006,6 +1012,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
         matchLines,
         drawnLines,
         spendableLines,
+        netWorthLines,
       },
     });
 
@@ -1056,6 +1063,10 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
       id: line.id,
       amount: line.amount,
     }));
+    const netWorthBalances = (last.detail?.netWorthLines ?? []).map((line) => ({
+      id: line.id,
+      amount: line.amount,
+    }));
     years.push({
       year,
       primaryAge: last.primaryAge,
@@ -1087,6 +1098,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
       savedLines,
       drawnLines: drawnBreakdown(arr),
       spendableBalances,
+      netWorthBalances,
     });
   }
 

@@ -269,6 +269,8 @@ export interface MonthLedgerDetail {
   matchLines: LedgerLine[];
   drawnLines: LedgerLine[];
   spendableLines: LedgerLine[];
+  /** Balances of accounts counted in net worth, in Accounts order. Nominal dollars. */
+  netWorthLines: LedgerLine[];
 }
 
 export interface MonthSnapshot {
@@ -338,6 +340,8 @@ export interface YearSnapshot {
   drawnLines?: LedgerLine[];
   /** Spendable account balances at the end of the year, in Accounts order. Nominal dollars. */
   spendableBalances?: { id: string; amount: number }[];
+  /** Net-worth account balances at the end of the year, in Accounts order. Nominal dollars. */
+  netWorthBalances?: { id: string; amount: number }[];
 }
 
 export interface FundingGap {
