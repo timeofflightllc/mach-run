@@ -565,29 +565,10 @@ function netWorthPoints(plan: Plan, sim: SimResult, span: ChartSpan): NwPoint[] 
   );
 }
 
-function niceStep(raw: number): number {
-  if (!(raw > 0) || !Number.isFinite(raw)) return 1;
-  const pow = 10 ** Math.floor(Math.log10(raw));
-  const n = raw / pow;
-  const nice = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
-  return nice * pow;
-}
-
-/** Axis for a chart that dips below zero. The negative end is the loan, not one asset-sized step. */
-function signedAxis(min: number, max: number): { lo: number; hi: number; ticks: number[] } {
-  const lo = min < 0 ? min - Math.abs(min) * 0.12 : 0;
-  const hi = max > 0 ? max * 1.04 : 1;
-  const step = niceStep(Math.max(hi, 1) / 4);
-  const ticks: number[] = [];
-  for (let v = 0; v <= hi + step * 0.01; v += step) ticks.push(v);
-  if (lo < 0) ticks.unshift(lo);
-  return { lo, hi, ticks };
-}
-
 function netWorthYDomain(
   data: NwPoint[],
   positiveKeys: string[] | null,
-): { lo: number; hi: number; ticks: number[] } | undefined {
+): { lo: number; hi: number } | null {
   let min = 0;
   let max = 0;
   for (const point of data) {
@@ -602,8 +583,10 @@ function netWorthYDomain(
     }
     max = Math.max(max, top);
   }
-  if (!(max > min)) return undefined;
-  return signedAxis(min, max);
+  if (!(max > min)) return null;
+  const lo = min < 0 ? min - Math.abs(min) * 0.12 : 0;
+  const hi = max > 0 ? max * 1.04 : 1;
+  return { lo, hi };
 }
 
 function fakeNetWorthPoints(span: ChartSpan): NwPoint[] {
@@ -734,21 +717,6 @@ export function WealthChart({
   const accounts = spendableSeries(plan);
   const x = axisProps(span);
   const debtOn = netWorthPaid && showLiabilities;
-  const wealthAxis = debtOn
-    ? signedAxis(
-        Math.min(0, ...data.map((point) => Math.min(point.liabilities, point.netWorth))),
-        Math.max(
-          0,
-          ...data.map((point) => {
-            let stacked = 0;
-            if (shape === "stacked") {
-              for (const account of accounts) stacked += Number(point[account.key] ?? 0);
-            }
-            return Math.max(stacked, point.spendable, point.netWorth);
-          }),
-        ),
-      )
-    : undefined;
 
   return (
     <ChartStage expanded={expanded} onClose={close} label="Spendable Wealth">
@@ -802,10 +770,7 @@ export function WealthChart({
               tick={{ fill: tickFill, fontSize: 11 }}
               tickLine={false}
               axisLine={false}
-              width={debtOn ? 72 : 56}
-              domain={wealthAxis ? [wealthAxis.lo, wealthAxis.hi] : undefined}
-              ticks={wealthAxis?.ticks}
-              allowDataOverflow={Boolean(wealthAxis)}
+              width={56}
             />
             <Tooltip
               formatter={formatTip}
@@ -1127,9 +1092,12 @@ export function NetWorthChart({
         return { ...point, assetsShown };
       })
     : data;
-  const yDomain = (locked ? hasDebt : debtOn)
+  const axisEnds = (locked ? hasDebt : debtOn)
     ? netWorthYDomain(data, accountsLive ? visibleKeys : null)
-    : undefined;
+    : null;
+  const yLo = axisEnds?.lo ?? 0;
+  const yHi = axisEnds?.hi ?? 1;
+  const yDomain = useCallback(() => [yLo, yHi] as [number, number], [yLo, yHi]);
 
   if (locked && minimized) {
     return (
@@ -1212,10 +1180,8 @@ export function NetWorthChart({
                 tick={{ fill: tickFill, fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
-                width={yDomain ? 72 : 56}
-                domain={yDomain ? [yDomain.lo, yDomain.hi] : undefined}
-                ticks={yDomain?.ticks}
-                allowDataOverflow={Boolean(yDomain)}
+                width={axisEnds ? 72 : 56}
+                domain={axisEnds ? yDomain : undefined}
               />
               <Tooltip
                 formatter={formatTip}
@@ -1259,44 +1225,41 @@ export function NetWorthChart({
                 </>
               ) : (
                 <>
-                  {debtOn ? <ReferenceLine y={0} stroke="#94a3b8" /> : null}
-                  {shape === "stacked" && accountsLive
-                    ? accounts.map((account) =>
-                        shown(account.id) ? (
-                          <Bar
-                            key={account.id}
-                            dataKey={account.key}
-                            name={account.name}
-                            stackId="networth"
-                            fill={account.color}
-                            maxBarSize={22}
+                  {[
+                    debtOn ? <ReferenceLine key="zero" y={0} stroke="#94a3b8" /> : null,
+                    ...(shape === "stacked" && accountsLive
+                      ? accounts
+                          .filter((account) => shown(account.id))
+                          .map((account) => (
+                            <Area
+                              key={account.id}
+                              type="monotone"
+                              dataKey={account.key}
+                              name={account.name}
+                              stackId="networth"
+                              stroke={account.color}
+                              fill={account.color}
+                              fillOpacity={0.82}
+                              strokeWidth={1.5}
+                              isAnimationActive={false}
+                            />
+                          ))
+                      : [
+                          <Area
+                            key="assets"
+                            type="monotone"
+                            dataKey={accountsLive ? "assetsShown" : "assets"}
+                            name="Assets"
+                            stroke="var(--color-positive)"
+                            fill="var(--color-positive)"
+                            fillOpacity={0.18}
+                            strokeWidth={2}
                             isAnimationActive={false}
-                          />
-                        ) : null,
-                      )
-                    : (
-                        <Area
-                          type="monotone"
-                          dataKey={accountsLive ? "assetsShown" : "assets"}
-                          name="Assets"
-                          stroke="var(--color-positive)"
-                          fill="var(--color-positive)"
-                          fillOpacity={0.18}
-                          strokeWidth={2}
-                          isAnimationActive={false}
-                        />
-                      )}
-                  {shown("liabilities") ? (
-                    shape === "stacked" ? (
-                      <Bar
-                        dataKey="liabilities"
-                        name="Liabilities"
-                        fill="var(--color-negative)"
-                        maxBarSize={22}
-                        isAnimationActive={false}
-                      />
-                    ) : (
+                          />,
+                        ]),
+                    shown("liabilities") ? (
                       <Area
+                        key="liabilities"
                         type="monotone"
                         dataKey="liabilities"
                         name="Liabilities"
@@ -1307,19 +1270,20 @@ export function NetWorthChart({
                         baseValue={0}
                         isAnimationActive={false}
                       />
-                    )
-                  ) : null}
-                  {shown("netWorth") ? (
-                    <Line
-                      type="monotone"
-                      dataKey="netWorth"
-                      name="Net worth"
-                      stroke="var(--color-accent)"
-                      strokeWidth={2.5}
-                      dot={false}
-                      isAnimationActive={false}
-                    />
-                  ) : null}
+                    ) : null,
+                    shown("netWorth") ? (
+                      <Line
+                        key="netWorth"
+                        type="monotone"
+                        dataKey="netWorth"
+                        name="Net worth"
+                        stroke="var(--color-accent)"
+                        strokeWidth={2.5}
+                        dot={false}
+                        isAnimationActive={false}
+                      />
+                    ) : null,
+                  ].filter((node) => node != null)}
                 </>
               )}
             </ComposedChart>
