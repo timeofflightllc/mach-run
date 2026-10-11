@@ -13,7 +13,8 @@ export const Route = createFileRoute("/contact")({
   head: () =>
     pageHead({
       title: "Contact the retirement calculator | MACH RUN",
-      description: "Ask about the retirement calculator, billing, or your MACH RUN account.",
+      description:
+        "Contact is a note to a person at MACH RUN. Ask about the calculator, billing, or your account.",
       path: "/contact",
     }),
   loader: () => loadPublicSiteCopy(),

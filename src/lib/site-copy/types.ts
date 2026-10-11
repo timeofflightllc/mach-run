@@ -2,6 +2,7 @@ export const SITE_PAGE_SLUGS = [
   "about",
   "method",
   "faq",
+  "learn",
   "contact",
   "privacy",
   "legal",

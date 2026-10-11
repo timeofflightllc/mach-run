@@ -44,6 +44,7 @@ const PAGE_LABEL: Record<SitePageSlug, string> = {
   about: "About",
   method: "The Method",
   faq: "FAQ",
+  learn: "Learn",
   contact: "Contact",
   privacy: "Privacy",
   legal: "Legal / ToS",
@@ -619,7 +620,15 @@ export function SiteCopyDesk() {
                 onChange={(e) => setDraft({ ...draft, kicker: e.target.value })}
               />
             </Field>
-            <Field label={slug === "contact" ? "Body — line under the topic buttons" : "Body"}>
+            <Field
+              label={
+                slug === "contact"
+                  ? "Body — line under the topic buttons"
+                  : slug === "learn"
+                    ? "The three links — Method, FAQ, Updates"
+                    : "Body"
+              }
+            >
               <textarea
                 rows={14}
                 value={draft.body}
@@ -630,6 +639,11 @@ export function SiteCopyDesk() {
             {slug === "contact" ? (
               <p className="text-xs text-muted">
                 Shown when General Question is selected. Replaces “Ask anything about the calculator, billing, or your account.” Leave it blank to keep that sentence. Bug and Feature Request keep their own lines.
+              </p>
+            ) : null}
+            {slug === "learn" ? (
+              <p className="text-xs text-muted">
+                One line per link, with a blank line between them. Order is The Method, then FAQ, then Updates. The links themselves stay.
               </p>
             ) : null}
             <div className="flex flex-wrap items-center gap-3">

@@ -153,6 +153,16 @@ Account menu → Manage billing. Stripe handles upgrades with credit for time al
 A retired U.S. Air Force fighter pilot who wanted one strip for income, contributions, a nest-egg goal, and the date the money runs out. More on [About](/about). Pronounce MACH like “mock.”`,
   },
   {
+    slug: "learn",
+    title: "Learn",
+    kicker: "The pages that explain a MACH RUN. Fill Observe, Orient, and Decide. Hit Calculate.",
+    body: `How a MACH RUN turns family, accounts, paychecks, spending, and contributions into a monthly retirement projection.
+
+Answers on Social Security, VA, military retired pay, accounts, and what Calculate does with the numbers you type.
+
+What shipped recently on the MACH RUN retirement calculator.`,
+  },
+  {
     slug: "contact",
     title: "Contact",
     kicker: "Pick a lane. It goes to the MACH RUN inbox. Reply-to is the email you type below.",
