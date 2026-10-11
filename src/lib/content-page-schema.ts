@@ -7,6 +7,7 @@ const CONTENT_DATES: Record<string, { published: string; modified: string }> = {
   "/about": { published: "2026-09-07", modified: "2026-10-10" },
   "/method": { published: "2026-08-27", modified: "2026-10-10" },
   "/faq": { published: "2026-08-27", modified: "2026-10-10" },
+  "/compare": { published: "2026-10-11", modified: "2026-10-11" },
   "/contact": { published: "2026-09-07", modified: "2026-10-10" },
   "/announcements": { published: "2026-09-07", modified: "2026-10-10" },
   "/learn": { published: "2026-10-10", modified: "2026-10-10" },

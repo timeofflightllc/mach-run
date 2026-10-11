@@ -4,6 +4,7 @@ import { DEFAULT_PLANNER_COPY, serializePlannerCopy } from "./planner-copy";
 import { DEFAULT_BOYD_QUOTES } from "./boyd-quotes";
 import { DEFAULT_HERO_COPY, serializeHeroCopy } from "./hero-copy";
 import { DEFAULT_PRICING_COPY, serializePricingCopy } from "./pricing-copy";
+import { DEFAULT_COMPARE_COPY, serializeCompareCopy } from "./compare-copy";
 import type { SiteAnnouncement, SitePage } from "./types";
 
 /** Tonight's ships. Stable ids so they insert once and stay editable in the desk. Newest first. */
@@ -161,6 +162,12 @@ A retired U.S. Air Force fighter pilot who wanted one strip for income, contribu
 Answers on Social Security, VA, military retired pay, accounts, and what Calculate does with the numbers you type.
 
 What shipped recently on the MACH RUN retirement calculator.`,
+  },
+  {
+    slug: "compare",
+    title: "Compare",
+    kicker: "",
+    body: serializeCompareCopy(DEFAULT_COMPARE_COPY),
   },
   {
     slug: "contact",

@@ -12,6 +12,7 @@ export const SITEMAP_PAGES: {
   { path: "/learn", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["learn", "footer"] },
   { path: "/method", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["method", "footer"] },
   { path: "/faq", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["faq", "footer"] },
+  { path: "/compare", sourceLastmod: "2026-10-11T07:45:00+00:00", slugs: ["compare", "footer"] },
   { path: "/contact", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["contact", "footer"] },
   { path: "/announcements", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["announcements", "footer"] },
   { path: "/legal", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["legal", "footer"] },

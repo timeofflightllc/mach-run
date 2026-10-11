@@ -20,7 +20,7 @@ export const Route = createFileRoute("/learn")({
     pageHead({
       title: "Learn | MACH RUN Retirement Calculator",
       description:
-        "Learn is where the Method, the FAQ, and Updates sit. How a MACH RUN uses the household numbers you type.",
+        "Learn is where the Method, the FAQ, Compare, and Updates sit. How a MACH RUN uses the household numbers you type.",
       path: "/learn",
     }),
   loader: () => loadPublicSiteCopy(),
@@ -51,6 +51,17 @@ function Learn() {
               {lines[i] ? <p className="mt-1 text-muted">{lines[i]}</p> : null}
             </li>
           ))}
+          <li>
+            <Link
+              to="/compare"
+              className="font-display text-2xl text-fg underline underline-offset-4 hover:text-accent"
+            >
+              Compare
+            </Link>
+            <p className="mt-1 text-muted">
+              MACH RUN next to FIRECalc, a spreadsheet, and Quicken.
+            </p>
+          </li>
         </ul>
         <RelatedPieces path="/learn" />
       </div>

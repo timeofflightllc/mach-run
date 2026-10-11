@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
+import { Route as CompareRouteImport } from './routes/compare'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FaqRouteImport } from './routes/faq'
 import { Route as LearnRouteImport } from './routes/learn'
@@ -46,6 +47,11 @@ const AccountRoute = AccountRouteImport.update({
 const AnnouncementsRoute = AnnouncementsRouteImport.update({
   id: '/announcements',
   path: '/announcements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareRoute = CompareRouteImport.update({
+  id: '/compare',
+  path: '/compare',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/announcements': typeof AnnouncementsRoute
+  '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/learn': typeof LearnRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/announcements': typeof AnnouncementsRoute
+  '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/learn': typeof LearnRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/announcements': typeof AnnouncementsRoute
+  '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
   '/learn': typeof LearnRoute
@@ -187,6 +196,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/account'
     | '/announcements'
+    | '/compare'
     | '/contact'
     | '/faq'
     | '/learn'
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/account'
     | '/announcements'
+    | '/compare'
     | '/contact'
     | '/faq'
     | '/learn'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/account'
     | '/announcements'
+    | '/compare'
     | '/contact'
     | '/faq'
     | '/learn'
@@ -248,6 +260,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AccountRoute: typeof AccountRoute
   AnnouncementsRoute: typeof AnnouncementsRoute
+  CompareRoute: typeof CompareRoute
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
   LearnRoute: typeof LearnRoute
@@ -292,6 +305,13 @@ declare module '@tanstack/react-router' {
       path: '/announcements'
       fullPath: '/announcements'
       preLoaderRoute: typeof AnnouncementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare': {
+      id: '/compare'
+      path: '/compare'
+      fullPath: '/compare'
+      preLoaderRoute: typeof CompareRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -400,6 +420,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AccountRoute: AccountRoute,
   AnnouncementsRoute: AnnouncementsRoute,
+  CompareRoute: CompareRoute,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
   LearnRoute: LearnRoute,

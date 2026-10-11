@@ -1,0 +1,15 @@
+# MACH RUN
+
+> MACH RUN is a household retirement calculator. You enter income, TSP, military retired pay, VA, spending, and a nest-egg goal. Calculate shows the monthly projection. Free to start. Individual is $4 a month.
+
+## Pages
+
+- [Home](https://machrun.com/): The calculator. Observe, Orient, Decide, Act.
+- [Method](https://machrun.com/method): How a MACH RUN turns the household you type into a monthly projection.
+- [FAQ](https://machrun.com/faq): Answers on Social Security, VA, military retired pay, accounts, and what Calculate does.
+- [Compare](https://machrun.com/compare): How MACH RUN differs from FIRECalc, a spreadsheet, and Quicken.
+- [Pricing](https://machrun.com/pricing): Free, Individual at $4 a month, Individual Unlimited, and Advisor plans.
+- [About](https://machrun.com/about): Who built MACH RUN.
+- [Learn](https://machrun.com/learn): Links to the Method, the FAQ, and Updates.
+- [Updates](https://machrun.com/announcements): What shipped.
+- [Contact](https://machrun.com/contact): A note to a person at MACH RUN.

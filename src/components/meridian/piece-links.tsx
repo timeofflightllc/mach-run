@@ -5,6 +5,7 @@ export const PIECES = [
   { to: "/learn", title: "Learn", cluster: "learn" },
   { to: "/method", title: "The Method", cluster: "learn" },
   { to: "/faq", title: "FAQ", cluster: "learn" },
+  { to: "/compare", title: "Compare", cluster: "learn" },
   { to: "/announcements", title: "Updates", cluster: "learn" },
   { to: "/about", title: "About", cluster: "company" },
   { to: "/pricing", title: "Pricing", cluster: "company" },
@@ -16,12 +17,13 @@ export const PIECES = [
 export type PiecePath = (typeof PIECES)[number]["to"];
 
 const RELATED: Record<PiecePath, PiecePath[]> = {
-  "/learn": ["/method", "/faq", "/announcements", "/pricing", "/about"],
-  "/method": ["/learn", "/faq", "/announcements", "/pricing", "/about"],
-  "/faq": ["/learn", "/method", "/announcements", "/pricing"],
-  "/announcements": ["/learn", "/method", "/faq", "/pricing"],
+  "/learn": ["/method", "/faq", "/compare", "/announcements", "/pricing"],
+  "/method": ["/learn", "/faq", "/compare", "/announcements", "/pricing"],
+  "/faq": ["/learn", "/compare", "/method", "/announcements", "/pricing"],
+  "/compare": ["/faq", "/method", "/learn", "/pricing"],
+  "/announcements": ["/learn", "/method", "/faq", "/compare", "/pricing"],
   "/about": ["/contact", "/pricing", "/learn", "/method"],
-  "/pricing": ["/learn", "/method", "/faq", "/about"],
+  "/pricing": ["/compare", "/learn", "/method", "/faq", "/about"],
   "/contact": ["/about", "/faq", "/pricing", "/learn"],
   "/privacy": ["/legal", "/contact", "/about"],
   "/legal": ["/privacy", "/contact", "/about"],

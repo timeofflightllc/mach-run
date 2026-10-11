@@ -33,6 +33,32 @@ export function parseFaq(body: string): { intro: string; items: FaqItem[] } {
   return { intro: introParts.join("\n\n").trim(), items };
 }
 
+/** Plain answer for FAQPage. A markdown link becomes its words. */
+export function faqAnswerText(answer: string): string {
+  return answer.replace(/\[([^\]]+)\]\([^)]+\)/g, "$1").replace(/\s+/g, " ").trim();
+}
+
+/** FAQPage JSON-LD from the saved FAQ body. Null when no question has an answer. */
+export function faqPageSchema(body: string): Record<string, unknown> | null {
+  const mainEntity = parseFaq(body).items.flatMap((item) => {
+    const text = faqAnswerText(item.answer);
+    if (!item.question || !text) return [];
+    return [
+      {
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: { "@type": "Answer", text },
+      },
+    ];
+  });
+  if (!mainEntity.length) return null;
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity,
+  };
+}
+
 function openFromHash() {
   const hash = decodeURIComponent(window.location.hash.replace(/^#/, ""));
   if (!hash) return;

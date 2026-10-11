@@ -39,6 +39,13 @@ import {
   parsePricingCopy,
   serializePricingCopy,
 } from "@/lib/site-copy/pricing-copy";
+import {
+  COMPARE_COLUMNS,
+  DEFAULT_COMPARE_COPY,
+  parseCompareCopy,
+  serializeCompareCopy,
+  type CompareCopy,
+} from "@/lib/site-copy/compare-copy";
 
 const PAGE_LABEL: Record<SitePageSlug, string> = {
   about: "About",
@@ -54,6 +61,7 @@ const PAGE_LABEL: Record<SitePageSlug, string> = {
   planner: "Calculator",
   boyd: "Boyd quotes",
   hero: "Hero",
+  compare: "Compare",
 };
 
 function BulletLines({
@@ -111,6 +119,110 @@ function Area({
       onChange={(e) => onChange(e.target.value)}
       className="w-full min-w-0 rounded-lg border border-border bg-elevated px-3 py-2 text-sm text-fg outline-none"
     />
+  );
+}
+
+function CompareFields({
+  value,
+  onChange,
+}: {
+  value: CompareCopy;
+  onChange: (next: CompareCopy) => void;
+}) {
+  const set = (patch: Partial<CompareCopy>) => onChange({ ...value, ...patch });
+  return (
+    <div className="mt-4 space-y-5">
+      <p className="text-sm text-muted">
+        Column names and logos stay as they are. A checked box is a green check. An empty box is a red X. Use [The Method](/method) for a link in the notes.
+      </p>
+      <Field label="Title">
+        <TextInput value={value.title} onChange={(e) => set({ title: e.target.value })} />
+      </Field>
+      <Field label="Line under the title">
+        <Area rows={2} value={value.kicker} onChange={(kicker) => set({ kicker })} />
+      </Field>
+      <Field label="Intro">
+        <Area rows={4} value={value.intro} onChange={(intro) => set({ intro })} />
+      </Field>
+      <Field label="Get Started button">
+        <TextInput value={value.button} onChange={(e) => set({ button: e.target.value })} />
+      </Field>
+      <div className="space-y-3 border-t border-border pt-4">
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-subtle">Features</p>
+        {value.rows.map((row, rowIndex) => (
+          <div key={rowIndex} className="space-y-2 border-t border-border pt-3">
+            <Field label={`Feature ${rowIndex + 1}`}>
+              <Area
+                rows={2}
+                value={row.feature}
+                onChange={(feature) => {
+                  const rows = value.rows.slice();
+                  rows[rowIndex] = { ...row, feature };
+                  set({ rows });
+                }}
+              />
+            </Field>
+            <div className="flex flex-wrap gap-x-4 gap-y-2">
+              {COMPARE_COLUMNS.map((name, index) => (
+                <label key={name} className="inline-flex items-center gap-2 text-sm text-fg">
+                  <input
+                    type="checkbox"
+                    checked={row.marks[index]}
+                    onChange={(e) => {
+                      const marks = row.marks.slice() as CompareCopy["rows"][number]["marks"];
+                      marks[index] = e.target.checked;
+                      const rows = value.rows.slice();
+                      rows[rowIndex] = { ...row, marks };
+                      set({ rows });
+                    }}
+                  />
+                  {name}
+                </label>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="text-sm text-muted underline underline-offset-4 hover:text-fg"
+              onClick={() => set({ rows: value.rows.filter((_, index) => index !== rowIndex) })}
+            >
+              Remove this feature
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className="text-sm font-medium text-fg underline underline-offset-4"
+          onClick={() =>
+            set({
+              rows: [...value.rows, { feature: "", marks: [false, false, false, false] }],
+            })
+          }
+        >
+          Add a feature
+        </button>
+      </div>
+      <div className="space-y-3 border-t border-border pt-4">
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-subtle">Pricing row</p>
+        {COMPARE_COLUMNS.map((name, index) => (
+          <Field key={name} label={name}>
+            <TextInput
+              value={value.prices[index]}
+              onChange={(e) => {
+                const prices = value.prices.slice() as CompareCopy["prices"];
+                prices[index] = e.target.value;
+                set({ prices });
+              }}
+            />
+          </Field>
+        ))}
+      </div>
+      <Field label="Star note under the table">
+        <Area rows={2} value={value.noteStar} onChange={(noteStar) => set({ noteStar })} />
+      </Field>
+      <Field label="Fine print under the table">
+        <Area rows={4} value={value.noteFine} onChange={(noteFine) => set({ noteFine })} />
+      </Field>
+    </div>
   );
 }
 
@@ -361,6 +473,7 @@ export function SiteCopyDesk() {
   const [footer, setFooter] = useState<FooterCopy>(DEFAULT_FOOTER_COPY);
   const [planner, setPlanner] = useState<PlannerCopy>(DEFAULT_PLANNER_COPY);
   const [hero, setHero] = useState<HeroCopy>(DEFAULT_HERO_COPY);
+  const [compare, setCompare] = useState<CompareCopy>(DEFAULT_COMPARE_COPY);
   const [status, setStatus] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<Partial<Record<SitePageSlug | string, Date>>>({});
   const [busy, setBusy] = useState(false);
@@ -397,6 +510,7 @@ export function SiteCopyDesk() {
     if (draft?.slug === "footer") setFooter(parseFooterCopy(draft.body));
     if (draft?.slug === "planner") setPlanner(parsePlannerCopy(draft.body));
     if (draft?.slug === "hero") setHero(parseHeroCopy(draft.body));
+    if (draft?.slug === "compare") setCompare(parseCompareCopy(draft.body));
   }, [draft]);
 
   function onPricingChange(next: PricingCopy) {
@@ -427,6 +541,13 @@ export function SiteCopyDesk() {
     );
   }
 
+  function onCompareChange(next: CompareCopy) {
+    setCompare(next);
+    setDraft((d) =>
+      d ? { ...d, title: "Compare", kicker: "", body: serializeCompareCopy(next) } : d,
+    );
+  }
+
   async function savePage() {
     if (!draft) return;
     setBusy(true);
@@ -441,7 +562,9 @@ export function SiteCopyDesk() {
               ? { ...draft, title: "Calculator", kicker: "", body: serializePlannerCopy(planner) }
               : draft.slug === "hero"
                 ? { ...draft, title: "Hero", kicker: "", body: serializeHeroCopy(hero) }
-                : draft;
+                : draft.slug === "compare"
+                  ? { ...draft, title: "Compare", kicker: "", body: serializeCompareCopy(compare) }
+                  : draft;
       const r = await saveOpsSitePageFn({ data: payload });
       if (r.ok) {
         setSavedAt((prev) => ({ ...prev, [draft.slug]: new Date() }));
@@ -506,6 +629,7 @@ export function SiteCopyDesk() {
   const plannerOpen = slug === "planner";
   const boydOpen = slug === "boyd";
   const heroOpen = slug === "hero";
+  const compareOpen = slug === "compare";
 
   return (
     <div className="space-y-6">
@@ -522,7 +646,9 @@ export function SiteCopyDesk() {
                   ? "One John Boyd quote per line. Blank lines are ignored."
                   : heroOpen
                     ? "The big line on the homepage, and the paragraph under it. A new line in the box starts a new line on the page."
-                    : "About, The Method, FAQ, Contact intro, Privacy, Legal, and the Updates header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
+                    : compareOpen
+                      ? "The Compare page. Checks, prices, the intro, and the Get Started button."
+                      : "About, The Method, FAQ, Contact intro, Privacy, Legal, and the Updates header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
         </p>
         <div className="mt-3 inline-flex flex-wrap rounded-lg bg-elevated p-1">
           {SITE_PAGE_SLUGS.map((id) => (
@@ -602,6 +728,16 @@ export function SiteCopyDesk() {
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
                 Save Hero
+              </PrimaryButton>
+              <SavedAt at={savedAt[slug]} />
+            </div>
+          </>
+        ) : draft && compareOpen ? (
+          <>
+            <CompareFields value={compare} onChange={onCompareChange} />
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
+                Save Compare
               </PrimaryButton>
               <SavedAt at={savedAt[slug]} />
             </div>

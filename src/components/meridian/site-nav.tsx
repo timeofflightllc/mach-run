@@ -10,6 +10,7 @@ const LINKS = [
   { to: "/method" as const, label: "Method" },
   { to: "/pricing" as const, label: "Pricing" },
   { to: "/faq" as const, label: "FAQ" },
+  { to: "/compare" as const, label: "Compare" },
   { to: "/announcements" as const, label: "Updates" },
   { to: "/contact" as const, label: "Contact" },
   { to: "/privacy" as const, label: "Privacy" },
