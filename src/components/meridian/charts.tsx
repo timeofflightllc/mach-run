@@ -892,10 +892,10 @@ export function CashChart({
   const flip = (key: keyof typeof shown) =>
     setShown((current) => ({ ...current, [key]: !current[key] }));
   const series = [
-    { key: "income" as const, label: "Income" },
-    { key: "spending" as const, label: "Spending" },
-    { key: "contributions" as const, label: "Contributions" },
-    { key: "guaranteed" as const, label: "Guaranteed" },
+    { key: "income" as const, label: "Income", color: "var(--color-positive)" },
+    { key: "spending" as const, label: "Spending", color: "var(--color-negative)" },
+    { key: "contributions" as const, label: "Contributions", color: "#1a2330" },
+    { key: "guaranteed" as const, label: "Guaranteed", color: "var(--color-accent)" },
   ];
 
   return (
@@ -931,12 +931,16 @@ export function CashChart({
                 type="button"
                 aria-pressed={shown[item.key]}
                 onClick={() => flip(item.key)}
-                className={cn(
-                  "h-7 rounded px-2 text-[11px] font-medium leading-none",
+                className="h-7 rounded px-2 text-[11px] font-medium leading-none"
+                style={
                   shown[item.key]
-                    ? "bg-accent text-accent-fg"
-                    : "bg-slate-100 text-slate-600 shadow-[0_0_0_1px_#c8d2de] hover:text-slate-900",
-                )}
+                    ? { backgroundColor: item.color, color: inkOn(item.color) }
+                    : {
+                        backgroundColor: "#ffffff",
+                        color: item.color,
+                        boxShadow: `inset 0 0 0 1px ${item.color}`,
+                      }
+                }
               >
                 {item.label}
               </button>
@@ -988,13 +992,14 @@ export function CashChart({
               />
             ) : null}
             {shown.spending ? (
-              <Line
+              <Area
                 type="monotone"
                 dataKey="spending"
                 name="Spending"
                 stroke="var(--color-negative)"
+                fill="var(--color-negative)"
+                fillOpacity={0.16}
                 strokeWidth={2}
-                dot={false}
                 isAnimationActive={false}
               />
             ) : null}
