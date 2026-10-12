@@ -213,6 +213,10 @@
   width: min(6.25rem, 100%);
 }
 
+.mach-orbit-monte {
+  width: min(12.5rem, 100%);
+}
+
 .mach-orbit-logo {
   position: relative;
   z-index: 1;

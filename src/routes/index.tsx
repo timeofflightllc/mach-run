@@ -497,7 +497,7 @@ function MonteCarloTab({
             {quotes.length > 0 ? <BoydQuote quotes={quotes} pulse /> : (
               <p className="max-w-sm text-sm leading-relaxed text-slate-600">Checking 1,000 futures…</p>
             )}
-            <MachOrbit compact />
+            <MachOrbit compact monte />
           </div>
         ) : unlocked && score && score.bands.length > 0 ? (
           <MonteCarloBandChart bands={score.bands} traces={score.traces} real={real} />

@@ -1,7 +1,7 @@
 /** Pulsing MACH RUN mark. A sketch fighter flies a clockwise positive-G turn, canopy toward the logo. */
-export function MachOrbit({ compact = false }: { compact?: boolean }) {
+export function MachOrbit({ compact = false, monte = false }: { compact?: boolean; monte?: boolean }) {
   return (
-    <div className={compact ? "mach-orbit mach-orbit-compact" : "mach-orbit"}>
+    <div className={compact ? `mach-orbit mach-orbit-compact${monte ? " mach-orbit-monte" : ""}` : "mach-orbit"}>
       <div className="mach-orbit-ring" aria-hidden />
       <div className="mach-comet" aria-hidden>
         <div className="mach-contrail-wash" />
