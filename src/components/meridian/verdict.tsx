@@ -75,11 +75,11 @@ function NestEggGap({
         <span>{usd(egg.goal)}</span>
       </div>
       <div
-        className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-200"
+        className="mt-1.5 h-4 overflow-hidden rounded-full bg-slate-200"
         role="img"
         aria-label={`${usd(projected)} of the ${usd(egg.goal)} goal in ${egg.targetYear}`}
       >
-        <div className="h-full rounded-full bg-slate-900" style={{ width: `${fill}%` }} />
+        <div className="h-full rounded-full bg-accent" style={{ width: `${fill}%` }} />
       </div>
       <p className="mt-2 text-sm font-medium leading-snug text-fg">{status}</p>
       {lever ? <p className="mt-1 text-sm leading-snug text-muted">{lever}</p> : null}
