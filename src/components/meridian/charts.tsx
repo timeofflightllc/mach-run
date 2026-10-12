@@ -1099,13 +1099,14 @@ export function NetWorthChart({
   const visibleKeys = accountsLive
     ? accounts.filter((account) => shown(account.id)).map((account) => account.key)
     : [];
-  const chartData = accountsLive
+  const chartData = (accountsLive
     ? data.map((point) => {
         let assetsShown = 0;
         for (const key of visibleKeys) assetsShown += Number(point[key] ?? 0);
         return { ...point, assetsShown };
       })
-    : data;
+    : data
+  ).map((point) => ({ ...point, netWorthEdge: point.netWorth }));
   const axisEnds = (locked ? hasDebt : debtOn)
     ? netWorthYDomain(data, accountsLive ? visibleKeys : null)
     : null;
@@ -1269,33 +1270,33 @@ export function NetWorthChart({
                   isAnimationActive={false}
                 />
               ) : null}
-              {locked || shown("netWorth") ? (
-                <>
-                  <Line
-                    type="monotone"
-                    dataKey="netWorth"
-                    stroke="#ffffff"
-                    strokeWidth={4.5}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    dot={false}
-                    legendType="none"
-                    tooltipType="none"
-                    isAnimationActive={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="netWorth"
-                    name="Net worth"
-                    stroke="var(--color-accent)"
-                    strokeWidth={2.5}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    dot={false}
-                    isAnimationActive={false}
-                  />
-                </>
-              ) : null}
+              {(locked || shown("netWorth")) && (
+                <Line
+                  type="monotone"
+                  dataKey="netWorthEdge"
+                  stroke="#ffffff"
+                  strokeWidth={4.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  dot={false}
+                  legendType="none"
+                  tooltipType="none"
+                  isAnimationActive={false}
+                />
+              )}
+              {(locked || shown("netWorth")) && (
+                <Line
+                  type="monotone"
+                  dataKey="netWorth"
+                  name="Net worth"
+                  stroke="var(--color-accent)"
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  dot={false}
+                  isAnimationActive={false}
+                />
+              )}
             </ComposedChart>
           </ResponsiveContainer>
         </div>
