@@ -1191,7 +1191,13 @@ export function NetWorthChart({
                 itemStyle={{ color: "#4b5b6e" }}
               />
               <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
-              {debtOn ? <ReferenceLine y={0} stroke="#94a3b8" /> : null}
+              <ReferenceLine
+                y={0}
+                stroke="#475569"
+                strokeWidth={1.25}
+                legendType="none"
+                label={{ value: "$0.00", position: "insideTopLeft", fill: "#475569", fontSize: 11 }}
+              />
               {locked ? (
                 <Area
                   type="monotone"
