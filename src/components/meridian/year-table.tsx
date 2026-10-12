@@ -563,9 +563,10 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
         </div>
       ) : null}
       <p className="border-t border-border px-4 py-3 text-xs text-subtle">
-        Identity: income + drawn = tax + spend + saved. Take-home is income
-        minus tax. Leftover is take-home minus spend. Hover an income amount
-        for the mix. Hover Drawn for where that cash comes from. Hover{" "}
+        Each year balances. Income plus cash drawn from accounts equals tax,
+        spending, and money saved. Take-home is income minus tax. Leftover is
+        take-home minus spending. Hover an income amount for the mix. Hover
+        Drawn for which accounts that cash came from. Hover{" "}
         <span className="font-bold text-negative">CAPPED</span> when a year is
         marked.
       </p>
