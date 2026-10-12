@@ -815,7 +815,6 @@ export function WealthChart({
               labelFormatter={(t) => formatAxisTick(t as string | number, span)}
               contentStyle={tooltipStyle}
               labelStyle={{ color: "#1a2330" }}
-              itemStyle={{ color: "#4b5b6e" }}
             />
             <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
             {debtOn ? <ReferenceLine y={0} stroke="#94a3b8" /> : null}
