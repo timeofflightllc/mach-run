@@ -1965,9 +1965,14 @@ function Home() {
                 </div>
               ) : null}
               <div className="relative">
-                <div className="mb-3 flex items-center justify-between gap-2 min-[72rem]:mb-0 min-[72rem]:h-0">
+                <div className="mb-3 flex items-center justify-between gap-2 min-[72rem]:absolute min-[72rem]:bottom-0 min-[72rem]:right-[calc(100%+0.5rem)] min-[72rem]:top-[2.5rem] min-[72rem]:z-20 min-[72rem]:mb-0 min-[72rem]:w-14 min-[72rem]:items-start">
                 <div
-                  className="flex min-w-0 flex-1 flex-row gap-2 overflow-x-auto pr-12 min-[72rem]:absolute min-[72rem]:top-0 min-[72rem]:z-20 min-[72rem]:flex-none min-[72rem]:flex-col min-[72rem]:overflow-visible min-[72rem]:pr-0 min-[72rem]:left-[calc(0.5rem-max(1rem,7.5vw))]"
+                  className={cn(
+                    "flex min-w-0 flex-1 flex-row gap-2 overflow-x-auto pr-12 min-[72rem]:sticky min-[72rem]:z-20 min-[72rem]:h-max min-[72rem]:w-14 min-[72rem]:flex-none min-[72rem]:flex-col min-[72rem]:self-start min-[72rem]:overflow-visible min-[72rem]:pr-0",
+                    stepsH != null
+                      ? "min-[72rem]:top-3"
+                      : "min-[72rem]:top-[calc(var(--mach-header-h,7rem)+0.75rem)]",
+                  )}
                 >
                   <div role="tablist" aria-label="Act" className="contents">
                   {ACT_TABS.map((tab) => (
