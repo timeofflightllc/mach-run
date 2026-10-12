@@ -574,28 +574,57 @@ function netWorthPoints(plan: Plan, sim: SimResult, span: ChartSpan): NwPoint[] 
   );
 }
 
-function netWorthYDomain(
+function netWorthExtent(
   data: NwPoint[],
   positiveKeys: string[] | null,
-): { lo: number; hi: number } | null {
+  debt: boolean,
+  net: boolean,
+): { lo: number; hi: number } {
   let min = 0;
   let max = 0;
   for (const point of data) {
-    min = Math.min(min, point.liabilities, point.netWorth);
-    let top = Math.max(0, point.netWorth);
+    if (debt) min = Math.min(min, point.liabilities);
+    if (net) {
+      min = Math.min(min, point.netWorth);
+      max = Math.max(max, point.netWorth);
+    }
+    let top = 0;
     if (positiveKeys) {
-      let sum = 0;
-      for (const key of positiveKeys) sum += Number(point[key] ?? 0);
-      top = Math.max(top, sum);
+      for (const key of positiveKeys) top += Number(point[key] ?? 0);
     } else {
-      top = Math.max(top, point.assets);
+      top = point.assets;
     }
     max = Math.max(max, top);
   }
-  if (!(max > min)) return null;
-  const lo = min < 0 ? min - Math.abs(min) * 0.12 : 0;
-  const hi = max > 0 ? max * 1.04 : 1;
-  return { lo, hi };
+  return { lo: min, hi: Math.max(max, min) };
+}
+
+/** Even steps (1, 2, or 5 × 10ⁿ) that cover the data, so the axis is $0, $1M, $2M — not $1.02M. */
+function moneyAxis(lo: number, hi: number): { lo: number; hi: number; ticks: number[] } {
+  const span = Math.max(hi - lo, 1);
+  const rough = span / 5;
+  const mag = 10 ** Math.floor(Math.log10(rough));
+  const residual = rough / mag;
+  const nice = residual <= 1 ? 1 : residual <= 2 ? 2 : residual <= 5 ? 5 : 10;
+  const step = nice * mag;
+  const start = Math.floor(lo / step) * step;
+  const end = Math.max(Math.ceil(hi / step) * step, start + step);
+  const count = Math.round((end - start) / step);
+  const ticks = Array.from({ length: count + 1 }, (_, i) => {
+    const value = Math.round(start + i * step);
+    return Math.abs(value) < 1 ? 0 : value;
+  });
+  return { lo: ticks[0] ?? 0, hi: ticks[ticks.length - 1] ?? step, ticks };
+}
+
+function axisDollars(n: number, ticks: number[]): string {
+  if (!Number.isFinite(n) || Math.abs(n) < 0.5) return "$0";
+  const top = ticks.reduce((max, tick) => Math.max(max, Math.abs(tick)), 0);
+  const unit = top >= 1_000_000 ? 1_000_000 : top >= 1_000 ? 1_000 : 1;
+  const suffix = unit === 1_000_000 ? "M" : unit === 1_000 ? "k" : "";
+  const scaled = Math.abs(n) / unit;
+  const text = Math.abs(scaled - Math.round(scaled)) < 0.05 ? String(Math.round(scaled)) : scaled.toFixed(1);
+  return `${n < 0 ? "-" : ""}$${text}${suffix}`;
 }
 
 function fakeNetWorthPoints(span: ChartSpan): NwPoint[] {
@@ -1107,12 +1136,13 @@ export function NetWorthChart({
       })
     : data
   ).map((point) => ({ ...point, netWorthEdge: point.netWorth }));
-  const axisEnds = (locked ? hasDebt : debtOn)
-    ? netWorthYDomain(data, accountsLive ? visibleKeys : null)
-    : null;
-  const yLo = axisEnds?.lo ?? 0;
-  const yHi = axisEnds?.hi ?? 1;
-  const yDomain = useCallback(() => [yLo, yHi] as [number, number], [yLo, yHi]);
+  const extent = netWorthExtent(
+    data,
+    accountsLive ? visibleKeys : null,
+    locked ? hasDebt : debtOn,
+    locked || shown("netWorth"),
+  );
+  const yAxis = moneyAxis(extent.lo, extent.hi);
 
   if (locked && minimized) {
     return (
@@ -1195,12 +1225,14 @@ export function NetWorthChart({
                 height={x.height}
               />
               <YAxis
-                tickFormatter={(v) => usdCompact(v)}
+                tickFormatter={(v) => axisDollars(Number(v), yAxis.ticks)}
+                ticks={yAxis.ticks}
+                domain={[yAxis.lo, yAxis.hi]}
                 tick={{ fill: tickFill, fontSize: 11 }}
                 tickLine={false}
                 axisLine={false}
-                width={axisEnds ? 72 : 56}
-                domain={axisEnds ? yDomain : undefined}
+                width={72}
+                interval={0}
               />
               <Tooltip
                 formatter={formatTip}
@@ -1214,7 +1246,6 @@ export function NetWorthChart({
                 stroke="#475569"
                 strokeWidth={1.25}
                 legendType="none"
-                label={{ value: "$0.00", position: "left", fill: tickFill, fontSize: 11 }}
               />
               {locked ? (
                 <Area
