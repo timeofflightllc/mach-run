@@ -134,7 +134,7 @@ export function mergeCompareCopy(raw: unknown): CompareCopy {
   return {
     title: str(src.title, d.title),
     kicker: str(src.kicker, d.kicker),
-    intro: str(src.intro, d.intro),
+    intro: typeof src.intro === "string" ? src.intro : d.intro,
     rows: rows.length ? rows : d.rows,
     prices: prices(src.prices, d.prices),
     noteStar: typeof src.noteStar === "string" ? src.noteStar : d.noteStar,

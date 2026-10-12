@@ -189,7 +189,7 @@ function Compare() {
           <div className="@container w-full">
             <div className="space-y-8 @[48rem]:hidden">
               {copy.intro ? (
-                <p className="text-base leading-relaxed text-fg">
+                <p className="text-center text-base leading-relaxed text-fg">
                   <SiteCopyText text={copy.intro} />
                 </p>
               ) : null}
@@ -197,7 +197,7 @@ function Compare() {
             </div>
             <div className="hidden w-full grid-cols-[1fr_1fr_minmax(0,max-content)_1fr_1fr] gap-y-8 @[48rem]:grid">
               {copy.intro ? (
-                <p className="col-span-4 col-start-2 min-w-0 text-base leading-relaxed text-fg">
+                <p className="col-span-full text-center text-base leading-relaxed text-fg">
                   <SiteCopyText text={copy.intro} />
                 </p>
               ) : null}
