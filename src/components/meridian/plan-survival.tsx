@@ -63,6 +63,9 @@ function SurvivalTitle() {
 const quoteSlip =
   "relative mt-3 flex h-[calc(7.5rem+24px)] shrink-0 flex-col items-center justify-center overflow-hidden rounded-lg border border-[#e4d5c4] bg-[#f7f1e6] px-4 py-[12px] text-center sm:h-[7.5rem] sm:py-0";
 
+const quoteSlipLarge =
+  "relative flex h-[calc(10rem+24px)] w-full shrink-0 flex-col items-center justify-center overflow-hidden rounded-lg border border-[#e4d5c4] bg-[#f7f1e6] px-6 py-4 text-center sm:h-[10rem] sm:py-0";
+
 function nextBoydLine(quotes: string[], current: string) {
   if (quotes.length === 0) return "";
   if (quotes.length === 1) return quotes[0] ?? "";
@@ -73,9 +76,19 @@ function nextBoydLine(quotes: string[], current: string) {
   return line;
 }
 
-export function BoydQuote({ quotes, pulse }: { quotes: string[]; pulse: boolean }) {
+export function BoydQuote({
+  quotes,
+  pulse,
+  large = false,
+}: {
+  quotes: string[];
+  pulse: boolean;
+  large?: boolean;
+}) {
+  const floor = large ? 22 : 18;
+  const min = large ? 14 : 11;
   const [spin, setSpin] = useState(0);
-  const [px, setPx] = useState(18);
+  const [px, setPx] = useState(floor);
   const slipRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const picked = useRef<{ spin: number; line: string } | null>(null);
@@ -100,8 +113,8 @@ export function BoydQuote({ quotes, pulse }: { quotes: string[]; pulse: boolean 
       const style = getComputedStyle(slip);
       const pad = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
       const limit = slip.clientHeight - pad;
-      let size = 18;
-      while (size > 11) {
+      let size = floor;
+      while (size > min) {
         if (quote) quote.style.fontSize = `${size}px`;
         if (mark) {
           mark.style.fontSize = `${Math.round(size * 2.4)}px`;
@@ -116,12 +129,12 @@ export function BoydQuote({ quotes, pulse }: { quotes: string[]; pulse: boolean 
     const watch = new ResizeObserver(fit);
     watch.observe(slip);
     return () => watch.disconnect();
-  }, [line]);
+  }, [line, floor, min]);
 
   const markPx = Math.round(px * 2.4);
 
   return (
-    <div ref={slipRef} className={quoteSlip}>
+    <div ref={slipRef} className={large ? quoteSlipLarge : quoteSlip}>
       {line ? (
         <div ref={bodyRef} className={cn("flex w-full flex-col items-center", pulse && "mach-run-pulse")}>
           <span
@@ -131,10 +144,10 @@ export function BoydQuote({ quotes, pulse }: { quotes: string[]; pulse: boolean 
           >
             “
           </span>
-          <p className="max-w-xl font-display leading-snug text-slate-900" style={{ fontSize: px }}>
+          <p className={cn("font-display leading-snug text-slate-900", large ? "max-w-2xl" : "max-w-xl")} style={{ fontSize: px }}>
             {line}
           </p>
-          <p className="mt-2 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+          <p className={cn("mt-2 font-medium uppercase tracking-[0.16em] text-slate-500", large ? "text-sm" : "text-xs")}>
             John Boyd
           </p>
         </div>
