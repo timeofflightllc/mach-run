@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ChartLine, FileSearch, Sparkles, Table2 } from "lucide-react";
+import { ChartLine, FileSearch, RefreshCw, Sparkles, Table2 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { AuthSlot } from "@/components/meridian/auth-slot";
 import { ProfileSwitcher } from "@/components/meridian/profile-switcher";
@@ -357,6 +357,37 @@ function ActTabButton({
           style={{ left: Math.min(Math.max(tip.x, 36), window.innerWidth - 36), top: tip.y }}
         >
           {label}
+        </span>
+      ) : null}
+    </button>
+  );
+}
+
+function ExecuteMachRunButton({ onExecute }: { onExecute: () => void }) {
+  const [tip, setTip] = useState<{ x: number; y: number } | null>(null);
+  function place(el: HTMLButtonElement) {
+    const r = el.getBoundingClientRect();
+    setTip({ x: r.left + r.width / 2, y: r.bottom + 8 });
+  }
+  return (
+    <button
+      type="button"
+      aria-label="Execute MACH RUN"
+      onClick={onExecute}
+      onMouseEnter={(e) => place(e.currentTarget)}
+      onMouseLeave={() => setTip(null)}
+      onFocus={(e) => place(e.currentTarget)}
+      onBlur={() => setTip(null)}
+      className="inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 min-[72rem]:h-14 min-[72rem]:w-14"
+    >
+      <RefreshCw className="size-6 min-[72rem]:size-7" strokeWidth={1.75} />
+      {tip ? (
+        <span
+          role="tooltip"
+          className="pointer-events-none fixed z-[80] -translate-x-1/2 whitespace-nowrap rounded-md bg-slate-900 px-2 py-1 text-xs font-medium text-white shadow-lg"
+          style={{ left: Math.min(Math.max(tip.x, 88), window.innerWidth - 88), top: tip.y }}
+        >
+          Execute MACH RUN
         </span>
       ) : null}
     </button>
@@ -1936,10 +1967,9 @@ function Home() {
               <div className="relative">
                 <div className="mb-3 flex items-center justify-between gap-2 min-[72rem]:mb-0 min-[72rem]:h-0">
                 <div
-                  role="tablist"
-                  aria-label="Act"
                   className="flex min-w-0 flex-1 flex-row gap-2 overflow-x-auto pr-12 min-[72rem]:absolute min-[72rem]:top-0 min-[72rem]:z-20 min-[72rem]:flex-none min-[72rem]:flex-col min-[72rem]:overflow-visible min-[72rem]:pr-0 min-[72rem]:left-[calc(0.5rem-max(1rem,7.5vw))]"
                 >
+                  <div role="tablist" aria-label="Act" className="contents">
                   {ACT_TABS.map((tab) => (
                     <ActTabButton
                       key={tab.id}
@@ -1949,6 +1979,8 @@ function Home() {
                       onClick={() => setActTab(tab.id)}
                     />
                   ))}
+                  </div>
+                  <ExecuteMachRunButton onExecute={() => void calculate({ stay: true })} />
                 </div>
                 <OodaRail open={oodaOpen} onToggle={() => setOodaOpen((open) => !open)} />
                 </div>
