@@ -882,9 +882,8 @@ export function WealthChart({
               dataKey="netWorth"
               name="Net worth"
               stroke="var(--color-accent)"
-              strokeWidth={1.5}
+              strokeWidth={2.5}
               dot={false}
-              strokeDasharray="4 4"
               isAnimationActive={false}
             />
           </ComposedChart>
