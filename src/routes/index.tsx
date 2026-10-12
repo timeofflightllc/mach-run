@@ -26,6 +26,7 @@ import { Verdict } from "@/components/meridian/verdict";
 import { YearTable } from "@/components/meridian/year-table";
 import { MachFooter, BrandLockup } from "@/components/meridian/mach-mark";
 import { MachOrbit } from "@/components/meridian/mach-orbit";
+import { MatrixRain } from "@/components/meridian/matrix-rain";
 import { isRealUser } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useGuestChrome } from "@/lib/auth/guest-chrome";
@@ -495,7 +496,9 @@ function MonteCarloTab({
         {unlocked && !running && score && score.bands.length > 0 ? (
           <MonteCarloBandChart bands={score.bands} traces={score.traces} real={real} />
         ) : (
-          <div className="flex h-[32rem] flex-col items-center justify-center gap-6 rounded-xl bg-white px-6 text-center shadow-[0_0_0_1px_#c8d2de] sm:h-[40rem]">
+          <div className="relative flex h-[32rem] flex-col items-center justify-center gap-6 overflow-hidden rounded-xl bg-white px-6 text-center shadow-[0_0_0_1px_#c8d2de] sm:h-[40rem]">
+            {running && unlocked ? <MatrixRain /> : null}
+            <div className="relative z-10 flex w-full flex-col items-center gap-6">
             {unlocked && quotes.length > 0 ? (
               <BoydQuote quotes={quotes} pulse={running} large />
             ) : running ? (
@@ -508,6 +511,7 @@ function MonteCarloTab({
                 Run it to see 1,000 possible futures for the money you can spend.
               </p>
             )}
+            </div>
           </div>
         )}
         {unlocked ? null : (
