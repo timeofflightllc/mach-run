@@ -17,8 +17,8 @@ export function MatrixRain() {
     const pen: CanvasRenderingContext2D = ctx;
     const surface: HTMLCanvasElement = canvas;
 
-    const font = 13;
-    const gap = 20;
+    const font = 12;
+    const gap = 13;
     let drops: { y: number; speed: number }[] = [];
 
     function size() {
@@ -35,7 +35,7 @@ export function MatrixRain() {
       const cols = Math.max(1, Math.ceil(w / gap));
       drops = Array.from({ length: cols }, () => ({
         y: Math.random() * h,
-        speed: 0.55 + Math.random() * 1.15,
+        speed: 0.85 + Math.random() * 1.35,
       }));
     }
 
@@ -47,17 +47,17 @@ export function MatrixRain() {
     function tick() {
       const w = surface.clientWidth;
       const h = surface.clientHeight;
-      pen.fillStyle = "rgba(255,255,255,0.16)";
+      pen.fillStyle = "rgba(255,255,255,0.11)";
       pen.fillRect(0, 0, w, h);
       pen.font = `${font}px ui-monospace, SFMono-Regular, Menlo, monospace`;
       pen.textAlign = "center";
-      pen.fillStyle = "rgba(14, 110, 64, 0.4)";
+      pen.fillStyle = "rgba(14, 110, 64, 0.42)";
       for (let i = 0; i < drops.length; i++) {
-        if (i % 5 === 0) continue;
         const drop = drops[i];
+        if (!drop) continue;
         const glyph = GLYPHS[Math.floor(Math.random() * GLYPHS.length)] ?? "0";
         pen.fillText(glyph, i * gap + gap / 2, drop.y);
-        drop.y += drop.speed * 2.4;
+        drop.y += drop.speed * 3.8;
         if (drop.y > h + font) drop.y = -Math.random() * h * 0.35;
       }
       raf = requestAnimationFrame(tick);
