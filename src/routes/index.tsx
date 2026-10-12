@@ -28,6 +28,8 @@ import { MachFooter, BrandLockup } from "@/components/meridian/mach-mark";
 import { MachOrbit } from "@/components/meridian/mach-orbit";
 import { MatrixRain } from "@/components/meridian/matrix-rain";
 import { isRealUser } from "@/lib/auth/gates";
+import { readActPlace, writeActPlace, type ActTab } from "@/lib/act-place";
+import { readActPlaceCookie } from "@/lib/act-place-api";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useGuestChrome } from "@/lib/auth/guest-chrome";
 import { simulate } from "@/lib/plan/engine";
@@ -158,6 +160,14 @@ function inputSignature(plan: Plan): string {
 }
 
 export const Route = createFileRoute("/")({
+  loader: async () => {
+    if (typeof document !== "undefined") return { actPlace: readActPlace() };
+    try {
+      return { actPlace: await readActPlaceCookie() };
+    } catch {
+      return { actPlace: null as ActTab | null };
+    }
+  },
   head: () =>
     pageHead({
       title: "MACH RUN | The Supersonic Retirement Calculator",
@@ -170,30 +180,6 @@ export const Route = createFileRoute("/")({
 });
 
 type BriefChart = "spendable" | "cash" | "net";
-type ActTab = "brief" | "charts" | "analysis" | "ledger" | "monte";
-
-const ACT_PLACE_KEY = "mach-act-place";
-const ACT_TAB_IDS: readonly ActTab[] = ["brief", "analysis", "charts", "ledger", "monte"];
-
-function readActPlace(): ActTab | null {
-  if (typeof sessionStorage === "undefined") return null;
-  try {
-    const raw = sessionStorage.getItem(ACT_PLACE_KEY);
-    return raw && ACT_TAB_IDS.includes(raw as ActTab) ? (raw as ActTab) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeActPlace(tab: ActTab | null) {
-  if (typeof sessionStorage === "undefined") return;
-  try {
-    if (tab) sessionStorage.setItem(ACT_PLACE_KEY, tab);
-    else sessionStorage.removeItem(ACT_PLACE_KEY);
-  } catch {
-    /* private mode */
-  }
-}
 
 function PocketAces({ className }: { className?: string; strokeWidth?: number }) {
   return (
@@ -706,6 +692,7 @@ function PhaseHead({
 }
 
 function Home() {
+  const { actPlace } = Route.useLoaderData();
   const plan = usePlanStore((s) => s.plan);
   const copy = usePlannerCopy();
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
@@ -713,7 +700,7 @@ function Home() {
   const { user, isPending } = useCurrentUserState();
   const signedIn = Boolean(user?.id);
   const ent = useEntitlement();
-  const [step, setStep] = useState<StepId>("family");
+  const [step, setStep] = useState<StepId>(actPlace ? "act" : "family");
   const sheet = hasBalanceSheet(ent.plan);
   const route = PAGES;
   const [motion, setMotion] = useState<{
@@ -802,7 +789,7 @@ function Home() {
   } | null>(null);
   const survivalView = survival[runKey] ?? null;
   const [survivalMinimized, setSurvivalMinimized] = useState(readPlanSurvivalMinimized);
-  const [actTab, setActTab] = useState<ActTab>("brief");
+  const [actTab, setActTab] = useState<ActTab>(actPlace ?? "brief");
   const [actBoot, setActBoot] = useState<"wait" | "ready">("wait");
   const [actPlaceSettled, setActPlaceSettled] = useState(false);
   const [runsLoaded, setRunsLoaded] = useState(false);
