@@ -232,9 +232,9 @@ const ACT_TABS: { id: ActTab; label: string; icon: ComponentType<{ className?: s
 ];
 
 const BRIEF_CHARTS: { id: BriefChart; label: string }[] = [
-  { id: "spendable", label: "Spendable" },
-  { id: "cash", label: "Cash" },
-  { id: "net", label: "Net worth" },
+  { id: "spendable", label: "Spendable Wealth" },
+  { id: "cash", label: "Annual Cash Flow" },
+  { id: "net", label: "Net Worth" },
 ];
 
 function ActChartColumn({
@@ -1911,7 +1911,7 @@ function Home() {
                         </div>
                       </div>
                       <div>
-                        <div className="mb-2 inline-flex rounded-lg bg-slate-100 p-1">
+                        <div className="mb-2 inline-flex max-w-full flex-wrap rounded-lg bg-slate-100 p-1">
                           {BRIEF_CHARTS.map((choice) => {
                             const on = briefChart === choice.id;
                             return (
@@ -1921,7 +1921,7 @@ function Home() {
                                 aria-pressed={on}
                                 onClick={() => setBriefChart(choice.id)}
                                 className={cn(
-                                  "h-8 rounded-md px-3 text-xs font-medium",
+                                  "h-8 whitespace-nowrap rounded-md px-3 text-xs font-medium",
                                   on ? "bg-slate-900 text-white" : "text-slate-600 hover:text-slate-900",
                                 )}
                               >
