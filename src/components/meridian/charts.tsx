@@ -38,7 +38,7 @@ const chartCard =
 function plotHeight(expanded: boolean, tall?: boolean) {
   if (expanded) return "h-[calc(100svh-12rem)]";
   if (tall) return "h-[32rem] sm:h-[40rem]";
-  return "h-64 sm:h-80";
+  return "h-96 sm:h-[30rem]";
 }
 const tickFill = "#4b5b6e";
 const gridStroke = "#d5dde6";
