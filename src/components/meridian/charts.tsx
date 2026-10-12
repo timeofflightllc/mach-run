@@ -112,6 +112,62 @@ function stackTipOrder(bottomToTop: string[], lead: readonly string[] = []) {
   };
 }
 
+type TipEntry = {
+  dataKey?: unknown;
+  name?: unknown;
+  value?: unknown;
+  color?: string;
+  type?: string;
+};
+
+function NetWorthTip({
+  active,
+  payload,
+  label,
+  labelFormatter,
+  bottomToTop,
+}: {
+  active?: boolean;
+  payload?: TipEntry[];
+  label?: string | number;
+  labelFormatter?: (label: string | number, payload: TipEntry[]) => ReactNode;
+  bottomToTop: string[];
+}) {
+  if (!active || !payload?.length) return null;
+  const rank = stackTipOrder(bottomToTop, ["netWorth"]);
+  const rows = payload
+    .filter((entry) => entry.type !== "none")
+    .slice()
+    .sort((a, b) => rank(a) - rank(b));
+  const title = labelFormatter && label != null ? labelFormatter(label, payload) : label;
+  return (
+    <div style={{ ...tooltipStyle, margin: 0, padding: 10, whiteSpace: "nowrap" }}>
+      {title != null && title !== "" ? (
+        <p style={{ margin: 0, color: "#1a2330" }}>{title}</p>
+      ) : null}
+      <ul style={{ margin: 0, padding: 0, listStyle: "none" }}>
+        {rows.map((entry, index) => {
+          const bold = String(entry.dataKey ?? "") === "netWorth";
+          return (
+            <li
+              key={`${String(entry.dataKey)}-${index}`}
+              style={{
+                display: "block",
+                paddingTop: 4,
+                paddingBottom: 4,
+                color: entry.color || "#000",
+                fontWeight: bold ? 700 : undefined,
+              }}
+            >
+              {String(entry.name ?? "")} : {formatTip(entry.value)}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 type ChartSpan = 5 | 10 | 20 | "horizon";
 
 function spanOptions(endAge: number): { id: ChartSpan; label: string }[] {
@@ -1266,11 +1322,8 @@ export function NetWorthChart({
                 interval={0}
               />
               <Tooltip
-                formatter={formatTip}
+                content={<NetWorthTip bottomToTop={visibleKeys} />}
                 labelFormatter={(t) => formatAxisTick(t as string | number, span)}
-                contentStyle={tooltipStyle}
-                labelStyle={{ color: "#1a2330" }}
-                itemSorter={stackTipOrder(visibleKeys)}
               />
               <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
               <ReferenceLine
