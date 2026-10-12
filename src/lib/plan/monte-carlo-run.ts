@@ -324,6 +324,7 @@ function portfolioFields(portfolio: Portfolio) {
     spendable: portfolio.spendable,
     includeInNetWorth: portfolio.includeInNetWorth,
     costBasis: portfolio.costBasis ?? null,
+    sunsetAge: portfolio.kind === "529" ? portfolio.sunsetAge ?? null : null,
     mortgage: portfolio.mortgage ? mortgageFields(portfolio.mortgage) : null,
   };
 }

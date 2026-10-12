@@ -26,6 +26,7 @@ import {
 import { emptyAudit, type PlanAudit } from "./audit.ts";
 import { irsAnnualCap, irsCapPerson, irsLimitClass } from "./irs-limits.ts";
 import { isTaxQualified } from "./family-owners.ts";
+import { five29Ended } from "./college-529.ts";
 import { mortgagePaymentDue, portfolioEquity, remainingMortgage } from "./mortgage.ts";
 import { liabilityPaymentDue, remainingLiability } from "./liability.ts";
 import type {
@@ -362,8 +363,9 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
 
   const values = new Map<string, number>();
   const basis = new Map<string, number>();
+  const asOfKey = iso(asOf).slice(0, 7);
   for (const p of plan.portfolios) {
-    values.set(p.id, p.currentValue);
+    values.set(p.id, five29Ended(plan, p, asOfKey) ? 0 : p.currentValue);
     if (isNonQualifiedAnnuity(p)) {
       basis.set(p.id, Math.max(0, Math.min(p.costBasis ?? 0, p.currentValue)));
     }
@@ -392,7 +394,6 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
   let totalContributed = 0;
   let totalWithdrawn = 0;
   const goalKey = (plan.assumptions.retirementGoalDate ?? "").slice(0, 7);
-  const asOfKey = iso(asOf).slice(0, 7);
   let atRetirement = new Map<string, number>();
   let atRetirementReal = new Map<string, number>();
 
@@ -408,14 +409,26 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
   while (!isBefore(endDate, cursor) && guard < 1200) {
     guard += 1;
     const monthsFromAsOf = months.length;
+    const monthKey = iso(cursor).slice(0, 7);
     const inflationIndex = (1 + mInf) ** monthsFromAsOf;
     const auditStart = audit ? new Map(values) : null;
+    const dropped529 = new Map<string, number>();
+    for (const p of plan.portfolios) {
+      if (!five29Ended(plan, p, monthKey)) continue;
+      const prior = values.get(p.id) ?? 0;
+      if (prior > 0.005) dropped529.set(p.id, prior);
+      values.set(p.id, 0);
+    }
     const auditBasisStart = audit ? new Map(basis) : null;
     const auditBasisAdded = audit ? new Map<string, number>() : null;
     const auditAnnuityGain = audit ? new Map<string, number>() : null;
     const auditAnnuityBasisOut = audit ? new Map<string, number>() : null;
 
     for (const p of plan.portfolios) {
+      if (five29Ended(plan, p, monthKey)) {
+        values.set(p.id, 0);
+        continue;
+      }
       const stated = (p.returnPct ?? plan.assumptions.defaultReturnPct) / 100;
       let annual = stated;
       if (shocks && p.kind !== "real_estate" && stated > 0) {
@@ -436,9 +449,16 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
           plan.portfolios.map((p) => {
             const start = auditStart?.get(p.id) ?? 0;
             const now = values.get(p.id) ?? 0;
+            const distributed = dropped529.get(p.id) ?? 0;
             return [
               p.id,
-              { growth: now - start, contribution: 0, match: 0, withdrawal: 0, sweep: 0 },
+              {
+                growth: now - start + distributed,
+                contribution: 0,
+                match: 0,
+                withdrawal: distributed,
+                sweep: 0,
+              },
             ] as const;
           }),
         )
@@ -542,6 +562,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
       if (amount <= 0) continue;
       if (!values.has(rule.portfolioId)) continue;
       const dest = plan.portfolios.find((p) => p.id === rule.portfolioId);
+      if (dest && five29Ended(plan, dest, monthKey)) continue;
       const cls = dest ? irsLimitClass(dest.kind) : null;
       const person = dest ? irsCapPerson(plan, dest, rule) : null;
       const asked = amount;
@@ -753,7 +774,9 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
         fundedAudit.push({ ruleId: d.ruleId, amount: take, matchApplied: 0 });
       }
       const sweepId = plan.assumptions.sweepPortfolioId;
-      if (pool > 0.5 && sweepId && values.has(sweepId)) {
+      const sweepDest = sweepId ? plan.portfolios.find((p) => p.id === sweepId) : undefined;
+      const sweepOpen = Boolean(sweepDest && !five29Ended(plan, sweepDest, monthKey));
+      if (pool > 0.5 && sweepId && values.has(sweepId) && sweepOpen) {
         values.set(sweepId, (values.get(sweepId) ?? 0) + pool);
         if (basis.has(sweepId)) {
           basis.set(sweepId, (basis.get(sweepId) ?? 0) + pool);
@@ -864,9 +887,10 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
     const spendableLines: { id: string; label: string; amount: number }[] = [];
     const netWorthLines: { id: string; label: string; amount: number }[] = [];
     for (const p of plan.portfolios) {
-      const v = values.get(p.id) ?? 0;
-      byBucket[p.taxBucket] += v;
-      if (p.includeInNetWorth) {
+      const ended = five29Ended(plan, p, monthKey);
+      const v = ended ? 0 : (values.get(p.id) ?? 0);
+      if (!ended) byBucket[p.taxBucket] += v;
+      if (!ended && p.includeInNetWorth) {
         const debt = p.kind === "real_estate" ? remainingMortgage(p.mortgage, cursor) : 0;
         assetsEnd += v;
         liabilitiesEnd += debt;
@@ -877,7 +901,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
           amount: v,
         });
       }
-      if (p.spendable) {
+      if (!ended && p.spendable) {
         spendableEnd += v;
         spendableLines.push({
           id: p.id,
@@ -1299,15 +1323,17 @@ function buildRmdAccountRows(
 }
 
 export function startingSpendable(plan: Plan): number {
+  const monthKey = (plan.assumptions.asOfDate ?? "").slice(0, 7);
   return plan.portfolios
-    .filter((p) => p.spendable)
+    .filter((p) => p.spendable && !five29Ended(plan, p, monthKey))
     .reduce((s, p) => s + p.currentValue, 0);
 }
 
 export function startingNetWorth(plan: Plan): number {
   const asOf = plan.assumptions.asOfDate;
+  const monthKey = (asOf ?? "").slice(0, 7);
   const equity = plan.portfolios
-    .filter((p) => p.includeInNetWorth)
+    .filter((p) => p.includeInNetWorth && !five29Ended(plan, p, monthKey))
     .reduce((s, p) => s + portfolioEquity(p, asOf), 0);
   const extra = (plan.liabilities ?? []).reduce(
     (s, l) => s + remainingLiability(l, asOf),

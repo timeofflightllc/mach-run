@@ -16,7 +16,7 @@ import {
 import type { AccountKind, Mortgage, Plan, Portfolio, TaxBucket } from "@/lib/plan/types";
 import { newId, usePlanStore } from "@/lib/plan/store";
 import { usd, pct } from "@/lib/plan/format";
-import { startingNetWorth } from "@/lib/plan/engine";
+import { startingNetWorth, startingSpendable } from "@/lib/plan/engine";
 import {
   emptyMortgage,
   mortgageAssociated,
@@ -33,12 +33,15 @@ import { atAccountCap, useEntitlement } from "@/lib/billing/use-entitlement";
 import { hasBalanceSheet } from "@/lib/billing/limits";
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import { fillPlanner } from "@/lib/site-copy/planner-copy";
+import { formatMonthYear } from "@/lib/plan/dates";
 import {
   accountOwnerOptions,
   accountOwnerValue,
+  childIdFromOwner,
   explicitTaxOwner,
   needsTaxOwner,
 } from "@/lib/plan/family-owners";
+import { child529StopDate, sunsetAgeOf } from "@/lib/plan/college-529";
 
 const KIND_LABELS: { value: AccountKind; label: string; bucket: TaxBucket }[] = [
   { value: "401k", label: "401(k)", bucket: "pre_tax" },
@@ -96,9 +99,7 @@ export function PortfolioForm() {
   const ent = useEntitlement();
   const capped = atAccountCap(plan.portfolios.length, ent);
 
-  const spendable = plan.portfolios
-    .filter((p) => p.spendable)
-    .reduce((s, p) => s + p.currentValue, 0);
+  const spendable = startingSpendable(plan);
   const net = startingNetWorth(plan);
   const copy = usePlannerCopy();
 
@@ -213,6 +214,9 @@ function AccountTile({
       ...(kind === "real_estate"
         ? { mortgage: p.mortgage ?? emptyMortgage(), spendable: false }
         : {}),
+      ...(kind === "529"
+        ? { sunsetAge: p.kind === "529" && sunsetAgeOf(p) ? sunsetAgeOf(p) : 23 }
+        : { sunsetAge: undefined }),
       ...(entering ? { owner: "" } : {}),
     });
   };
@@ -418,6 +422,7 @@ function AccountTile({
                 onChange={(mortgage) => onChange({ mortgage })}
               />
             ) : null}
+            {p.kind === "529" ? <College529Stop plan={plan} portfolio={p} onChange={onChange} /> : null}
           </div>
         </div>
       </div>
@@ -437,6 +442,53 @@ function AccountTile({
         </div>
       </div>
     </li>
+  );
+}
+
+function College529Stop({
+  plan,
+  portfolio: p,
+  onChange,
+}: {
+  plan: Plan;
+  portfolio: Portfolio;
+  onChange: (patch: Partial<Portfolio>) => void;
+}) {
+  const age = sunsetAgeOf(p);
+  const childId = childIdFromOwner(p.owner);
+  const child = (plan.children ?? []).find((row) => row.id === childId) ?? null;
+  const stopDate = child529StopDate(child?.birthDate, age);
+  const asOfKey = (plan.assumptions.asOfDate ?? "").slice(0, 7);
+  const already = Boolean(stopDate && asOfKey >= stopDate.slice(0, 7));
+  const name = child?.name.trim() || "This child";
+  let note =
+    "Blank keeps this 529 in the plan through longevity. Set an age to treat the balance as spent on that birthday.";
+  if (age != null && !child) {
+    note = "Pick the child who owns this 529. Sunset uses that child's birthday.";
+  } else if (age != null && child && !child.birthDate) {
+    note = `Add ${name}'s birthday in Family so MACH RUN knows when they turn ${age}.`;
+  } else if (already) {
+    note = `${name} is already ${age}. This 529 is treated as spent. It is left out of net worth, spendable cash, and the rest of the run.`;
+  } else if (stopDate && age != null) {
+    note = `In ${formatMonthYear(stopDate)}, when ${name} turns ${age}, this money is treated as spent. After that month it is left out of net worth, spendable cash, contributions, and every later calculation.`;
+  }
+  return (
+    <div className="flex max-w-xl flex-col gap-1">
+      <Field label="Sunset age" className="w-[6.5rem]">
+        <NumberInput
+          min={1}
+          max={99}
+          step={1}
+          value={age ?? 0}
+          onValue={(n) =>
+            onChange({
+              sunsetAge: n > 0 ? Math.min(99, Math.round(n)) : undefined,
+            })
+          }
+        />
+      </Field>
+      <p className="text-xs leading-relaxed text-subtle">{note}</p>
+    </div>
   );
 }
 
@@ -464,6 +516,7 @@ function AccountSummary({
     p.spendable ? "Spendable" : null,
     showNetWorth && p.includeInNetWorth ? "Net worth" : null,
     p.kind === "real_estate" && mortgageAssociated(p.mortgage) ? "Mortgage" : null,
+    p.kind === "529" && sunsetAgeOf(p) ? `Sunset ${sunsetAgeOf(p)}` : null,
   ].filter(Boolean);
   return (
     <>

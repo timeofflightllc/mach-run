@@ -87,6 +87,12 @@ export interface Portfolio {
   institutionId?: string | null;
   /** Custodian or lender. Not used in any calculation. */
   institutionName?: string;
+  /**
+   * 529 only. The month the child owner reaches this age, the balance is
+   * treated as spent. It leaves net worth, spendable cash, contributions,
+   * and every later month. Blank keeps the account through longevity.
+   */
+  sunsetAge?: number | null;
 }
 
 export type LiabilityKind =

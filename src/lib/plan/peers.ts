@@ -11,6 +11,7 @@ import {
 } from "./engine.ts";
 import { guaranteedAnnuityEquivalent, type AnnuityEquivalent } from "./annuity-equivalent.ts";
 import { cashShortYears } from "./cash-short.ts";
+import { five29Ended } from "./college-529.ts";
 import { usd, usdCompact } from "./format.ts";
 import { remainingLiability, liabilityPayoffDate } from "./liability.ts";
 import { monthsBetweenMonths, mortgageAssociated, mortgagePayoffDate, remainingMortgage } from "./mortgage.ts";
@@ -577,8 +578,9 @@ function balanceSheetNow(plan: Plan): { assets: number; debt: number } {
   const asOf = plan.assumptions.asOfDate;
   let assets = 0;
   let debt = 0;
+  const monthKey = (asOf ?? "").slice(0, 7);
   for (const p of plan.portfolios) {
-    if (!p.includeInNetWorth) continue;
+    if (!p.includeInNetWorth || five29Ended(plan, p, monthKey)) continue;
     assets += Math.max(0, p.currentValue);
     if (p.kind === "real_estate") debt += remainingMortgage(p.mortgage, asOf);
   }
@@ -920,11 +922,13 @@ function accountTable(plan: Plan, sim: SimResult, note: string): BriefTableSpec 
         p.kind === "annuity" && (p.costBasis ?? 0) > 0
           ? ` (invested ${usd(p.costBasis ?? 0)})`
           : "";
+      const spent = five29Ended(plan, p, (plan.assumptions.asOfDate ?? "").slice(0, 7));
       const bal = at.get(p.id);
-      const nominal = bal?.nominal ?? p.currentValue;
-      const real = bal?.real ?? p.currentValue;
+      const nominal = spent ? 0 : (bal?.nominal ?? p.currentValue);
+      const real = spent ? 0 : (bal?.real ?? p.currentValue);
       const later = hasGoal ? `${usd(nominal)} (${usd(real)} today)` : "—";
-      return [`${p.name.trim() || p.kind}`, `${usd(p.currentValue)}${invested}`, later];
+      const start = spent ? 0 : p.currentValue;
+      return [`${p.name.trim() || p.kind}`, `${usd(start)}${spent ? "" : invested}`, later];
     }),
     logos: plan.portfolios.map((p) => ({
       institutionId: p.institutionId ?? null,

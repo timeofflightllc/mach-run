@@ -910,5 +910,79 @@ test("October shortfall funds Roths before the taxable contribution listed first
   assert.doesNotMatch(cash.body, /above this one/);
 });
 
+test("529 leaves the plan the month the child owner turns 23", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-01-01";
+  plan.children = [{ id: "kid", name: "Sybil", birthDate: "2014-06-15" }];
+  plan.incomes = [
+    {
+      id: "pay",
+      name: "Pay",
+      kind: "salary",
+      monthlyAmount: 1000,
+      startDate: "2026-01-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.portfolios = [
+    {
+      id: "p529",
+      name: "529",
+      kind: "529",
+      owner: "child:kid",
+      currentValue: 12_000,
+      returnPct: 0,
+      taxBucket: "none",
+      spendable: false,
+      includeInNetWorth: true,
+      sunsetAge: 23,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c529",
+      label: "529",
+      portfolioId: "p529",
+      monthlyAmount: 100,
+      startDate: "2026-01-01",
+      endDate: null,
+    },
+  ];
+  const sim = simulate(plan, { audit: true });
+  const may = sim.months.find((m) => m.date.startsWith("2037-05"));
+  const jun = sim.months.find((m) => m.date.startsWith("2037-06"));
+  assert.ok(may && jun);
+  const mayLine = may.detail?.netWorthLines.find((line) => line.id === "p529");
+  assert.ok(Math.abs((mayLine?.amount ?? 0) - 25_700) < 0.02);
+  assert.equal(may.contributions, 100);
+  assert.equal(jun.detail?.netWorthLines.some((line) => line.id === "p529"), false);
+  assert.equal(jun.contributions, 0);
+  assert.equal(jun.withdrawals, 0);
+  assert.ok(jun.income < 5_000);
+  assert.ok(jun.netWorthEnd < 1);
+  assert.ok(jun.spendableEnd < 1);
+  const dropped = sim.audit?.accounts.find(
+    (row) => row.accountId === "p529" && row.date.startsWith("2037-06"),
+  );
+  assert.ok(dropped);
+  assert.ok(Math.abs((dropped?.withdrawal ?? 0) - 25_700) < 0.02);
+  assert.ok(Math.abs(dropped?.residual ?? 1) < 0.02);
+  assert.ok((dropped?.end ?? 1) < 1);
+
+  plan.portfolios[0]!.sunsetAge = 22;
+  const earlier = simulate(plan).months.find((m) => m.date.startsWith("2036-06"));
+  assert.equal(earlier?.detail?.netWorthLines.some((line) => line.id === "p529"), false);
+  assert.ok((earlier?.netWorthEnd ?? 1) < 1);
+
+  plan.portfolios[0]!.sunsetAge = null;
+  const kept = simulate(plan).months.find((m) => m.date.startsWith("2037-06"));
+  const keptLine = kept?.detail?.netWorthLines.find((line) => line.id === "p529");
+  assert.ok((keptLine?.amount ?? 0) > 25_700);
+});
+
+
 
 

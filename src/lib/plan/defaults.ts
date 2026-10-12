@@ -1,4 +1,4 @@
-import type { Plan } from "./types";
+import type { Plan, Portfolio } from "./types";
 import { coerceIsoDate, todayIso, validIso } from "./dates.ts";
 import { institutionFields } from "./institutions.ts";
 import { isPayCadence } from "./pay-cadence.ts";
@@ -59,23 +59,38 @@ export function ensurePlan(plan: Plan): Plan {
     payCadence: isPayCadence(s.payCadence) ? s.payCadence : undefined,
     payAmount: s.payAmount != null && Number.isFinite(s.payAmount) ? s.payAmount : undefined,
   }));
-  next.portfolios = next.portfolios.map((p) => ({
-    ...p,
-    ...institutionFields(p.institutionId, p.institutionName),
-    costBasis:
-      p.kind === "annuity"
-        ? Number.isFinite(p.costBasis as number)
-          ? Number(p.costBasis)
-          : 0
-        : p.costBasis ?? null,
-    mortgage:
-      p.mortgage
+  next.portfolios = next.portfolios.map((p) => {
+    const legacy = (p as { endAtChildAge23?: boolean }).endAtChildAge23 === true;
+    const { endAtChildAge23: _legacyAge, ...rest } = p as Portfolio & {
+      endAtChildAge23?: boolean;
+    };
+    const raw = rest.sunsetAge;
+    const sunsetAge =
+      rest.kind === "529"
+        ? raw != null && Number.isFinite(Number(raw)) && Number(raw) > 0
+          ? Math.min(99, Math.round(Number(raw)))
+          : legacy
+            ? 23
+            : undefined
+        : undefined;
+    return {
+      ...rest,
+      ...institutionFields(rest.institutionId, rest.institutionName),
+      costBasis:
+        rest.kind === "annuity"
+          ? Number.isFinite(rest.costBasis as number)
+            ? Number(rest.costBasis)
+            : 0
+          : rest.costBasis ?? null,
+      mortgage: rest.mortgage
         ? {
-            ...p.mortgage,
-            ...institutionFields(p.mortgage.institutionId, p.mortgage.institutionName),
+            ...rest.mortgage,
+            ...institutionFields(rest.mortgage.institutionId, rest.mortgage.institutionName),
           }
-        : p.mortgage ?? null,
-  }));
+        : rest.mortgage ?? null,
+      sunsetAge,
+    };
+  });
   next.liabilities = next.liabilities.map((l) => ({
     ...l,
     ...institutionFields(l.institutionId, l.institutionName),

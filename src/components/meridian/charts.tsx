@@ -100,6 +100,14 @@ function formatTip(value: unknown) {
   return usd(Number(value ?? 0));
 }
 
+/** Stacked series render bottom to top. The hover should read the picture top to bottom. */
+function stackTipOrder(bottomToTop: string[]) {
+  return (item: { dataKey?: unknown }) => {
+    const index = bottomToTop.indexOf(String(item.dataKey ?? ""));
+    return index < 0 ? 10_000 : bottomToTop.length - index;
+  };
+}
+
 type ChartSpan = 5 | 10 | 20 | "horizon";
 
 function spanOptions(endAge: number): { id: ChartSpan; label: string }[] {
@@ -830,6 +838,7 @@ export function WealthChart({
               labelFormatter={(t) => formatAxisTick(t as string | number, span)}
               contentStyle={tooltipStyle}
               labelStyle={{ color: "#1a2330" }}
+              itemSorter={stackTipOrder(accounts.map((account) => account.key))}
             />
             <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
             {debtOn ? <ReferenceLine y={0} stroke="#94a3b8" /> : null}
@@ -1254,6 +1263,7 @@ export function NetWorthChart({
                 labelFormatter={(t) => formatAxisTick(t as string | number, span)}
                 contentStyle={tooltipStyle}
                 labelStyle={{ color: "#1a2330" }}
+                itemSorter={stackTipOrder(visibleKeys)}
               />
               <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
               <ReferenceLine

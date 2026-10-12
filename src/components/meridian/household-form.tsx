@@ -418,6 +418,15 @@ function AddDependentPrompt({
       <div
         className="w-full max-w-md rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]"
         onMouseDown={(event) => event.stopPropagation()}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" || event.shiftKey || event.metaKey || event.ctrlKey || event.altKey) return;
+          if (event.nativeEvent.isComposing) return;
+          const tag = (event.target as HTMLElement | null)?.tagName;
+          if (tag === "SELECT" || tag === "TEXTAREA" || tag === "BUTTON") return;
+          if (!ready) return;
+          event.preventDefault();
+          onSave(name.trim(), birthDate);
+        }}
       >
         <p id="add-dependent-title" className="font-display text-lg text-fg">
           Add additional child
