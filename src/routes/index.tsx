@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChartLine, FileSearch, Sparkles, Table2 } from "lucide-react";
-import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { AuthSlot } from "@/components/meridian/auth-slot";
 import { ProfileSwitcher } from "@/components/meridian/profile-switcher";
 import { MACH_RESET_BASELINE } from "@/components/meridian/account-menu";
@@ -169,6 +169,29 @@ export const Route = createFileRoute("/")({
 
 type BriefChart = "spendable" | "cash" | "net";
 type ActTab = "brief" | "charts" | "analysis" | "ledger" | "monte";
+
+const ACT_PLACE_KEY = "mach-act-place";
+const ACT_TAB_IDS: readonly ActTab[] = ["brief", "analysis", "charts", "ledger", "monte"];
+
+function readActPlace(): ActTab | null {
+  if (typeof sessionStorage === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(ACT_PLACE_KEY);
+    return raw && ACT_TAB_IDS.includes(raw as ActTab) ? (raw as ActTab) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeActPlace(tab: ActTab | null) {
+  if (typeof sessionStorage === "undefined") return;
+  try {
+    if (tab) sessionStorage.setItem(ACT_PLACE_KEY, tab);
+    else sessionStorage.removeItem(ACT_PLACE_KEY);
+  } catch {
+    /* private mode */
+  }
+}
 
 function PocketAces({ className }: { className?: string; strokeWidth?: number }) {
   return (
@@ -736,8 +759,67 @@ function Home() {
   const survivalView = survival[runKey] ?? null;
   const [survivalMinimized, setSurvivalMinimized] = useState(readPlanSurvivalMinimized);
   const [actTab, setActTab] = useState<ActTab>("brief");
+  const [actBoot, setActBoot] = useState<"wait" | "ready">("wait");
+  const [actPlaceSettled, setActPlaceSettled] = useState(false);
+  const [runsLoaded, setRunsLoaded] = useState(false);
+  const [profilesReady, setProfilesReady] = useState(false);
+  const restoredAct = useRef(false);
   const [briefChart, setBriefChart] = useState<BriefChart>("spendable");
   const [oodaOpen, setOodaOpen] = useState(false);
+  useLayoutEffect(() => {
+    const place = readActPlace();
+    if (place) {
+      restoredAct.current = true;
+      setActTab(place);
+      setStep("act");
+    }
+    setActBoot("ready");
+  }, []);
+
+  useEffect(() => {
+    if (actBoot !== "ready") return;
+    if (step === "act") writeActPlace(actTab);
+    else writeActPlace(null);
+  }, [actBoot, step, actTab]);
+
+  useEffect(() => {
+    if (useProfileStore.persist.hasHydrated()) {
+      setProfilesReady(true);
+      return;
+    }
+    return useProfileStore.persist.onFinishHydration(() => setProfilesReady(true));
+  }, []);
+
+  useEffect(() => {
+    if (!restoredAct.current || actPlaceSettled) return;
+    if (actBoot !== "ready" || isPending || !runsLoaded) return;
+    if (!signedIn) {
+      writeActPlace(null);
+      restoredAct.current = false;
+      setActTab("brief");
+      setStep("family");
+      setActPlaceSettled(true);
+      return;
+    }
+    if (!profilesReady) return;
+    const key = activeProfileId || "local";
+    if (!runs[key]) {
+      writeActPlace(null);
+      restoredAct.current = false;
+      setActTab("brief");
+      setStep("family");
+    }
+    setActPlaceSettled(true);
+  }, [
+    actBoot,
+    actPlaceSettled,
+    isPending,
+    runsLoaded,
+    signedIn,
+    profilesReady,
+    activeProfileId,
+    runs,
+  ]);
   const simulatorFull = sheet
     ? Boolean(survivalView && survivalView.status !== "empty" && survivalView.open)
     : !survivalMinimized;
@@ -764,6 +846,7 @@ function Home() {
       survivalTask.current?.controller.abort();
       survivalTask.current = null;
       setSurvival({});
+      setRunsLoaded(true);
       return;
     }
     const stored = loadStoredRuns();
@@ -793,6 +876,7 @@ function Home() {
       }
       return next;
     });
+    setRunsLoaded(true);
   }, [isPending, signedIn]);
 
   useEffect(() => {
@@ -2008,6 +2092,8 @@ function Home() {
                 />
               </div>
             </div>
+          ) : restoredAct.current && !actPlaceSettled ? (
+            <div className="min-h-[40svh]" />
           ) : (
             <div className="flex flex-col gap-4">
               <div className="relative flex min-h-11 items-center">
