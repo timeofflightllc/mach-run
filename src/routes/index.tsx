@@ -411,7 +411,7 @@ function OodaRail({ open, onToggle }: { open: boolean; onToggle: () => void }) {
       onFocus={(e) => place(e.currentTarget)}
       onBlur={() => setTip(null)}
       className={cn(
-        "fixed z-[24] inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl right-2 top-[calc(var(--mach-header-h,7rem)+0.75rem)] min-[72rem]:h-14 min-[72rem]:w-14",
+        "fixed z-[24] inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl right-2 top-[calc(var(--mach-header-h,7rem)+0.75rem)] min-[72rem]:relative min-[72rem]:right-auto min-[72rem]:top-auto min-[72rem]:h-14 min-[72rem]:w-14",
         open ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
       )}
     >
@@ -449,7 +449,7 @@ function OodaDrawer({
       aria-hidden={!open}
       inert={!open}
       className={cn(
-        "fixed z-20 h-max max-h-[calc(100dvh-var(--mach-header-h,7rem)-1.5rem)] overflow-y-auto rounded-xl transition-transform duration-200 top-[calc(var(--mach-header-h,7rem)+0.75rem)] max-[71.99rem]:inset-x-3 max-[71.99rem]:w-auto min-[72rem]:w-[min(24rem,calc(100vw-6rem))] min-[72rem]:right-[4.5rem]",
+        "fixed z-20 h-max max-h-[calc(100dvh-var(--mach-header-h,7rem)-1.5rem)] overflow-y-auto rounded-xl transition-transform duration-200 top-[calc(var(--mach-header-h,7rem)+0.75rem)] max-[71.99rem]:inset-x-3 max-[71.99rem]:w-auto min-[72rem]:absolute min-[72rem]:inset-x-auto min-[72rem]:top-0 min-[72rem]:right-[calc(100%+0.5rem)] min-[72rem]:w-[min(24rem,calc(100vw-6rem))]",
         open ? "translate-x-0" : "pointer-events-none translate-x-[120%]",
       )}
     >
@@ -1987,7 +1987,25 @@ function Home() {
                   </div>
                   <ExecuteMachRunButton onExecute={() => void calculate({ stay: true })} />
                 </div>
-                <OodaRail open={oodaOpen} onToggle={() => setOodaOpen((open) => !open)} />
+                </div>
+                <div className="max-[71.99rem]:contents min-[72rem]:absolute min-[72rem]:bottom-0 min-[72rem]:left-[calc(100%+0.5rem)] min-[72rem]:top-[2.5rem] min-[72rem]:z-20 min-[72rem]:w-14">
+                  <div
+                    className={cn(
+                      "min-[72rem]:sticky min-[72rem]:z-20 min-[72rem]:h-max min-[72rem]:w-14",
+                      stepsH != null
+                        ? "min-[72rem]:top-3"
+                        : "min-[72rem]:top-[calc(var(--mach-header-h,7rem)+0.75rem)]",
+                    )}
+                  >
+                    <OodaRail open={oodaOpen} onToggle={() => setOodaOpen((open) => !open)} />
+                    <OodaDrawer
+                      open={oodaOpen}
+                      onClose={() => setOodaOpen(false)}
+                      plan={displayPlan}
+                      sim={run.sim}
+                      brief={run.brief}
+                    />
+                  </div>
                 </div>
                 <div>
                   {actTab === "brief" ? (
@@ -2120,13 +2138,6 @@ function Home() {
                     />
                   ) : null}
                 </div>
-                <OodaDrawer
-                  open={oodaOpen}
-                  onClose={() => setOodaOpen(false)}
-                  plan={displayPlan}
-                  sim={run.sim}
-                  brief={run.brief}
-                />
               </div>
             </div>
           ) : restoredAct.current && !actPlaceSettled ? (
