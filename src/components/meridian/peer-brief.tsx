@@ -404,7 +404,6 @@ export function PeerBriefCard({
     : brief.paragraphs.map((body) => ({ title: "", body }));
   const clipped = !brief.expanded && sections.length > 2;
   const visible = clipped ? sections.slice(0, 2) : sections;
-  const faded = clipped ? sections[2] : null;
 
   const egg = plan && sim ? nestEggTrack(plan, sim) : null;
   const annuityCopy = brief.annuityEquivalent
@@ -500,22 +499,6 @@ export function PeerBriefCard({
             )}
           </div>
         ))}
-        {faded ? (
-          <div className="relative max-h-[5.5rem] overflow-hidden">
-            {faded.title ? (
-              <p className="font-semibold text-fg" aria-hidden>
-                {faded.title}
-              </p>
-            ) : null}
-            <div aria-hidden>
-              <BriefBody text={faded.body} />
-            </div>
-            <div
-              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-surface from-[18%] via-surface/75 to-transparent"
-              aria-hidden
-            />
-          </div>
-        ) : null}
       </div>
       {clipped ? (
         <div className="mt-4 flex flex-col items-center gap-2 border-t border-border pt-4 text-center">
@@ -533,7 +516,7 @@ export function PeerBriefCard({
           <RealSignedIn>
             <p className="text-sm text-muted">
               The rest of this OODA — RMDs, retirement landing, every stage —
-              is on MACH RUN Unlimited.
+              is on the paid MACH RUN.
             </p>
             <Link
               to="/pricing"

@@ -885,6 +885,9 @@ function Home() {
     return () => window.removeEventListener("keydown", onKey);
   }, [oodaOpen]);
 
+  const paidRef = useRef(ent.paid);
+  paidRef.current = ent.paid;
+
   useEffect(() => {
     if (isPending) return;
     if (!signedIn) {
@@ -908,7 +911,7 @@ function Home() {
           id: row.id,
           plan: row.plan,
           sim: simForCharts(sim),
-          brief: buildPeerBrief(row.plan, sim, { expanded: false, recommended }),
+          brief: buildPeerBrief(row.plan, sim, { expanded: paidRef.current, recommended }),
         };
       } catch {
         /* skip a bad snapshot */
@@ -1019,13 +1022,18 @@ function Home() {
   }, [step, runKey, runs, holding, liveSig]);
 
   useEffect(() => {
-    if (!ent.paid) return;
+    if (!ent.paid || !runsLoaded) return;
     setRuns((prev) => {
-      const cur = prev[runKey];
-      if (!cur?.brief || cur.brief.expanded) return prev;
-      return { ...prev, [runKey]: { ...cur, brief: { ...cur.brief, expanded: true } } };
+      let changed = false;
+      const next = { ...prev };
+      for (const [key, row] of Object.entries(prev)) {
+        if (!row.brief || row.brief.expanded) continue;
+        next[key] = { ...row, brief: { ...row.brief, expanded: true } };
+        changed = true;
+      }
+      return changed ? next : prev;
     });
-  }, [ent.paid, runKey]);
+  }, [ent.paid, runsLoaded]);
 
   const guestChrome = useGuestChrome(user?.primaryEmail);
   const heroOn = !isRealUser(user) || guestChrome;
