@@ -73,7 +73,7 @@ function nextBoydLine(quotes: string[], current: string) {
   return line;
 }
 
-function BoydQuote({ quotes, pulse }: { quotes: string[]; pulse: boolean }) {
+export function BoydQuote({ quotes, pulse }: { quotes: string[]; pulse: boolean }) {
   const [spin, setSpin] = useState(0);
   const [px, setPx] = useState(18);
   const slipRef = useRef<HTMLDivElement>(null);

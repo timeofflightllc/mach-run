@@ -8,7 +8,8 @@ import { StaleRunPrompt } from "@/components/meridian/confirm-remove";
 import { CalculateButton } from "@/components/meridian/calculate-button";
 import { AdvisoryStrip } from "@/components/meridian/advisory-note";
 import { CashChart, MonteCarloBandChart, NetWorthChart, WealthChart } from "@/components/meridian/charts";
-import { PlanSurvival, readPlanSurvivalMinimized, RunMonteCarloButton, type SurvivalView } from "@/components/meridian/plan-survival";
+import { BoydQuote, PlanSurvival, readPlanSurvivalMinimized, RunMonteCarloButton, type SurvivalView } from "@/components/meridian/plan-survival";
+import { useBoydQuotes } from "@/components/meridian/use-boyd-quotes";
 import { Pinnable, useChartPins } from "@/components/meridian/chart-pin";
 import { ContributionForm } from "@/components/meridian/contribution-form";
 import { AssumptionsForm, HouseholdForm } from "@/components/meridian/household-form";
@@ -486,18 +487,24 @@ function MonteCarloTab({
   onRun: () => void;
 }) {
   const ranOut = score ? runOutSentence(score, longevityAge) : null;
+  const quotes = useBoydQuotes();
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <PhaseLabel id="ooda-monte" label="Monte Carlo" />
       <div className="relative">
-        {unlocked && score && score.bands.length > 0 ? (
+        {running ? (
+          <div className="flex h-[32rem] flex-col items-center justify-center gap-6 rounded-xl bg-white px-6 text-center shadow-[0_0_0_1px_#c8d2de] sm:h-[40rem]">
+            {quotes.length > 0 ? <BoydQuote quotes={quotes} pulse /> : (
+              <p className="max-w-sm text-sm leading-relaxed text-slate-600">Checking 1,000 futures…</p>
+            )}
+            <MachOrbit compact />
+          </div>
+        ) : unlocked && score && score.bands.length > 0 ? (
           <MonteCarloBandChart bands={score.bands} traces={score.traces} real={real} />
         ) : (
           <div className="flex h-[32rem] items-center justify-center rounded-xl bg-white px-6 text-center shadow-[0_0_0_1px_#c8d2de] sm:h-[40rem]">
             <p className="max-w-sm text-sm leading-relaxed text-slate-600">
-              {running
-                ? "Checking 1,000 futures…"
-                : "Run it to see 1,000 possible futures for the money you can spend."}
+              Run it to see 1,000 possible futures for the money you can spend.
             </p>
           </div>
         )}
