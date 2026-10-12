@@ -402,8 +402,8 @@ export function PeerBriefCard({
   const sections: BriefSection[] = brief.sections?.length
     ? brief.sections
     : brief.paragraphs.map((body) => ({ title: "", body }));
-  const open = Boolean(brief.expanded || ent.paid);
-  const clipped = !open && !ent.pending && sections.length > 2;
+  const open = ent.paid || ent.pending;
+  const clipped = !open && sections.length > 2;
   const visible = open ? sections : sections.slice(0, 2);
 
   const egg = plan && sim ? nestEggTrack(plan, sim) : null;

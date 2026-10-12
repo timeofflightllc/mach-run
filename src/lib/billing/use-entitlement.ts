@@ -33,6 +33,7 @@ export function useEntitlement(): Entitlement & { pending: boolean } {
   const painted = paintFromSnapshot(snapshot, userId);
   const [ent, setEnt] = useState<Entitlement>(painted ?? GUEST_ENTITLEMENT);
   const [pending, setPending] = useState(painted == null);
+  const [fetched, setFetched] = useState<{ id: string; ent: Entitlement } | null>(null);
   const settledFor = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
@@ -73,13 +74,18 @@ export function useEntitlement(): Entitlement & { pending: boolean } {
       .then((next) => {
         if (cancelled) return;
         settledFor.current = userId;
+        setFetched({ id: userId, ent: next });
         setEnt(next);
         setPending(false);
       })
       .catch(() => {
         if (cancelled) return;
         settledFor.current = userId;
-        if (!known) setEnt({ ...GUEST_ENTITLEMENT, signedIn: true });
+        if (!known) {
+          const fallback = { ...GUEST_ENTITLEMENT, signedIn: true };
+          setFetched({ id: userId, ent: fallback });
+          setEnt(fallback);
+        }
         setPending(false);
       });
     return () => {
@@ -87,7 +93,12 @@ export function useEntitlement(): Entitlement & { pending: boolean } {
     };
   }, [userId, isPending, snapshot]);
 
-  return { ...(pending && painted ? painted : ent), pending: pending && !painted };
+  const fetchedNow = fetched && fetched.id === userId ? fetched.ent : null;
+  // The package painted with the session wins until this user's billing
+  // request returns. A guest state from the first render must not cover it.
+  const shown = fetchedNow ?? painted ?? ent;
+  const waiting = Boolean(userId) && !fetchedNow && !painted && pending;
+  return { ...shown, pending: waiting };
 }
 
 function previewUnlimited(): boolean {
