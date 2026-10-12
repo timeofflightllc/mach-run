@@ -750,6 +750,7 @@ export function WealthChart({
   const [span, setSpan] = useState<ChartSpan>("horizon");
   const [shape, setShape] = useState<WealthShape>("stacked");
   const [showLiabilities, setShowLiabilities] = useState(false);
+  const [showNetWorth, setShowNetWorth] = useState(true);
   const { expanded, toggle, close } = useChartExpanded();
   const data = wealthPoints(plan, sim, span);
   const accounts = spendableSeries(plan);
@@ -785,6 +786,19 @@ export function WealthChart({
               on={showLiabilities}
               onToggle={() => setShowLiabilities((open) => !open)}
             />
+            <button
+              type="button"
+              aria-pressed={showNetWorth}
+              onClick={() => setShowNetWorth((open) => !open)}
+              className={cn(
+                "h-7 rounded px-2 text-[11px] font-medium leading-none",
+                showNetWorth
+                  ? "bg-accent text-accent-fg"
+                  : "bg-slate-100 text-slate-600 shadow-[0_0_0_1px_#c8d2de] hover:text-slate-900",
+              )}
+            >
+              Net Worth
+            </button>
           </span>
         }
       />
@@ -877,15 +891,17 @@ export function WealthChart({
                 />
               )
             ) : null}
-            <Line
-              type="monotone"
-              dataKey="netWorth"
-              name="Net worth"
-              stroke="var(--color-accent)"
-              strokeWidth={2.5}
-              dot={false}
-              isAnimationActive={false}
-            />
+            {showNetWorth ? (
+              <Line
+                type="monotone"
+                dataKey="netWorth"
+                name="Net worth"
+                stroke="var(--color-accent)"
+                strokeWidth={2.5}
+                dot={false}
+                isAnimationActive={false}
+              />
+            ) : null}
           </ComposedChart>
         </ResponsiveContainer>
       </div>
