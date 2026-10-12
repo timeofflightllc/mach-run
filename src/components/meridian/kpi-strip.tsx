@@ -4,9 +4,6 @@ import { startingNetWorth, startingSpendable } from "@/lib/plan/engine";
 import { sustainableRetirementIncome, type SustainableIncome } from "@/lib/plan/sustainable-income";
 import type { Plan, SimResult } from "@/lib/plan/types";
 
-const MONTHLY_TIP =
-  "First full year after goal date of Actual Income Retired (A.I.R.) ÷ 12. This is military retired pay, VA, Social Security, pension, and other retirement, plus withdrawals.";
-
 const ANNUAL_TIP =
   "The first full calendar year of Actual Income Retired (A.I.R.) in the ledger. That is the income your spending is scheduled to take: guaranteed retirement pay plus withdrawals.";
 
@@ -71,100 +68,94 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
     : ret.now
       ? "Spendable at retirement (now)"
       : `Spendable at retirement (${ret.date.slice(0, 7)})`;
-  const atTerm = real ? sim.spendableAtEndReal : sim.spendableAtEnd;
-  const ranOut = sim.depletedAge != null && sim.depletedYear != null;
-  const lastCell = ranOut
-    ? {
-        label: "Spendable runs out",
-        value: `Age ${sim.depletedAge} · ${sim.depletedYear}`,
-      }
-    : {
-        label: "Still funded at",
-        value: `Age ${plan.assumptions.projectionEndAge} · ${usd(atTerm)}`,
-      };
-
-  const items = [
-    {
-      label: "Current spendable",
-      value: usd(startingSpendable(plan)),
-      tip: "Balances marked spendable, as of today. Not grown. A house or other account left unmarked is not included.",
-    },
-    {
-      label: "Current net worth",
-      value: usd(startingNetWorth(plan)),
-      tip: "Accounts counted in net worth, minus remaining loans.",
-    },
-    {
-      label: "Monthly income in retirement",
-      value:
-        monthly != null ? (
-          <span className="block">
-            {usd(monthly, true)}
-            {roomAmount != null ? (
-              <span className="mt-1 block font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
-                {usd(roomAmount / 12, true)} the most all retirement sources can pay per month and still last
-              </span>
-            ) : null}
-            {drawnAmount != null ? (
-              <span className="mt-1 block font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
-                {usd(drawnAmount / 12, true)} available for withdrawal from investments without overspending
-              </span>
-            ) : null}
-          </span>
-        ) : (
-          "—"
-        ),
-      tip: MONTHLY_TIP,
-    },
-    {
-      label: ret?.incomeYear
-        ? `Annual income in retirement (${ret.incomeYear})`
-        : "Annual income in retirement",
-      value:
-        annual != null ? (
-          <span className="block">
-            {usd(annual)}
-            {roomAmount != null ? (
-              <span className="mt-1 block font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
-                {usd(roomAmount)} from all income sources in retirement combined without overspending.
-              </span>
-            ) : null}
-            {drawnAmount != null ? (
-              <span className="mt-1 block font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
-                {usd(drawnAmount)} available for withdrawal from investments without overspending
-              </span>
-            ) : null}
-          </span>
-        ) : (
-          "—"
-        ),
-      tip: ANNUAL_TIP,
-    },
-    {
-      label: retLabel,
-      value: spendableAtRet != null ? usd(spendableAtRet) : "Set date in Family",
-      tip: "Spendable balance the month before the goal date, in this run’s dollars.",
-    },
-    {
-      ...lastCell,
-      tip: ranOut
-        ? "The month spendable accounts hit zero. Age and year are from this run."
-        : "Spendable balance left at the end of the plan.",
-    },
-  ];
+  const goal = plan.assumptions.nestEggGoal;
+  const goalBasis = real ? spendableAtRet : (ret?.spendableReal ?? null);
+  let goalNote: string | null = null;
+  if (goal != null && goal > 0 && goalBasis != null) {
+    const gap = goal - goalBasis;
+    const where = real ? "" : " in today's dollars";
+    if (gap > 1) goalNote = `${usd(gap)} under the ${usd(goal)} goal${where}`;
+    else if (gap < -1) goalNote = `${usd(-gap)} over the ${usd(goal)} goal${where}`;
+    else goalNote = `On the ${usd(goal)} goal${where}`;
+  }
+  let roomNote: string | null = null;
+  if (annual != null && roomAmount != null) {
+    const roomLeft = roomAmount - annual;
+    if (roomLeft > 1) roomNote = `${usd(roomLeft)} a year of room left, and the money still lasts`;
+    else if (roomLeft < -1) roomNote = `${usd(-roomLeft)} a year over what still lasts`;
+    else roomNote = "No unused room. This is what still lasts.";
+  }
+  const payTip = [
+    ANNUAL_TIP,
+    drawnAmount != null
+      ? `${usd(drawnAmount)} available for withdrawal from investments without overspending.`
+      : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const payLabel = ret?.incomeYear ? `Retirement pay (${ret.incomeYear})` : "Retirement pay";
 
   return (
-    <div>
-      <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-xl bg-border shadow-[0_0_0_1px_var(--color-border)]">
-        {items.map((item) => (
-          <div key={item.label} className="bg-surface px-3 py-3 sm:px-4 sm:py-4">
-            <HoverLabel label={item.label} tip={item.tip} />
-            <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg sm:text-xl">
-              {item.value}
-            </dd>
-          </div>
-        ))}
-      </dl>
-    </div>
+    <dl className="overflow-hidden rounded-xl bg-border shadow-[0_0_0_1px_var(--color-border)]">
+      <div className="grid grid-cols-2 gap-px">
+        <div className="bg-surface px-3 py-3 sm:px-4 sm:py-4">
+          <HoverLabel
+            label="Current spendable"
+            tip="Balances marked spendable, as of today. Not grown. A house or other account left unmarked is not included."
+          />
+          <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg sm:text-xl">
+            {usd(startingSpendable(plan))}
+          </dd>
+        </div>
+        <div className="bg-surface px-3 py-3 sm:px-4 sm:py-4">
+          <HoverLabel
+            label="Current net worth"
+            tip="Accounts counted in net worth, minus remaining loans."
+          />
+          <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg sm:text-xl">
+            {usd(startingNetWorth(plan))}
+          </dd>
+        </div>
+      </div>
+      <div className="mt-px bg-surface px-3 py-3 sm:px-4 sm:py-4">
+        <HoverLabel
+          label={retLabel}
+          tip="Spendable balance the month before the goal date, in this run’s dollars."
+        />
+        <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg sm:text-xl">
+          {spendableAtRet != null ? usd(spendableAtRet) : "Set date in Family"}
+        </dd>
+        {goalNote ? (
+          <p className="mt-1 font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
+            {goalNote}
+          </p>
+        ) : null}
+      </div>
+      <div className="mt-px bg-surface px-3 py-3 sm:px-4 sm:py-4">
+        <HoverLabel label={payLabel} tip={payTip} />
+        <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg sm:text-xl">
+          {annual != null ? (
+            <span className="flex flex-wrap items-baseline gap-x-2">
+              <span>{usd(annual)}</span>
+              <span className="font-sans text-sm font-normal normal-case tracking-normal text-muted">a year</span>
+              {monthly != null ? (
+                <>
+                  <span className="font-sans text-sm font-normal text-muted">·</span>
+                  <span>{usd(monthly, true)}</span>
+                  <span className="font-sans text-sm font-normal normal-case tracking-normal text-muted">a month</span>
+                </>
+              ) : null}
+            </span>
+          ) : (
+            "—"
+          )}
+        </dd>
+        {roomNote ? (
+          <p className="mt-1 font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
+            {roomNote}
+          </p>
+        ) : null}
+      </div>
+    </dl>
   );
 }
