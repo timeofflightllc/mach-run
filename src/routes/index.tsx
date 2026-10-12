@@ -254,10 +254,10 @@ const ACT_TABS: { id: ActTab; label: string; icon: ComponentType<{ className?: s
   { id: "monte", label: "Monte Carlo", icon: PocketAces },
 ];
 
-const BRIEF_CHARTS: { id: BriefChart; label: string }[] = [
-  { id: "spendable", label: "Spendable Wealth" },
-  { id: "cash", label: "Annual Cash Flow" },
-  { id: "net", label: "Net Worth" },
+const BRIEF_CHARTS: { id: BriefChart; label: string; short: string }[] = [
+  { id: "spendable", label: "Spendable Wealth", short: "Spendable" },
+  { id: "cash", label: "Annual Cash Flow", short: "Cash" },
+  { id: "net", label: "Net Worth", short: "Net Worth" },
 ];
 
 function ActChartColumn({
@@ -2050,7 +2050,7 @@ function Home() {
                         </div>
                       </div>
                       <div>
-                        <div className="mb-2 inline-flex max-w-full flex-wrap rounded-lg bg-slate-100 p-1">
+                        <div className="mb-2 inline-flex max-w-full flex-nowrap rounded-lg bg-slate-100 p-1 sm:flex-wrap">
                           {BRIEF_CHARTS.map((choice) => {
                             const on = briefChart === choice.id;
                             return (
@@ -2058,13 +2058,15 @@ function Home() {
                                 key={choice.id}
                                 type="button"
                                 aria-pressed={on}
+                                aria-label={choice.label}
                                 onClick={() => setBriefChart(choice.id)}
                                 className={cn(
                                   "h-8 whitespace-nowrap rounded-md px-3 text-xs font-medium",
                                   on ? "bg-slate-900 text-white" : "text-slate-600 hover:text-slate-900",
                                 )}
                               >
-                                {choice.label}
+                                <span className="sm:hidden">{choice.short}</span>
+                                <span className="hidden sm:inline">{choice.label}</span>
                               </button>
                             );
                           })}
