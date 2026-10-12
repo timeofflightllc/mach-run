@@ -9,7 +9,7 @@ export const ADVISOR_MONTHLY_USD = 69;
 export const ADVISOR_YEARLY_USD = 690;
 export const ADVISOR_UNLIMITED_MONTHLY_USD = 169;
 export const ADVISOR_UNLIMITED_YEARLY_USD = 1690;
-export const ADVISOR_TRIAL_DAYS = 7;
+export const ADVISOR_TRIAL_DAYS = 14;
 /** Prefill only. The desk can send any whole number of days from 1 to 730. */
 export const DESK_UNLIMITED_TRIAL_DAYS = 90;
 export const ADVISOR_LITE_PROFILE_LIMIT = 5;

@@ -1,6 +1,6 @@
 import { getSql } from "@/lib/db";
 import { pathsForSlug, pingIndexNow } from "@/lib/seo/sitemap";
-import { DEFAULT_PAGES, defaultAnnouncements } from "./defaults";
+import { DEFAULT_PAGES, defaultAnnouncements, REFUND_FAQ_BLOCK, REFUND_LEGAL_BLOCK } from "./defaults";
 import {
   SITE_PAGE_SLUGS,
   type SiteAnnouncement,
@@ -124,7 +124,50 @@ function freshenStoredCopy(body: string): string {
     .replaceAll(
       "A spreadsheet has only the rows you build. Quicken Classic can hold some of the same pay. The checks below are what each one includes today.",
       "A spreadsheet has only the rows you build, and lacks Monte Carlo and a seamless user interface. Quicken Classic can hold some of the same pay, but is not focused on retirement planning and is not made by veterans for veterans. Please see the table below for a robust comparison of MACH RUN to the other common products.",
+    )
+    .replaceAll("Seven-day trial, then $69/month.", "14-day trial, then $69/month.")
+    .replaceAll("7-day free trial", "14-day free trial")
+    .replaceAll("7-day trial, we throw in two months", "14-day trial, we throw in two months")
+    .replaceAll("7-day trial, then $69/month", "14-day trial, then $69/month")
+    .replaceAll("A 7-day Advisor trial", "A 14-day Advisor Lite trial")
+    .replaceAll(
+      "Details and a 7-day trial live on [Pricing](/pricing).",
+      "Advisor Lite includes a 14-day trial. Details live on [Pricing](/pricing).",
+    )
+    .replaceAll(
+      "For Advisor Lite and Advisor Unlimited trials, the card is charged when the trial ends unless canceled before then.",
+      "Advisor Lite includes a 14-day trial. The card is charged when that trial ends unless canceled before then. Advisor Unlimited is charged at checkout.",
     );
+  return ensureRefundCopy(body);
+}
+
+const OLD_NOT_REFUNDED = "The current period is not refunded except where the law requires it.";
+const OLD_ACCESS =
+  "Access lasts through the paid period unless the account is closed for abuse.";
+const NEW_ACCESS =
+  "Access lasts through the paid period unless a refund is sent or the account is closed for abuse.";
+
+function ensureRefundCopy(body: string): string {
+  let next = body.replaceAll(
+    "Last updated: October 3, 2026. MACH RUN is a hypothetical",
+    "Last updated: October 12, 2026. MACH RUN is a hypothetical",
+  );
+  if (next.includes(OLD_NOT_REFUNDED)) {
+    next = next.replaceAll(
+      OLD_NOT_REFUNDED,
+      "Canceling stops the next charge. It does not by itself refund a charge already made.",
+    );
+  }
+  if (next.includes(OLD_ACCESS)) next = next.replaceAll(OLD_ACCESS, NEW_ACCESS);
+  if (next.includes("# Subscriptions") && next.includes("Paid plans are billed by Stripe") && !next.includes("# Refunds")) {
+    const at = next.indexOf("\n# Not advice");
+    next = at === -1 ? `${next.trimEnd()}\n\n${REFUND_LEGAL_BLOCK}\n` : `${next.slice(0, at)}\n\n${REFUND_LEGAL_BLOCK}${next.slice(at)}`;
+  }
+  if ((next.includes("# How do I cancel") || next.includes("# What is free")) && !next.includes("# Can I get a refund?")) {
+    const who = next.indexOf("\n# Who built this?");
+    next = who === -1 ? `${next.trimEnd()}\n\n${REFUND_FAQ_BLOCK}\n` : `${next.slice(0, who)}\n\n${REFUND_FAQ_BLOCK}${next.slice(who)}`;
+  }
+  return next;
 }
 
 function preferCurrentLegal(page: SitePage): SitePage {

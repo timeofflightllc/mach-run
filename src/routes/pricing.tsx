@@ -655,7 +655,7 @@ function Pricing() {
               ))}
             </ul>
             <p className="mt-4 text-sm leading-relaxed text-muted">
-              The card is charged when the trial ends unless canceled before then. The plan renews until canceled.
+              The card is charged when the 14-day trial ends unless canceled before then. The plan renews until canceled.
             </p>
             {!signedIn ? (
               <a
@@ -712,7 +712,7 @@ function Pricing() {
               ))}
             </ul>
             <p className="mt-4 text-sm leading-relaxed text-muted">
-              The card is charged when the trial ends unless canceled before then. The plan renews until canceled.
+              The card is charged today. The plan renews until canceled.
             </p>
             {!signedIn ? (
               <a

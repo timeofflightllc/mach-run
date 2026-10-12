@@ -35,6 +35,30 @@ export const PINNED_ANNOUNCEMENTS: SiteAnnouncement[] = [
   },
 ];
 
+export const REFUND_FAQ_BLOCK = `# Can I get a refund?
+Refunds cover the current billing period only. Earlier months are not refunded.
+
+A monthly plan is refunded for the billing period you ask in. It is not split by the day.
+
+A yearly plan is prorated from the amount you paid. A month already started counts as used. Unused whole months come back.
+
+Ask from the email on the account through [Contact](/contact). The paid plan ends when the refund is sent. The full rule is on [Legal](/legal#refunds).`;
+
+export const REFUND_LEGAL_BLOCK = `# Refunds {#refunds}
+Refunds cover the current billing period only. Months that already ended are not refunded, except where the law requires more.
+
+A monthly plan is refunded for the billing period in which you ask. It is not split by the day. Earlier months stay billed.
+
+A yearly plan is prorated from the amount you paid. Each month already started counts as used, including the month you ask in. Unused whole months are refunded. Divide what you paid by 12, then multiply by the unused months. A coupon or a yearly price is already in that amount. Used months are not repriced at the monthly rate.
+
+Example. You paid $40 for the year and you ask in month 4. Four months count as used. The refund is $40 × 8/12.
+
+Ask from the email on the account through [Contact](/contact). Say monthly or yearly. The refund goes back to the card through Stripe. Banks usually show it in 5 to 10 business days. MACH RUN does not keep the card number.
+
+The paid plan ends when the refund is sent. The household stays, on the free limits. A 14-day Advisor Lite trial canceled before it ends is not charged, so there is nothing to refund.
+
+A refund is not an upgrade. Stepping up a tier is handled in Manage billing, with credit for time already paid. Deleting the account does not send a refund. Ask first. If a refund was sent, do not also dispute that charge with the bank.`;
+
 export const DEFAULT_PAGES: SitePage[] = [
   {
     slug: "about",
@@ -121,7 +145,7 @@ Individual ($4/month or $40/year) is one household with unlimited accounts, cont
 
 Individual Unlimited ($15/month or $150/year): everything in Individual, plus Net Worth (assets vs liabilities), a liabilities list, Plan Survival, and encrypted MACH RUN backup download.
 
-Advisor Lite and Advisor Unlimited are for professionals who need named client profiles. Details and a 7-day trial live on [Pricing](/pricing). Yearly billing is two months on us.
+Advisor Lite and Advisor Unlimited are for professionals who need named client profiles. Advisor Lite includes a 14-day trial. Details live on [Pricing](/pricing). Yearly billing is two months on us.
 
 # How do I start if I am already retired?
 In Family, set the retirement goal date. An already-retired path lets you enter the month and year you left work. Then add pension, Social Security, VA, and the rest as income blocks.
@@ -149,6 +173,8 @@ An optional PIN on Account profile (off by default). After about 10 minutes idle
 
 # How do I cancel or change plans?
 Account menu → Manage billing. Stripe handles upgrades with credit for time already paid when you step up a tier. Questions: [Contact](/contact).
+
+${REFUND_FAQ_BLOCK}
 
 # Who built this?
 A retired U.S. Air Force fighter pilot who wanted one strip for income, contributions, a nest-egg goal, and the date the money runs out. More on [About](/about). Pronounce MACH like “mock.”`,
@@ -180,13 +206,15 @@ What shipped recently on the MACH RUN retirement calculator.`,
     title: "Legal",
     kicker: "",
     body: `# Terms of Service {#terms}
-Last updated: October 3, 2026. MACH RUN is a hypothetical household planning calculator. It is not a broker, bank, fiduciary, or advisor. MACH RUN is operated by Time of Flight LLC, and Florida law governs these terms.
+Last updated: October 12, 2026. MACH RUN is a hypothetical household planning calculator. It is not a broker, bank, fiduciary, or advisor. MACH RUN is operated by Time of Flight LLC, and Florida law governs these terms.
 
 # Accounts
 You may register with email or a sign-in provider. You are responsible for the account and for the numbers you type. Do not share your password.
 
 # Subscriptions
-Paid plans are billed by Stripe. You can cancel anytime in Manage billing. The current period is not refunded except where the law requires it. Access lasts through the paid period unless the account is closed for abuse. For Advisor Lite and Advisor Unlimited trials, the card is charged when the trial ends unless canceled before then. The plan renews until canceled.
+Paid plans are billed by Stripe. You can cancel anytime in Manage billing. Canceling stops the next charge. It does not by itself refund a charge already made. Access lasts through the paid period unless a refund is sent or the account is closed for abuse. Advisor Lite includes a 14-day trial. The card is charged when that trial ends unless canceled before then. Advisor Unlimited is charged at checkout. The plan renews until canceled.
+
+${REFUND_LEGAL_BLOCK}
 
 # Not advice
 MACH RUN does not provide financial, tax, legal, or investment advice. Projections are illustrations from the numbers you enter. See the disclaimer below.

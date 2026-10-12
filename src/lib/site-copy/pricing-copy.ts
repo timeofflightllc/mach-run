@@ -6,14 +6,14 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
   personalP1: "Individual is a monthly hop for the full cash-flow MACH RUN.",
   personalP2: "Individual Unlimited adds Net Worth and Liabilities.",
   personalP3: "Professional financial advisors have even more capability built in.",
-  advisorP1: "Advisor Lite is five named client profiles. Seven-day trial, then $69/month.",
+  advisorP1: "Advisor Lite is five named client profiles. 14-day trial, then $69/month.",
   advisorP2: "Advisor Unlimited is the same engine with unlimited profiles.",
   couponLabel: "Do you have a coupon code?",
   intervalNoteMonth: "Monthly or yearly — fly yearly and we throw in two months.",
   intervalNoteYear: "Yearly: we throw in two months.",
-  intervalNoteAdvisorMonth: "Advisor Lite includes a 7-day free trial (card on file).",
+  intervalNoteAdvisorMonth: "Advisor Lite includes a 14-day free trial (card on file).",
   freeAdvisorBullet: "Same free start. Paid advisor packages sit next to it.",
-  advisorLiteTagYear: "7-day trial, we throw in two months",
+  advisorLiteTagYear: "14-day trial, we throw in two months",
   advisorUnlimitedTagYear: "Fly yearly and we throw in two months.",
   free: {
     tag: "Register in 30 seconds",
@@ -46,7 +46,7 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
     ],
   },
   advisorLite: {
-    tag: "7-day trial, then $69/month",
+    tag: "14-day trial, then $69/month",
     bullets: [
       "Everything in Individual Unlimited, plus:",
       "5 named profiles (client IDs)",
