@@ -762,8 +762,9 @@ export function WealthChart({
       <h2 className="font-display text-xl font-bold text-slate-900">Spendable Wealth</h2>
       <p className="mb-4 mt-1 text-xs text-slate-600">
         {real ? "Inflation-adjusted (today's dollars)" : "Future dollars"} ·
-        Roth / taxable / TSP marked spendable. Houses and 529s sit in net worth
-        only.
+        Accounts labeled Spendable listed on this chart (liquid cash, investment accounts, etc).
+        Houses, child custodial and liability accounts sit in net worth only, are not included
+        in Spendable or the Spendable Wealth chart.
         {expanded ? " Esc closes this view." : ""}
       </p>
       <ChartSpanBar
