@@ -716,6 +716,7 @@ function Home() {
   const ent = useEntitlement();
   const [step, setStep] = useState<StepId>(actPlace ? "act" : "family");
   const sheet = hasBalanceSheet(ent.plan);
+  const survivalOn = sheet || (ent.pending && signedIn);
   const route = PAGES;
   const [motion, setMotion] = useState<{
     from: StepId;
@@ -2064,7 +2065,7 @@ function Home() {
                               sim={run.sim}
                               brief={run.brief}
                               className={simulatorFull ? "@min-[36rem]/act:flex-1" : undefined}
-                              survivalUnlocked={sheet}
+                              survivalUnlocked={survivalOn}
                               survival={
                                 sheet &&
                                 survivalView?.status === "ready" &&
@@ -2080,7 +2081,7 @@ function Home() {
                         <div className={cn("flex min-w-0 flex-col gap-3", simulatorFull && "@min-[36rem]/act:h-full")}>
                           <PhaseLabel id="ooda-simulator" label="The Simulator" />
                           <PlanSurvival
-                            locked={!sheet}
+                            locked={!survivalOn}
                             view={survivalView}
                             onSwing={chooseSwing}
                             onRun={runMonteCarlo}
@@ -2157,7 +2158,7 @@ function Home() {
                   ) : null}
                   {actTab === "monte" ? (
                     <MonteCarloTab
-                      unlocked={sheet}
+                      unlocked={survivalOn}
                       real={real}
                       longevityAge={displayPlan.assumptions.projectionEndAge}
                       score={

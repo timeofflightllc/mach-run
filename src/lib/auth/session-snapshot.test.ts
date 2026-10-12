@@ -7,6 +7,7 @@ const snapshot = {
   name: "Cain",
   email: "cain@example.com",
   image: null,
+  plan: null,
 };
 
 test("a pending session paints the cookie snapshot and stays pending", () => {

@@ -1,19 +1,44 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
-import { GUEST_ENTITLEMENT, type Entitlement } from "./limits";
+import { SessionSnapshotContext } from "@/lib/auth/session-snapshot-context";
+import type { SessionSnapshot } from "@/lib/auth/session-snapshot";
+import { GUEST_ENTITLEMENT, profileLimitFor, type Entitlement, type MachPackage } from "./limits";
 import { getBillingConfig, getEntitlement } from "./api";
 
+function paintedEntitlement(plan: MachPackage): Entitlement {
+  const paid = plan !== "free";
+  return {
+    ...GUEST_ENTITLEMENT,
+    signedIn: true,
+    paid,
+    plan,
+    billed: plan,
+    accountLimit: paid ? null : GUEST_ENTITLEMENT.accountLimit,
+    contributionLimit: paid ? null : GUEST_ENTITLEMENT.contributionLimit,
+    incomeLimit: paid ? null : GUEST_ENTITLEMENT.incomeLimit,
+    profileLimit: profileLimitFor(plan),
+    status: paid ? "active" : "none",
+  };
+}
+
+function paintFromSnapshot(snapshot: SessionSnapshot | null, userId: string | null): Entitlement | null {
+  if (!snapshot || !userId || snapshot.id !== userId || snapshot.plan == null) return null;
+  return paintedEntitlement(snapshot.plan);
+}
+
 export function useEntitlement(): Entitlement & { pending: boolean } {
+  const snapshot = useContext(SessionSnapshotContext);
   const { user, isPending } = useCurrentUserState();
   const userId = user?.id ?? null;
-  const [ent, setEnt] = useState<Entitlement>(GUEST_ENTITLEMENT);
-  const [pending, setPending] = useState(true);
+  const painted = paintFromSnapshot(snapshot, userId);
+  const [ent, setEnt] = useState<Entitlement>(painted ?? GUEST_ENTITLEMENT);
+  const [pending, setPending] = useState(painted == null);
   const settledFor = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     let cancelled = false;
-    if (isPending) return;
     if (!userId) {
+      if (isPending) return;
       if (settledFor.current === null) return;
       settledFor.current = null;
       setPending(false);
@@ -42,7 +67,8 @@ export function useEntitlement(): Entitlement & { pending: boolean } {
       };
     }
     if (settledFor.current === userId) return;
-    setPending(true);
+    const known = paintFromSnapshot(snapshot, userId);
+    if (!known) setPending(true);
     void getEntitlement()
       .then((next) => {
         if (cancelled) return;
@@ -53,13 +79,13 @@ export function useEntitlement(): Entitlement & { pending: boolean } {
       .catch(() => {
         if (cancelled) return;
         settledFor.current = userId;
-        setEnt({ ...GUEST_ENTITLEMENT, signedIn: true });
+        if (!known) setEnt({ ...GUEST_ENTITLEMENT, signedIn: true });
         setPending(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [userId, isPending]);
+  }, [userId, isPending, snapshot]);
 
   return { ...ent, pending };
 }

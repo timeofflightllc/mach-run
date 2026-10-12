@@ -1,14 +1,18 @@
+import type { MachPackage } from "@/lib/billing/limits";
 import type { AppUser } from "./use-current-user";
 
 /**
  * Display-only user read from the session cookie during the document request.
  * Never a session token. `null` means signed out, auth off, or the read gave up.
+ * `plan` is null when the package could not be read in time. `"free"` means
+ * the account has no paid package. A paid package is safe to paint immediately.
  */
 export type SessionSnapshot = {
   id: string;
   name: string | null;
   email: string | null;
   image: string | null;
+  plan: MachPackage | null;
 };
 
 type SessionLike = {
