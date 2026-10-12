@@ -281,7 +281,7 @@ export function GuestHero({
           <br className="hidden sm:inline" />
           <span className="sm:whitespace-nowrap"> of households that do not.”</span>
         </p>
-        <p className="mt-1 max-w-3xl text-center text-xs text-muted sm:text-sm">
+        <p className="mt-1 max-w-3xl text-center text-[0.65rem] leading-snug text-muted sm:text-xs">
           <a
             href="https://www.nber.org/papers/w17078"
             target="_blank"
@@ -293,14 +293,6 @@ export function GuestHero({
         </p>
         <div className="mt-3 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:mt-6 sm:flex-row sm:flex-wrap sm:gap-3">
           <PrimaryButton
-            className="h-auto min-h-11 whitespace-normal border border-[#3a8a58] bg-white px-4 py-2.5 text-center leading-snug text-[#3a8a58] hover:bg-[#f3faf6] sm:max-w-xs"
-            onClick={prefill}
-          >
-            Click here to use Pre-Filled Demo for
-            <br />
-            an example MACH RUN
-          </PrimaryButton>
-          <PrimaryButton
             className="h-auto min-h-11 whitespace-normal px-4 py-2.5 text-center leading-snug sm:whitespace-nowrap sm:text-base"
             onClick={() => {
               setConfirming(false);
@@ -308,13 +300,21 @@ export function GuestHero({
             }}
           >
             <span className="sm:hidden">
-              Click here to start with your info --
+              Start with your info --
               <br />
               no credit card needed.
             </span>
             <span className="hidden sm:inline">
-              Click here to start with your info -- no credit card needed.
+              Start with your info -- no credit card needed.
             </span>
+          </PrimaryButton>
+          <PrimaryButton
+            className="h-auto min-h-11 whitespace-normal border border-[#3a8a58] bg-white px-4 py-2.5 text-center leading-snug text-[#3a8a58] hover:bg-[#f3faf6] sm:max-w-xs"
+            onClick={prefill}
+          >
+            Use Pre-Filled Demo for
+            <br />
+            an example MACH RUN
           </PrimaryButton>
         </div>
         <p className="mt-3 w-full max-w-3xl px-6 text-center text-[calc(0.667rem-1pt)] leading-relaxed text-muted sm:mt-4 sm:px-10 sm:text-[calc(1.125rem-1pt)]">
@@ -496,6 +496,29 @@ const MILITARY_SAMPLE = [
   },
 ] as const;
 
+/** One row of white stars on Old Glory blue. Decorative. */
+function FlagStripe() {
+  return (
+    <div
+      aria-hidden="true"
+      className="my-4 h-8 w-screen sm:my-5"
+    >
+      <svg className="h-full w-full" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <pattern id="mach-flag-stars" width="36" height="32" patternUnits="userSpaceOnUse">
+            <polygon
+              fill="#fff"
+              points="18,9 19.6,13.7 24.7,13.8 20.7,16.9 22.1,21.7 18,18.8 13.9,21.7 15.3,16.9 11.3,13.8 16.4,13.7"
+            />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="#002868" />
+        <rect width="100%" height="100%" fill="url(#mach-flag-stars)" />
+      </svg>
+    </div>
+  );
+}
+
 /** Guest homepage only. Names the three military incomes and a sample blend. */
 export function MilitaryHousehold() {
   const [open, setOpen] = useState<(typeof MILITARY_SAMPLE)[number]["id"] | null>(null);
@@ -523,15 +546,17 @@ export function MilitaryHousehold() {
   }, [open, finePointer]);
 
   return (
-    <section className="bg-bg">
+    <section className="overflow-x-clip bg-bg">
       <div className="mx-auto w-full max-w-3xl px-2" aria-hidden="true">
         <div style={{ paddingTop: "calc(12.5% + 1.625rem)" }} />
       </div>
-      <div className="page-gutter relative mx-auto flex w-full max-w-none flex-col items-center py-8 text-center sm:py-12">
-        <p className="pointer-events-none absolute inset-x-4 top-1 text-center text-[0.65rem] leading-tight text-muted sm:top-2 sm:text-xs">
-          This sample household is on track for more than $2,500,000 in retirement. The third screen
-          is 1,000 futures of that same run.
+      <div className="page-gutter relative mx-auto flex w-full max-w-none flex-col items-center pt-4 pb-3 text-center sm:pt-6 sm:pb-4">
+        <p className="mb-3 max-w-3xl text-center text-xs leading-snug text-muted sm:text-sm">
+          The Hale sample starts with two paychecks, three kids, and a $2,500,000 nest-egg goal. With
+          MACH RUN, they iterate and build a household that is on track for more than $2,500,000,
+          with their money lasting at least through age 95.
         </p>
+        <FlagStripe />
         <p className="font-display text-lg font-semibold uppercase tracking-[0.14em] text-[#3a8a58] sm:text-2xl">
           For military and veteran households
         </p>
@@ -605,6 +630,7 @@ export function MilitaryHousehold() {
             ? "Mouse over a payment above. Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at the required-withdrawal age, 75."
             : "Tap a payment above. Tap it again, or tap outside the cards, to return to the sample. Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at the required-withdrawal age, 75."}
         </p>
+        <FlagStripe />
       </div>
     </section>
   );

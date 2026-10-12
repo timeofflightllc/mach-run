@@ -1696,6 +1696,34 @@ function Home() {
       <div id={heroOn ? "guest-dock" : undefined}>
       {heroOn ? <MilitaryHousehold /> : null}
       {heroOn ? (
+        <section className="bg-bg">
+          <div className="page-gutter mx-auto w-full max-w-3xl pb-8 sm:pb-12">
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                "Change the savings rate and contributions.",
+                "Watch that date and FIRE number move.",
+                "See whether the money lasts across 1,000 futures.",
+              ].map((line) => (
+                <p
+                  key={line}
+                  className="rounded-lg bg-white px-4 py-4 text-center text-sm leading-snug text-[#1a2330] shadow-[0_0_0_1px_var(--color-border)] sm:text-base"
+                >
+                  {line}
+                </p>
+              ))}
+            </div>
+            <div className="mt-3 rounded-lg bg-white px-4 py-4 text-center shadow-[0_0_0_1px_var(--color-border)]">
+              <p className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-[#3a8a58]">
+                Sample, from the pre-filled demo. Not your plan.
+              </p>
+              <p className="mt-2 text-sm font-semibold leading-snug text-[#1a2330] sm:text-base">
+                In 100 of 100 futures like this one, your money lasts through your longevity age (95).
+              </p>
+            </div>
+          </div>
+        </section>
+      ) : null}
+      {heroOn ? (
         <div id="master-caution" className="relative z-20 border-t border-[#8a7020] bg-[#2c220e]">
           <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-2 py-4 text-center">
             <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">

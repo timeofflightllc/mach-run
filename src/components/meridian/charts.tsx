@@ -861,7 +861,7 @@ export function WealthChart({
               <Line
                 type="monotone"
                 dataKey="spendable"
-                name="Total"
+                name="Total Spendable Wealth"
                 stroke="#1a2330"
                 strokeWidth={2}
                 dot={false}
