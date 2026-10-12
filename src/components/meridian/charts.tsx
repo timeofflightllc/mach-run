@@ -1270,15 +1270,31 @@ export function NetWorthChart({
                 />
               ) : null}
               {locked || shown("netWorth") ? (
-                <Line
-                  type="monotone"
-                  dataKey="netWorth"
-                  name="Net worth"
-                  stroke="var(--color-accent)"
-                  strokeWidth={2.5}
-                  dot={false}
-                  isAnimationActive={false}
-                />
+                <>
+                  <Line
+                    type="monotone"
+                    dataKey="netWorth"
+                    stroke="#ffffff"
+                    strokeWidth={4.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    dot={false}
+                    legendType="none"
+                    tooltipType="none"
+                    isAnimationActive={false}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="netWorth"
+                    name="Net worth"
+                    stroke="var(--color-accent)"
+                    strokeWidth={2.5}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    dot={false}
+                    isAnimationActive={false}
+                  />
+                </>
               ) : null}
             </ComposedChart>
           </ResponsiveContainer>
