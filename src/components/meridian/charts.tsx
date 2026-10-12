@@ -332,6 +332,15 @@ function stackColor(index: number): string {
   return `hsl(${hue} 42% 42%)`;
 }
 
+function inkOn(color: string): string {
+  if (!color.startsWith("#") || color.length < 7) return "#ffffff";
+  const r = Number.parseInt(color.slice(1, 3), 16);
+  const g = Number.parseInt(color.slice(3, 5), 16);
+  const b = Number.parseInt(color.slice(5, 7), 16);
+  const y = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return y > 0.64 ? "#1a2330" : "#ffffff";
+}
+
 function spendableSeries(plan: Plan) {
   return plan.portfolios
     .filter((p) => p.spendable)
@@ -1077,9 +1086,9 @@ export function NetWorthChart({
     });
   };
   const switches = [
-    ...accounts.map((account) => ({ id: account.id, label: account.name })),
-    { id: "liabilities", label: "Liabilities" },
-    { id: "netWorth", label: "Net worth" },
+    ...accounts.map((account) => ({ id: account.id, label: account.name, color: account.color })),
+    { id: "liabilities", label: "Liabilities", color: "var(--color-negative)" },
+    { id: "netWorth", label: "Net worth", color: "var(--color-accent)" },
   ];
   const debtOn = !locked && shown("liabilities") && hasDebt;
   const visibleKeys = accountsLive
@@ -1145,12 +1154,16 @@ export function NetWorthChart({
                     type="button"
                     aria-pressed={shown(item.id)}
                     onClick={() => flip(item.id)}
-                    className={cn(
-                      "h-7 rounded px-2 text-[11px] font-medium leading-none",
+                    className="h-7 rounded px-2 text-[11px] font-medium leading-none"
+                    style={
                       shown(item.id)
-                        ? "bg-accent text-accent-fg"
-                        : "bg-slate-100 text-slate-600 shadow-[0_0_0_1px_#c8d2de] hover:text-slate-900",
-                    )}
+                        ? { backgroundColor: item.color, color: inkOn(item.color) }
+                        : {
+                            backgroundColor: "#ffffff",
+                            color: item.color,
+                            boxShadow: `inset 0 0 0 1px ${item.color}`,
+                          }
+                    }
                   >
                     {item.label}
                   </button>
