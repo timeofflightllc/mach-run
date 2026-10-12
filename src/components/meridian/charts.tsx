@@ -1196,7 +1196,7 @@ export function NetWorthChart({
                 stroke="#475569"
                 strokeWidth={1.25}
                 legendType="none"
-                label={{ value: "$0.00", position: "insideTopLeft", fill: "#475569", fontSize: 11 }}
+                label={{ value: "$0.00", position: "left", fill: tickFill, fontSize: 11 }}
               />
               {locked ? (
                 <Area
