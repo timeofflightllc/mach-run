@@ -7,14 +7,14 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
   personalP2: "Individual Unlimited adds Net Worth and Liabilities.",
   personalP3: "Professional financial advisors have even more capability built in.",
   advisorP1: "Advisor Lite is five named client profiles. 14-day trial, then $69/month.",
-  advisorP2: "Advisor Unlimited is the same engine with unlimited profiles.",
+  advisorP2: "Advisor Unlimited is unlimited profiles. 14-day trial, then $169/month.",
   couponLabel: "Do you have a coupon code?",
   intervalNoteMonth: "Monthly or yearly — fly yearly and we throw in two months.",
   intervalNoteYear: "Yearly: we throw in two months.",
-  intervalNoteAdvisorMonth: "Advisor Lite includes a 14-day free trial (card on file).",
+  intervalNoteAdvisorMonth: "Advisor Lite and Advisor Unlimited each include a 14-day free trial (card on file).",
   freeAdvisorBullet: "Same free start. Paid advisor packages sit next to it.",
   advisorLiteTagYear: "14-day trial, we throw in two months",
-  advisorUnlimitedTagYear: "Fly yearly and we throw in two months.",
+  advisorUnlimitedTagYear: "14-day trial, we throw in two months.",
   free: {
     tag: "Register in 30 seconds",
     bullets: [
@@ -56,7 +56,7 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
     ],
   },
   advisorUnlimited: {
-    tag: "$169/month for an unlimited book.",
+    tag: "14-day trial, then $169/month",
     bullets: [
       "Everything in Advisor Lite, plus:",
       "Unlimited named profiles",

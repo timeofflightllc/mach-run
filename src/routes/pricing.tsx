@@ -251,15 +251,23 @@ function Pricing() {
     busy === `advisor_lite-${interval}`
       ? "Redirecting…"
       : `Start ${trialOnAdvisorLite && promoDays ? promoDays : ADVISOR_TRIAL_DAYS}-day trial`;
+  const advisorUnlTrialLabel = `${trialOnAdvisor && promoDays ? promoDays : ADVISOR_TRIAL_DAYS}-day trial`;
+  const advisorUnlSubtitle = trialOnAdvisor && promoDays
+    ? interval === "year"
+      ? `${promoDays}-day trial, 2 months free`
+      : `${promoDays}-day trial, then $${ADVISOR_UNLIMITED_MONTHLY_USD}/month`
+    : trialOnAdvisor && promoPct
+      ? `${promoPct}% off first invoice`
+      : interval === "year"
+        ? `${ADVISOR_TRIAL_DAYS}-day trial, 2 months free`
+        : `${ADVISOR_TRIAL_DAYS}-day trial, then $${ADVISOR_UNLIMITED_MONTHLY_USD}/month`;
   const advisorUnlSignIn = "Create an account, then choose Advisor Unlimited";
   const advisorUnlButton =
     busy === `advisor-${interval}`
       ? "Redirecting…"
-      : trialOnAdvisor && promoDays
-        ? `Start ${promoDays}-day trial · $${advUnlPrice}${per}`
-        : trialOnAdvisor && promoPct
-          ? `Choose Unlimited · ${promoPct}% off`
-          : `Choose Unlimited · $${advUnlPrice}${per}`;
+      : trialOnAdvisor && promoPct && !promoDays
+        ? `Choose Unlimited · ${promoPct}% off`
+        : `Start ${trialOnAdvisor && promoDays ? promoDays : ADVISOR_TRIAL_DAYS}-day trial`;
 
   const currentText = !ent.signedIn
     ? null
@@ -691,20 +699,22 @@ function Pricing() {
               </p>
               {onAdvisor ? (
                 <YourPlanMark interval={ent.interval} />
-              ) : interval === "year" ? (
+              ) : (
                 <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-subtle">
-                  Two months free
+                  {advisorUnlTrialLabel}
                 </span>
-              ) : null}
+              )}
             </div>
             <p className="mt-3 font-display text-4xl tabular-nums">
               ${advUnlPrice}
               <span className="text-xl text-muted">{per}</span>
             </p>
             <p className="mt-1 text-sm text-muted">
-              {interval === "year"
-                ? copy.advisorUnlimitedTagYear
-                : copy.advisorUnlimited.tag}
+              {trialOnAdvisor && (promoDays || promoPct)
+                ? advisorUnlSubtitle
+                : interval === "year"
+                  ? copy.advisorUnlimitedTagYear
+                  : copy.advisorUnlimited.tag}
             </p>
             <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
               {copy.advisorUnlimited.bullets.map((line, i) => (
@@ -712,7 +722,7 @@ function Pricing() {
               ))}
             </ul>
             <p className="mt-4 text-sm leading-relaxed text-muted">
-              The card is charged today. The plan renews until canceled.
+              The card is charged when the 14-day trial ends unless canceled before then. The plan renews until canceled.
             </p>
             {!signedIn ? (
               <a

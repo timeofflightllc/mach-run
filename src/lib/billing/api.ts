@@ -315,7 +315,8 @@ export const startCheckout = createServerFn({ method: "POST" })
     if (promoPercent && !promoPercent.stripeCouponId) {
       throw new Error("That percent-off code is not connected to Stripe yet.");
     }
-    const trialDays = promoTrialDays ?? (pkg === "advisor_lite" ? ADVISOR_TRIAL_DAYS : null);
+    const trialDays =
+      promoTrialDays ?? (pkg === "advisor_lite" || pkg === "advisor" ? ADVISOR_TRIAL_DAYS : null);
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceIdFor(data.interval, pkg), quantity: 1 }],

@@ -129,15 +129,36 @@ function freshenStoredCopy(body: string): string {
     .replaceAll("7-day free trial", "14-day free trial")
     .replaceAll("7-day trial, we throw in two months", "14-day trial, we throw in two months")
     .replaceAll("7-day trial, then $69/month", "14-day trial, then $69/month")
-    .replaceAll("A 7-day Advisor trial", "A 14-day Advisor Lite trial")
+    .replaceAll("A 7-day Advisor trial", "A 14-day Advisor Lite or Advisor Unlimited trial")
     .replaceAll(
       "Details and a 7-day trial live on [Pricing](/pricing).",
+      "Each includes a 14-day trial. Details live on [Pricing](/pricing).",
+    )
+    .replaceAll(
       "Advisor Lite includes a 14-day trial. Details live on [Pricing](/pricing).",
+      "Each includes a 14-day trial. Details live on [Pricing](/pricing).",
     )
     .replaceAll(
       "For Advisor Lite and Advisor Unlimited trials, the card is charged when the trial ends unless canceled before then.",
+      "Advisor Lite and Advisor Unlimited each include a 14-day trial. The card is charged when that trial ends unless canceled before then.",
+    )
+    .replaceAll(
       "Advisor Lite includes a 14-day trial. The card is charged when that trial ends unless canceled before then. Advisor Unlimited is charged at checkout.",
-    );
+      "Advisor Lite and Advisor Unlimited each include a 14-day trial. The card is charged when that trial ends unless canceled before then.",
+    )
+    .replaceAll(
+      "Advisor Unlimited is the same engine with unlimited profiles.",
+      "Advisor Unlimited is unlimited profiles. 14-day trial, then $169/month.",
+    )
+    .replaceAll(
+      "Advisor Lite includes a 14-day free trial (card on file).",
+      "Advisor Lite and Advisor Unlimited each include a 14-day free trial (card on file).",
+    )
+    .replaceAll('"$169/month for an unlimited book."', '"14-day trial, then $169/month"')
+    .replaceAll(
+      '"advisorUnlimitedTagYear": "Fly yearly and we throw in two months."',
+      '"advisorUnlimitedTagYear": "14-day trial, we throw in two months."',
+    );;
   return ensureRefundCopy(body);
 }
 
