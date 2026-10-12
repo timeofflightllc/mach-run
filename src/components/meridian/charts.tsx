@@ -1206,7 +1206,6 @@ export function NetWorthChart({
                 labelFormatter={(t) => formatAxisTick(t as string | number, span)}
                 contentStyle={tooltipStyle}
                 labelStyle={{ color: "#1a2330" }}
-                itemStyle={{ color: "#4b5b6e" }}
               />
               <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
               <ReferenceLine
