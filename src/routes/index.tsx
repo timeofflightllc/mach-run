@@ -480,7 +480,27 @@ function MonteCarloTab({
       <PhaseLabel id="ooda-monte" label="Monte Carlo" />
       <div className="relative">
         {unlocked && !running && score && score.bands.length > 0 ? (
-          <MonteCarloBandChart bands={score.bands} traces={score.traces} real={real} />
+          <MonteCarloBandChart
+            bands={score.bands}
+            traces={score.traces}
+            real={real}
+            note={
+              <div
+                className="rounded-md px-4 py-3"
+                style={{
+                  background: "color-mix(in oklab, #e8c547 22%, white)",
+                  boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 45%, white)",
+                }}
+              >
+                <p className="text-base font-bold leading-snug text-slate-900 sm:text-xl">
+                  {survivalSentence(score.score, longevityAge)}
+                </p>
+                {ranOut ? (
+                  <p className="mt-1.5 text-sm font-semibold leading-snug text-slate-900 sm:text-base">{ranOut}</p>
+                ) : null}
+              </div>
+            }
+          />
         ) : (
           <div className="relative flex h-[32rem] flex-col items-center justify-center gap-6 overflow-hidden rounded-xl bg-white px-6 text-center shadow-[0_0_0_1px_#c8d2de] sm:h-[40rem]">
             {running && unlocked ? <MatrixRain /> : null}
@@ -516,12 +536,6 @@ function MonteCarloTab({
       </div>
       {unlocked ? (
         <RunMonteCarloButton running={running} progress={running ? progress : 0} onClick={onRun} />
-      ) : null}
-      {unlocked && score ? (
-        <div className="text-sm leading-relaxed text-fg">
-          <p>{survivalSentence(score.score, longevityAge)}</p>
-          {ranOut ? <p className="mt-1">{ranOut}</p> : null}
-        </div>
       ) : null}
     </div>
   );

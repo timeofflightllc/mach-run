@@ -1343,10 +1343,12 @@ export function MonteCarloBandChart({
   bands,
   traces,
   real,
+  note,
 }: {
   bands: SurvivalBand[];
   traces?: SurvivalTraces | null;
   real: boolean;
+  note?: ReactNode;
 }) {
   const series = traces ? (real ? traces.real : traces.nominal) : null;
   const years = traces?.years ?? [];
@@ -1410,7 +1412,12 @@ export function MonteCarloBandChart({
         </li>
         <li>{real ? "Dollars are today's dollars." : "Dollars are future dollars, not adjusted for inflation."}</li>
       </ul>
-      <div className="h-[32rem] sm:h-[40rem]">
+      <div className="relative h-[32rem] sm:h-[40rem]">
+        {note ? (
+          <div className="pointer-events-none absolute left-[6.25rem] top-3 z-10 max-w-[min(28rem,calc(100%-7.5rem))]">
+            {note}
+          </div>
+        ) : null}
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 12, left: 8, bottom: 4 }}>
             <CartesianGrid stroke={gridStroke} vertical={false} />
