@@ -881,7 +881,7 @@ export function WealthChart({
               type="monotone"
               dataKey="netWorth"
               name="Net worth"
-              stroke="#4b5b6e"
+              stroke="var(--color-accent)"
               strokeWidth={1.5}
               dot={false}
               strokeDasharray="4 4"
