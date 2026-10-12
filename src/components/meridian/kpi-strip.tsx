@@ -96,9 +96,9 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
   const payLabel = ret?.incomeYear ? `Retirement pay (${ret.incomeYear})` : "Retirement pay";
 
   return (
-    <dl className="overflow-hidden rounded-xl bg-border shadow-[0_0_0_1px_var(--color-border)]">
+    <dl className="@container/kpi overflow-hidden rounded-xl bg-border shadow-[0_0_0_1px_var(--color-border)]">
       <div className="grid grid-cols-2 gap-px">
-        <div className="bg-surface px-3 py-3 sm:px-4 sm:py-4">
+        <div className="bg-surface px-3 py-3 sm:px-4">
           <HoverLabel
             label="Current spendable"
             tip="Balances marked spendable, as of today. Not grown. A house or other account left unmarked is not included."
@@ -107,7 +107,7 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
             {usd(startingSpendable(plan))}
           </dd>
         </div>
-        <div className="bg-surface px-3 py-3 sm:px-4 sm:py-4">
+        <div className="bg-surface px-3 py-3 sm:px-4">
           <HoverLabel
             label="Current net worth"
             tip="Accounts counted in net worth, minus remaining loans."
@@ -117,44 +117,46 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
           </dd>
         </div>
       </div>
-      <div className="mt-px bg-surface px-3 py-3 sm:px-4 sm:py-4">
-        <HoverLabel
-          label={retLabel}
-          tip="Spendable balance the month before the goal date, in this run’s dollars."
-        />
-        <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg sm:text-xl">
-          {spendableAtRet != null ? usd(spendableAtRet) : "Set date in Family"}
-        </dd>
-        {goalNote ? (
-          <p className="mt-1 font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
-            {goalNote}
-          </p>
-        ) : null}
-      </div>
-      <div className="mt-px bg-surface px-3 py-3 sm:px-4 sm:py-4">
-        <HoverLabel label={payLabel} tip={payTip} />
-        <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg sm:text-xl">
-          {annual != null ? (
-            <span className="flex flex-wrap items-baseline gap-x-2">
-              <span>{usd(annual)}</span>
-              <span className="font-sans text-sm font-normal normal-case tracking-normal text-muted">a year</span>
-              {monthly != null ? (
-                <>
-                  <span className="font-sans text-sm font-normal text-muted">·</span>
-                  <span>{usd(monthly, true)}</span>
-                  <span className="font-sans text-sm font-normal normal-case tracking-normal text-muted">a month</span>
-                </>
-              ) : null}
-            </span>
-          ) : (
-            "—"
-          )}
-        </dd>
-        {roomNote ? (
-          <p className="mt-1 font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
-            {roomNote}
-          </p>
-        ) : null}
+      <div className="mt-px grid grid-cols-1 gap-px @min-[28rem]/kpi:grid-cols-2">
+        <div className="bg-surface px-3 py-3 sm:px-4">
+          <HoverLabel
+            label={retLabel}
+            tip="Spendable balance the month before the goal date, in this run’s dollars."
+          />
+          <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg sm:text-xl">
+            {spendableAtRet != null ? usd(spendableAtRet) : "Set date in Family"}
+          </dd>
+          {goalNote ? (
+            <p className="mt-1 font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
+              {goalNote}
+            </p>
+          ) : null}
+        </div>
+        <div className="bg-surface px-3 py-3 sm:px-4">
+          <HoverLabel label={payLabel} tip={payTip} />
+          <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg sm:text-xl">
+            {annual != null ? (
+              <span className="flex flex-wrap items-baseline gap-x-2">
+                <span>{usd(annual)}</span>
+                <span className="font-sans text-sm font-normal normal-case tracking-normal text-muted">a year</span>
+                {monthly != null ? (
+                  <>
+                    <span className="font-sans text-sm font-normal text-muted">·</span>
+                    <span>{usd(monthly, true)}</span>
+                    <span className="font-sans text-sm font-normal normal-case tracking-normal text-muted">a month</span>
+                  </>
+                ) : null}
+              </span>
+            ) : (
+              "—"
+            )}
+          </dd>
+          {roomNote ? (
+            <p className="mt-1 font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
+              {roomNote}
+            </p>
+          ) : null}
+        </div>
       </div>
     </dl>
   );

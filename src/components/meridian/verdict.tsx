@@ -87,7 +87,7 @@ export function Verdict({
   const egg = nestEggTrack(plan, sim);
 
   return (
-    <div className={cn("rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]", className)}>
+    <div className={cn("@container/bluf flex h-full flex-col rounded-xl bg-surface px-5 py-4 shadow-[0_0_0_1px_var(--color-border)]", className)}>
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
         BLUF (Bottom Line Up Front)
       </p>
@@ -97,50 +97,52 @@ export function Verdict({
       {egg ? (
         <p className="mt-2 text-base font-medium leading-snug text-fg">{body}</p>
       ) : null}
-      {rank ? (
-        <div className="mt-3 text-center">
-          <p className="font-display text-lg font-semibold uppercase tracking-[0.08em] text-fg">
-            {rank.title}
-          </p>
-          <ul className="mx-auto mt-1.5 inline-block list-disc space-y-1 pl-5 text-left text-sm leading-snug text-fg">
-            {rank.lines.map((line) => (
-              <li key={line}>{line}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
       {retLine ? (
         <p className="mt-3 text-sm leading-relaxed text-muted">{retLine}</p>
       ) : null}
-      {survivalUnlocked ? (
-        <div className="mt-3">
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-subtle">
-            Plan Survival
-          </p>
-          {survival ? (
-            <p className="mt-1 text-sm leading-relaxed text-fg">
-              {survivalSentence(survival.score, longevityAge)}
-              {ranOut ? ` ${ranOut}` : ""}
-            </p>
+      <div className={cn("mt-3 grid items-start gap-x-6 gap-y-3", rank && "@min-[32rem]/bluf:grid-cols-2")}>
+          {rank ? (
+            <div>
+              <p className="font-display text-lg font-semibold uppercase tracking-[0.08em] text-fg">
+                {rank.title}
+              </p>
+              <ul className="mt-1.5 list-disc space-y-1 pl-5 text-left text-sm leading-snug text-fg">
+                {rank.lines.map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+          {survivalUnlocked ? (
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.14em] text-subtle">
+                Plan Survival
+              </p>
+              {survival ? (
+                <p className="mt-1 text-sm leading-snug text-fg">
+                  {survivalSentence(survival.score, longevityAge)}
+                  {ranOut ? ` ${ranOut}` : ""}
+                </p>
+              ) : (
+                <p className="mt-1 text-sm leading-snug text-muted">
+                  Run Monte Carlo Simulation on the card{" "}
+                  <span className="@min-[36rem]/act:hidden">below.</span>
+                  <span className="hidden @min-[36rem]/act:inline">to the right.</span>
+                </p>
+              )}
+            </div>
           ) : (
-            <p className="mt-1 text-sm leading-relaxed text-muted">
-              Run Monte Carlo Simulation on the card{" "}
-              <span className="@min-[36rem]:hidden">below.</span>
-              <span className="hidden @min-[36rem]:inline">to the right.</span>
+            <p className="rounded-md px-3 py-2 text-xs leading-relaxed text-subtle shadow-[0_0_0_1px_var(--color-border)]">
+              <Link
+                to="/pricing"
+                className="font-medium text-accent underline underline-offset-2 hover:text-fg"
+              >
+                Upgrade
+              </Link>{" "}
+              <span className="opacity-70">to access Plan Survival (Monte Carlo Simulations)</span>
             </p>
           )}
-        </div>
-      ) : (
-        <p className="mt-3 rounded-md px-3 py-2 text-xs leading-relaxed text-subtle shadow-[0_0_0_1px_var(--color-border)]">
-          <Link
-            to="/pricing"
-            className="font-medium text-accent underline underline-offset-2 hover:text-fg"
-          >
-            Upgrade
-          </Link>{" "}
-          <span className="opacity-70">to access Plan Survival (Monte Carlo Simulations)</span>
-        </p>
-      )}
+      </div>
     </div>
   );
 }

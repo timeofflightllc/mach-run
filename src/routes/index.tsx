@@ -2051,19 +2051,19 @@ function Home() {
                 </div>
                 <div>
                   {actTab === "brief" ? (
-                    <div className="@container flex flex-col gap-4">
-                      <div className="grid grid-cols-1 items-start gap-4 @min-[36rem]:grid-cols-2 @min-[36rem]:items-stretch">
+                    <div className="@container/act flex flex-col gap-4">
+                      <div className="grid grid-cols-1 items-start gap-4 @min-[36rem]/act:grid-cols-2 @min-[36rem]/act:items-stretch">
                         <div className={cn(
                           "flex min-w-0 flex-col gap-3",
-                          simulatorFull && "@min-[36rem]:h-full",
+                          simulatorFull && "@min-[36rem]/act:h-full",
                         )}>
                           <ActPhase />
-                          <div className={cn("flex flex-col gap-3", simulatorFull && "@min-[36rem]:flex-1")}>
+                          <div className={cn("flex flex-col gap-3", simulatorFull && "@min-[36rem]/act:flex-1")}>
                             <Verdict
                               plan={displayPlan}
                               sim={run.sim}
                               brief={run.brief}
-                              className={simulatorFull ? "@min-[36rem]:flex-1" : undefined}
+                              className={simulatorFull ? "@min-[36rem]/act:flex-1" : undefined}
                               survivalUnlocked={sheet}
                               survival={
                                 sheet &&
@@ -2077,7 +2077,7 @@ function Home() {
                             <KpiStrip plan={displayPlan} sim={run.sim} />
                           </div>
                         </div>
-                        <div className={cn("flex min-w-0 flex-col gap-3", simulatorFull && "@min-[36rem]:h-full")}>
+                        <div className={cn("flex min-w-0 flex-col gap-3", simulatorFull && "@min-[36rem]/act:h-full")}>
                           <PhaseLabel id="ooda-simulator" label="The Simulator" />
                           <PlanSurvival
                             locked={!sheet}
