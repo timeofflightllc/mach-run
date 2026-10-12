@@ -402,8 +402,9 @@ export function PeerBriefCard({
   const sections: BriefSection[] = brief.sections?.length
     ? brief.sections
     : brief.paragraphs.map((body) => ({ title: "", body }));
-  const clipped = !brief.expanded && sections.length > 2;
-  const visible = clipped ? sections.slice(0, 2) : sections;
+  const open = Boolean(brief.expanded || ent.paid);
+  const clipped = !open && !ent.pending && sections.length > 2;
+  const visible = open ? sections : sections.slice(0, 2);
 
   const egg = plan && sim ? nestEggTrack(plan, sim) : null;
   const annuityCopy = brief.annuityEquivalent
@@ -416,7 +417,7 @@ export function PeerBriefCard({
         <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
           MACH OODA Financial Analysis*
         </p>
-        {plan && sim && brief.expanded ? (
+        {plan && sim && open ? (
           <PrimaryButton
             onClick={() => {
               void downloadAnalysisPdf(brief, plan, sim, {

@@ -1994,7 +1994,7 @@ function Home() {
                   This MACH RUN is not current. Changes were saved, but the run has not been executed.
                 </p>
               ) : null}
-              {!ent.paid ? (
+              {!ent.paid && !ent.pending ? (
                 <div
                   className="flex flex-col gap-3 rounded-xl px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
                   style={{

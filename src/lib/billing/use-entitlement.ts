@@ -87,7 +87,7 @@ export function useEntitlement(): Entitlement & { pending: boolean } {
     };
   }, [userId, isPending, snapshot]);
 
-  return { ...ent, pending };
+  return { ...(pending && painted ? painted : ent), pending: pending && !painted };
 }
 
 function previewUnlimited(): boolean {
