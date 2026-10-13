@@ -531,10 +531,10 @@ function cashPoints(plan: Plan, sim: SimResult, span: ChartSpan): CashPoint[] {
   if (span === 5) {
     return monthsInSpan(sim, plan.assumptions.asOfDate, 5).map((m) => ({
       t: `${m.year}-${pad2(m.month)}`,
-      income: Math.round(deflate(m.year, m.month, m.income) * 12),
-      spending: Math.round(deflate(m.year, m.month, m.spending) * 12),
-      guaranteed: Math.round(deflate(m.year, m.month, m.guaranteed) * 12),
-      contributions: Math.round(deflate(m.year, m.month, m.contributions) * 12),
+      income: Math.round(deflate(m.year, m.month, m.income)),
+      spending: Math.round(deflate(m.year, m.month, m.spending)),
+      guaranteed: Math.round(deflate(m.year, m.month, m.guaranteed)),
+      contributions: Math.round(deflate(m.year, m.month, m.contributions)),
     }));
   }
   if (span === 10) {
@@ -1026,7 +1026,7 @@ export function CashChart({
         {span === 10
           ? " Each point is one quarter. Hover a point for the months."
           : span === 5
-            ? " Each point is one month, times 12, so the scale matches the yearly views."
+            ? " Each point is that month. The hover is the month, not a yearly run rate."
             : ""}
         {expanded ? " Esc closes this view." : ""}
       </p>
@@ -1099,7 +1099,7 @@ export function CashChart({
               <Area
                 type="monotone"
                 dataKey="income"
-                name="Income"
+                name={span === 5 ? "Income this month" : "Income"}
                 stroke="var(--color-positive)"
                 fill="var(--color-positive)"
                 fillOpacity={0.16}
@@ -1111,7 +1111,7 @@ export function CashChart({
               <Area
                 type="monotone"
                 dataKey="spending"
-                name="Spending"
+                name={span === 5 ? "Spending this month" : "Spending"}
                 stroke="var(--color-negative)"
                 fill="var(--color-negative)"
                 fillOpacity={0.16}
@@ -1123,7 +1123,7 @@ export function CashChart({
               <Line
                 type="monotone"
                 dataKey="contributions"
-                name="Contributions"
+                name={span === 5 ? "Contributions this month" : "Contributions"}
                 stroke="#1a2330"
                 strokeWidth={1.5}
                 dot={false}
@@ -1134,7 +1134,11 @@ export function CashChart({
               <Line
                 type="monotone"
                 dataKey="guaranteed"
-                name="Guaranteed (pension / VA / SS)"
+                name={
+                  span === 5
+                    ? "Guaranteed this month (pension / VA / SS)"
+                    : "Guaranteed (pension / VA / SS)"
+                }
                 stroke="var(--color-accent)"
                 strokeWidth={1.5}
                 dot={false}
