@@ -351,3 +351,118 @@ test("audit CSV opens with a reviewer prompt before the trace", () => {
   const dictionaryAt = lines.findIndex((line) => line.startsWith("dictionary,"));
   assert.ok(dictionaryAt > 10, "dictionary should follow the review order");
 });
+
+function sectionTable(csv: string, name: string): { header: string[]; rows: string[][] } {
+  let pending: string[] | null = null;
+  let header: string[] = [];
+  const rows: string[][] = [];
+  for (const line of csv.split("\n")) {
+    if (!line) continue;
+    const cells = line.split(",");
+    if (cells[0] === "section") {
+      pending = cells.slice(1);
+      continue;
+    }
+    if (cells[0] !== name) continue;
+    if (header.length === 0 && pending) header = pending;
+    rows.push(cells.slice(1));
+  }
+  return { header, rows };
+}
+
+test("audit income rows show a yearly bonus as one check", () => {
+  const plan = roundPlan();
+  plan.assumptions.sweepPortfolioId = null;
+  plan.portfolios = [
+    {
+      id: "k",
+      name: "401k",
+      kind: "401k",
+      owner: "primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "pre_tax",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.incomes = [
+    {
+      id: "bonus",
+      name: "BGS Bonus",
+      kind: "bonus",
+      monthlyAmount: 6_666.67,
+      payCadence: "year",
+      payAmount: 80_000,
+      startDate: "2027-09-01",
+      endDate: "2029-09-01",
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "match",
+      label: "Bonus match",
+      portfolioId: "k",
+      monthlyAmount: 0,
+      startDate: "2027-09-01",
+      endDate: null,
+      stopDate: "2028-09-01",
+      amountMode: "percent",
+      percentOfIncome: 10,
+      percentOfIncomeId: "bonus",
+      employerMatch: true,
+      employerMatchPct: 100,
+    },
+  ];
+  const csv = buildInvestmentAuditCsv(plan, simulate(plan, { audit: true }));
+  assert.match(
+    csv,
+    /cadence year deposits pay_amount \(or monthly times 12 when pay_amount is blank\) in the anniversary month only/,
+  );
+
+  const incomes = sectionTable(csv, "incomes");
+  assert.deepEqual(incomes.header.slice(4, 7), ["monthly_today", "pay_cadence", "pay_amount"]);
+  const bonusIn = incomes.rows.find((row) => row[0] === "bonus");
+  assert.ok(bonusIn);
+  assert.equal(bonusIn[4], "6666.67");
+  assert.equal(bonusIn[5], "year");
+  assert.equal(bonusIn[6], "80000.00");
+
+  const contributions = sectionTable(csv, "contributions");
+  assert.ok(contributions.header.includes("stop_date"));
+  const stopAt = contributions.header.indexOf("stop_date");
+  assert.equal(contributions.rows[0]?.[stopAt], "2028-09-01");
+
+  const windows = sectionTable(csv, "windows");
+  const matchWindow = windows.rows.find((row) => row[1] === "match");
+  assert.ok(matchWindow);
+  assert.equal(matchWindow.at(-1), "none");
+
+  const income = sectionTable(csv, "month_income");
+  const nominalAt = income.header.indexOf("nominal");
+  const idAt = income.header.indexOf("income_id");
+  const dateAt = income.header.indexOf("date");
+  const sep = income.rows.filter((row) => row[dateAt] === "2027-09-01" && row[idAt] === "bonus");
+  assert.equal(sep.length, 1);
+  assert.equal(sep[0]?.[nominalAt], "80000.00");
+  assert.equal(
+    income.rows.some((row) => row[dateAt] === "2027-10-01" && row[idAt] === "bonus"),
+    false,
+  );
+
+  const home = sectionTable(csv, "month_household");
+  const hDate = home.header.indexOf("date");
+  const hIncome = home.header.indexOf("income");
+  const hMatch = home.header.indexOf("employer_match");
+  for (const key of ["2027-09-01", "2027-10-01"]) {
+    const nominals = income.rows
+      .filter((row) => row[dateAt] === key)
+      .reduce((sum, row) => sum + Number(row[nominalAt]), 0);
+    const month = home.rows.find((row) => row[hDate] === key);
+    assert.ok(month, key);
+    near(Number(month[hIncome]), nominals + Number(month[hMatch] || 0));
+  }
+});

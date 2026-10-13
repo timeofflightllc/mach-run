@@ -1,4 +1,4 @@
-import { inRange, monthStart, yearlyRateToMonthly, calendarColaYears } from "./dates.ts";
+import { inRange, monthStart, yearlyRateToMonthly } from "./dates.ts";
 import {
   assumptionRows,
   csvRow,
@@ -10,6 +10,7 @@ import {
   spendingWindow,
   streamBenefitToday,
   streamColaAnnual,
+  streamNominalAt,
   streamWindow,
 } from "./engine.ts";
 import { liabilityPaymentDue, remainingLiability } from "./liability.ts";
@@ -90,7 +91,7 @@ const REVIEW_ORDER: string[] = [
   "You are an independent reviewer of a household cash-flow calculator. You did not write this file. Do not assume the software is correct. Do not give financial advice, do not rewrite the household, and do not praise the plan. The reader will change the TypeScript backend from your bug table.",
   "This file is one MACH RUN. MACH RUN projects one household from asOfDate through the month the primary person reaches projectionEndAge. Each month it grows balances, counts income, spends, taxes at one flat rate, saves only leftover cash, withdraws from spendable accounts when the month is short, and reports spendable wealth and net worth. The rows under this prompt are the engine's own trace of the saved inputs. Recompute from the inputs and the rules below. A residual column is a claim, not proof. Assumption fields use the names in the assumptions section. Month columns use the header row of that section.",
   "The first column of every row is the section name. Sections follow in this order: review_order (these instructions), dictionary, assumptions, people, accounts, liabilities, incomes, spending, contributions, windows, then month_account, month_income, month_spending, month_contribution, month_rmd, month_annuity, month_loan, and month_household. Amounts are rounded to two decimals. A gap under $0.05, or under 0.05 percent of a balance above $1,000, is rounding, not a bug.",
-  "Month order. 1. Grow every account first. Monthly rate = (1 + annual rate) ^ (1/12) - 1. Annual rate is the percent divided by 100. A blank account return uses defaultReturnPct. 2. Add income inside its resolved window. Nominal = today's dollars times (1 + annual COLA) ^ calendar years since the as-of year. The as-of year does not step. Each later January steps once, then the paycheck stays the same through December. COLA is that income's cola_pct, else defaultColaPct, else inflationPct. 3. Add typed spending inside its window, inflated monthly from the inflation assumption. Add a mortgage or liability payment only when counted_in_spending is yes and principal remains. 4. Plan contributions inside their resolved windows. A percent rule is that percent of the named income's nominal that month. 5. Apply required minimum distributions. 6. Compute tax. 7. Split leftover cash. 8. Then add employer match.",
+  "Month order. 1. Grow every account first. Monthly rate = (1 + annual rate) ^ (1/12) - 1. Annual rate is the percent divided by 100. A blank account return uses defaultReturnPct. 2. Add income inside its resolved window. Nominal = today's dollars times (1 + annual COLA) ^ calendar years since the as-of year. The as-of year does not step. Each later January steps once, then the paycheck stays the same through December. COLA is that income's cola_pct, else defaultColaPct, else inflationPct. A salary, bonus, or allowance with cadence year deposits pay_amount (or monthly times 12 when pay_amount is blank) in the anniversary month only, then COLA. Other incomes stay monthly. 3. Add typed spending inside its window, inflated monthly from the inflation assumption. Add a mortgage or liability payment only when counted_in_spending is yes and principal remains. 4. Plan contributions inside their resolved windows. A percent rule is that percent of the named income's nominal that month. 5. Apply required minimum distributions. 6. Compute tax. 7. Split leftover cash. 8. Then add employer match.",
   "Tax is flat. Ordinary income and taken RMDs are taxed at ordinaryTaxRatePct. Social Security is taxed only on ssTaxablePct of the benefit, then at that same rate. There are no brackets and no standard deduction. Do not flag the missing brackets. Employer match is added to income after tax, so match is not taxed that month. Annuity taxable earnings are listed on month_annuity and are not inside the tax column. The withdrawal is grossed up instead.",
   "Leftover = income after RMDs and before match, minus tax, minus spending. If leftover is more than $0.50, fund employee contributions tax-qualified first, then taxable, until the cash runs out. Inside each of those groups, pay rules in the order they are listed. One rule may be paid in part. Once leftover is down to $0.50 or less, every later rule that month is $0. Do not withdraw from other accounts to fill a contribution, and do not use cash on hand to fill one. If a sweep account is set, deposit the rest there. If sweep is blank, add the rest to cash on hand. Cash on hand earns nothing. Then match = dollars actually invested on that rule times match_pct, and only when employer_match is yes and the destination is a 401(k), Roth 401(k), TSP, or Roth TSP. Match is added to that account and to income. If leftover is under -$0.50, spend cash on hand first, then withdraw from spendable accounts to cover what is still short, and fund no contributions that month.",
   "Withdrawals come only from spendable accounts, in order: taxable, then pre-tax, then Roth. Pre-tax dollars and non-qualified annuity gains are grossed up by 1 / (1 - tax rate) so the cash after that tax covers the hole. Annuity basis comes out tax-free after the gains. The extra withdrawn to pay tax on the withdrawal is not added to the tax column. That gross-up is allowed to show up in residual_engine. Roth withdrawals are not grossed up.",
@@ -187,13 +188,15 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   lines.push(
     ...section(
       "incomes",
-      ["id", "name", "kind", "person", "monthly_today", "start", "end", "cola_pct", "tax_treatment", "ss_claim_age", "ss_pia", "va_rating"],
+      ["id", "name", "kind", "person", "monthly_today", "pay_cadence", "pay_amount", "start", "end", "cola_pct", "tax_treatment", "ss_claim_age", "ss_pia", "va_rating"],
       plan.incomes.map((s) => [
         s.id,
         s.name,
         s.kind,
         s.person,
         s.monthlyAmount,
+        s.payCadence ?? null,
+        s.payAmount ?? null,
         s.startDate,
         s.endDate,
         s.colaPct,
@@ -216,7 +219,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   lines.push(
     ...section(
       "contributions",
-      ["id", "label", "account_id", "account_name", "mode", "monthly_amount", "percent", "percent_of_income_id", "start", "end", "employer_match", "match_pct", "irs_cap", "end_at_retirement"],
+      ["id", "label", "account_id", "account_name", "mode", "monthly_amount", "percent", "percent_of_income_id", "start", "end", "stop_date", "employer_match", "match_pct", "irs_cap", "end_at_retirement"],
       plan.contributions.map((c) => {
         const dest = plan.portfolios.find((p) => p.id === c.portfolioId);
         return [
@@ -230,6 +233,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
           c.percentOfIncomeId ?? null,
           c.startDate,
           c.endDate,
+          c.stopDate ?? null,
           Boolean(c.employerMatch),
           c.employerMatchPct ?? null,
           Boolean(c.capToIrsLimit),
@@ -285,7 +289,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
       resolved.end,
       windowWhy({
         retirement: Boolean(rule.endAtRetirement),
-        tiedToStage: Boolean(rule.endWithStageId || (rule.amountMode === "percent" && rule.percentOfIncomeId)),
+        tiedToStage: Boolean(rule.endWithStageId),
       }),
     ]);
   }
@@ -306,18 +310,15 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   const loanRows: (string | number | boolean | null)[][] = [];
   const homeRows: (string | number | null)[][] = [];
 
-  const asOf = monthStart(plan.assumptions.asOfDate);
   sim.months.forEach((month, index) => {
     const date = month.date;
     const inflationIndex = (1 + mInf) ** index;
     const at = monthStart(date);
     for (const stream of plan.incomes) {
-      const win = streamWindow(plan, stream);
-      if (!inRange(at, win.start, win.end)) continue;
+      const nominal = streamNominalAt(plan, stream, at, index, infA);
+      if (Math.abs(nominal) < 0.005) continue;
       const today = streamBenefitToday(plan, stream, at);
       const cola = streamColaAnnual(plan, stream, infA);
-      const nominal = today * (1 + cola) ** calendarColaYears(asOf, at);
-      if (Math.abs(nominal) < 0.005 && Math.abs(today) < 0.005) continue;
       const ss = stream.kind === "ss" && stream.ssPia != null && stream.ssClaimAge != null;
       const rating = vaRatingOf(stream);
       const va = stream.kind === "va" && rating != null;

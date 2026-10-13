@@ -167,7 +167,7 @@ function annualPaycheckBase(stream: IncomeStream): number {
  * `payAmount` in the anniversary month only. Everything else stays monthly.
  * `streamBenefitToday` is unchanged, so peer rank still sees the monthly equivalent.
  */
-function streamNominalAt(
+export function streamNominalAt(
   plan: Plan,
   stream: IncomeStream,
   cursor: Date,
