@@ -592,6 +592,7 @@ test("OODA paychecks sort by start date and print month then year", () => {
   assert.match(pay.body, /Sep 2036/);
   assert.match(pay.body, /Jan 2071 \(Longevity age 95\)/);
   assert.equal(pay.columns?.rows[0]?.window.includes("Longevity age"), false);
+  assert.match(pay.columns?.rows[0]?.amount ?? "", /\/mo$/);
   assert.doesNotMatch(pay.body, /open/);
   assert.doesNotMatch(pay.body, /2026-08/);
 });
@@ -654,5 +655,48 @@ test("analysis sections follow option A, with guaranteed paychecks after paychec
     buildPeerBrief(plan, simulate(plan), { expanded: true }).sections[guaranteed]?.variant,
     "annuity",
   );
+});
+
+test("paychecks show a yearly bonus and a weekly salary as typed", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1976-01-01";
+  plan.assumptions.asOfDate = "2026-10-01";
+  plan.incomes = [
+    {
+      id: "bonus",
+      name: "BGS Bonus",
+      kind: "bonus",
+      monthlyAmount: 6_666.67,
+      payCadence: "year",
+      payAmount: 80_000,
+      startDate: "2027-09-01",
+      endDate: "2029-09-01",
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+    {
+      id: "week",
+      name: "Weekly",
+      kind: "salary",
+      monthlyAmount: 4_333.33,
+      payCadence: "week",
+      payAmount: 1_000,
+      startDate: "2026-10-01",
+      endDate: "2026-12-01",
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  const pay = buildPeerBrief(plan, simulate(plan), { expanded: true }).sections.find(
+    (s) => s.title === "Paychecks",
+  );
+  const bonus = pay?.columns?.rows.find((row) => row.name === "BGS Bonus");
+  const weekly = pay?.columns?.rows.find((row) => row.name === "Weekly");
+  assert.equal(bonus?.amount, "$80,000.00/year");
+  assert.doesNotMatch(bonus?.amount ?? "", /\/mo/);
+  assert.match(weekly?.amount ?? "", /\/week$/);
+  assert.doesNotMatch(weekly?.amount ?? "", /\/mo/);
 });
 

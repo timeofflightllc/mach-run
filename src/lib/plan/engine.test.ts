@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createDefaultPlan } from "./defaults.ts";
 import { openAdvisories } from "./advisories.ts";
-import { simulate } from "./engine.ts";
+import { simulate, streamBenefitToday } from "./engine.ts";
 import { remainingLiability } from "./liability.ts";
 import { remainingMortgage } from "./mortgage.ts";
+import { monthlyFromPay } from "./pay-cadence.ts";
+import { monthStart } from "./dates.ts";
 import { ssBenefitFromPia, ssScheduleDates } from "./social-security.ts";
 import type { IncomeStream } from "./types.ts";
 
@@ -981,6 +983,88 @@ test("529 leaves the plan the month the child owner turns 23", () => {
   const kept = simulate(plan).months.find((m) => m.date.startsWith("2037-06"));
   const keptLine = kept?.detail?.netWorthLines.find((line) => line.id === "p529");
   assert.ok((keptLine?.amount ?? 0) > 25_700);
+});
+
+test("a yearly bonus is deposited in the anniversary month only", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1976-01-01";
+  plan.assumptions.asOfDate = "2026-10-01";
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.spending = [];
+  const bonus: IncomeStream = {
+    id: "bonus",
+    name: "BGS Bonus",
+    kind: "bonus",
+    monthlyAmount: monthlyFromPay(80_000, "year"),
+    payCadence: "year",
+    payAmount: 80_000,
+    startDate: "2027-09-01",
+    endDate: "2029-09-01",
+    colaPct: 0,
+    taxTreatment: "ordinary",
+    person: "primary",
+  };
+  const weekly: IncomeStream = {
+    id: "week",
+    name: "Weekly",
+    kind: "salary",
+    monthlyAmount: monthlyFromPay(1_000, "week"),
+    payCadence: "week",
+    payAmount: 1_000,
+    startDate: "2026-10-01",
+    endDate: "2026-12-01",
+    colaPct: 0,
+    taxTreatment: "ordinary",
+    person: "primary",
+  };
+  plan.incomes = [bonus, weekly];
+  plan.portfolios = [
+    {
+      id: "k",
+      name: "401k",
+      kind: "401k",
+      owner: "Primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "pre_tax",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c1",
+      label: "Percent of bonus",
+      portfolioId: "k",
+      monthlyAmount: 0,
+      startDate: "2027-09-01",
+      endDate: null,
+      amountMode: "percent",
+      percentOfIncome: 10,
+      percentOfIncomeId: "bonus",
+      employerMatch: false,
+    },
+  ];
+  const result = simulate(plan);
+  const month = (key: string) => result.months.find((row) => row.date.startsWith(key));
+  for (const key of ["2027-09", "2028-09", "2029-09"]) {
+    assert.equal(month(key)?.incomeByKind.bonus, 80_000, key);
+  }
+  assert.equal(month("2027-10")?.incomeByKind.bonus ?? 0, 0);
+  assert.equal(month("2028-01")?.incomeByKind.bonus ?? 0, 0);
+  const year2028 = result.months
+    .filter((row) => row.date.startsWith("2028-"))
+    .reduce((sum, row) => sum + (row.incomeByKind.bonus ?? 0), 0);
+  assert.equal(year2028, 80_000);
+  assert.notEqual(year2028, monthlyFromPay(80_000, "year") * 12);
+  const weeklyMonth = monthlyFromPay(1_000, "week");
+  for (const key of ["2026-10", "2026-11", "2026-12"]) {
+    assert.equal(month(key)?.incomeByKind.salary, weeklyMonth, key);
+  }
+  assert.equal(streamBenefitToday(plan, bonus, monthStart("2027-09-01")), monthlyFromPay(80_000, "year"));
+  assert.notEqual(streamBenefitToday(plan, bonus, monthStart("2027-09-01")), 80_000);
+  assert.equal(month("2027-09")?.contributions, 8_000);
+  assert.equal(month("2027-10")?.contributions ?? 0, 0);
 });
 
 

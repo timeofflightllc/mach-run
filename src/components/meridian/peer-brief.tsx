@@ -13,7 +13,7 @@ import { CashShortNotice } from "@/components/meridian/cash-short-notice";
 import { nestEggTrack } from "@/lib/plan/peers";
 import { annuityEquivalentCopy } from "@/lib/plan/annuity-equivalent";
 import { Field, MoneyInput, MonthInput, PrimaryButton, TextInput } from "@/components/ui/field";
-import { paycheckFromMonthly } from "@/lib/plan/pay-cadence";
+import { paycheckFromMonthly, monthlyFromPay } from "@/lib/plan/pay-cadence";
 import { usePlanStore } from "@/lib/plan/store";
 import { InstitutionMark } from "@/components/meridian/institution-field";
 
@@ -157,13 +157,29 @@ function BriefTable({
 
 type PaycheckDraft = {
   name: string;
-  monthly: number;
+  amount: number;
   start: string;
   end: string | null;
 };
 
 function amountIsCalculated(kind: IncomeStream["kind"]): boolean {
   return kind === "ss" || kind === "va";
+}
+
+function editsPaycheck(income: IncomeStream): boolean {
+  return (
+    (income.kind === "salary" || income.kind === "bonus" || income.kind === "allowance") &&
+    (income.payCadence === "week" ||
+      income.payCadence === "biweek" ||
+      income.payCadence === "year")
+  );
+}
+
+function paycheckEditLabel(income: IncomeStream): string {
+  if (income.payCadence === "week") return "$ / week";
+  if (income.payCadence === "biweek") return "$ / two weeks";
+  if (income.payCadence === "year") return "$ / year";
+  return "Monthly";
 }
 
 function PaycheckTable({
@@ -210,7 +226,11 @@ function PaycheckTable({
     setEditingId(live.id);
     setDraft({
       name: live.name,
-      monthly: live.monthlyAmount,
+      amount: editsPaycheck(live)
+        ? live.payAmount != null && Number.isFinite(live.payAmount)
+          ? live.payAmount
+          : paycheckFromMonthly(live.monthlyAmount, live.payCadence ?? "month")
+        : live.monthlyAmount,
       start: live.startDate || "",
       end: live.endDate,
     });
@@ -227,9 +247,11 @@ function PaycheckTable({
     const name = current.name.trim();
     const patch: Partial<IncomeStream> = { name: name || income.name };
     if (!locked) {
-      patch.monthlyAmount = current.monthly;
-      if (income.payCadence === "week" || income.payCadence === "biweek" || income.payCadence === "year") {
-        patch.payAmount = paycheckFromMonthly(current.monthly, income.payCadence);
+      if (editsPaycheck(income) && income.payCadence) {
+        patch.payAmount = current.amount;
+        patch.monthlyAmount = monthlyFromPay(current.amount, income.payCadence);
+      } else {
+        patch.monthlyAmount = current.amount;
       }
     }
     if (current.start) {
@@ -255,7 +277,7 @@ function PaycheckTable({
         note={note}
         headers={[
           { label: "Income" },
-          { label: "Monthly", align: "right", nowrap: true },
+          { label: "Pay", align: "right", nowrap: true },
           { label: "When", nowrap: true },
         ]}
         rows={rows.map((r) => [r.name, r.amount, r.window])}
@@ -320,10 +342,10 @@ function PaycheckTable({
                   <p className="text-sm tabular-nums text-fg">{shown?.amount}</p>
                 </Field>
               ) : (
-                <Field label="Monthly">
+                <Field label={paycheckEditLabel(income)}>
                   <MoneyInput
-                    value={draft.monthly}
-                    onValue={(n) => patchDraft({ monthly: n })}
+                    value={draft.amount}
+                    onValue={(n) => patchDraft({ amount: n })}
                   />
                 </Field>
               )}

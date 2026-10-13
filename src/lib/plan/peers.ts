@@ -13,10 +13,11 @@ import { guaranteedAnnuityEquivalent, type AnnuityEquivalent } from "./annuity-e
 import { cashShortYears } from "./cash-short.ts";
 import { five29Ended } from "./college-529.ts";
 import { usd, usdCompact } from "./format.ts";
+import { paycheckFromMonthly } from "./pay-cadence.ts";
 import { remainingLiability, liabilityPayoffDate } from "./liability.ts";
 import { monthsBetweenMonths, mortgageAssociated, mortgagePayoffDate, remainingMortgage } from "./mortgage.ts";
 import type { RecommendedRetirement } from "./earliest-retirement.ts";
-import type { Liability, LiabilityKind, Plan, SimResult } from "./types.ts";
+import type { IncomeStream, Liability, LiabilityKind, Plan, SimResult } from "./types.ts";
 
 /** SCF 2022 net worth knots, inflated ~12% into 2026 dollars. Approximate. */
 const NW_BANDS: {
@@ -311,6 +312,27 @@ function throughPrimaryAge(plan: Plan, endIso: string | null): string {
   return `${end} (Longevity age ${plan.assumptions.projectionEndAge})`;
 }
 
+/** Paychecks column. Salary, bonus, and allowance show the check they typed. */
+function paycheckShown(plan: Plan, stream: IncomeStream, asOf: Date): string {
+  const cadence = stream.payCadence;
+  const tunable =
+    stream.kind === "salary" || stream.kind === "bonus" || stream.kind === "allowance";
+  if (
+    tunable &&
+    (cadence === "week" || cadence === "biweek" || cadence === "month" || cadence === "year")
+  ) {
+    const amount =
+      stream.payAmount != null && Number.isFinite(stream.payAmount)
+        ? stream.payAmount
+        : paycheckFromMonthly(stream.monthlyAmount || 0, cadence);
+    if (cadence === "week") return `${usd(amount, true)}/week`;
+    if (cadence === "biweek") return `${usd(amount, true)} every 2 weeks`;
+    if (cadence === "year") return `${usd(amount, true)}/year`;
+    return `${usd(amount, true)}/mo`;
+  }
+  return `${usd(streamBenefitToday(plan, stream, asOf), true)}/mo`;
+}
+
 export function buildPeerBrief(
   plan: Plan,
   sim: SimResult,
@@ -332,7 +354,7 @@ export function buildPeerBrief(
   const spendingNow = month0?.spending ?? 0;
   const horizon = sim.spendableAtEndReal;
   const namedIncomes = plan.incomes.filter(
-    (s) => (s.monthlyAmount ?? 0) > 0 || (s.ssPia ?? 0) > 0,
+    (s) => (s.monthlyAmount ?? 0) > 0 || (s.payAmount ?? 0) > 0 || (s.ssPia ?? 0) > 0,
   );
 
   const band = age != null ? bandForAge(age) : null;
@@ -446,12 +468,11 @@ export function buildPeerBrief(
     });
     const rows: BriefColumnRow[] = ordered.map((s) => {
       const win = streamWindow(plan, s);
-      const amt = streamBenefitToday(plan, s, asOf);
       const end = throughPrimaryAge(plan, win.end);
       return {
         id: s.id,
         name: s.name.trim() || s.kind,
-        amount: `${usd(amt, true)}/mo`,
+        amount: paycheckShown(plan, s, asOf),
         window: `${formatMonthYear(win.start)} → ${end}`,
       };
     });

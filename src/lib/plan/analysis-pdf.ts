@@ -400,7 +400,7 @@ function buildBlocks(
         kind: "table",
         intro: s.columns.intro,
         note: s.columns.note,
-        headers: ["Income", "Monthly", "When"],
+        headers: ["Income", "Pay", "When"],
         rows: s.columns.rows.map((r) => [r.name, r.amount, r.window]),
       });
     } else {

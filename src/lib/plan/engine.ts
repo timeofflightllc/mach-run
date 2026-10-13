@@ -29,6 +29,7 @@ import { isTaxQualified } from "./family-owners.ts";
 import { five29Ended } from "./college-529.ts";
 import { mortgagePaymentDue, portfolioEquity, remainingMortgage } from "./mortgage.ts";
 import { liabilityPaymentDue, remainingLiability } from "./liability.ts";
+import { paycheckFromMonthly } from "./pay-cadence.ts";
 import type {
   FundingGap,
   IncomeStage,
@@ -147,19 +148,42 @@ export function streamColaAnnual(plan: Plan, stream: IncomeStream, infA: number)
   return infA;
 }
 
+function isAnnualPaycheck(stream: IncomeStream): boolean {
+  return (
+    stream.payCadence === "year" &&
+    (stream.kind === "salary" || stream.kind === "bonus" || stream.kind === "allowance")
+  );
+}
+
+/** The check they typed. Missing payAmount falls back to the monthly equivalent × 12. */
+function annualPaycheckBase(stream: IncomeStream): number {
+  if (stream.payAmount != null && Number.isFinite(stream.payAmount)) return stream.payAmount;
+  return paycheckFromMonthly(stream.monthlyAmount || 0, "year");
+}
+
+/**
+ * Cash this stream adds in `cursor`. Yearly salary, bonus, and allowance pay
+ * `payAmount` in the anniversary month only. Everything else stays monthly.
+ * `streamBenefitToday` is unchanged, so peer rank still sees the monthly equivalent.
+ */
 function streamNominalAt(
   plan: Plan,
   stream: IncomeStream,
   cursor: Date,
-  monthsFromAsOf: number,
+  _monthsFromAsOf: number,
   infA: number,
 ): number {
   const win = streamWindow(plan, stream);
   if (!inRange(cursor, win.start, win.end)) return 0;
-  const todayAmt = streamBenefitToday(plan, stream, cursor);
   const colaAnnual = streamColaAnnual(plan, stream, infA);
   const years = calendarColaYears(monthStart(plan.assumptions.asOfDate), cursor);
-  return todayAmt * (1 + colaAnnual) ** years;
+  const grow = (base: number) => base * (1 + colaAnnual) ** years;
+  if (isAnnualPaycheck(stream)) {
+    const start = monthStart(win.start);
+    if (cursor.getMonth() !== start.getMonth()) return 0;
+    return grow(annualPaycheckBase(stream));
+  }
+  return grow(streamBenefitToday(plan, stream, cursor));
 }
 
 function contributionDueThisMonth(
@@ -473,11 +497,8 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
     let guaranteed = 0;
 
     for (const stream of plan.incomes) {
-      const win = streamWindow(plan, stream);
-      if (!inRange(cursor, win.start, win.end)) continue;
-      const todayAmt = streamBenefitToday(plan, stream, cursor);
-      const colaAnnual = streamColaAnnual(plan, stream, infA);
-      const nominal = todayAmt * (1 + colaAnnual) ** calendarColaYears(asOf, cursor);
+      const nominal = streamNominalAt(plan, stream, cursor, monthsFromAsOf, infA);
+      if (nominal === 0) continue;
       income += nominal;
       incomeByKind[stream.kind] = (incomeByKind[stream.kind] ?? 0) + nominal;
       if (stream.taxTreatment === "ordinary") {
