@@ -170,7 +170,7 @@ function cashChart(plan: Plan, sim: SimResult): ChartSpec | null {
   const scale = (year: number, v: number) =>
     real ? v / (1 + inf) ** Math.max(0, year - asOfYear) : v;
   return {
-    title: "Annual Cash Flow",
+    title: "Cash Flow",
     note: real ? "Today's Dollars" : "Future Dollars",
     labels: yearLabels(years),
     series: [
@@ -359,8 +359,8 @@ function buildBlocks(
     blocks.push({
       kind: "muted",
       text: includeNetWorth
-        ? "Spendable wealth, annual cash flow, and net worth across the full projection."
-        : "Spendable wealth and annual cash flow across the full projection.",
+        ? "Spendable wealth, cash flow, and net worth across the full projection."
+        : "Spendable wealth and cash flow across the full projection.",
     });
     blocks.push({ kind: "space", h: 4 });
     for (const chart of charts) {

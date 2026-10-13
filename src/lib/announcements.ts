@@ -74,7 +74,7 @@ export const ANNOUNCEMENTS: Announcement[] = [
   {
     at: "2026-09-03",
     title: "5 / 10 / 20 / Horizon chart spans",
-    blurb: "Spendable wealth and annual cash flow can zoom the same windows as Net Worth.",
+    blurb: "Spendable wealth and cash flow can zoom the same windows as Net Worth.",
   },
   {
     at: "2026-09-03",

@@ -44,6 +44,7 @@ import type {
   YearCap,
   YearSnapshot,
 } from "./types";
+import { CASH_ON_HAND_ID } from "./types.ts";
 
 const WITHDRAW_ORDER: TaxBucket[] = ["taxable", "pre_tax", "roth"];
 
@@ -417,6 +418,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
   let markedDepleted = false;
   let totalContributed = 0;
   let totalWithdrawn = 0;
+  let cashOnHand = 0;
   const goalKey = (plan.assumptions.retirementGoalDate ?? "").slice(0, 7);
   let atRetirement = new Map<string, number>();
   let atRetirementReal = new Map<string, number>();
@@ -738,6 +740,8 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
     const matchLines: { id: string; label: string; amount: number }[] = [];
     let sweepLine: { id: string; label: string; amount: number } | null = null;
     let unallocatedSpent = 0;
+    let cashParked = 0;
+    let cashDrawn = 0;
     if (leftover > 0.5) {
       let pool = leftover;
       const funded: {
@@ -815,8 +819,8 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
           amount: pool,
         };
       } else if (pool > 0.5) {
-        spending += pool;
-        unallocatedSpent = pool;
+        cashOnHand += pool;
+        cashParked = pool;
       }
       for (const f of funded) {
         if (f.matchPct <= 0) continue;
@@ -857,9 +861,15 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
         eligibleByRule.set(d.ruleId, intended);
       }
       if (leftover < -0.5) {
+      const need = -leftover;
+      const fromCash = Math.min(cashOnHand, need);
+      cashOnHand -= fromCash;
+      cashDrawn = fromCash;
+      const still = need - fromCash;
       const withdrawLog: { id: string; amount: number; taxableGain: number; basisReturn: number }[] =
         [];
-      withdrawals += withdrawNeed(plan, values, basis, -leftover, taxR, withdrawLog);
+      if (still > 0.5) {
+      withdrawals += withdrawNeed(plan, values, basis, still, taxR, withdrawLog);
       let gain = 0;
       for (const w of withdrawLog) {
         const dest = plan.portfolios.find((row) => row.id === w.id);
@@ -896,6 +906,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
           depletedAge = ageYears(plan.primary.birthDate, cursor);
           depletedYear = cursor.getFullYear();
         }
+      }
       }
       }
     }
@@ -935,6 +946,21 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
       const debt = remainingLiability(l, cursor);
       liabilitiesEnd += debt;
       netWorthEnd -= debt;
+    }
+    if (cashOnHand > 0.5) {
+      spendableEnd += cashOnHand;
+      assetsEnd += cashOnHand;
+      netWorthEnd += cashOnHand;
+      spendableLines.push({
+        id: CASH_ON_HAND_ID,
+        label: "Cash on hand",
+        amount: cashOnHand,
+      });
+      netWorthLines.push({
+        id: CASH_ON_HAND_ID,
+        label: "Cash on hand",
+        amount: cashOnHand,
+      });
     }
 
     totalContributed += appliedContrib;
@@ -1052,6 +1078,9 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
         taxRatePct: plan.assumptions.ordinaryTaxRatePct,
         spendingLines,
         unallocatedSpent,
+        cashOnHand,
+        cashParked,
+        cashDrawn,
         savedLines,
         sweep: sweepLine,
         matchLines,

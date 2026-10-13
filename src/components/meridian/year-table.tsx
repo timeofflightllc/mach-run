@@ -5,7 +5,7 @@ import { canDownloadInvestmentAudit } from "@/lib/ops/audit-download-api";
 import { buildInvestmentAuditCsv } from "@/lib/plan/audit-csv";
 import { simulate } from "@/lib/plan/engine";
 import { usd } from "@/lib/plan/format";
-import type { LedgerLine, Plan, SimResult, YearCap } from "@/lib/plan/types";
+import { CASH_ON_HAND_ID, type LedgerLine, type Plan, type SimResult, type YearCap } from "@/lib/plan/types";
 
 const KIND_LABEL: Record<string, string> = {
   salary: "Salary / wages",
@@ -442,18 +442,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
     });
   }
   const spendRows = sumLabeled(
-    details.map((d) => [
-      ...d.spendingLines,
-      ...(d.unallocatedSpent > 0.5
-        ? [
-            {
-              id: "unallocated",
-              label: "Unallocated surplus (no sweep account)",
-              amount: d.unallocatedSpent,
-            },
-          ]
-        : []),
-    ]),
+    details.map((d) => d.spendingLines),
     scaleTip,
   );
   const savedRows = (() => {
@@ -519,7 +508,10 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
         .map((line) => {
           const account = spendableById.get(line.id);
           return {
-            label: account?.name.trim() || "Account",
+            label:
+              line.id === CASH_ON_HAND_ID
+                ? "Cash on hand"
+                : account?.name.trim() || "Account",
             amount: line.amount * scale,
             institutionId: account?.institutionId ?? null,
             institutionName: account?.institutionName ?? "",
@@ -564,7 +556,9 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
       ) : null}
       <p className="border-t border-border px-4 py-3 text-xs text-subtle">
         Each year balances. Income plus cash drawn from accounts equals tax,
-        spending, and money saved. Take-home is income minus tax. Leftover is
+        spending, and money saved, once cash held with no sweep account is
+        counted. That cash is not spending. A later short month uses it before
+        any account. Take-home is income minus tax. Leftover is
         take-home minus spending. Hover an income amount for the mix. Hover
         Drawn for which accounts that cash came from. Hover{" "}
         <span className="font-bold text-negative">CAPPED</span> when a year is
@@ -913,7 +907,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
           title={`${tip.year} spending`}
           rows={spendRows}
           total={flow(yearRow.spending, yearRow.year)}
-          note={`Spending you typed, raised with inflation from the as-of date, plus mortgage and loan payments you marked to include. If Sweep surplus into is blank, leftover paycheck is unallocated surplus and is counted as spent. It is not saved. ${dollarsNote()}`}
+          note={`Spending you typed, raised with inflation from the as-of date, plus mortgage and loan payments you marked to include. Leftover pay with no sweep account is not in this column. ${dollarsNote()}`}
         />
       ) : null}
       {tip && yearRow && tip.mode === "leftover" ? (
@@ -926,7 +920,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
             { label: "Spend", amount: flow(yearRow.spending, yearRow.year) },
           ]}
           total={flow(yearRow.income - yearRow.tax - yearRow.spending, yearRow.year)}
-          note={`Take-home minus spend. A negative number means draws covered the gap. If Sweep surplus into is blank, unswept cash is already inside Spend, so it is not in this column. ${dollarsNote()}`}
+          note={`Take-home minus spend. A negative number means the month was short. If Sweep surplus into is blank, what you do not contribute is held as cash. It is not added to Spend. ${dollarsNote()}`}
         />
       ) : null}
       {tip && yearRow && tip.mode === "saved" ? (

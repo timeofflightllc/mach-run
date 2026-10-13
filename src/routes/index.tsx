@@ -81,6 +81,9 @@ function simForCharts(sim: SimResult): SimResult {
           taxRatePct: detail.taxRatePct,
           spendingLines: detail.spendingLines,
           unallocatedSpent: detail.unallocatedSpent,
+          cashOnHand: detail.cashOnHand,
+          cashParked: detail.cashParked,
+          cashDrawn: detail.cashDrawn,
           savedLines: detail.savedLines,
           sweep: detail.sweep,
           matchLines: detail.matchLines,
@@ -244,7 +247,7 @@ const ACT_TABS: { id: ActTab; label: string; icon: ComponentType<{ className?: s
 
 const BRIEF_CHARTS: { id: BriefChart; label: string; short: string }[] = [
   { id: "spendable", label: "Spendable Wealth", short: "Spendable" },
-  { id: "cash", label: "Annual Cash Flow", short: "Cash" },
+  { id: "cash", label: "Cash Flow", short: "Cash" },
   { id: "net", label: "Net Worth", short: "Net Worth" },
 ];
 

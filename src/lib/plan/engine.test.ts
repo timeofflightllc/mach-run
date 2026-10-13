@@ -8,7 +8,7 @@ import { remainingMortgage } from "./mortgage.ts";
 import { monthlyFromPay } from "./pay-cadence.ts";
 import { monthStart } from "./dates.ts";
 import { ssBenefitFromPia, ssScheduleDates } from "./social-security.ts";
-import type { IncomeStream } from "./types.ts";
+import { CASH_ON_HAND_ID, type IncomeStream } from "./types.ts";
 
 test("SS claiming: FRA is 100%, 62 is 70%, 70 is 124%", () => {
   assert.equal(ssBenefitFromPia(1000, 67, 67), 1000);
@@ -339,9 +339,10 @@ test("percent-of-income contribution plus employer match", () => {
   const result = simulate(plan);
   const m0 = result.months[0];
   assert.ok(m0);
-  // 10% of 10k = 1000 employee + 500 match
+  // 10% of 10k = 1000 employee + 500 match. The other 9k is cash on hand.
   assert.ok(Math.abs(m0.contributions - 1500) < 2);
-  assert.ok(Math.abs(m0.spendableEnd - 1500) < 2);
+  assert.ok(Math.abs((m0.detail?.cashOnHand ?? 0) - 9000) < 2);
+  assert.ok(Math.abs(m0.spendableEnd - 10500) < 2);
 });
 
 test("percent contribution and match end when the income ends", () => {
@@ -475,9 +476,11 @@ test("a percent contribution can stop before the paycheck ends", () => {
   const savedTotal = saved.reduce((sum, line) => sum + line.amount, 0);
   assert.ok(Math.abs(savedTotal - y2026.contributions) < 1);
   const balances = y2026.spendableBalances ?? [];
-  assert.equal(balances.length, 1);
-  assert.equal(balances[0]?.id, "k");
-  assert.ok(Math.abs((balances[0]?.amount ?? 0) - y2026.endSpendable) < 1);
+  assert.equal(balances.length, 2);
+  const account = balances.find((line) => line.id === "k");
+  const cash = balances.find((line) => line.id === CASH_ON_HAND_ID);
+  assert.ok(account && cash);
+  assert.ok(Math.abs(account.amount + cash.amount - y2026.endSpendable) < 1);
 });
 
 test("IRS cap: $3000/mo 401k stops when $24,500 is full; match follows", () => {
@@ -964,8 +967,9 @@ test("529 leaves the plan the month the child owner turns 23", () => {
   assert.equal(jun.contributions, 0);
   assert.equal(jun.withdrawals, 0);
   assert.ok(jun.income < 5_000);
-  assert.ok(jun.netWorthEnd < 1);
-  assert.ok(jun.spendableEnd < 1);
+  assert.ok((jun.detail?.cashOnHand ?? 0) > 1);
+  assert.ok(Math.abs(jun.netWorthEnd - (jun.detail?.cashOnHand ?? 0)) < 1);
+  assert.ok(Math.abs(jun.spendableEnd - (jun.detail?.cashOnHand ?? 0)) < 1);
   const dropped = sim.audit?.accounts.find(
     (row) => row.accountId === "p529" && row.date.startsWith("2037-06"),
   );
@@ -977,7 +981,7 @@ test("529 leaves the plan the month the child owner turns 23", () => {
   plan.portfolios[0]!.sunsetAge = 22;
   const earlier = simulate(plan).months.find((m) => m.date.startsWith("2036-06"));
   assert.equal(earlier?.detail?.netWorthLines.some((line) => line.id === "p529"), false);
-  assert.ok((earlier?.netWorthEnd ?? 1) < 1);
+  assert.ok(Math.abs((earlier?.netWorthEnd ?? 0) - (earlier?.detail?.cashOnHand ?? 0)) < 1);
 
   plan.portfolios[0]!.sunsetAge = null;
   const kept = simulate(plan).months.find((m) => m.date.startsWith("2037-06"));
@@ -1065,6 +1069,70 @@ test("a yearly bonus is deposited in the anniversary month only", () => {
   assert.notEqual(streamBenefitToday(plan, bonus, monthStart("2027-09-01")), 80_000);
   assert.equal(month("2027-09")?.contributions, 8_000);
   assert.equal(month("2027-10")?.contributions ?? 0, 0);
+});
+
+test("blank sweep holds leftover cash and spends it before any account", () => {
+  const plan = createDefaultPlan();
+  plan.primary = { name: "Cash", birthDate: "1980-01-01" };
+  plan.assumptions.asOfDate = "2026-01-01";
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultColaPct = 0;
+  plan.assumptions.defaultReturnPct = 0;
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.assumptions.projectionEndAge = 48;
+  plan.assumptions.sweepPortfolioId = null;
+  plan.portfolios = [
+    {
+      id: "brokerage",
+      name: "Brokerage",
+      kind: "taxable",
+      owner: "primary",
+      currentValue: 50_000,
+      returnPct: 0,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.incomes = [
+    {
+      id: "pay",
+      name: "Pay",
+      kind: "salary",
+      monthlyAmount: 10_000,
+      startDate: "2026-01-01",
+      endDate: "2026-01-01",
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.spending = [
+    {
+      id: "life",
+      label: "Life",
+      monthlyAmount: 4_000,
+      startDate: "2026-02-01",
+      endDate: null,
+    },
+  ];
+  plan.contributions = [];
+  const sim = simulate(plan);
+  const jan = sim.months.find((row) => row.date.startsWith("2026-01"));
+  const feb = sim.months.find((row) => row.date.startsWith("2026-02"));
+  const apr = sim.months.find((row) => row.date.startsWith("2026-04"));
+  assert.ok(jan && feb && apr);
+  assert.equal(jan.spending, 0);
+  assert.equal(jan.detail?.cashParked, 10_000);
+  assert.equal(jan.spendableEnd, 60_000);
+  assert.equal(feb.spending, 4_000);
+  assert.equal(feb.withdrawals, 0);
+  assert.equal(feb.detail?.cashDrawn, 4_000);
+  assert.equal(feb.detail?.cashOnHand, 6_000);
+  assert.equal(feb.spendableEnd, 56_000);
+  assert.equal(apr.withdrawals, 2_000);
+  assert.equal(apr.detail?.cashOnHand ?? 0, 0);
+  assert.equal(apr.spendableEnd, 48_000);
 });
 
 

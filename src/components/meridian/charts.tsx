@@ -21,7 +21,7 @@ import type { SurvivalBand, SurvivalTraces } from "@/lib/plan/monte-carlo-run";
 import { PinToggle } from "@/components/meridian/chart-pin";
 import { hasBalanceSheet } from "@/lib/billing/limits";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
-import type { MonthSnapshot, Plan, SimResult, YearSnapshot } from "@/lib/plan/types";
+import { CASH_ON_HAND_ID, type MonthSnapshot, type Plan, type SimResult, type YearSnapshot } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 
 const tooltipStyle = {
@@ -409,8 +409,12 @@ function inkOn(color: string): string {
   return y > 0.64 ? "#1a2330" : "#ffffff";
 }
 
-function spendableSeries(plan: Plan) {
-  return plan.portfolios
+function hasHeldCash(sim: SimResult) {
+  return sim.months.some((month) => (month.detail?.cashOnHand ?? 0) > 0.5);
+}
+
+function spendableSeries(plan: Plan, includeCash = false) {
+  const rows = plan.portfolios
     .filter((p) => p.spendable)
     .map((p, index) => ({
       id: p.id,
@@ -418,13 +422,22 @@ function spendableSeries(plan: Plan) {
       key: `s${index}`,
       color: stackColor(index),
     }));
+  if (includeCash) {
+    rows.push({
+      id: CASH_ON_HAND_ID,
+      name: "Cash on hand",
+      key: "cash",
+      color: stackColor(rows.length),
+    });
+  }
+  return rows;
 }
 
-function netWorthAccountSeries(plan: Plan) {
+function netWorthAccountSeries(plan: Plan, includeCash = false) {
   const spendable = plan.portfolios.filter((p) => p.spendable);
   const spendableIndex = new Map(spendable.map((p, index) => [p.id, index]));
   let next = spendable.length;
-  return plan.portfolios
+  const rows = plan.portfolios
     .filter((p) => p.includeInNetWorth)
     .map((p, index) => {
       const shared = spendableIndex.get(p.id);
@@ -436,6 +449,15 @@ function netWorthAccountSeries(plan: Plan) {
         color: stackColor(colorIndex),
       };
     });
+  if (includeCash) {
+    rows.push({
+      id: CASH_ON_HAND_ID,
+      name: "Cash on hand",
+      key: "cash",
+      color: stackColor(next),
+    });
+  }
+  return rows;
 }
 
 function accountDollars(amount: number, nominalTotal: number, realTotal: number, real: boolean) {
@@ -446,7 +468,7 @@ function accountDollars(amount: number, nominalTotal: number, realTotal: number,
 
 function wealthPoints(plan: Plan, sim: SimResult, span: ChartSpan): WealthPoint[] {
   const real = plan.assumptions.dollars === "real";
-  const series = spendableSeries(plan);
+  const series = spendableSeries(plan, hasHeldCash(sim));
   const fill = (
     point: WealthPoint,
     lines: { id: string; amount: number }[] | undefined,
@@ -547,13 +569,12 @@ function cashPoints(plan: Plan, sim: SimResult, span: ChartSpan): CashPoint[] {
     }
     return [...buckets.entries()].map(([t, arr]) => {
       const sum = (fn: (m: MonthSnapshot) => number) => arr.reduce((s, m) => s + fn(m), 0);
-      const scale = 12 / arr.length;
       return {
         t,
-        income: Math.round(sum((m) => deflate(m.year, m.month, m.income)) * scale),
-        spending: Math.round(sum((m) => deflate(m.year, m.month, m.spending)) * scale),
-        guaranteed: Math.round(sum((m) => deflate(m.year, m.month, m.guaranteed)) * scale),
-        contributions: Math.round(sum((m) => deflate(m.year, m.month, m.contributions)) * scale),
+        income: Math.round(sum((m) => deflate(m.year, m.month, m.income))),
+        spending: Math.round(sum((m) => deflate(m.year, m.month, m.spending))),
+        guaranteed: Math.round(sum((m) => deflate(m.year, m.month, m.guaranteed))),
+        contributions: Math.round(sum((m) => deflate(m.year, m.month, m.contributions))),
       };
     });
   }
@@ -580,7 +601,7 @@ type NwPoint = {
 
 function netWorthPoints(plan: Plan, sim: SimResult, span: ChartSpan): NwPoint[] {
   const real = plan.assumptions.dollars === "real";
-  const accounts = netWorthAccountSeries(plan);
+  const accounts = netWorthAccountSeries(plan, hasHeldCash(sim));
   const fill = (
     point: NwPoint,
     lines: { id: string; amount: number }[] | undefined,
@@ -821,7 +842,7 @@ export function WealthChart({
   const [showNetWorth, setShowNetWorth] = useState(true);
   const { expanded, toggle, close } = useChartExpanded();
   const data = wealthPoints(plan, sim, span);
-  const accounts = spendableSeries(plan);
+  const accounts = spendableSeries(plan, hasHeldCash(sim));
   const x = axisProps(span);
   const debtOn = netWorthPaid && showLiabilities;
 
@@ -1015,19 +1036,11 @@ export function CashChart({
   ];
 
   return (
-    <ChartStage expanded={expanded} onClose={close} label="Annual Cash Flow">
+    <ChartStage expanded={expanded} onClose={close} label="Cash Flow">
     <div className={cn(chartCard, expanded && "flex h-full min-h-0 flex-1 flex-col")}>
-      <h2 className="font-display text-xl font-bold text-slate-900">Annual Cash Flow</h2>
+      <h2 className="font-display text-xl font-bold text-slate-900">Cash Flow</h2>
       <p className="mb-4 mt-1 text-xs text-slate-600">
-        Gross income vs spending vs planned contributions. Guaranteed (gold
-        line) is pension, other retirement income, military retired pay, VA, and
-        Social Security. Salary, bonus, allowance, and other income are earned —
-        they drop off when that stage ends.
-        {span === 10
-          ? " Each point is one quarter. Hover a point for the months."
-          : span === 5
-            ? " Each point is that month. The hover is the month, not a yearly run rate."
-            : ""}
+        Gross income vs spending vs planned contributions.
         {expanded ? " Esc closes this view." : ""}
       </p>
       <ChartSpanBar
@@ -1099,7 +1112,9 @@ export function CashChart({
               <Area
                 type="monotone"
                 dataKey="income"
-                name={span === 5 ? "Income this month" : "Income"}
+                name={
+                  span === 5 ? "Income this month" : span === 10 ? "Income this quarter" : "Income"
+                }
                 stroke="var(--color-positive)"
                 fill="var(--color-positive)"
                 fillOpacity={0.16}
@@ -1111,7 +1126,13 @@ export function CashChart({
               <Area
                 type="monotone"
                 dataKey="spending"
-                name={span === 5 ? "Spending this month" : "Spending"}
+                name={
+                  span === 5
+                    ? "Spending this month"
+                    : span === 10
+                      ? "Spending this quarter"
+                      : "Spending"
+                }
                 stroke="var(--color-negative)"
                 fill="var(--color-negative)"
                 fillOpacity={0.16}
@@ -1123,7 +1144,13 @@ export function CashChart({
               <Line
                 type="monotone"
                 dataKey="contributions"
-                name={span === 5 ? "Contributions this month" : "Contributions"}
+                name={
+                  span === 5
+                    ? "Contributions this month"
+                    : span === 10
+                      ? "Contributions this quarter"
+                      : "Contributions"
+                }
                 stroke="#1a2330"
                 strokeWidth={1.5}
                 dot={false}
@@ -1137,7 +1164,9 @@ export function CashChart({
                 name={
                   span === 5
                     ? "Guaranteed this month (pension / VA / SS)"
-                    : "Guaranteed (pension / VA / SS)"
+                    : span === 10
+                      ? "Guaranteed this quarter (pension / VA / SS)"
+                      : "Guaranteed (pension / VA / SS)"
                 }
                 stroke="var(--color-accent)"
                 strokeWidth={1.5}
@@ -1193,7 +1222,7 @@ export function NetWorthChart({
   const { expanded, toggle, close } = useChartExpanded();
   const [minimized, setMinimized] = useState(readNetWorthMin);
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
-  const accounts = netWorthAccountSeries(plan);
+  const accounts = netWorthAccountSeries(plan, locked ? false : hasHeldCash(sim));
   const live = netWorthPoints(plan, sim, span);
   const data = locked ? fakeNetWorthPoints(span) : live;
   const hasDebt = data.some((d) => Math.abs(d.liabilities) > 1);

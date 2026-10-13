@@ -363,7 +363,7 @@ export function AssumptionsForm() {
               }
               className="w-full min-w-0 max-w-[18rem]"
             >
-              <option value="">Do not sweep (spend leftover)</option>
+              <option value="">Do not sweep (hold as cash)</option>
               {plan.portfolios.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name.trim() || "Untitled account"}

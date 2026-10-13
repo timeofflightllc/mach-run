@@ -283,7 +283,7 @@ test("audit G: planned contrib bigger than leftover is capped — identity holds
   near(jan.spendableEnd, 102_000);
 });
 
-test("audit H: blank sweep spends leftover instead of dropping it", () => {
+test("audit H: blank sweep holds leftover as cash instead of spending it", () => {
   const plan = roundPlan();
   plan.portfolios = [taxable(100_000)];
   plan.assumptions.sweepPortfolioId = null;
@@ -323,13 +323,19 @@ test("audit H: blank sweep spends leftover instead of dropping it", () => {
   const jan = month(sim, "2026-01");
   near(jan.income, 20_000);
   near(jan.contributions, 2_000);
-  near(jan.spending, 18_000);
-  near(jan.detail?.unallocatedSpent ?? 0, 10_000);
+  near(jan.spending, 8_000);
+  near(jan.detail?.unallocatedSpent ?? -1, 0);
+  near(jan.detail?.cashParked ?? 0, 10_000);
+  near(jan.detail?.cashOnHand ?? 0, 10_000);
   near(jan.detail?.spendingLines[0]?.amount ?? 0, 8_000);
-  near(jan.income + jan.withdrawals, jan.tax + jan.spending + jan.contributions);
-  near(jan.spendableEnd, 102_000);
+  near(
+    jan.income + jan.withdrawals + (jan.detail?.cashDrawn ?? 0),
+    jan.tax + jan.spending + jan.contributions + (jan.detail?.cashParked ?? 0),
+  );
+  near(jan.spendableEnd, 112_000);
   const dec = month(sim, "2026-12");
-  near(dec.spendableEnd, 100_000 + 12 * 2_000);
+  near(dec.spendableEnd, 100_000 + 12 * 2_000 + 12 * 10_000);
+  near(dec.detail?.cashOnHand ?? 0, 120_000);
 });
 
 test("audit CSV opens with a reviewer prompt before the trace", () => {

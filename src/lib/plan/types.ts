@@ -255,6 +255,8 @@ export interface Plan {
   confirmations?: PlanConfirmation[];
 }
 
+export const CASH_ON_HAND_ID = "cash-on-hand";
+
 export interface LedgerLine {
   id: string;
   label: string;
@@ -269,7 +271,14 @@ export interface MonthLedgerDetail {
   rmdTaxable: number;
   taxRatePct: number;
   spendingLines: LedgerLine[];
+  /** Always 0. Kept so older readers do not treat held cash as spending. */
   unallocatedSpent: number;
+  /** End of month. Not invested, and not spending. */
+  cashOnHand: number;
+  /** Added to cash on hand this month because Sweep surplus into was blank. */
+  cashParked: number;
+  /** Taken from cash on hand this month to cover a shortfall, before any account. */
+  cashDrawn: number;
   savedLines: LedgerLine[];
   sweep: LedgerLine | null;
   matchLines: LedgerLine[];

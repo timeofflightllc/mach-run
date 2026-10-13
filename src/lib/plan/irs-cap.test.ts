@@ -135,7 +135,7 @@ test("spouse Roth cap is hers — an uncapped primary Roth does not eat it", () 
   }
   const july = sim.months.find((m) => m.date.startsWith("2027-07"));
   assert.ok(july);
-  assert.ok((july.detail?.unallocatedSpent ?? 0) > 0);
+  assert.ok((july.detail?.cashParked ?? 0) > 0);
   const funded = (sim.audit?.accounts ?? []).filter((row) => row.date.startsWith("2027-"));
   for (const row of funded) {
     assert.ok(Math.abs(row.residual) < 0.05, `${row.date} ${row.accountId} residual ${row.residual}`);
