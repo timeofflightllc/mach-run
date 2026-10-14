@@ -351,7 +351,12 @@ function CashBody({
               <th className="py-1 pr-3 font-medium">Month</th>
               <th className="py-1 pr-3 font-medium">Asked</th>
               <th className="py-1 pr-3 font-medium">Invested</th>
-              <th className="py-1 font-medium">Paycheck left</th>
+              <th
+                className="py-1 font-medium"
+                title="Cash left after tax and spending. Every contribution that month is paid from this same amount. It is not what is left after this row."
+              >
+                After tax and spending
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -365,6 +370,9 @@ function CashBody({
             ))}
           </tbody>
         </table>
+        <p className="mt-2 text-xs leading-relaxed text-muted">
+          After tax and spending is the cash every contribution shares that month. Earlier rules are paid first. It is not cash left over after this one.
+        </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-3">
         {detail.mode === "percent" ? (
