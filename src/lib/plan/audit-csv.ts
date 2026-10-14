@@ -219,7 +219,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   lines.push(
     ...section(
       "contributions",
-      ["id", "label", "account_id", "account_name", "mode", "monthly_amount", "percent", "percent_of_income_id", "start", "end", "stop_date", "employer_match", "match_pct", "irs_cap", "end_at_retirement"],
+      ["id", "label", "account_id", "account_name", "mode", "monthly_amount", "pay_cadence", "pay_amount", "percent", "percent_of_income_id", "start", "end", "stop_date", "employer_match", "match_pct", "irs_cap", "end_at_retirement"],
       plan.contributions.map((c) => {
         const dest = plan.portfolios.find((p) => p.id === c.portfolioId);
         return [
@@ -229,6 +229,8 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
           dest?.name ?? "",
           c.amountMode === "percent" ? "percent" : "fixed",
           c.amountMode === "percent" ? null : c.monthlyAmount,
+          c.amountMode === "percent" ? null : c.payCadence ?? null,
+          c.amountMode === "percent" ? null : c.payAmount ?? null,
           c.amountMode === "percent" ? c.percentOfIncome ?? null : null,
           c.percentOfIncomeId ?? null,
           c.startDate,

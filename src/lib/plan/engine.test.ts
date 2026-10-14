@@ -1071,6 +1071,116 @@ test("a yearly bonus is deposited in the anniversary month only", () => {
   assert.equal(month("2027-10")?.contributions ?? 0, 0);
 });
 
+test("yearly and weekly contributions follow the check, and a monthly row stays monthly", () => {
+  const plan = createDefaultPlan();
+  plan.primary.birthDate = "1976-01-01";
+  plan.assumptions.asOfDate = "2026-10-01";
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultColaPct = 0;
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.assumptions.projectionEndAge = 55;
+  plan.spending = [];
+  plan.portfolios = [
+    {
+      id: "k",
+      name: "Brokerage",
+      kind: "taxable",
+      owner: "primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.incomes = [
+    {
+      id: "pay",
+      name: "Salary",
+      kind: "salary",
+      monthlyAmount: 20_000,
+      payCadence: "month",
+      payAmount: 20_000,
+      startDate: "2026-10-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+    {
+      id: "bonus",
+      name: "BGS Bonus",
+      kind: "bonus",
+      monthlyAmount: monthlyFromPay(80_000, "year"),
+      payCadence: "year",
+      payAmount: 80_000,
+      startDate: "2027-09-01",
+      endDate: "2030-09-01",
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "half",
+      label: "Half the bonus",
+      portfolioId: "k",
+      monthlyAmount: 0,
+      startDate: "2027-09-01",
+      endDate: null,
+      amountMode: "percent",
+      percentOfIncome: 50,
+      percentOfIncomeId: "bonus",
+    },
+    {
+      id: "year",
+      label: "Once a year",
+      portfolioId: "k",
+      monthlyAmount: 0,
+      payCadence: "year",
+      payAmount: 6_000,
+      startDate: "2027-09-01",
+      endDate: null,
+      amountMode: "fixed",
+    },
+    {
+      id: "week",
+      label: "Weekly",
+      portfolioId: "k",
+      monthlyAmount: monthlyFromPay(100, "week"),
+      payCadence: "week",
+      payAmount: 100,
+      startDate: "2026-10-01",
+      endDate: null,
+      amountMode: "fixed",
+    },
+    {
+      id: "month",
+      label: "Monthly",
+      portfolioId: "k",
+      monthlyAmount: 250,
+      startDate: "2026-10-01",
+      endDate: null,
+      amountMode: "fixed",
+    },
+  ];
+  const result = simulate(plan);
+  const paid = (key: string) =>
+    result.months.find((row) => row.date.startsWith(key))?.contributions ?? 0;
+  const steady = monthlyFromPay(100, "week") + 250;
+  const september = 40_000 + 6_000 + steady;
+  assert.ok(Math.abs(paid("2027-08") - steady) < 0.02);
+  assert.ok(Math.abs(paid("2027-09") - september) < 0.02);
+  assert.ok(Math.abs(paid("2027-10") - steady) < 0.02);
+  assert.ok(Math.abs(paid("2028-09") - september) < 0.02);
+  for (const month of ["01", "02", "03", "04", "05", "06", "07", "08", "10", "11", "12"]) {
+    assert.ok(Math.abs(paid(`2028-${month}`) - steady) < 0.02, month);
+  }
+  assert.notEqual(paid("2028-09"), steady + 6_000 / 12 + 40_000 / 12);
+});
+
+
 test("blank sweep holds leftover cash and spends it before any account", () => {
   const plan = createDefaultPlan();
   plan.primary = { name: "Cash", birthDate: "1980-01-01" };

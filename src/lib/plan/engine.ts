@@ -203,6 +203,13 @@ function contributionDueThisMonth(
     if (pct <= 0) return 0;
     return streamNominalAt(plan, stream, cursor, monthsFromAsOf, infA) * (pct / 100);
   }
+  if (rule.payCadence === "year") {
+    const amount = rule.payAmount;
+    if (amount == null || !Number.isFinite(amount) || amount <= 0) return 0;
+    if (!validIso(win.start)) return 0;
+    if (cursor.getMonth() !== monthStart(win.start).getMonth()) return 0;
+    return amount;
+  }
   return rule.monthlyAmount > 0 ? rule.monthlyAmount : 0;
 }
 

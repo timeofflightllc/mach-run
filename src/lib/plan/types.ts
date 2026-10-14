@@ -131,6 +131,10 @@ export interface ContributionRule {
   endWithStageId?: string;
   /** fixed dollars, or a percent of a named income stream. */
   amountMode?: "fixed" | "percent";
+  /** How a fixed dollar was typed. Missing means monthly. Not used for a percent. */
+  payCadence?: "week" | "biweek" | "month" | "year";
+  /** The fixed amount they typed, in payCadence. Yearly does not fill monthlyAmount. */
+  payAmount?: number;
   percentOfIncome?: number | null;
   percentOfIncomeId?: string | null;
   employerMatch?: boolean;

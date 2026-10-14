@@ -1,12 +1,12 @@
 import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
+  ContributionMoney,
   DateInput,
   Field,
   GhostButton,
   NumberInput,
   MonthInput,
-  MonthYearMoney,
   PrimaryButton,
   DangerButton,
   SelectInput,
@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/field";
 import { usd } from "@/lib/plan/format";
 import { blankEndLabel, dateAtAge, formatMonthYear, iso, projectionEndMonth, validIso } from "@/lib/plan/dates";
+import { streamWindow } from "@/lib/plan/engine";
+import { paycheckFromMonthly } from "@/lib/plan/pay-cadence";
 import { newId, usePlanStore } from "@/lib/plan/store";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
 import { ConfirmRemove } from "@/components/meridian/confirm-remove";
@@ -32,6 +34,20 @@ import type { ContributionRule, Plan } from "@/lib/plan/types";
 
 const MATCH_PCTS = Array.from({ length: 21 }, (_, i) => i * 5);
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const FULL_MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 const summaryCols =
   "w-full @min-[46rem]:min-w-[40rem] @min-[46rem]:grid @min-[46rem]:grid-cols-[minmax(5rem,1fr)_minmax(6rem,1.15fr)_minmax(7.5rem,1.45fr)_minmax(9.5rem,13rem)_minmax(3rem,3.5rem)_minmax(6.25rem,7.25rem)] @min-[46rem]:items-center @min-[46rem]:gap-x-3";
 const bandField = "w-[9.5rem] shrink-0";
@@ -55,14 +71,43 @@ function accountLogo(plan: Plan, rule: ContributionRule): string | undefined {
 }
 
 function summaryAmount(plan: Plan, rule: ContributionRule): { main: string; title?: string } {
-  const dollars = `${usd(employeeMonthlyNow(plan, rule))}/mo`;
   if (rule.amountMode === "percent") {
     const inc = plan.incomes.find((s) => s.id === rule.percentOfIncomeId);
     const name = inc?.name.trim() || "that income";
     const pct = rule.percentOfIncome ?? 0;
-    const main = `${dollars} (${pct}% of ${name})`;
+    const yearly =
+      inc?.payCadence === "year" &&
+      (inc.kind === "salary" || inc.kind === "bonus" || inc.kind === "allowance");
+    if (inc && yearly) {
+      const start = streamWindow(plan, inc).start;
+      const month = Number(/^(\d{4})-(\d{2})/.exec(start)?.[2] ?? 0);
+      const when = FULL_MONTHS[month - 1];
+      const base =
+        inc.payAmount != null && Number.isFinite(inc.payAmount)
+          ? inc.payAmount
+          : paycheckFromMonthly(inc.monthlyAmount || 0, "year");
+      const annual = Math.round(base * (pct / 100) * 100) / 100;
+      const main = when
+        ? `${pct}% of ${name}, in ${when}. ${usd(annual)} a year`
+        : `${pct}% of ${name}`;
+      return { main, title: main };
+    }
+    const main = `${pct}% of ${name}`;
     return { main, title: main };
   }
+  if (rule.payCadence === "year") {
+    const main = `${usd(rule.payAmount ?? 0)}/year`;
+    return { main, title: main };
+  }
+  if (rule.payCadence === "week" && rule.payAmount != null) {
+    const main = `${usd(rule.payAmount)}/week`;
+    return { main, title: main };
+  }
+  if (rule.payCadence === "biweek" && rule.payAmount != null) {
+    const main = `${usd(rule.payAmount)} every 2 weeks`;
+    return { main, title: main };
+  }
+  const dollars = `${usd(employeeMonthlyNow(plan, rule))}/mo`;
   return { main: dollars, title: dollars };
 }
 
@@ -339,12 +384,12 @@ export function ContributionForm() {
                         </Field>
                       </>
                     ) : (
-                      <MonthYearMoney
+                      <ContributionMoney
                         compact
-                        monthLabel="$ / month"
-                        yearLabel="$ / year"
                         monthly={c.monthlyAmount}
-                        onMonthly={(n) => updateContribution(c.id, { monthlyAmount: n })}
+                        payAmount={c.payAmount}
+                        cadence={c.payCadence}
+                        onChange={(next) => updateContribution(c.id, next)}
                       />
                     )}
                     {c.amountMode === "percent" ? (

@@ -102,6 +102,8 @@ export function ensurePlan(plan: Plan): Plan {
     startDate: coerceIsoDate(c.startDate) || c.startDate,
     endDate: c.endDate ? coerceIsoDate(c.endDate) || c.endDate : null,
     stopDate: c.stopDate ? coerceIsoDate(c.stopDate) || c.stopDate : null,
+    payCadence: isPayCadence(c.payCadence) ? c.payCadence : undefined,
+    payAmount: c.payAmount != null && Number.isFinite(c.payAmount) ? c.payAmount : undefined,
   }));
   next.spending = next.spending.map((p) => ({
     ...p,

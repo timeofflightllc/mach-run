@@ -266,6 +266,8 @@ function cashAdvisories(plan: Plan): Advisory[] {
         rule.id,
         rule.amountMode ?? "fixed",
         rule.monthlyAmount,
+        rule.payCadence ?? "",
+        rule.payAmount ?? "",
         rule.percentOfIncome ?? "",
         rule.percentOfIncomeId ?? "",
         win.start,

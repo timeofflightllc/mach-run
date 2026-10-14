@@ -269,6 +269,97 @@ export function PaycheckMoney({
   );
 }
 
+/** Fixed contribution. Yearly is one deposit, so monthlyAmount stays 0. */
+export function ContributionMoney({
+  monthly,
+  payAmount,
+  cadence,
+  onChange,
+  compact,
+}: {
+  monthly: number;
+  payAmount?: number;
+  cadence?: PayCadence;
+  onChange: (next: { payCadence: PayCadence; payAmount: number; monthlyAmount: number }) => void;
+  compact?: boolean;
+}) {
+  const payCadence: PayCadence = isPayCadence(cadence) ? cadence : "month";
+  const shown =
+    payCadence === "month"
+      ? roundCents(monthly)
+      : payAmount != null && Number.isFinite(payAmount)
+        ? roundCents(payAmount)
+        : payCadence === "year"
+          ? 0
+          : paycheckFromMonthly(monthly, payCadence);
+  const year = yearFromMonthly(payCadence === "year" ? 0 : monthly);
+  const fieldClass = compact ? "w-[8.75rem]" : "min-w-[9.5rem] flex-1";
+
+  function commit(nextCadence: PayCadence, nextPay: number) {
+    onChange({
+      payCadence: nextCadence,
+      payAmount: roundCents(nextPay),
+      monthlyAmount: nextCadence === "year" ? 0 : monthlyFromPay(nextPay, nextCadence),
+    });
+  }
+
+  function switchCadence(next: PayCadence) {
+    if (next === "year") {
+      const annual = payCadence === "year" ? shown : yearFromMonthly(monthly);
+      onChange({ payCadence: "year", payAmount: roundCents(annual), monthlyAmount: 0 });
+      return;
+    }
+    if (payCadence === "year") {
+      const monthlyAmount = monthlyFromYear(shown);
+      onChange({
+        payCadence: next,
+        payAmount: paycheckFromMonthly(monthlyAmount, next),
+        monthlyAmount,
+      });
+      return;
+    }
+    onChange({
+      payCadence: next,
+      payAmount: paycheckFromMonthly(monthly, next),
+      monthlyAmount: roundCents(monthly),
+    });
+  }
+
+  return (
+    <div className="flex min-w-0 flex-wrap items-end gap-x-3 gap-y-2">
+      <Field label="Paid" className="w-[9.5rem] shrink-0">
+        <SelectInput
+          value={payCadence}
+          onChange={(e) => switchCadence(isPayCadence(e.target.value) ? e.target.value : "month")}
+        >
+          <option value="week">Weekly</option>
+          <option value="biweek">Every two weeks</option>
+          <option value="month">Monthly</option>
+          <option value="year">Yearly</option>
+        </SelectInput>
+      </Field>
+      <Field label={PAY_CADENCE_LABEL[payCadence]} className={fieldClass}>
+        <MoneyInput value={shown} onValue={(n) => commit(payCadence, n)} />
+      </Field>
+      {payCadence === "year" ? null : (
+        <Field label="$ / year" className={fieldClass}>
+          <MoneyInput
+            value={year}
+            onValue={(n) => {
+              const monthlyAmount = monthlyFromYear(n);
+              onChange({
+                payCadence,
+                payAmount: paycheckFromMonthly(monthlyAmount, payCadence),
+                monthlyAmount,
+              });
+            }}
+          />
+        </Field>
+      )}
+    </div>
+  );
+}
+
 const datePartClass =
   "h-11 rounded-lg border border-border bg-elevated px-2 text-sm text-fg tabular-nums outline-none transition-[box-shadow,border-color] duration-150 placeholder:text-subtle focus:border-accent/40 focus:shadow-[0_0_0_3px_color-mix(in_oklab,var(--color-accent)_25%,transparent)]";
 

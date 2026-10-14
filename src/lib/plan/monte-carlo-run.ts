@@ -359,6 +359,8 @@ function contributionFields(rule: ContributionRule) {
     id: rule.id,
     portfolioId: rule.portfolioId,
     monthlyAmount: rule.monthlyAmount,
+    payCadence: rule.payCadence ?? null,
+    payAmount: rule.payAmount ?? null,
     startDate: rule.startDate,
     endDate: rule.endDate,
     endWithStageId: rule.endWithStageId ?? null,
