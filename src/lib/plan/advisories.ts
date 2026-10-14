@@ -52,6 +52,9 @@ export type AdvisoryDetail =
       year: number;
       laterYears: number;
       months: AdvisoryMonth[];
+      lines: string[];
+      ahead: string[];
+      notes: string[];
     };
 
 export interface Advisory {
@@ -256,6 +259,8 @@ function cashAdvisories(plan: Plan): Advisory[] {
         ? plan.incomes.find((stream) => stream.id === rule.percentOfIncomeId)
         : undefined;
     const shortHits = list.filter((hit) => hit.short);
+    const names = aheadNames(plan, rule.id, shortHits, rows);
+    const copy = cashCopy(year, list, later, names);
     out.push({
       id: `cash:${rule.id}`,
       cardId: `card-contributions-${rule.id}`,
@@ -277,7 +282,7 @@ function cashAdvisories(plan: Plan): Advisory[] {
         Math.round(shown),
         list.filter((hit) => hit.short).length,
       ].join("|"),
-      body: cashSentence(year, list, later, aheadPhrase(plan, rule.id, shortHits, rows)),
+      body: copy.body,
       keep: "Keep it",
       endOther: null,
       detail: {
@@ -302,6 +307,9 @@ function cashAdvisories(plan: Plan): Advisory[] {
           spending: hit.spending,
           leftover: hit.leftover,
         })),
+        lines: copy.lines,
+        ahead: copy.ahead,
+        notes: copy.notes,
       },
     });
   });
@@ -349,24 +357,40 @@ function monthSpan(hits: MonthHit[]): string {
   return labels.map((label) => `${label.name} ${label.year}`).join(", ");
 }
 
-function cashSentence(
+function cashCopy(
   year: number,
   hits: MonthHit[],
   laterYears: number,
-  ahead: string,
-): string {
+  names: string[],
+): { body: string; lines: string[]; ahead: string[]; notes: string[] } {
   const ordered = [...hits].sort((a, b) => a.date.localeCompare(b.date));
   const short = ordered.filter((hit) => hit.short);
   const covered = ordered.filter((hit) => !hit.short);
   const again =
     laterYears === 0
       ? ""
-      : ` The same shortfall shows up in ${laterYears} later ${laterYears === 1 ? "year" : "years"}.`;
+      : `The same shortfall shows up in ${laterYears} later ${laterYears === 1 ? "year" : "years"}.`;
   const broke = short.length > 0 && short.every((hit) => hit.leftover <= 0.5);
   const sample = short[0] ?? ordered[0];
+  const brokeNote = `This is not an IRS limit. Income does not cover taxes and spending, so nothing is left to invest. ${monthLabel(sample.date)}: income ${usd(sample.income)}, tax ${usd(sample.tax)}, spending ${usd(sample.spending)}. MACH RUN will not take this contribution from savings.`;
+  const ahead = broke ? [] : names;
   const reason = broke
-    ? `This is not an IRS limit. Income does not cover taxes and spending, so nothing is left to invest. ${monthLabel(sample.date)}: income ${usd(sample.income)}, tax ${usd(sample.tax)}, spending ${usd(sample.spending)}. MACH RUN will not take this contribution from savings.`
-    : `The rest is more than what is left after taxes and spending. ${ahead}`;
+    ? brokeNote
+    : ahead.length
+      ? `Tax-qualified contributions are funded first. Paid before this one: ${joinNames(ahead)}.`
+      : "The cash after tax and spending is not enough. Nothing else was funded ahead of this one.";
+  const lines = cashLines(year, ordered, covered, short);
+  const notes = [broke ? brokeNote : ahead.length ? "" : reason, again].filter(Boolean);
+  const body = `${lines.join(" ")}${lines.length ? " " : ""}${reason}${again ? ` ${again}` : ""}`;
+  return { body, lines, ahead, notes };
+}
+
+function cashLines(
+  year: number,
+  ordered: MonthHit[],
+  covered: MonthHit[],
+  short: MonthHit[],
+): string[] {
   if (!covered.length) {
     const asked = sumHits(ordered, "asked");
     const got = sumHits(ordered, "got");
@@ -374,20 +398,30 @@ function cashSentence(
     const flat = ordered.every((hit) => Math.abs(hit.asked - monthly) < 1);
     const count = ordered.length;
     if (flat && count === 12) {
-      return `In ${year} this is ${usd(monthly)} a month, ${usd(asked)} for the year. ${usd(got)} of that will be invested. ${reason}${again}`;
+      return [
+        `In ${year} this is ${usd(monthly)} a month, ${usd(asked)} for the year.`,
+        `${usd(got)} of that will be invested.`,
+      ];
     }
     if (flat && count === 1) {
-      return `${monthSpan(ordered)} asks for ${usd(asked)}. ${usd(got)} of that will be invested. ${reason}${again}`;
+      return [
+        `${monthSpan(ordered)} asks for ${usd(asked)}.`,
+        `${usd(got)} of that will be invested.`,
+      ];
     }
     if (flat) {
       const unit = count === 2 ? "those two months" : `those ${count} months`;
-      return `${monthSpan(ordered)}: ${usd(monthly)} a month, ${usd(asked)} for ${unit}. ${usd(got)} of that will be invested. ${reason}${again}`;
+      return [
+        `${monthSpan(ordered)}: ${usd(monthly)} a month, ${usd(asked)} for ${unit}.`,
+        `${usd(got)} of that will be invested.`,
+      ];
     }
-    return `${monthSpan(ordered)}: ${usd(asked)} asked, ${usd(got)} invested. ${reason}${again}`;
+    return [`${monthSpan(ordered)}: ${usd(asked)} asked, ${usd(got)} invested.`];
   }
-  const missedAsked = sumHits(short, "asked");
-  const missedGot = sumHits(short, "got");
-  return `${monthSpan(covered)} will be invested (${usd(sumHits(covered, "got"))}). ${monthSpan(short)} asks for ${usd(missedAsked)} and ${usd(missedGot)} of that will be invested. ${reason}${again}`;
+  return [
+    `${monthSpan(covered)} is fully invested (${usd(sumHits(covered, "got"))}).`,
+    `${monthSpan(short)} asked ${usd(sumHits(short, "asked"))} and invested ${usd(sumHits(short, "got"))}.`,
+  ];
 }
 
 function fundingRank(plan: Plan): Map<string, number> {
@@ -400,12 +434,12 @@ function fundingRank(plan: Plan): Map<string, number> {
   return new Map(ordered.map((row, index) => [row.id, index]));
 }
 
-function aheadPhrase(
+function aheadNames(
   plan: Plan,
   ruleId: string,
   short: MonthHit[],
   rows: { date: string; ruleId: string; invested: number }[],
-): string {
+): string[] {
   const order = fundingRank(plan);
   const mine = order.get(ruleId) ?? 0;
   const nameOf = new Map(
@@ -414,31 +448,22 @@ function aheadPhrase(
       rule.label.trim() || `Contribution ${index + 1}`,
     ]),
   );
-  const bits: string[] = [];
-  const seen = new Set<string>();
-  for (const hit of [...short].sort((a, b) => a.date.localeCompare(b.date))) {
-    const ahead = rows
-      .filter(
-        (row) =>
-          row.date === hit.date && (order.get(row.ruleId) ?? 0) < mine && row.invested > 0.5,
-      )
-      .sort((a, b) => (order.get(a.ruleId) ?? 0) - (order.get(b.ruleId) ?? 0));
-    const text = ahead
-      .map((row) => `${nameOf.get(row.ruleId) ?? "Contribution"} ${usd(row.invested)}`)
-      .join(" and ");
-    if (seen.has(text)) continue;
-    seen.add(text);
-    if (!text) bits.push("nothing else was funded ahead of this one");
-    else if (short.length === 1) bits.push(text);
-    else bits.push(`${monthLabel(hit.date)}: ${text}`);
+  const ids: string[] = [];
+  for (const hit of short) {
+    for (const row of rows) {
+      if (row.date !== hit.date || row.invested <= 0.5) continue;
+      if ((order.get(row.ruleId) ?? 0) >= mine) continue;
+      if (!ids.includes(row.ruleId)) ids.push(row.ruleId);
+    }
   }
-  if (bits.length === 1 && bits[0] === "nothing else was funded ahead of this one") {
-    return "Tax-qualified contributions are funded first. Nothing else was funded ahead of this one.";
-  }
-  if (bits.length === 1) {
-    return `Tax-qualified contributions are funded first. Ahead of this one: ${bits[0]}.`;
-  }
-  return `Tax-qualified contributions are funded first. Ahead of this one — ${bits.join("; ")}.`;
+  ids.sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0));
+  return ids.map((id) => nameOf.get(id) ?? "Contribution");
+}
+
+function joinNames(names: string[]): string {
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
 }
 
 let cachedKey = "";

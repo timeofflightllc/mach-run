@@ -911,7 +911,7 @@ test("October shortfall funds Roths before the taxable contribution listed first
   const cash = openAdvisories(plan).find((row) => row.kind === "cash" && row.name === "Non Qualified");
   assert.ok(cash);
   assert.match(cash.body, /Tax-qualified contributions are funded first/);
-  assert.match(cash.body, /Matt Roth AMS \$625\.00 and Sarah Roth AMS \$625\.00/);
+  assert.match(cash.body, /Paid before this one: Matt Roth AMS and Sarah Roth AMS/);
   assert.doesNotMatch(cash.body, /above this one/);
 });
 

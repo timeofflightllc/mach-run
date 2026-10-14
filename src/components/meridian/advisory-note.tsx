@@ -32,7 +32,7 @@ export function AdvisoryNote({ advisory }: { advisory?: Advisory }) {
     <>
       {advisory ? (
         <div className="rounded-lg px-3 py-2 text-sm leading-relaxed text-fg" style={YELLOW}>
-          <p>{advisory.body}</p>
+          <CashReadout advisory={advisory} />
           <button
             type="button"
             className="mt-1 text-sm font-medium text-[#5c4a18] underline decoration-[#5c4a18]/50 underline-offset-2"
@@ -81,17 +81,19 @@ export function AdvisoryStrip({
   return (
     <div className="rounded-lg px-4 py-3 text-sm leading-relaxed text-fg" style={YELLOW}>
       <p className="font-semibold text-[#e8c547]">Unanswered. Calculate still runs.</p>
-      <ul className="mt-2 flex flex-col gap-1">
+      <ul className="mt-2 flex flex-col gap-3">
         {rows.map((row) => (
           <li key={row.id}>
             <button
               type="button"
-              className="text-left text-fg underline decoration-[#e8c547]/70 underline-offset-2"
+              className="text-left font-medium text-fg underline decoration-[#e8c547]/70 underline-offset-2"
               onClick={() => onOpen(row.step, row.cardId)}
             >
               {row.name}
             </button>
-            <span className="text-muted"> — {row.body} </span>
+            <div className="mt-1">
+              <CashReadout advisory={row} />
+            </div>
             <button
               type="button"
               className="text-[#5c4a18] underline decoration-[#5c4a18]/50 underline-offset-2"
@@ -109,6 +111,31 @@ export function AdvisoryStrip({
 
 export function cashAdvisoryStillOpen(plan: Plan): boolean {
   return openAdvisories(plan).some((row) => row.kind === "cash");
+}
+
+function CashReadout({ advisory }: { advisory: Advisory }) {
+  const detail = advisory.detail;
+  if (detail.kind !== "cash") return <p>{advisory.body}</p>;
+  return (
+    <div className="space-y-2">
+      {detail.lines.map((line) => (
+        <p key={line}>{line}</p>
+      ))}
+      {detail.ahead.length > 0 ? (
+        <div>
+          <p className="font-medium">Paid first</p>
+          <ul className="mt-0.5 list-disc pl-5">
+            {detail.ahead.map((name) => (
+              <li key={name}>{name}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {detail.notes.map((line) => (
+        <p key={line}>{line}</p>
+      ))}
+    </div>
+  );
 }
 
 function monthLabel(iso: string): string {
