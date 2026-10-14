@@ -11,7 +11,7 @@ import { monthlyIncomeAt } from "@/lib/plan/engine";
 import { usd } from "@/lib/plan/format";
 import { runOutSentence, survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { nestEggTrack, peerRankLine, type PeerBrief } from "@/lib/plan/peers";
-import { cashShortYears } from "@/lib/plan/cash-short";
+import { cashParkedYears, cashShortYears, paycheckGapNote } from "@/lib/plan/cash-short";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +53,10 @@ function NestEggGap({
   const fill = egg.goal > 0 ? Math.min(100, (projected / egg.goal) * 100) : 0;
   const short = Math.max(0, egg.goal - egg.projected);
   const early = egg.hitYear != null && egg.hitYear < egg.targetYear;
-  const noRoom = !egg.onTrack && cashShortYears(sim).length > 0;
+  const blocked = paycheckGapNote(
+    cashShortYears(sim).map((row) => row.year),
+    cashParkedYears(sim, egg.targetYear),
+  );
   let status: string;
   if (!egg.onTrack) {
     status = `${usd(short)} short of the goal in ${egg.targetYear}.`;
@@ -63,9 +66,8 @@ function NestEggGap({
     status = `On the ${usd(egg.goal)} goal in ${egg.targetYear}.`;
   }
   const lever = !egg.onTrack
-    ? noRoom
-      ? "The paycheck does not have room for the extra saving that would close this."
-      : `About ${usd(egg.extraMonthly, true)} more a month, on top of what you already save, closes it by ${egg.targetYear}.`
+    ? blocked ??
+      `About ${usd(egg.extraMonthly, true)} more a month, on top of what you already save, closes it by ${egg.targetYear}.`
     : null;
   return (
     <div className="mt-auto hidden border-t border-border pt-3 @min-[36rem]/act:block">

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { cashShortYears } from "./cash-short.ts";
+import { cashParkedYears, cashShortYears, paycheckGapNote } from "./cash-short.ts";
 import type { SimResult, YearCap } from "./types.ts";
 
 function cap(partial: Pick<YearCap, "year" | "kind" | "planned" | "leftover" | "employerMatch">): YearCap {
@@ -31,3 +31,32 @@ test("cash short ignores employer match and skips years the paycheck covered", (
   assert.equal(rows[2].left, 0);
   assert.equal(rows[2].missed, 87000);
 });
+
+test("a short year does not erase years that parked cash", () => {
+  const parked = paycheckGapNote([2032, 2033, 2034], [2028, 2029, 2030, 2031]);
+  assert.equal(
+    parked,
+    "Only 2032, 2033, and 2034 are short. Other years are parking leftover as cash, and that cash is already inside this number.",
+  );
+  assert.equal(
+    paycheckGapNote([2032], [2028]),
+    "Only 2032 is short. Other years are parking leftover as cash, and that cash is already inside this number.",
+  );
+  assert.equal(
+    paycheckGapNote([2032, 2033], []),
+    "The paycheck does not have room for the extra saving that would close this.",
+  );
+  assert.equal(paycheckGapNote([], [2028]), null);
+});
+
+test("parked years stop at the goal year", () => {
+  const sim = {
+    months: [
+      { year: 2030, detail: { cashParked: 5000 } },
+      { year: 2031, detail: { cashParked: 0 } },
+      { year: 2036, detail: { cashParked: 9000 } },
+    ],
+  } as SimResult;
+  assert.deepEqual(cashParkedYears(sim, 2035), [2030]);
+});
+

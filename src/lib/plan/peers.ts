@@ -10,7 +10,7 @@ import {
   streamWindow,
 } from "./engine.ts";
 import { guaranteedAnnuityEquivalent, type AnnuityEquivalent } from "./annuity-equivalent.ts";
-import { cashShortYears } from "./cash-short.ts";
+import { cashParkedYears, cashShortYears, paycheckGapNote } from "./cash-short.ts";
 import { five29Ended } from "./college-529.ts";
 import { usd, usdCompact } from "./format.ts";
 import { paycheckFromMonthly } from "./pay-cadence.ts";
@@ -254,12 +254,16 @@ function bottomLine(opts: {
         body: `Projected spendable at that date is ${usd(egg.projected)} in today's dollars.${early} Stay with the plan — this is the number you asked MACH RUN to hit.`,
       };
     }
-    const cashShort = cashShortYears(sim).length > 0;
+    const gap = Math.max(0, egg.goal - egg.projected);
+    const note = paycheckGapNote(
+      cashShortYears(sim).map((row) => row.year),
+      cashParkedYears(sim, egg.targetYear),
+    );
     return {
       headline: `You are not on track for ${usd(egg.goal)} by ${egg.targetYear}${byAge}.`,
-      body: cashShort
-        ? `Projected spendable there is ${usd(egg.projected)} — short ${usd(Math.max(0, egg.goal - egg.projected))}. If the paycheck had the room, about ${usd(egg.extraMonthly, true)} more per month, compounding at your assumed real return, would close the gap by that date. It does not have that room. The contributions already entered are larger than income minus tax minus spending, so MACH RUN did not invest them. The notice above lists each year.`
-        : `Projected spendable there is ${usd(egg.projected)} — short ${usd(Math.max(0, egg.goal - egg.projected))}. Invest about ${usd(egg.extraMonthly, true)} more per month (on top of what you already entered), compounding at your assumed real return, to close the gap by that date.`,
+      body: note
+        ? `Projected spendable there is ${usd(egg.projected)} — short ${usd(gap)}. ${note} The notice above lists each year the contributions already typed did not fit.`
+        : `Projected spendable there is ${usd(egg.projected)} — short ${usd(gap)}. Invest about ${usd(egg.extraMonthly, true)} more per month (on top of what you already entered), compounding at your assumed real return, to close the gap by that date.`,
     };
   }
 
@@ -427,11 +431,17 @@ export function buildPeerBrief(
 
   const egg = nestEggTrack(plan, sim);
   if (egg) {
+    const gapNote = paycheckGapNote(
+      cashShortYears(sim).map((row) => row.year),
+      cashParkedYears(sim, egg.targetYear),
+    );
     add(
       "Nest egg goal",
       egg.onTrack
         ? `Goal ${usd(egg.goal)} by ${egg.targetYear}${egg.targetAge != null ? ` (age ${egg.targetAge})` : ""}. Projected ${usd(egg.projected)} in today's dollars — on track.`
-        : `Goal ${usd(egg.goal)} by ${egg.targetYear}${egg.targetAge != null ? ` (age ${egg.targetAge})` : ""}. Projected ${usd(egg.projected)}. Gap ${usd(Math.max(0, egg.goal - egg.projected))}. About ${usd(egg.extraMonthly, true)}/mo more invested closes it at your assumed return.`,
+        : gapNote
+          ? `Goal ${usd(egg.goal)} by ${egg.targetYear}${egg.targetAge != null ? ` (age ${egg.targetAge})` : ""}. Projected ${usd(egg.projected)}. Gap ${usd(Math.max(0, egg.goal - egg.projected))}. ${gapNote}`
+          : `Goal ${usd(egg.goal)} by ${egg.targetYear}${egg.targetAge != null ? ` (age ${egg.targetAge})` : ""}. Projected ${usd(egg.projected)}. Gap ${usd(Math.max(0, egg.goal - egg.projected))}. About ${usd(egg.extraMonthly, true)}/mo more invested closes it at your assumed return.`,
     );
   }
 
