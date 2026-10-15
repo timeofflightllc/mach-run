@@ -1,4 +1,4 @@
-import { simulate } from "./engine.ts";
+import { simulate, spendingWindow } from "./engine.ts";
 import type { Plan, SimResult } from "./types.ts";
 
 export type SustainableIncome = {
@@ -33,9 +33,15 @@ function planForDraw(plan: Plan, monthly: number): Plan {
       spending.push(phase);
       continue;
     }
-    if (phase.startDate >= start) continue;
-    if (!phase.endDate || phase.endDate >= start) {
-      spending.push({ ...phase, endDate: cutoff });
+    const win = spendingWindow(plan, phase);
+    if (win.start >= start) continue;
+    if (!win.end || win.end >= start) {
+      spending.push({
+        ...phase,
+        tiedToStageId: undefined,
+        startDate: win.start,
+        endDate: cutoff,
+      });
       continue;
     }
     spending.push(phase);

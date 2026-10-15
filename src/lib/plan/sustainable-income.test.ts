@@ -164,3 +164,56 @@ test("retirement return replaces the account rate, and cash keeps its own", () =
   assert.ok(Math.abs(brokerage - 10_500) < 2);
   assert.ok(Math.abs(cash - 10_000) < 1);
 });
+
+test("spending tied to an open stage does not cap the investment withdrawal", () => {
+  const plan = createDefaultPlan();
+  plan.primary = { name: "Test", birthDate: "1980-06-01" };
+  plan.assumptions.asOfDate = "2026-01-01";
+  plan.assumptions.retirementGoalDate = "2035-11-01";
+  plan.assumptions.projectionEndAge = 105;
+  plan.assumptions.inflationPct = 2.5;
+  plan.assumptions.defaultReturnPct = 8;
+  plan.assumptions.retirementReturnPct = 6;
+  plan.assumptions.ordinaryTaxRatePct = 22;
+  plan.stages = [{ id: "life", name: "Life", startDate: "2026-01-01", endDate: null }];
+  plan.incomes = [
+    {
+      id: "mil",
+      name: "Military",
+      kind: "military",
+      monthlyAmount: 6785,
+      startDate: "2035-11-01",
+      endDate: null,
+      colaPct: 2.5,
+      taxTreatment: "tax_free",
+      person: "primary",
+    },
+  ];
+  plan.spending = [
+    {
+      id: "live",
+      label: "Living",
+      monthlyAmount: 8551,
+      startDate: "2026-01-01",
+      endDate: null,
+      tiedToStageId: "life",
+    },
+  ];
+  plan.contributions = [];
+  plan.portfolios = [
+    {
+      id: "brokerage",
+      name: "Brokerage",
+      kind: "taxable",
+      owner: "primary",
+      currentValue: 2_000_000,
+      returnPct: 8,
+      taxBucket: "taxable",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  const room = sustainableRetirementIncome(plan);
+  assert.ok(room);
+  assert.ok(room.withdrawalReal / 12 > 5_000);
+});
