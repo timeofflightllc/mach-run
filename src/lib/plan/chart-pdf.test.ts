@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { buildChartPdf, chartYears } from "./chart-pdf.ts";
 import { createDefaultPlan } from "./defaults.ts";
@@ -65,6 +66,7 @@ test("a spendable chart PDF starts with the PDF header and names the chart", () 
     orientation: "portrait",
     charts: ["spendable"],
     pictures: [{ id: "spendable", jpeg }],
+    titleFont: new Uint8Array(readFileSync(new URL("../../../public/brand/BebasNeue-Regular.ttf", import.meta.url))),
     survival: null,
   });
   assert.ok(bytes);
@@ -73,8 +75,10 @@ test("a spendable chart PDF starts with the PDF header and names the chart", () 
   assert.ok(text.includes("MACH RUN Charts"));
   assert.ok(text.includes("The Supersonic Retirement Calculator"));
   assert.ok(text.includes("MACH RUN.com"));
-  assert.ok(text.includes("For entertainment purposes only"));
+  assert.ok(text.includes("For information purposes only - consult a fiduciary before you make any financial decisions."));
   assert.ok(text.includes("Spendable Wealth"));
   assert.ok(text.includes("Future dollars"));
+  assert.ok(text.includes("BebasNeue-Regular"));
+  assert.ok(text.includes("/Subtype /TrueType"));
   assert.ok(text.includes("DCTDecode"));
 });

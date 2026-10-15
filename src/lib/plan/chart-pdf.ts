@@ -17,7 +17,8 @@ export type ChartLogo = {
   h: number;
 };
 
-const FOOTER_NOTE = "For entertainment purposes only";
+const FOOTER_NOTE =
+  "For information purposes only - consult a fiduciary before you make any financial decisions.";
 const NAVY = "0.039 0.094 0.208";
 const SILVER = "0.773 0.804 0.839";
 const SAGE = "0.616 0.729 0.604";
@@ -64,8 +65,8 @@ function household(plan: Plan): string {
 
 function chrome(orientation: ChartOrientation) {
   return orientation === "landscape"
-    ? { header: 74, footer: 36, marginX: 28, gap: 0 }
-    : { header: 96, footer: 40, marginX: 32, gap: 16 };
+    ? { header: 74, footer: 50, marginX: 28, gap: 0 }
+    : { header: 96, footer: 54, marginX: 32, gap: 16 };
 }
 
 function dollarLabel(plan: Plan): string {
@@ -196,10 +197,12 @@ function drawPicture(
   bottom: number,
   width: number,
   height: number,
+  titleFace: { font: string; size: number },
 ): string {
   const { w, h } = jpegSize(jpeg);
-  const titleY = bottom + height - 16;
-  const plotTop = titleY - 18;
+  const titleY = bottom + height - titleFace.size - 2;
+  const noteY = titleY - 12;
+  const plotTop = noteY - 8;
   const plotH = Math.max(10, plotTop - bottom);
   const scale = Math.min(width / w, plotH / h);
   const dw = w * scale;
@@ -207,8 +210,8 @@ function drawPicture(
   const x = left + (width - dw) / 2;
   const y = plotTop - dh;
   return [
-    textOp("/F2", 13, GREEN_DEEP, left, titleY, chart.title),
-    textOp("/F1", 9, MUTED, left, titleY - 12, chart.note),
+    textOp(titleFace.font, titleFace.size, GREEN_DEEP, left, titleY, chart.title),
+    textOp("/F1", 9, MUTED, left, noteY, chart.note),
     `q ${dw.toFixed(2)} 0 0 ${dh.toFixed(2)} ${x.toFixed(2)} ${y.toFixed(2)} cm /${imageName} Do Q`,
   ].join("\n");
 }
@@ -223,9 +226,9 @@ function footerOp(width: number, pageNo: number, pageCount: number, footerH: num
     `${NAVY} rg`,
     `0 0 ${width} ${footerH} re f`,
     "Q",
-    textOp("/F1", 8, SAGE, 28, 16, "MACH RUN.com"),
-    textOp("/F1", 8, GOLD, 168, 16, FOOTER_NOTE),
-    textOp("/F1", 8, SILVER, pageX, 16, label),
+    textOp("/F1", 8, GOLD, 28, 32, FOOTER_NOTE),
+    textOp("/F1", 8, SAGE, 28, 14, "MACH RUN.com"),
+    textOp("/F1", 8, SILVER, pageX, 14, label),
   ].join("\n");
 }
 
@@ -255,6 +258,131 @@ function jpegObject(bytes: Uint8Array): Uint8Array {
   ]);
 }
 
+type TitleFont = {
+  bytes: Uint8Array;
+  name: string;
+  bbox: number[];
+  ascent: number;
+  descent: number;
+  capHeight: number;
+  widths: number[];
+};
+
+function ttfView(bytes: Uint8Array): DataView {
+  return new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+}
+
+function ttfTables(bytes: Uint8Array): Map<string, { offset: number; length: number }> {
+  const view = ttfView(bytes);
+  const count = view.getUint16(4);
+  const tables = new Map<string, { offset: number; length: number }>();
+  for (let i = 0; i < count; i++) {
+    const at = 12 + i * 16;
+    const tag = String.fromCharCode(bytes[at], bytes[at + 1], bytes[at + 2], bytes[at + 3]);
+    tables.set(tag, { offset: view.getUint32(at + 8), length: view.getUint32(at + 12) });
+  }
+  return tables;
+}
+
+function ttfName(bytes: Uint8Array, tables: Map<string, { offset: number; length: number }>): string {
+  const table = tables.get("name");
+  if (!table) return "BebasNeue-Regular";
+  const view = ttfView(bytes);
+  const count = view.getUint16(table.offset + 2);
+  const storage = table.offset + view.getUint16(table.offset + 4);
+  for (let i = 0; i < count; i++) {
+    const at = table.offset + 6 + i * 12;
+    const platform = view.getUint16(at);
+    if (view.getUint16(at + 6) !== 6) continue;
+    const length = view.getUint16(at + 8);
+    const start = storage + view.getUint16(at + 10);
+    let text = "";
+    if (platform === 3 || platform === 0) {
+      for (let j = 0; j + 1 < length; j += 2) text += String.fromCharCode(view.getUint16(start + j));
+    } else {
+      for (let j = 0; j < length; j++) text += String.fromCharCode(bytes[start + j]);
+    }
+    const clean = text.replace(/[^A-Za-z0-9-]/g, "");
+    if (clean) return clean;
+  }
+  return "BebasNeue-Regular";
+}
+
+function ttfGlyph(view: DataView, cmap: number, code: number): number {
+  const segCount = view.getUint16(cmap + 6) / 2;
+  const endAt = cmap + 14;
+  const startAt = endAt + segCount * 2 + 2;
+  const deltaAt = startAt + segCount * 2;
+  const rangeAt = deltaAt + segCount * 2;
+  for (let i = 0; i < segCount; i++) {
+    const end = view.getUint16(endAt + i * 2);
+    if (code > end) continue;
+    const start = view.getUint16(startAt + i * 2);
+    if (code < start) return 0;
+    const delta = view.getInt16(deltaAt + i * 2);
+    const range = view.getUint16(rangeAt + i * 2);
+    if (range === 0) return (code + delta) & 0xffff;
+    const glyph = view.getUint16(rangeAt + i * 2 + range + (code - start) * 2);
+    return glyph === 0 ? 0 : (glyph + delta) & 0xffff;
+  }
+  return 0;
+}
+
+/** Bebas Neue, the MACH RUN wordmark face. Null when the file is not a usable TrueType. */
+function readTitleFont(bytes: Uint8Array | null | undefined): TitleFont | null {
+  if (!bytes || bytes.length < 12) return null;
+  if (bytes[0] !== 0 || bytes[1] !== 1 || bytes[2] !== 0 || bytes[3] !== 0) return null;
+  const tables = ttfTables(bytes);
+  const head = tables.get("head");
+  const hhea = tables.get("hhea");
+  const hmtx = tables.get("hmtx");
+  const cmap = tables.get("cmap");
+  if (!head || !hhea || !hmtx || !cmap) return null;
+  const view = ttfView(bytes);
+  const units = view.getUint16(head.offset + 18) || 1000;
+  const scale = (n: number) => Math.round((n * 1000) / units);
+  const encCount = view.getUint16(cmap.offset + 2);
+  let format4 = 0;
+  for (let i = 0; i < encCount; i++) {
+    const platform = view.getUint16(cmap.offset + 4 + i * 8);
+    const encoding = view.getUint16(cmap.offset + 6 + i * 8);
+    if (platform === 3 && encoding === 1) format4 = cmap.offset + view.getUint32(cmap.offset + 8 + i * 8);
+  }
+  if (!format4 || view.getUint16(format4) !== 4) return null;
+  const metrics = view.getUint16(hhea.offset + 34);
+  const advance = (glyph: number) => {
+    const index = Math.min(glyph, Math.max(0, metrics - 1));
+    return view.getUint16(hmtx.offset + index * 4);
+  };
+  const widths = Array.from({ length: 95 }, (_, i) => scale(advance(ttfGlyph(view, format4, 32 + i))));
+  const os2 = tables.get("OS/2");
+  const ascent = view.getInt16(hhea.offset + 4);
+  const cap =
+    os2 && os2.length >= 90 && view.getUint16(os2.offset) >= 2 ? view.getInt16(os2.offset + 88) : ascent;
+  return {
+    bytes,
+    name: ttfName(bytes, tables),
+    bbox: [
+      scale(view.getInt16(head.offset + 36)),
+      scale(view.getInt16(head.offset + 38)),
+      scale(view.getInt16(head.offset + 40)),
+      scale(view.getInt16(head.offset + 42)),
+    ],
+    ascent: scale(ascent),
+    descent: scale(view.getInt16(hhea.offset + 6)),
+    capHeight: scale(cap),
+    widths,
+  };
+}
+
+function fontFileObject(bytes: Uint8Array): Uint8Array {
+  return concat([
+    enc(`<< /Length ${bytes.length} /Length1 ${bytes.length} >>\nstream\n`),
+    bytes,
+    enc("\nendstream"),
+  ]);
+}
+
 export function buildChartPdf(input: {
   plan: Plan;
   sim: Pick<SimResult, "years">;
@@ -263,6 +391,8 @@ export function buildChartPdf(input: {
   charts: ChartPdfChoice[];
   pictures: ChartPicture[];
   logo?: ChartLogo | null;
+  /** Bebas Neue file. Chart titles use it. Header and footer stay Helvetica. */
+  titleFont?: Uint8Array | null;
   survival?: Pick<SurvivalScore, "score" | "survived" | "paths" | "runOutAge" | "bands"> | null;
 }): Uint8Array | null {
   if (!input.sim.years.length || !input.charts.length) return null;
@@ -294,6 +424,8 @@ export function buildChartPdf(input: {
   const logo = resolvedLogo(input.logo);
   const mark = logoBox(logo, chrome(input.orientation).header, input.orientation);
   const footerH = chrome(input.orientation).footer;
+  const embedded = readTitleFont(input.titleFont);
+  const titleFace = embedded ? { font: "/F3", size: 20 } : { font: "/F2", size: 13 };
   const streams = pages.map((page, index) => {
     const slots = pageSlots(input.orientation, page.length);
     const ops = [
@@ -307,6 +439,7 @@ export function buildChartPdf(input: {
           slots[slot].bottom,
           slots[slot].width,
           slots[slot].height,
+          titleFace,
         ),
       ),
       footerOp(w, index + 1, pages.length, footerH),
@@ -323,6 +456,21 @@ export function buildChartPdf(input: {
   add(enc("<< /Type /Pages /Kids [] /Count 0 >>"));
   add(enc("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"));
   add(enc("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>"));
+  let titleFontId = 0;
+  if (embedded) {
+    const fileId = add(fontFileObject(embedded.bytes));
+    const widthsId = add(enc(`[ ${embedded.widths.join(" ")} ]`));
+    const descId = add(
+      enc(
+        `<< /Type /FontDescriptor /FontName /${embedded.name} /Flags 32 /FontBBox [${embedded.bbox.join(" ")}] /ItalicAngle 0 /Ascent ${embedded.ascent} /Descent ${embedded.descent} /CapHeight ${embedded.capHeight} /StemV 80 /FontFile2 ${fileId} 0 R >>`,
+      ),
+    );
+    titleFontId = add(
+      enc(
+        `<< /Type /Font /Subtype /TrueType /BaseFont /${embedded.name} /Encoding /WinAnsiEncoding /FirstChar 32 /LastChar 126 /Widths ${widthsId} 0 R /FontDescriptor ${descId} 0 R >>`,
+      ),
+    );
+  }
   const logoId = logo && mark ? add(jpegObject(logo.bytes)) : 0;
   const imageIds = pictures.map((picture) => add(jpegObject(picture.jpeg)));
   const contentIds = streams.map((stream) =>
@@ -337,7 +485,7 @@ export function buildChartPdf(input: {
   const pageIds = contentIds.map((id) =>
     add(
       enc(
-        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${w} ${h}] /Contents ${id} 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R >> /XObject << ${xobjects} >> >> >>`,
+        `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${w} ${h}] /Contents ${id} 0 R /Resources << /Font << /F1 3 0 R /F2 4 0 R${titleFontId ? ` /F3 ${titleFontId} 0 R` : ""} >> /XObject << ${xobjects} >> >> >>`,
       ),
     ),
   );
@@ -377,8 +525,24 @@ async function loadLogo(): Promise<ChartLogo | null> {
   }
 }
 
+async function loadTitleFont(): Promise<Uint8Array | null> {
+  if (typeof fetch === "undefined") return null;
+  try {
+    const res = await fetch("/brand/BebasNeue-Regular.ttf");
+    if (!res.ok) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    return readTitleFont(bytes) ? bytes : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function downloadChartPdf(input: Parameters<typeof buildChartPdf>[0]): Promise<boolean> {
-  const bytes = buildChartPdf({ ...input, logo: input.logo ?? (await loadLogo()) });
+  const bytes = buildChartPdf({
+    ...input,
+    logo: input.logo ?? (await loadLogo()),
+    titleFont: input.titleFont ?? (await loadTitleFont()),
+  });
   if (!bytes || typeof document === "undefined") return false;
   const copy = new Uint8Array(bytes.byteLength);
   copy.set(bytes);

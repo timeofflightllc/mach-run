@@ -10,7 +10,7 @@ const PAGE_W = 612;
 const PAGE_H = 792;
 const MARGIN_X = 54;
 const HEADER_H = 102;
-const FOOTER_H = 40;
+const FOOTER_H = 54;
 const NAVY = "0.039 0.094 0.208"; // #0a1835
 const SILVER = "0.773 0.804 0.839"; // #c5cdd6
 const BODY = "0.102 0.141 0.220"; // #1a2438
@@ -499,20 +499,20 @@ function footerOps(pageNo: number, pageCount: number): string {
     "Q",
     "BT",
     "/F1 8 Tf",
+    `${GOLD} rg`,
+    "54 32 Td",
+    "(For information purposes only - consult a fiduciary before you make any financial decisions.) Tj",
+    "ET",
+    "BT",
+    "/F1 8 Tf",
     `${SAGE} rg`,
-    "54 16 Td",
+    "54 14 Td",
     "(MACH RUN.com) Tj",
     "ET",
     "BT",
     "/F1 8 Tf",
-    `${GOLD} rg`,
-    "196 16 Td",
-    "(For entertainment purposes only) Tj",
-    "ET",
-    "BT",
-    "/F1 8 Tf",
     `${SILVER} rg`,
-    "508 16 Td",
+    "508 14 Td",
     `(Page ${pageNo} of ${pageCount}) Tj`,
     "ET",
   ].join("\n");
