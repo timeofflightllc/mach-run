@@ -14,7 +14,7 @@ const LINKS = [
   { to: "/announcements" as const, label: "Updates" },
   { to: "/contact" as const, label: "Contact" },
   { to: "/privacy" as const, label: "Privacy" },
-  { to: "/legal" as const, label: "Legal" },
+  { to: "/legal" as const, label: "Terms of Service", menu: "Terms" },
 ];
 
 export function SiteNav({
@@ -108,7 +108,7 @@ export function SiteMenu({
               onClick={() => setOpen(false)}
               className="block px-3 py-2.5 text-sm text-fg hover:bg-surface"
             >
-              {link.label}
+              {"menu" in link ? link.menu : link.label}
             </Link>
           ))}
         </div>

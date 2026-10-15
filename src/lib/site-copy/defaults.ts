@@ -42,7 +42,7 @@ A monthly plan is refunded for the billing period you ask in. It is not split by
 
 A yearly plan is prorated from the amount you paid. A month already started counts as used. Unused whole months come back.
 
-Ask from the email on the account through [Contact](/contact). The paid plan ends when the refund is sent. The full rule is on [Legal](/legal#refunds).`;
+Ask from the email on the account through [Contact](/contact). The paid plan ends when the refund is sent. The full rule is on [Terms of Service](/legal#refunds).`;
 
 export const REFUND_LEGAL_BLOCK = `# Refunds {#refunds}
 Refunds cover the current billing period only. Months that already ended are not refunded, except where the law requires more.
@@ -136,7 +136,7 @@ Open Family, then Accounts. Add at least one income and your spending if you hav
 Observe, Orient, Decide, Act. It comes from U.S. Air Force Col. John Boyd (Ret.). On this site it is a way to look at money — not a trademarked product from anyone else. Observe is the household as it stands. Orient is where dollars go (income and spending). Decide is contributions. Act is the ledger, charts, and analysis after Calculate.
 
 # Is this financial advice?
-No. MACH RUN is a hypothetical planning tool. It is not financial, tax, or legal advice. The full disclaimer and Terms of Service live on [Legal](/legal).
+No. MACH RUN is a hypothetical planning tool. It is not financial, tax, or legal advice. The full disclaimer and Terms of Service live on [Terms of Service](/legal).
 
 # What is free, and what do I pay for?
 Free: register in about 30 seconds, save one household, with a limit of 2 accounts, 2 contributions, and 2 incomes. The OODA analysis is shortened.
@@ -203,10 +203,9 @@ What shipped recently on the MACH RUN retirement calculator.`,
   },
   {
     slug: "legal",
-    title: "Legal",
-    kicker: "",
-    body: `# Terms of Service {#terms}
-Last updated: October 12, 2026. MACH RUN is a hypothetical household planning calculator. It is not a broker, bank, fiduciary, or advisor. MACH RUN is operated by Time of Flight LLC, and Florida law governs these terms.
+    title: "Terms of Service",
+    kicker: "Last updated: October 12, 2026.",
+    body: `MACH RUN is a hypothetical household planning calculator. It is not a broker, bank, fiduciary, or advisor. MACH RUN is operated by Time of Flight LLC, and Florida law governs these terms.
 
 # Accounts
 You may register with email or a sign-in provider. You are responsible for the account and for the numbers you type. Do not share your password.

@@ -9,7 +9,7 @@ import { pageHead } from "@/lib/seo";
 export const Route = createFileRoute("/legal")({
   head: () =>
     pageHead({
-      title: "Legal terms for the calculator | MACH RUN",
+      title: "Terms of Service | MACH RUN",
       description:
         "Terms and the disclaimer. MACH RUN is a planning sketch, not financial, tax, or legal advice.",
       path: "/legal",
@@ -27,7 +27,7 @@ function Legal() {
         <PageMast />
         <PieceCrumbs path="/legal" />
         <header>
-          <h1 className="font-display text-4xl text-fg sm:text-5xl">{page.title}</h1>
+          <h1 id="terms" className="font-display text-4xl text-fg sm:text-5xl">{page.title}</h1>
           {page.kicker ? <p className="mt-2 text-lg text-muted">{page.kicker}</p> : null}
         </header>
         <SiteCopyBody body={page.body} underlineLinks />

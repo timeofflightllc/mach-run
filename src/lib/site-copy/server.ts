@@ -114,8 +114,12 @@ function freshenStoredCopy(body: string): string {
       "For tax-qualified accounts, required minimum distributions are modeled when the rules say they apply. The analysis calls them out.",
     )
     .replaceAll(
-      "Individual Unlimited and Advisor can download a password-protected .machrun backup — that password is not the site login, and MACH RUN does not keep it.",
-      "Individual Unlimited and Advisor can download a password-protected .machrun backup. That password is not the site login. MACH RUN does not keep it.",
+      "The full disclaimer and Terms of Service live on [Legal](/legal).",
+      "The full disclaimer and Terms of Service live on [Terms of Service](/legal).",
+    )
+    .replaceAll(
+      "The full rule is on [Legal](/legal#refunds).",
+      "The full rule is on [Terms of Service](/legal#refunds).",
     )
     .replaceAll(
       "A retired U.S. Air Force fighter pilot who wanted one system for multiple stages of income, numerous types of accounts and contributions, a nest-egg goal, and math-driven estimations of date the money runs out.",
@@ -191,6 +195,19 @@ function ensureRefundCopy(body: string): string {
   return next;
 }
 
+function presentTerms(page: SitePage): SitePage {
+  if (page.slug !== "legal") return page;
+  const body = page.body
+    .replace(/^# Terms of Service \{#terms\}\s*/m, "")
+    .replace(/^Last updated: [A-Za-z]+ \d{1,2}, \d{4}\.\s*/, "");
+  return {
+    ...page,
+    title: "Terms of Service",
+    kicker: "Last updated: October 12, 2026.",
+    body,
+  };
+}
+
 function preferCurrentLegal(page: SitePage): SitePage {
   const fresh = DEFAULT_PAGES.find((item) => item.slug === page.slug);
   if (!fresh) return page;
@@ -221,12 +238,14 @@ function mapPage(row: {
   body: string;
 }): SitePage | null {
   if (!isSlug(row.slug)) return null;
-  return preferCurrentLegal({
-    slug: row.slug,
-    title: row.title,
-    kicker: row.kicker ?? "",
-    body: freshenStoredCopy(row.body ?? ""),
-  });
+  return presentTerms(
+    preferCurrentLegal({
+      slug: row.slug,
+      title: row.title,
+      kicker: row.kicker ?? "",
+      body: freshenStoredCopy(row.body ?? ""),
+    }),
+  );
 }
 
 export async function loadSiteCopy(): Promise<SiteCopy> {

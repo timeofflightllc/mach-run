@@ -11,7 +11,7 @@ export const PIECES = [
   { to: "/pricing", title: "Pricing", cluster: "company" },
   { to: "/contact", title: "Contact", cluster: "company" },
   { to: "/privacy", title: "Privacy", cluster: "trust" },
-  { to: "/legal", title: "Legal", cluster: "trust" },
+  { to: "/legal", title: "Terms of Service", cluster: "trust" },
 ] as const;
 
 export type PiecePath = (typeof PIECES)[number]["to"];

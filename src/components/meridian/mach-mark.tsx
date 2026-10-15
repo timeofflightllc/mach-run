@@ -182,7 +182,7 @@ function PlannerDisclaimer() {
         annuities. The formulas are kept current, but a statement, a benefits letter, or a
         product page can still show a different number. Those sources use their own rules, and an
         entry here can be incomplete. Nothing on this site is warranted as complete, exact, or
-        suited to a particular decision. The longer notice is on the Legal page.
+        suited to a particular decision. The longer notice is on the Terms of Service page.
       </p>
     </div>
   );
@@ -239,7 +239,7 @@ export function MachFooter({
             <p className="w-full text-center text-[12.5px] leading-snug text-muted">
               <Link to="/privacy" className="font-medium text-fg underline underline-offset-4 hover:text-accent">Privacy</Link>
               <span className="px-4">|</span>
-              <Link to="/legal" className="font-medium text-fg underline underline-offset-4 hover:text-accent">Legal</Link>
+              <Link to="/legal" className="font-medium text-fg underline underline-offset-4 hover:text-accent">Terms of Service</Link>
               <span className="px-4">|</span>
               <a
                 href="https://www.linkedin.com/company/machrun-com/"

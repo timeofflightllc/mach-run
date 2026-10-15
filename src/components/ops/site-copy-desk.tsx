@@ -54,7 +54,7 @@ const PAGE_LABEL: Record<SitePageSlug, string> = {
   learn: "Learn",
   contact: "Contact",
   privacy: "Privacy",
-  legal: "Legal / ToS",
+  legal: "Terms of Service",
   announcements: "Updates (header)",
   pricing: "Pricing",
   footer: "Footer content",
@@ -648,7 +648,7 @@ export function SiteCopyDesk() {
                     ? "The big line on the homepage, and the paragraph under it. A new line in the box starts a new line on the page."
                     : compareOpen
                       ? "The Compare page. Checks, prices, the intro, and the Get Started button."
-                      : "About, The Method, FAQ, Contact intro, Privacy, Legal, and the Updates header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
+                      : "About, The Method, FAQ, Contact intro, Privacy, Terms of Service, and the Updates header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
         </p>
         <div className="mt-3 inline-flex flex-wrap rounded-lg bg-elevated p-1">
           {SITE_PAGE_SLUGS.map((id) => (
