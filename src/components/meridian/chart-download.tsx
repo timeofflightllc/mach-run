@@ -50,6 +50,7 @@ export function ChartDownload({
   const [orientation, setOrientation] = useState<ChartOrientation>("portrait");
   const [span, setSpan] = useState<ChartSpan>("horizon");
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -78,21 +79,39 @@ export function ChartDownload({
   );
   const noRun = sim.years.length === 0;
 
-  function download() {
-    if (noRun || !chosen.length) return;
-    const wrote = downloadChartPdf({
-      plan,
-      sim,
-      span,
-      orientation,
-      charts: chosen,
-      survival: monteReady ? survival : null,
-    });
-    if (!wrote) {
-      setError("Not enough years in that span to draw a chart.");
-      return;
+  async function download() {
+    if (noRun || !chosen.length || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const { captureChartPictures } = await import("@/components/meridian/chart-capture");
+      const pictures = await captureChartPictures({
+        plan,
+        sim,
+        span,
+        orientation,
+        charts: chosen,
+        survival: monteReady ? survival : null,
+      });
+      const wrote = downloadChartPdf({
+        plan,
+        sim,
+        span,
+        orientation,
+        charts: chosen,
+        pictures,
+        survival: monteReady ? survival : null,
+      });
+      if (!wrote) {
+        setError("Not enough years in that span to draw a chart.");
+        return;
+      }
+      setOpen(false);
+    } catch {
+      setError("The chart could not be drawn. Try again.");
+    } finally {
+      setBusy(false);
     }
-    setOpen(false);
   }
 
   const dialog =
@@ -184,11 +203,11 @@ export function ChartDownload({
                 {noRun ? null : (
                   <button
                     type="button"
-                    disabled={!chosen.length}
-                    onClick={download}
+                    disabled={!chosen.length || busy}
+                    onClick={() => void download()}
                     className="inline-flex h-10 items-center rounded-lg bg-slate-900 px-4 text-sm font-medium text-white disabled:opacity-40"
                   >
-                    Download
+                    {busy ? "Preparing…" : "Download"}
                   </button>
                 )}
               </div>

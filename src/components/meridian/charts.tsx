@@ -828,6 +828,8 @@ export function WealthChart({
   onPin,
   tall,
   survival = null,
+  viewSpan,
+  plotOnly = false,
 }: {
   plan: Plan;
   sim: SimResult;
@@ -835,6 +837,9 @@ export function WealthChart({
   onPin?: () => void;
   tall?: boolean;
   survival?: SurvivalScore | null;
+  /** PDF capture only. The on-screen chips keep their own span. */
+  viewSpan?: ChartSpan;
+  plotOnly?: boolean;
 }) {
   const real = plan.assumptions.dollars === "real";
   const ent = useEntitlement();
@@ -844,14 +849,16 @@ export function WealthChart({
   const [showLiabilities, setShowLiabilities] = useState(false);
   const [showNetWorth, setShowNetWorth] = useState(true);
   const { expanded, toggle, close } = useChartExpanded();
-  const data = wealthPoints(plan, sim, span);
+  const drawn = viewSpan ?? span;
+  const data = wealthPoints(plan, sim, drawn);
   const accounts = spendableSeries(plan, hasHeldCash(sim));
-  const x = axisProps(span);
+  const x = axisProps(drawn);
   const debtOn = netWorthPaid && showLiabilities;
 
-  return (
-    <ChartStage expanded={expanded} onClose={close} label="Spendable Wealth">
-    <div className={cn(chartCard, expanded && "flex h-full min-h-0 flex-1 flex-col")}>
+  const body = (
+    <div className={plotOnly ? "h-full w-full bg-white" : cn(chartCard, expanded && "flex h-full min-h-0 flex-1 flex-col")}>
+      {plotOnly ? null : (
+      <>
       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
         <h2 className="font-display text-xl font-bold text-slate-900">Spendable Wealth</h2>
         <ChartDownload plan={plan} sim={sim} survival={survival} />
@@ -897,13 +904,15 @@ export function WealthChart({
           </span>
         }
       />
-      <div className={plotHeight(expanded, tall)}>
+      </>
+      )}
+      <div className={plotOnly ? "h-full w-full" : plotHeight(expanded, tall)}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
             <CartesianGrid stroke={gridStroke} vertical={false} />
             <XAxis
               dataKey="t"
-              tickFormatter={(t) => formatAxisTick(t, span)}
+              tickFormatter={(t) => formatAxisTick(t, drawn)}
               tick={{ fill: tickFill, fontSize: 11 }}
               tickLine={false}
               axisLine={{ stroke: gridStroke }}
@@ -922,7 +931,7 @@ export function WealthChart({
             />
             <Tooltip
               formatter={formatTip}
-              labelFormatter={(t) => formatAxisTick(t as string | number, span)}
+              labelFormatter={(t) => formatAxisTick(t as string | number, drawn)}
               contentStyle={tooltipStyle}
               labelStyle={{ color: "#1a2330" }}
               itemSorter={stackTipOrder(
@@ -1005,6 +1014,11 @@ export function WealthChart({
         </ResponsiveContainer>
       </div>
     </div>
+  );
+  if (plotOnly) return body;
+  return (
+    <ChartStage expanded={expanded} onClose={close} label="Spendable Wealth">
+      {body}
     </ChartStage>
   );
 }
@@ -1016,6 +1030,8 @@ export function CashChart({
   onPin,
   tall,
   survival = null,
+  viewSpan,
+  plotOnly = false,
 }: {
   plan: Plan;
   sim: SimResult;
@@ -1023,6 +1039,8 @@ export function CashChart({
   onPin?: () => void;
   tall?: boolean;
   survival?: SurvivalScore | null;
+  viewSpan?: ChartSpan;
+  plotOnly?: boolean;
 }) {
   const [span, setSpan] = useState<ChartSpan>("horizon");
   const [shown, setShown] = useState({
@@ -1032,8 +1050,9 @@ export function CashChart({
     guaranteed: true,
   });
   const { expanded, toggle, close } = useChartExpanded();
-  const data = cashPoints(plan, sim, span);
-  const x = axisProps(span);
+  const drawn = viewSpan ?? span;
+  const data = cashPoints(plan, sim, drawn);
+  const x = axisProps(drawn);
   const flip = (key: keyof typeof shown) =>
     setShown((current) => ({ ...current, [key]: !current[key] }));
   const series = [
@@ -1045,7 +1064,9 @@ export function CashChart({
 
   return (
     <ChartStage expanded={expanded} onClose={close} label="Cash Flow">
-    <div className={cn(chartCard, expanded && "flex h-full min-h-0 flex-1 flex-col")}>
+    <div className={plotOnly ? "h-full w-full bg-white" : cn(chartCard, expanded && "flex h-full min-h-0 flex-1 flex-col")}>
+      {plotOnly ? null : (
+      <>
       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
         <h2 className="font-display text-xl font-bold text-slate-900">Cash Flow</h2>
         <ChartDownload plan={plan} sim={sim} survival={survival} />
@@ -1088,13 +1109,15 @@ export function CashChart({
           </span>
         }
       />
-      <div className={plotHeight(expanded, tall)}>
+      </>
+      )}
+      <div className={plotOnly ? "h-full w-full" : plotHeight(expanded, tall)}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
             <CartesianGrid stroke={gridStroke} vertical={false} />
             <XAxis
               dataKey="t"
-              tickFormatter={(t) => formatAxisTick(t, span)}
+              tickFormatter={(t) => formatAxisTick(t, drawn)}
               tick={{ fill: tickFill, fontSize: 11 }}
               tickLine={false}
               axisLine={{ stroke: gridStroke }}
@@ -1113,7 +1136,7 @@ export function CashChart({
             />
             <Tooltip
               formatter={formatTip}
-              labelFormatter={(t) => formatCashTip(t as string | number, span)}
+              labelFormatter={(t) => formatCashTip(t as string | number, drawn)}
               contentStyle={tooltipStyle}
               labelStyle={{ color: "#1a2330" }}
               itemStyle={{ color: "#4b5b6e" }}
@@ -1124,7 +1147,7 @@ export function CashChart({
                 type="monotone"
                 dataKey="income"
                 name={
-                  span === 5 ? "Income this month" : span === 10 ? "Income this quarter" : "Income"
+                  drawn === 5 ? "Income this month" : drawn === 10 ? "Income this quarter" : "Income"
                 }
                 stroke="var(--color-positive)"
                 fill="var(--color-positive)"
@@ -1138,9 +1161,9 @@ export function CashChart({
                 type="monotone"
                 dataKey="spending"
                 name={
-                  span === 5
+                  drawn === 5
                     ? "Spending this month"
-                    : span === 10
+                    : drawn === 10
                       ? "Spending this quarter"
                       : "Spending"
                 }
@@ -1156,9 +1179,9 @@ export function CashChart({
                 type="monotone"
                 dataKey="contributions"
                 name={
-                  span === 5
+                  drawn === 5
                     ? "Contributions this month"
-                    : span === 10
+                    : drawn === 10
                       ? "Contributions this quarter"
                       : "Contributions"
                 }
@@ -1173,9 +1196,9 @@ export function CashChart({
                 type="monotone"
                 dataKey="guaranteed"
                 name={
-                  span === 5
+                  drawn === 5
                     ? "Guaranteed this month (pension / VA / SS)"
-                    : span === 10
+                    : drawn === 10
                       ? "Guaranteed this quarter (pension / VA / SS)"
                       : "Guaranteed (pension / VA / SS)"
                 }
@@ -1220,6 +1243,8 @@ export function NetWorthChart({
   locked = false,
   tall,
   survival = null,
+  viewSpan,
+  plotOnly = false,
 }: {
   plan: Plan;
   sim: SimResult;
@@ -1228,6 +1253,8 @@ export function NetWorthChart({
   locked?: boolean;
   tall?: boolean;
   survival?: SurvivalScore | null;
+  viewSpan?: ChartSpan;
+  plotOnly?: boolean;
 }) {
   const real = plan.assumptions.dollars === "real";
   const [span, setSpan] = useState<ChartSpan>(10);
@@ -1235,14 +1262,15 @@ export function NetWorthChart({
   const { expanded, toggle, close } = useChartExpanded();
   const [minimized, setMinimized] = useState(readNetWorthMin);
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
+  const drawn = viewSpan ?? span;
   const accounts = netWorthAccountSeries(plan, locked ? false : hasHeldCash(sim));
-  const live = netWorthPoints(plan, sim, span);
-  const data = locked ? fakeNetWorthPoints(span) : live;
+  const live = netWorthPoints(plan, sim, drawn);
+  const data = locked ? fakeNetWorthPoints(drawn) : live;
   const hasDebt = data.some((d) => Math.abs(d.liabilities) > 1);
   const accountsLive =
     !locked &&
     accounts.some((account) => data.some((point) => Math.abs(Number(point[account.key] ?? 0)) > 1));
-  const x = axisProps(span);
+  const x = axisProps(drawn);
   const shown = (id: string) => !hidden.has(id);
   const flip = (id: string) => {
     setHidden((current) => {
@@ -1294,8 +1322,10 @@ export function NetWorthChart({
 
   return (
     <ChartStage expanded={expanded} onClose={close} label="Net Worth">
-    <div className={cn("relative", chartCard, expanded && "flex h-full min-h-0 flex-1 flex-col")}>
-      <div className={cn(locked && "pointer-events-none select-none opacity-60", expanded && "flex min-h-0 flex-1 flex-col")}>
+    <div className={plotOnly ? "h-full w-full bg-white" : cn("relative", chartCard, expanded && "flex h-full min-h-0 flex-1 flex-col")}>
+      <div className={cn(locked && "pointer-events-none select-none opacity-60", (plotOnly || expanded) && "flex min-h-0 flex-1 flex-col h-full")}>
+        {plotOnly ? null : (
+        <>
         <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
           <h2 className="font-display text-xl font-bold text-slate-900">Net Worth</h2>
           <ChartDownload plan={plan} sim={sim} survival={survival} locked={locked} />
@@ -1344,13 +1374,15 @@ export function NetWorthChart({
             )
           }
         />
-        <div className={plotHeight(expanded, tall)}>
+        </>
+        )}
+        <div className={plotOnly ? "h-full w-full" : plotHeight(expanded, tall)}>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid stroke="var(--color-border)" vertical={false} />
               <XAxis
                 dataKey="t"
-                tickFormatter={(t) => formatAxisTick(t, span)}
+                tickFormatter={(t) => formatAxisTick(t, drawn)}
                 tick={{ fill: tickFill, fontSize: 11 }}
                 tickLine={false}
                 axisLine={{ stroke: "var(--color-border)" }}
@@ -1372,7 +1404,7 @@ export function NetWorthChart({
               />
               <Tooltip
                 content={<NetWorthTip bottomToTop={visibleKeys} />}
-                labelFormatter={(t) => formatAxisTick(t as string | number, span)}
+                labelFormatter={(t) => formatAxisTick(t as string | number, drawn)}
               />
               <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
               <ReferenceLine
@@ -1529,6 +1561,7 @@ export function MonteCarloBandChart({
   plan,
   sim,
   survival = null,
+  plotOnly = false,
 }: {
   bands: SurvivalBand[];
   traces?: SurvivalTraces | null;
@@ -1537,6 +1570,7 @@ export function MonteCarloBandChart({
   plan?: Plan;
   sim?: SimResult;
   survival?: SurvivalScore | null;
+  plotOnly?: boolean;
 }) {
   const series = traces ? (real ? traces.real : traces.nominal) : null;
   const years = traces?.years ?? [];
@@ -1572,7 +1606,9 @@ export function MonteCarloBandChart({
     }
   }
   return (
-    <div className={chartCard}>
+    <div className={plotOnly ? "h-full w-full bg-white" : chartCard}>
+      {plotOnly ? null : (
+      <>
       <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
         <h2 className="font-display text-xl font-bold text-slate-900">1000 Spendable Futures</h2>
         {plan && sim ? <ChartDownload plan={plan} sim={sim} survival={survival} /> : null}
@@ -1603,7 +1639,9 @@ export function MonteCarloBandChart({
         </li>
         <li>{real ? "Dollars are today's dollars." : "Dollars are future dollars, not adjusted for inflation."}</li>
       </ul>
-      <div className="relative h-[32rem] sm:h-[40rem]">
+      </>
+      )}
+      <div className={plotOnly ? "relative h-full w-full" : "relative h-[32rem] sm:h-[40rem]"}>
         {note ? (
           <div className="pointer-events-none absolute left-[6.25rem] top-3 z-10 max-w-[min(28rem,calc(100%-7.5rem))]">
             {note}
