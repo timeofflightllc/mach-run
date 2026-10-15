@@ -57,6 +57,7 @@ function GoalScore({
   payFill,
   bump,
   onExecute,
+  onArmExecute,
 }: {
   sim: SimResult;
   view: "nest" | "income";
@@ -68,6 +69,7 @@ function GoalScore({
   payFill: number;
   bump: number | null;
   onExecute?: () => void;
+  onArmExecute?: () => void;
 }) {
   const live = usePlanStore((s) => s.plan);
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
@@ -157,6 +159,14 @@ function GoalScore({
             if (next instanceof Node && event.currentTarget.contains(next)) return;
             flushGoal();
           }}
+          onKeyDown={(event) => {
+            if (event.key !== "Enter") return;
+            if (!(event.target instanceof HTMLInputElement)) return;
+            event.preventDefault();
+            onArmExecute?.();
+            flushGoal();
+            onExecute?.();
+          }}
         >
           <p className="line-clamp-2 min-h-10 text-sm leading-5 text-muted">
             Add the retirement date and the goal, then Execute MACH RUN.
@@ -199,9 +209,11 @@ function GoalScore({
           {onExecute ? (
             <button
               type="button"
+              data-mach-execute=""
+              onMouseDown={() => onArmExecute?.()}
               onClick={() => {
                 flushGoal();
-                onExecute();
+                onExecute?.();
               }}
               className="mt-auto h-9 w-fit rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
             >
@@ -334,10 +346,12 @@ export function KpiStrip({
   plan,
   sim,
   onExecute,
+  onArmExecute,
 }: {
   plan: Plan;
   sim: SimResult;
   onExecute?: () => void;
+  onArmExecute?: () => void;
 }) {
   const real = plan.assumptions.dollars === "real";
   const ret = sim.retirement;
@@ -492,6 +506,7 @@ export function KpiStrip({
         payFill={payFill}
         bump={bump}
         onExecute={onExecute}
+        onArmExecute={onArmExecute}
       />
     </dl>
   );

@@ -358,7 +358,7 @@ function ActTabButton({
   );
 }
 
-function ExecuteMachRunButton({ onExecute }: { onExecute: () => void }) {
+function ExecuteMachRunButton({ onExecute, onArm }: { onExecute: () => void; onArm?: () => void }) {
   const [tip, setTip] = useState<{ x: number; y: number } | null>(null);
   function place(el: HTMLButtonElement) {
     const r = el.getBoundingClientRect();
@@ -367,7 +367,9 @@ function ExecuteMachRunButton({ onExecute }: { onExecute: () => void }) {
   return (
     <button
       type="button"
+      data-mach-execute=""
       aria-label="Execute MACH RUN"
+      onMouseDown={() => onArm?.()}
       onClick={onExecute}
       onMouseEnter={(e) => place(e.currentTarget)}
       onMouseLeave={() => setTip(null)}
@@ -746,6 +748,8 @@ function Home() {
   const holdTimer = useRef<number | null>(null);
   const holdGen = useRef(0);
   const dismissedStale = useRef<string | null>(null);
+  const executing = useRef(false);
+  const [armTick, setArmTick] = useState(0);
   const [holding, setHolding] = useState(false);
   const [stalePrompt, setStalePrompt] = useState(false);
   useEffect(() => {
@@ -1018,6 +1022,7 @@ function Home() {
   useEffect(() => {
     if (step !== "act") {
       dismissedStale.current = null;
+      executing.current = false;
       setStalePrompt(false);
       return;
     }
@@ -1028,13 +1033,34 @@ function Home() {
       return;
     }
     if (inputSignature(current.plan) === liveSig) {
+      executing.current = false;
       dismissedStale.current = null;
       setStalePrompt(false);
       return;
     }
+    if (holding || executing.current) return;
     if (dismissedStale.current === liveSig) return;
     setStalePrompt(true);
-  }, [step, runKey, runs, holding, liveSig]);
+  }, [step, runKey, runs, holding, liveSig, armTick]);
+
+  function armExecute() {
+    executing.current = true;
+  }
+
+  useEffect(() => {
+    function onUp(event: MouseEvent) {
+      const target = event.target;
+      const armed = target instanceof Element && Boolean(target.closest("[data-mach-execute]"));
+      window.setTimeout(() => {
+        if (armed) return;
+        if (!executing.current) return;
+        executing.current = false;
+        setArmTick((tick) => tick + 1);
+      }, 0);
+    }
+    window.addEventListener("mouseup", onUp);
+    return () => window.removeEventListener("mouseup", onUp);
+  }, []);
 
   useEffect(() => {
     if (!ent.paid || !runsLoaded) return;
@@ -2051,7 +2077,10 @@ function Home() {
                     />
                   ))}
                   </div>
-                  <ExecuteMachRunButton onExecute={() => void calculate({ stay: true })} />
+                  <ExecuteMachRunButton
+                    onArm={armExecute}
+                    onExecute={() => void calculate({ stay: true })}
+                  />
                 </div>
                 </div>
                 <div className="max-[71.99rem]:contents min-[72rem]:absolute min-[72rem]:bottom-0 min-[72rem]:left-[calc(100%+0.5rem)] min-[72rem]:top-[2.5rem] min-[72rem]:z-20 min-[72rem]:w-14">
@@ -2101,6 +2130,7 @@ function Home() {
                             <KpiStrip
                               plan={displayPlan}
                               sim={run.sim}
+                              onArmExecute={armExecute}
                               onExecute={() => void calculate({ stay: true })}
                             />
                           </div>
