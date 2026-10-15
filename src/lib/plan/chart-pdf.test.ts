@@ -70,6 +70,11 @@ test("a spendable chart PDF starts with the PDF header and names the chart", () 
   assert.ok(bytes);
   const text = new TextDecoder().decode(bytes);
   assert.ok(text.startsWith("%PDF"));
+  assert.ok(text.includes("MACH RUN Charts"));
+  assert.ok(text.includes("The Supersonic Retirement Calculator"));
+  assert.ok(text.includes("MACH RUN.com"));
+  assert.ok(text.includes("For entertainment purposes only"));
   assert.ok(text.includes("Spendable Wealth"));
+  assert.ok(text.includes("Future dollars"));
   assert.ok(text.includes("DCTDecode"));
 });

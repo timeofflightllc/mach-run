@@ -11,9 +11,21 @@ export type ChartPicture = {
   jpeg: Uint8Array;
 };
 
-const FOOTER = "Illustration only. Not financial advice.";
+export type ChartLogo = {
+  bytes: Uint8Array;
+  w: number;
+  h: number;
+};
+
+const FOOTER_NOTE = "For entertainment purposes only";
+const NAVY = "0.039 0.094 0.208";
+const SILVER = "0.773 0.804 0.839";
+const SAGE = "0.616 0.729 0.604";
+const GOLD = "0.910 0.773 0.278";
+const GREEN_MID = "0.141 0.337 0.227";
 const GREEN_DEEP = "0.102 0.208 0.149";
 const MUTED = "0.290 0.349 0.420";
+const WHITE = "1 1 1";
 
 const TITLES: Record<ChartPdfChoice, string> = {
   spendable: "Spendable Wealth",
@@ -39,9 +51,21 @@ export function chartCaptureSize(orientation: ChartOrientation): { width: number
   return orientation === "landscape" ? { width: 1400, height: 860 } : { width: 1100, height: 640 };
 }
 
-function spanLabel(span: ChartSpan): string {
-  if (span === "horizon") return "Horizon";
+function spanLabel(span: ChartSpan, endAge: number): string {
+  if (span === "horizon") return `Horizon to age ${endAge}`;
   return `${span}-Year`;
+}
+
+function household(plan: Plan): string {
+  const who = [plan.primary.name.trim(), plan.spouse.name.trim()].filter(Boolean).join(" & ");
+  if (!who) return "";
+  return who.length > 48 ? `${who.slice(0, 47)}...` : who;
+}
+
+function chrome(orientation: ChartOrientation) {
+  return orientation === "landscape"
+    ? { header: 74, footer: 36, marginX: 28, gap: 0 }
+    : { header: 96, footer: 40, marginX: 32, gap: 16 };
 }
 
 function dollarLabel(plan: Plan): string {
@@ -81,6 +105,15 @@ function jpegSize(bytes: Uint8Array): { w: number; h: number } {
   return { w: 1, h: 1 };
 }
 
+function resolvedLogo(logo: ChartLogo | null | undefined): ChartLogo | null {
+  if (!logo || logo.bytes.length < 4) return null;
+  const size = jpegSize(logo.bytes);
+  const w = size.w > 1 ? size.w : logo.w;
+  const h = size.h > 1 ? size.h : logo.h;
+  if (w < 2 || h < 2) return null;
+  return { bytes: logo.bytes, w, h };
+}
+
 function pageSize(orientation: ChartOrientation): { w: number; h: number } {
   return orientation === "landscape" ? { w: 792, h: 612 } : { w: 612, h: 792 };
 }
@@ -90,18 +123,69 @@ function pageSlots(
   count: number,
 ): { left: number; bottom: number; width: number; height: number }[] {
   const { w, h } = pageSize(orientation);
-  const margin = 36;
-  const footer = 32;
-  const width = w - margin * 2;
-  if (orientation === "landscape") {
-    return [{ left: margin, bottom: footer + 8, width, height: h - margin - footer - 8 }];
+  const box = chrome(orientation);
+  const left = box.marginX;
+  const width = w - box.marginX * 2;
+  const top = h - box.header - 14;
+  const bottom = box.footer + 14;
+  const inner = top - bottom;
+  if (orientation === "landscape" || count < 2) {
+    return [{ left, bottom, width, height: inner }];
   }
-  const gap = 16;
-  const inner = h - margin - footer - 8;
-  const slotH = (inner - gap) / 2;
-  const top = { left: margin, bottom: footer + 8 + slotH + gap, width, height: slotH };
-  const low = { left: margin, bottom: footer + 8, width, height: slotH };
-  return count === 1 ? [top] : [top, low];
+  const slotH = (inner - box.gap) / 2;
+  return [
+    { left, bottom: bottom + slotH + box.gap, width, height: slotH },
+    { left, bottom, width, height: slotH },
+  ];
+}
+
+function logoBox(logo: ChartLogo | null | undefined, headerH: number, orientation: ChartOrientation) {
+  if (!logo || logo.w < 2 || logo.h < 2) return null;
+  const maxH = headerH - 20;
+  const maxW = orientation === "landscape" ? 132 : 156;
+  const scale = Math.min(maxW / logo.w, maxH / logo.h);
+  return { drawW: logo.w * scale, drawH: logo.h * scale };
+}
+
+function headerOps(
+  orientation: ChartOrientation,
+  pageIndex: number,
+  logo: { drawW: number; drawH: number } | null,
+  meta: string,
+): string {
+  const { w, h } = pageSize(orientation);
+  const headerH = chrome(orientation).header;
+  const y0 = h - headerH;
+  const textLeft = logo ? 28 + logo.drawW + 14 : 32;
+  const title = pageIndex > 0 ? "MACH RUN Charts (continued)" : "MACH RUN Charts";
+  const titleSize = orientation === "landscape" ? 13 : 15;
+  const titleY = y0 + (orientation === "landscape" ? 44 : 58);
+  const ops = [
+    "q",
+    `${NAVY} rg`,
+    `0 ${y0} ${w} ${headerH} re f`,
+    "Q",
+  ];
+  if (logo) {
+    ops.push(
+      "q",
+      `${logo.drawW.toFixed(2)} 0 0 ${logo.drawH.toFixed(2)} 28 ${(y0 + (headerH - logo.drawH) / 2).toFixed(2)} cm`,
+      "/ImLogo Do",
+      "Q",
+    );
+  }
+  ops.push(
+    textOp("/F2", titleSize, WHITE, textLeft, titleY, title),
+    textOp("/F1", 9, SAGE, textLeft, titleY - 14, "The Supersonic Retirement Calculator"),
+    textOp("/F1", 8, SILVER, textLeft, titleY - 26, meta),
+    "q",
+    `${GOLD} rg`,
+    `0 ${y0} ${w} 3 re f`,
+    `${GREEN_MID} rg`,
+    `0 ${y0 - 6} ${w} 6 re f`,
+    "Q",
+  );
+  return ops.join("\n");
 }
 
 function drawPicture(
@@ -121,7 +205,7 @@ function drawPicture(
   const dw = w * scale;
   const dh = h * scale;
   const x = left + (width - dw) / 2;
-  const y = bottom + (plotH - dh) / 2;
+  const y = plotTop - dh;
   return [
     textOp("/F2", 13, GREEN_DEEP, left, titleY, chart.title),
     textOp("/F1", 9, MUTED, left, titleY - 12, chart.note),
@@ -129,10 +213,19 @@ function drawPicture(
   ].join("\n");
 }
 
-function footerOp(width: number, pageNo: number, pageCount: number): string {
+function footerOp(width: number, pageNo: number, pageCount: number, footerH: number): string {
+  const label = `Page ${pageNo} of ${pageCount}`;
+  const pageX = Math.max(360, width - 28 - label.length * 4.4);
   return [
-    textOp("/F1", 8, MUTED, 36, 16, FOOTER),
-    textOp("/F1", 8, MUTED, width - 88, 16, `${pageNo} of ${pageCount}`),
+    "q",
+    `${GOLD} rg`,
+    `0 ${footerH} ${width} 2.5 re f`,
+    `${NAVY} rg`,
+    `0 0 ${width} ${footerH} re f`,
+    "Q",
+    textOp("/F1", 8, SAGE, 28, 16, "MACH RUN.com"),
+    textOp("/F1", 8, GOLD, 168, 16, FOOTER_NOTE),
+    textOp("/F1", 8, SILVER, pageX, 16, label),
   ].join("\n");
 }
 
@@ -169,10 +262,14 @@ export function buildChartPdf(input: {
   orientation: ChartOrientation;
   charts: ChartPdfChoice[];
   pictures: ChartPicture[];
+  logo?: ChartLogo | null;
   survival?: Pick<SurvivalScore, "score" | "survived" | "paths" | "runOutAge" | "bands"> | null;
 }): Uint8Array | null {
   if (!input.sim.years.length || !input.charts.length) return null;
-  const note = `${dollarLabel(input.plan)} - ${spanLabel(input.span)}`;
+  const who = household(input.plan);
+  const lens = `${dollarLabel(input.plan)} | ${spanLabel(input.span, input.plan.assumptions.projectionEndAge)}`;
+  const meta = who ? `${who} | ${lens}` : lens;
+  const note = lens;
   const pages: { title: string; note: string; image: number }[][] = [];
   const pictures = input.charts.flatMap((id) => {
     const picture = input.pictures.find((item) => item.id === id);
@@ -194,20 +291,26 @@ export function buildChartPdf(input: {
     );
   }
   const { w, h } = pageSize(input.orientation);
+  const logo = resolvedLogo(input.logo);
+  const mark = logoBox(logo, chrome(input.orientation).header, input.orientation);
+  const footerH = chrome(input.orientation).footer;
   const streams = pages.map((page, index) => {
     const slots = pageSlots(input.orientation, page.length);
-    const ops = page.map((chart, slot) =>
-      drawPicture(
-        chart,
-        `Im${chart.image + 1}`,
-        pictures[chart.image].jpeg,
-        slots[slot].left,
-        slots[slot].bottom,
-        slots[slot].width,
-        slots[slot].height,
+    const ops = [
+      headerOps(input.orientation, index, mark, meta),
+      ...page.map((chart, slot) =>
+        drawPicture(
+          chart,
+          `Im${chart.image + 1}`,
+          pictures[chart.image].jpeg,
+          slots[slot].left,
+          slots[slot].bottom,
+          slots[slot].width,
+          slots[slot].height,
+        ),
       ),
-    );
-    ops.push(footerOp(w, index + 1, pages.length));
+      footerOp(w, index + 1, pages.length, footerH),
+    ];
     return enc(ops.join("\n"));
   });
 
@@ -220,11 +323,17 @@ export function buildChartPdf(input: {
   add(enc("<< /Type /Pages /Kids [] /Count 0 >>"));
   add(enc("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"));
   add(enc("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>"));
+  const logoId = logo && mark ? add(jpegObject(logo.bytes)) : 0;
   const imageIds = pictures.map((picture) => add(jpegObject(picture.jpeg)));
   const contentIds = streams.map((stream) =>
     add(concat([enc(`<< /Length ${stream.length} >>\nstream\n`), stream, enc("\nendstream")])),
   );
-  const xobjects = imageIds.map((id, index) => `/Im${index + 1} ${id} 0 R`).join(" ");
+  const xobjects = [
+    logoId ? `/ImLogo ${logoId} 0 R` : "",
+    ...imageIds.map((id, index) => `/Im${index + 1} ${id} 0 R`),
+  ]
+    .filter(Boolean)
+    .join(" ");
   const pageIds = contentIds.map((id) =>
     add(
       enc(
@@ -254,8 +363,22 @@ export function buildChartPdf(input: {
   return concat(parts);
 }
 
-export function downloadChartPdf(input: Parameters<typeof buildChartPdf>[0]): boolean {
-  const bytes = buildChartPdf(input);
+async function loadLogo(): Promise<ChartLogo | null> {
+  if (typeof fetch === "undefined") return null;
+  try {
+    const res = await fetch("/brand/mach-run-logo.jpg?v=23");
+    if (!res.ok) return null;
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    const { w, h } = jpegSize(bytes);
+    if (w < 2 || h < 2 || bytes.length < 4) return null;
+    return { bytes, w, h };
+  } catch {
+    return null;
+  }
+}
+
+export async function downloadChartPdf(input: Parameters<typeof buildChartPdf>[0]): Promise<boolean> {
+  const bytes = buildChartPdf({ ...input, logo: input.logo ?? (await loadLogo()) });
   if (!bytes || typeof document === "undefined") return false;
   const copy = new Uint8Array(bytes.byteLength);
   copy.set(bytes);

@@ -93,7 +93,7 @@ export function ChartDownload({
         charts: chosen,
         survival: monteReady ? survival : null,
       });
-      const wrote = downloadChartPdf({
+      const wrote = await downloadChartPdf({
         plan,
         sim,
         span,
