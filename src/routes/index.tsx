@@ -12,7 +12,7 @@ import { BoydQuote, PlanSurvival, readPlanSurvivalMinimized, RunMonteCarloButton
 import { useBoydQuotes } from "@/components/meridian/use-boyd-quotes";
 import { Pinnable, useChartPins } from "@/components/meridian/chart-pin";
 import { ContributionForm } from "@/components/meridian/contribution-form";
-import { AssumptionsForm, HouseholdForm } from "@/components/meridian/household-form";
+import { AssumptionsForm, GoalsForm, HouseholdForm } from "@/components/meridian/household-form";
 import { IncomeForm } from "@/components/meridian/income-form";
 import { KpiStrip } from "@/components/meridian/kpi-strip";
 import { PortfolioForm } from "@/components/meridian/portfolio-form";
@@ -559,6 +559,7 @@ function MonteCarloTab({
 
 const PAGES = [
   { id: "family", phase: "observe" },
+  { id: "goals", phase: "observe" },
   { id: "assumptions", phase: "observe" },
   { id: "assets", phase: "observe" },
   { id: "liabilities", phase: "observe" },
@@ -583,20 +584,23 @@ function pageStarted(plan: Plan, id: StepId, calculated: boolean): boolean {
           plan.spouse.birthDate ||
           plan.children.length,
       );
-    case "assumptions":
+    case "goals":
       return Boolean(
         a.retirementGoalDate ||
           (a.nestEggGoal != null && a.nestEggGoal > 0) ||
           (a.goalMode === "income" && (a.incomeGoalMonthly ?? 0) > 0) ||
-          a.sweepPortfolioId ||
           a.asOfPinned ||
+          a.projectionEndAge !== blank.projectionEndAge,
+      );
+    case "assumptions":
+      return Boolean(
+        a.sweepPortfolioId ||
           a.inflationPct !== blank.inflationPct ||
           a.defaultColaPct !== blank.defaultColaPct ||
           a.defaultReturnPct !== blank.defaultReturnPct ||
           a.retirementReturnPct !== blank.retirementReturnPct ||
           a.ordinaryTaxRatePct !== blank.ordinaryTaxRatePct ||
-          a.ssTaxablePct !== blank.ssTaxablePct ||
-          a.projectionEndAge !== blank.projectionEndAge,
+          a.ssTaxablePct !== blank.ssTaxablePct,
       );
     case "assets":
       return plan.portfolios.length > 0;
@@ -655,6 +659,7 @@ function ActPhase() {
 
 const OBSERVE_TABS = [
   { id: "family", label: "Family" },
+  { id: "goals", label: "Goals" },
   { id: "assumptions", label: "Assumptions" },
   { id: "assets", label: "Assets" },
   { id: "liabilities", label: "Liabilities" },
@@ -1584,6 +1589,7 @@ function Home() {
     "mx-auto flex w-full max-w-6xl flex-col gap-3 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]";
   const shell = "flex w-full flex-col";
   const familyPane = pane("family", shell);
+  const goalsPane = pane("goals", shell);
   const assumptionsPane = pane("assumptions", shell);
   const assetsPane = pane("assets", shell);
   const liabilitiesPane = pane("liabilities", shell);
@@ -1837,6 +1843,33 @@ function Home() {
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
             >
               <HouseholdForm />
+            </Section>
+            </div>
+            </div>
+          </div>
+          <div
+            ref={(node) => {
+              panelRefs.current.goals = node;
+            }}
+            className={goalsPane.className}
+            style={goalsPane.style}
+            aria-hidden={goalsPane.hidden}
+            hidden={goalsPane.hidden}
+          >
+            <div className={inputFrame}>
+            <div>
+            <PhaseHead
+              id="ooda-observe-goals"
+              label="Observe"
+              tabs={<PhaseFolderTabs name="Observe" tabs={OBSERVE_TABS} active="goals" onPick={goStep} />}
+            />
+            <Section
+              title="Goals"
+              hint={copy.goalsHint}
+              pinned
+              nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
+            >
+              <GoalsForm />
             </Section>
             </div>
             </div>

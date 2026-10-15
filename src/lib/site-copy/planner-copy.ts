@@ -3,6 +3,7 @@ import type { SiteCopy } from "./types";
 /** Desk-editable calculator instructions. Live numbers stay in code via {spendable}, {net}, {return}. */
 export type PlannerCopy = {
   familyHint: string;
+  goalsHint: string;
   assumptionsHint: string;
   assetsHint: string;
   assetsBody: string;
@@ -20,6 +21,7 @@ export type PlannerCopy = {
 
 export const PLANNER_COPY_KEYS = [
   "familyHint",
+  "goalsHint",
   "assumptionsHint",
   "assetsHint",
   "assetsBody",
@@ -37,7 +39,8 @@ export const PLANNER_COPY_KEYS = [
 
 export const DEFAULT_PLANNER_COPY: PlannerCopy = {
   familyHint: "Names and birthdays for the household.",
-  assumptionsHint: "As-of date, longevity, returns, retirement goal, and where leftover dollars go.",
+  goalsHint: "As-of date, longevity, and the nest egg or monthly income you are aiming for.",
+  assumptionsHint: "Returns, inflation, tax, and where leftover dollars go.",
   assetsHint: "The accounts you have today, and what each one is worth.",
   assetsBody:
     "Spendable (retirement) {spendable} · Net worth {net}. These accounts are the only ones Orient can sweep into and Decide can contribute to. Per-account return blank uses the global {return}% nominal.",

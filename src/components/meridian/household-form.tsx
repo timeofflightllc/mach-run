@@ -190,12 +190,14 @@ export function HouseholdForm() {
   );
 }
 
-export function AssumptionsForm() {
+export function GoalsForm() {
   const plan = usePlanStore((s) => s.plan);
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
   const [editingAsOf, setEditingAsOf] = useState(false);
-
   const pct = "w-[4.75rem] max-w-full";
+  const goal = plan.assumptions.retirementGoalDate;
+  const asOf = plan.assumptions.asOfDate.slice(0, 7);
+  const already = Boolean(goal && goal.slice(0, 7) <= asOf);
 
   return (
     <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-3 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
@@ -234,93 +236,80 @@ export function AssumptionsForm() {
               className={pct}
             />
           </label>
-          {(() => {
-            const goal = plan.assumptions.retirementGoalDate;
-            const asOf = plan.assumptions.asOfDate.slice(0, 7);
-            const already = Boolean(goal && goal.slice(0, 7) <= asOf);
-            return (
-              <>
-                <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fg">
-                  <input
-                    type="checkbox"
-                    checked={already}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        patchAssumptions({ retirementGoalDate: `${asOf}-01` });
-                      } else {
-                        patchAssumptions({ retirementGoalDate: null });
-                      }
-                    }}
-                  />
-                  Already retired
-                </label>
-                {already ? (
-                  <Field label="Retired" className="w-full min-w-0 max-w-xs">
-                    <MonthInput
-                      value={goal}
-                      onValue={(v) =>
-                        patchAssumptions({ retirementGoalDate: v === "" ? null : v })
-                      }
-                    />
-                  </Field>
-                ) : (
-                  <Field label="Retirement goal date" className="w-full min-w-0 max-w-xs">
-                    <DateInput
-                      value={goal}
-                      onValue={(v) =>
-                        patchAssumptions({ retirementGoalDate: v === "" ? null : v })
-                      }
-                    />
-                  </Field>
-                )}
-                <div className="flex w-auto flex-col gap-1.5">
-                  <span className="text-xs font-medium tracking-wide text-muted">Goal</span>
-                  <div className="inline-flex max-w-full flex-wrap rounded-md bg-slate-100 p-0.5 shadow-[0_0_0_1px_#c8d2de]">
-                    {(
-                      [
-                        ["nest", "Retirement Nest Egg Goal"],
-                        ["income", "Monthly Retirement Income Goal"],
-                      ] as const
-                    ).map(([id, label]) => {
-                      const on = (plan.assumptions.goalMode === "income" ? "income" : "nest") === id;
-                      return (
-                        <button
-                          key={id}
-                          type="button"
-                          aria-pressed={on}
-                          onClick={() => patchAssumptions({ goalMode: id })}
-                          className={
-                            on
-                              ? "h-7 whitespace-nowrap rounded bg-accent px-2 text-[11px] font-medium leading-none text-accent-fg"
-                              : "h-7 whitespace-nowrap rounded px-2 text-[11px] font-medium leading-none text-slate-600 hover:text-slate-900"
-                          }
-                        >
-                          {label}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                {plan.assumptions.goalMode === "income" ? (
-                  <Field label="Desired Monthly Income In Retirement From Nest Egg" className="w-full min-w-0 max-w-52">
-                    <MoneyInput
-                      value={plan.assumptions.incomeGoalMonthly ?? 0}
-                      onValue={(n) => patchAssumptions({ incomeGoalMonthly: n > 0 ? n : null })}
-                      className="w-full max-w-full"
-                    />
-                  </Field>
-                ) : (
-                  <Field label="Nest egg goal (today $)" className="w-full min-w-0 max-w-40">
-                    <MoneyInput
-                      value={plan.assumptions.nestEggGoal ?? 0}
-                      onValue={(n) => patchAssumptions({ nestEggGoal: n > 0 ? n : null })}
-                      className="w-full max-w-full"
-                    />
-                  </Field>
-                )}
-              </>
-            );
-          })()}
+          <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fg">
+            <input
+              type="checkbox"
+              checked={already}
+              onChange={(e) => {
+                if (e.target.checked) {
+                  patchAssumptions({ retirementGoalDate: `${asOf}-01` });
+                } else {
+                  patchAssumptions({ retirementGoalDate: null });
+                }
+              }}
+            />
+            Already retired
+          </label>
+          {already ? (
+            <Field label="Retired" className="w-full min-w-0 max-w-xs">
+              <MonthInput
+                value={goal}
+                onValue={(v) => patchAssumptions({ retirementGoalDate: v === "" ? null : v })}
+              />
+            </Field>
+          ) : (
+            <Field label="Retirement goal date" className="w-full min-w-0 max-w-xs">
+              <DateInput
+                value={goal}
+                onValue={(v) => patchAssumptions({ retirementGoalDate: v === "" ? null : v })}
+              />
+            </Field>
+          )}
+          <div className="flex w-auto flex-col gap-1.5">
+            <span className="text-xs font-medium tracking-wide text-muted">Goal</span>
+            <div className="inline-flex max-w-full flex-wrap rounded-md bg-slate-100 p-0.5 shadow-[0_0_0_1px_#c8d2de]">
+              {(
+                [
+                  ["nest", "Retirement Nest Egg Goal"],
+                  ["income", "Monthly Retirement Income Goal"],
+                ] as const
+              ).map(([id, label]) => {
+                const on = (plan.assumptions.goalMode === "income" ? "income" : "nest") === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => patchAssumptions({ goalMode: id })}
+                    className={
+                      on
+                        ? "h-7 whitespace-nowrap rounded bg-accent px-2 text-[11px] font-medium leading-none text-accent-fg"
+                        : "h-7 whitespace-nowrap rounded px-2 text-[11px] font-medium leading-none text-slate-600 hover:text-slate-900"
+                    }
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {plan.assumptions.goalMode === "income" ? (
+            <Field label="Desired Monthly Income In Retirement From Nest Egg" className="w-full min-w-0 max-w-52">
+              <MoneyInput
+                value={plan.assumptions.incomeGoalMonthly ?? 0}
+                onValue={(n) => patchAssumptions({ incomeGoalMonthly: n > 0 ? n : null })}
+                className="w-full max-w-full"
+              />
+            </Field>
+          ) : (
+            <Field label="Nest egg goal (today $)" className="w-full min-w-0 max-w-40">
+              <MoneyInput
+                value={plan.assumptions.nestEggGoal ?? 0}
+                onValue={(n) => patchAssumptions({ nestEggGoal: n > 0 ? n : null })}
+                className="w-full max-w-full"
+              />
+            </Field>
+          )}
         </div>
         <p className="text-xs leading-relaxed text-subtle">
           Balances peg to the as-of date. Blank end dates run through the longevity age. Act’s
@@ -329,7 +318,18 @@ export function AssumptionsForm() {
           paycheck. A blank goal is not scored.
         </p>
       </div>
+    </div>
+  );
+}
 
+export function AssumptionsForm() {
+  const plan = usePlanStore((s) => s.plan);
+  const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
+
+  const pct = "w-[4.75rem] max-w-full";
+
+  return (
+    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-3 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
       <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
         <div className="card-fields flex min-w-0 flex-wrap items-center gap-x-5 gap-y-3">
           <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1">
