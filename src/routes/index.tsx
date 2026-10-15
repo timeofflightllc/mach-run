@@ -2021,15 +2021,12 @@ function Home() {
             }}
           />
           {holding ? (
-            <div className="relative flex min-h-[70svh] flex-col items-center justify-center overflow-hidden rounded-xl bg-white px-5 py-10 text-center shadow-[0_0_0_1px_var(--color-border)]">
-              <MatrixRain />
-              <div className="relative z-10 flex flex-col items-center">
-                <MachOrbit />
-                <p className="mt-6 font-display text-2xl text-fg" aria-label="MACH RUN in progress.">
-                  MACH RUN in progress<span className="mach-run-dots" aria-hidden="true" />
-                </p>
-                <p className="mt-2 text-sm text-muted">Kicking the tires and lighting the fires.</p>
-              </div>
+            <div className="flex min-h-[70svh] flex-col items-center justify-center rounded-xl bg-surface px-5 py-10 text-center shadow-[0_0_0_1px_var(--color-border)]">
+              <MachOrbit />
+              <p className="mt-6 font-display text-2xl text-fg" aria-label="MACH RUN in progress.">
+                MACH RUN in progress<span className="mach-run-dots" aria-hidden="true" />
+              </p>
+              <p className="mt-2 text-sm text-muted">Kicking the tires and lighting the fires.</p>
             </div>
           ) : run ? (
             <div className="flex flex-col gap-4">
