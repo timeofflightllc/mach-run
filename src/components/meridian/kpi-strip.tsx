@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DateInput, MoneyInput } from "@/components/ui/field";
 import { usd } from "@/lib/plan/format";
 import { startingNetWorth, startingSpendable } from "@/lib/plan/engine";
@@ -73,7 +73,8 @@ function GoalScore({
 }) {
   const live = usePlanStore((s) => s.plan);
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
-  const ready = view === "nest" ? Boolean(egg) : Boolean(gap);
+  const [editing, setEditing] = useState(false);
+  const canceling = useRef(false);
   const [dateDraft, setDateDraft] = useState<string | null>(live.assumptions.retirementGoalDate);
   const [incomeDraft, setIncomeDraft] = useState(live.assumptions.incomeGoalMonthly ?? 0);
   const [nestDraft, setNestDraft] = useState(live.assumptions.nestEggGoal ?? 0);
@@ -120,6 +121,19 @@ function GoalScore({
     }
     patchAssumptions({ retirementGoalDate: date, nestEggGoal: amount, goalMode: "nest" });
   }
+  function closeEdit() {
+    const date = live.assumptions.retirementGoalDate;
+    dateRef.current = date;
+    setDateDraft(date);
+    const income = live.assumptions.incomeGoalMonthly ?? 0;
+    incomeRef.current = income;
+    setIncomeDraft(income);
+    const nest = live.assumptions.nestEggGoal ?? 0;
+    nestRef.current = nest;
+    setNestDraft(nest);
+    setEditing(false);
+  }
+  const showForm = editing || !(view === "nest" ? egg : gap);
   return (
     <div className="mt-px bg-surface px-3 py-3 sm:px-4">
       <div className="inline-flex rounded-lg bg-slate-100 p-0.5">
@@ -147,14 +161,22 @@ function GoalScore({
           );
         })}
       </div>
-      {ready && view === "nest" && egg ? (
-        <NestEggBar egg={egg} sim={sim} />
-      ) : ready && gap ? (
-        <MonthlyPayBar gap={gap} canPay={canPay} payShort={payShort} payFill={payFill} bump={bump} />
+      {!showForm && view === "nest" && egg ? (
+        <NestEggBar egg={egg} sim={sim} onEdit={() => setEditing(true)} />
+      ) : !showForm && gap ? (
+        <MonthlyPayBar
+          gap={gap}
+          canPay={canPay}
+          payShort={payShort}
+          payFill={payFill}
+          bump={bump}
+          onEdit={() => setEditing(true)}
+        />
       ) : (
         <div
-          className="mt-2 flex h-[14.5rem] flex-col overflow-hidden"
+          className="mt-2 flex flex-col"
           onBlur={(event) => {
+            if (canceling.current) return;
             const next = event.relatedTarget;
             if (next instanceof Node && event.currentTarget.contains(next)) return;
             flushGoal();
@@ -165,11 +187,14 @@ function GoalScore({
             event.preventDefault();
             onArmExecute?.();
             flushGoal();
+            setEditing(false);
             onExecute?.();
           }}
         >
-          <p className="line-clamp-2 min-h-10 text-sm leading-5 text-muted">
-            Add the retirement date and the goal, then Execute MACH RUN.
+          <p className="text-sm leading-5 text-muted">
+            {editing
+              ? "Change the date or the goal, then Execute MACH RUN."
+              : "Add the retirement date and the goal, then Execute MACH RUN."}
           </p>
           <div className="mt-2 flex flex-col gap-2">
             <label className="flex flex-col gap-1">
@@ -206,20 +231,38 @@ function GoalScore({
               )}
             </label>
           </div>
-          {onExecute ? (
-            <button
-              type="button"
-              data-mach-execute=""
-              onMouseDown={() => onArmExecute?.()}
-              onClick={() => {
-                flushGoal();
-                onExecute?.();
-              }}
-              className="mt-auto h-9 w-fit rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
-            >
-              Execute MACH RUN
-            </button>
-          ) : null}
+          <div className="mt-3 flex items-center gap-2">
+            {onExecute ? (
+              <button
+                type="button"
+                data-mach-execute=""
+                onMouseDown={() => onArmExecute?.()}
+                onClick={() => {
+                  flushGoal();
+                  setEditing(false);
+                  onExecute();
+                }}
+                className="h-9 w-fit rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
+              >
+                Execute MACH RUN
+              </button>
+            ) : null}
+            {editing ? (
+              <button
+                type="button"
+                onMouseDown={() => {
+                  canceling.current = true;
+                }}
+                onClick={() => {
+                  closeEdit();
+                  canceling.current = false;
+                }}
+                className="h-9 w-fit rounded-lg px-3 text-sm font-medium text-muted hover:text-fg"
+              >
+                Cancel
+              </button>
+            ) : null}
+          </div>
         </div>
       )}
     </div>
@@ -232,12 +275,14 @@ function MonthlyPayBar({
   payShort,
   payFill,
   bump,
+  onEdit,
 }: {
   gap: NonNullable<ReturnType<typeof incomeGap>>;
   canPay: number | null;
   payShort: number | null;
   payFill: number;
   bump: number | null;
+  onEdit?: () => void;
 }) {
   const detail = [
     canPay != null && Math.abs(canPay - gap.projected) > 1
@@ -264,6 +309,7 @@ function MonthlyPayBar({
             : "On the monthly paycheck you asked for."
       }
       note={detail || null}
+      action={onEdit ? <EditGoalButton label="Edit monthly pay" onClick={onEdit} /> : null}
     />
   );
 }
@@ -275,9 +321,11 @@ function roomKey(plan: Plan): string {
 function NestEggBar({
   egg,
   sim,
+  onEdit,
 }: {
   egg: NonNullable<ReturnType<typeof nestEggTrack>>;
   sim: SimResult;
+  onEdit?: () => void;
 }) {
   const projected = Math.max(0, egg.projected);
   const fill = egg.goal > 0 ? Math.min(100, (projected / egg.goal) * 100) : 0;
@@ -305,7 +353,20 @@ function NestEggBar({
       fill={fill}
       status={status}
       note={lever}
+      action={onEdit ? <EditGoalButton label="Edit nest egg" onClick={onEdit} /> : null}
     />
+  );
+}
+
+function EditGoalButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="mt-3 h-8 w-fit rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-fg hover:bg-slate-50"
+    >
+      {label}
+    </button>
   );
 }
 
@@ -317,6 +378,7 @@ function GoalReadout({
   fill,
   status,
   note,
+  action,
 }: {
   title: string;
   left: string;
@@ -325,9 +387,10 @@ function GoalReadout({
   fill: number;
   status: string;
   note: string | null;
+  action?: ReactNode;
 }) {
   return (
-    <div className="mt-2 flex h-36 flex-col overflow-hidden">
+    <div className="mt-2 flex flex-col">
       <p className="text-[13px] font-medium uppercase tracking-wider text-subtle">{title}</p>
       <div className="mt-1 flex items-baseline justify-between gap-3 text-sm font-medium tabular-nums text-fg">
         <span className="min-w-0 truncate">{left}</span>
@@ -337,7 +400,8 @@ function GoalReadout({
         <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.max(0, fill))}%` }} />
       </div>
       <p className="mt-2 line-clamp-2 text-sm font-medium leading-5 text-fg">{status}</p>
-      <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted">{note ?? ""}</p>
+      {note ? <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted">{note}</p> : null}
+      {action}
     </div>
   );
 }
