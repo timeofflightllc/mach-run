@@ -362,7 +362,7 @@ export function GuestHero({
               <ScreenArrow direction="right" />
             </button>
             {/* 12.5% of this width is 20% of a 16:10 screen. The extra drops the chin behind the page. */}
-            <div className="mx-[3px]" style={{ marginBottom: "calc(-12.5% - 1.625rem)" }}>
+            <div className="mx-[3px]" style={{ marginBottom: "calc(-12.5% - 3.375rem)" }}>
               <div
                 className="overflow-hidden rounded-t-xl border-8 border-transparent sm:border-[12px]"
                 style={{
@@ -387,32 +387,35 @@ export function GuestHero({
                       <LaptopPane key={`${slide}-${slot}`} slide={slide} />
                     ))}
                   </div>
-                  <div
-                    className="absolute inset-x-0 bottom-2 z-10 flex items-center justify-center gap-1.5"
-                    role="group"
-                    aria-label="Laptop screens"
-                  >
-                    {LAPTOP_SLIDES.map((slide, slot) => {
-                      const on = slot === ((index % SLIDE_COUNT) + SLIDE_COUNT) % SLIDE_COUNT;
-                      return (
-                        <button
-                          key={slide}
-                          type="button"
-                          aria-label={`Show laptop screen ${slot + 1} of ${SLIDE_COUNT}`}
-                          aria-current={on ? "true" : undefined}
-                          onClick={() => goTo(slot)}
-                          className={
-                            on
-                              ? "h-2 w-2 rounded-full bg-[#1a2330] shadow-[0_0_0_1px_#fff]"
-                              : "h-2 w-2 rounded-full bg-white/40 shadow-[inset_0_0_0_1.5px_#fff,0_0_0_1px_rgba(26,35,48,0.55)]"
-                          }
-                        />
-                      );
-                    })}
-                  </div>
                 </div>
               </div>
-              <div className="h-3 rounded-b-lg bg-gradient-to-b from-[#868d94] to-[#aeb4ba]" />
+              <div
+                className="relative z-10 flex h-10 items-center justify-center gap-2.5 rounded-b-lg bg-gradient-to-b from-[#868d94] to-[#aeb4ba]"
+                role="group"
+                aria-label="Laptop screens"
+              >
+                {LAPTOP_SLIDES.map((slide, slot) => {
+                  const on = slot === ((index % SLIDE_COUNT) + SLIDE_COUNT) % SLIDE_COUNT;
+                  return (
+                    <button
+                      key={slide}
+                      type="button"
+                      aria-label={`Show laptop screen ${slot + 1} of ${SLIDE_COUNT}`}
+                      aria-current={on ? "true" : undefined}
+                      onClick={() => goTo(slot)}
+                      className="flex h-8 w-8 items-center justify-center"
+                    >
+                      <span
+                        className={
+                          on
+                            ? "h-[1.125rem] w-[1.125rem] rounded-full bg-[#1a2330] shadow-[0_0_0_2px_#fff]"
+                            : "h-[1.125rem] w-[1.125rem] rounded-full bg-white/55 shadow-[0_0_0_1.5px_rgba(26,35,48,0.55)]"
+                        }
+                      />
+                    </button>
+                  );
+                })}
+              </div>
               <div className="mx-auto h-2.5 w-[68%] rounded-b-md bg-[#9aa1a8]" />
               <div className="mx-auto h-1 w-[42%] rounded-b-sm bg-[#7e868d]" />
             </div>
@@ -438,7 +441,7 @@ function LaptopPane({ slide }: { slide: LaptopSlide }) {
   const width = { width: `${100 / STRIP_COUNT}%` };
   if (slide === "ooda") {
     return (
-      <div className="h-full shrink-0 bg-[#e4ebf2] p-2 sm:p-3" style={width}>
+      <div className="h-full shrink-0 bg-[#ddd4c2] p-2 sm:p-3" style={width}>
         <OodaLoop />
       </div>
     );
@@ -548,7 +551,7 @@ export function MilitaryHousehold() {
   return (
     <section className="overflow-x-clip bg-bg">
       <div className="mx-auto w-full max-w-3xl px-2" aria-hidden="true">
-        <div style={{ paddingTop: "calc(12.5% + 1.625rem)" }} />
+        <div style={{ paddingTop: "calc(12.5% + 3.375rem)" }} />
       </div>
       <div className="page-gutter relative mx-auto flex w-full max-w-none flex-col items-center pt-4 pb-3 text-center sm:pt-6 sm:pb-4">
         <p className="mb-3 max-w-3xl text-center text-xs leading-snug text-muted sm:text-sm">
