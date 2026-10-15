@@ -283,7 +283,7 @@ function axisProps(span: ChartSpan) {
 }
 
 const GOAL_DATE_NOTE =
-  "To see Retirement Goal Date charts and graphs, set your retirement goal date in OBSERVE > Family";
+  "To see Retirement Goal Date charts and graphs, set your retirement goal date in DECIDE > Goals";
 
 function GoalDateNote() {
   return (

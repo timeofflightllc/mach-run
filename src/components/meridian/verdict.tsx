@@ -78,7 +78,7 @@ export function Verdict({
   const ret = sim.retirement;
   let retLine = "";
   if (!ret && !plan.assumptions.retirementGoalDate) {
-    retLine = "Set a retirement goal date in Family to key the Spendable strip.";
+    retLine = "Set a retirement goal date in Goals to key the Spendable strip.";
   }
 
   const rank = brief ? peerRankLine(brief) : null;

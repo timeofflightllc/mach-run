@@ -486,7 +486,7 @@ test("debt section scores the ratio at retirement against today", () => {
   plan.assumptions.retirementGoalDate = null;
   const unset = debtSentence(plan, simulate(plan));
   assert.ok(unset);
-  assert.match(unset, /Set a retirement goal date in Family/);
+  assert.match(unset, /Set a retirement goal date in Goals/);
 });
 
 test("debt at retirement names the statement balance and today's dollars", () => {

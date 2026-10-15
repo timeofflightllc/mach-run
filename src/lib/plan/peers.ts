@@ -295,13 +295,13 @@ function bottomLine(opts: {
   if (age != null && age < 40 && (nwPercentile == null || nwPercentile < 50)) {
     return {
       headline: `${who} is early — and that's an advantage.`,
-      body: `Time will do more work than a heroic save rate later. Automate contributions now and let compounding compound. Set a retirement goal date in Family so MACH RUN can score the landing.`,
+      body: `Time will do more work than a heroic save rate later. Automate contributions now and let compounding compound. Set a retirement goal date in Goals so MACH RUN can score the landing.`,
     };
   }
 
   return {
     headline: `${who} is in good shape on the numbers you typed.`,
-    body: `Spendable lasts through age ${endAge}. Set a retirement goal date in Family (or check Already retired) if you want the landing scored.`,
+    body: `Spendable lasts through age ${endAge}. Set a retirement goal date in Goals (or check Already retired) if you want the landing scored.`,
   };
 }
 
@@ -466,7 +466,7 @@ export function buildPeerBrief(
   } else {
     add(
       "Retirement landing",
-      "No retirement goal date in Family yet, so MACH RUN cannot score the landing. Put a goal date in — or check Already retired — then Calculate again.",
+      "No retirement goal date in Goals yet, so MACH RUN cannot score the landing. Put a goal date in — or check Already retired — then Calculate again.",
     );
   }
 
@@ -682,7 +682,7 @@ function retirementLanding(pct: number): string {
 function retirementDebtLine(plan: Plan, sim: SimResult): string {
   const goal = plan.assumptions.retirementGoalDate;
   if (!goal || !validIso(goal)) {
-    return "Set a retirement goal date in Family to see the debt-to-asset ratio at retirement.";
+    return "Set a retirement goal date in Goals to see the debt-to-asset ratio at retirement.";
   }
   const asOf = plan.assumptions.asOfDate;
   const already =
@@ -696,7 +696,7 @@ function retirementDebtLine(plan: Plan, sim: SimResult): string {
   if (!month) {
     const last = sim.months[sim.months.length - 1];
     if (!last || last.date.slice(0, 7) < key) {
-      return `The run ends before ${when}, so MACH RUN cannot score the debt-to-asset ratio on that date. Extend the projection age in Family.`;
+      return `The run ends before ${when}, so MACH RUN cannot score the debt-to-asset ratio on that date. Extend the projection age in Goals.`;
     }
     return "Calculate again to score the debt-to-asset ratio at retirement.";
   }
@@ -940,7 +940,7 @@ function accountTable(plan: Plan, sim: SimResult, note: string): BriefTableSpec 
   const hasGoal = Boolean(plan.assumptions.retirementGoalDate);
   const when = hasGoal
     ? "Position at retirement is the balance entering that month. The first figure is future dollars — your return, compounded. In parentheses is today's dollars, after inflation. A return equal to inflation holds its buying power."
-    : "Set a retirement goal date in Family to see the balance there.";
+    : "Set a retirement goal date in Goals to see the balance there.";
   return {
     intro: "",
     note: `${note} ${when}`,

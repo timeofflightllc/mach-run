@@ -660,7 +660,7 @@ export function KpiStrip({
             tip="Spendable balance the month before the goal date, in this run’s dollars."
           />
           <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg sm:text-xl">
-            {spendableAtRet != null ? usd(spendableAtRet) : "Set date in Family"}
+            {spendableAtRet != null ? usd(spendableAtRet) : "Set date in Goals"}
           </dd>
           {goalNote ? (
             <p className="mt-1 font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">

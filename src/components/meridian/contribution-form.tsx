@@ -512,7 +512,7 @@ export function ContributionForm() {
                     ) : null}
                     {c.endAtRetirement && !plan.assumptions.retirementGoalDate ? (
                       <p className="basis-full text-xs leading-relaxed text-[#5c4a18]">
-                        Set a retirement goal date in Family first.
+                        Set a retirement goal date in Goals first.
                       </p>
                     ) : null}
                     {open && advisory ? <div className="basis-full"><AdvisoryNote advisory={advisory} /></div> : null}

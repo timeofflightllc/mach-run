@@ -559,12 +559,12 @@ function MonteCarloTab({
 
 const PAGES = [
   { id: "family", phase: "observe" },
-  { id: "goals", phase: "observe" },
   { id: "assumptions", phase: "observe" },
   { id: "assets", phase: "observe" },
   { id: "liabilities", phase: "observe" },
   { id: "income", phase: "orient" },
   { id: "spending", phase: "orient" },
+  { id: "goals", phase: "decide" },
   { id: "contributions", phase: "decide" },
   { id: "act", phase: "act" },
 ] as const;
@@ -620,7 +620,7 @@ function pageStarted(plan: Plan, id: StepId, calculated: boolean): boolean {
 const PHASES = [
   { id: "observe", label: "Observe", page: "family" },
   { id: "orient", label: "Orient", page: "income" },
-  { id: "decide", label: "Decide", page: "contributions" },
+  { id: "decide", label: "Decide", page: "goals" },
   { id: "act", label: "Act", page: "act" },
 ] as const;
 
@@ -659,7 +659,6 @@ function ActPhase() {
 
 const OBSERVE_TABS = [
   { id: "family", label: "Family" },
-  { id: "goals", label: "Goals" },
   { id: "assumptions", label: "Assumptions" },
   { id: "assets", label: "Assets" },
   { id: "liabilities", label: "Liabilities" },
@@ -668,6 +667,11 @@ const OBSERVE_TABS = [
 const ORIENT_TABS = [
   { id: "income", label: "Income" },
   { id: "spending", label: "Spending" },
+] as const;
+
+const DECIDE_TABS = [
+  { id: "goals", label: "Goals" },
+  { id: "contributions", label: "Contributions" },
 ] as const;
 
 function PhaseFolderTabs({
@@ -1849,33 +1853,6 @@ function Home() {
           </div>
           <div
             ref={(node) => {
-              panelRefs.current.goals = node;
-            }}
-            className={goalsPane.className}
-            style={goalsPane.style}
-            aria-hidden={goalsPane.hidden}
-            hidden={goalsPane.hidden}
-          >
-            <div className={inputFrame}>
-            <div>
-            <PhaseHead
-              id="ooda-observe-goals"
-              label="Observe"
-              tabs={<PhaseFolderTabs name="Observe" tabs={OBSERVE_TABS} active="goals" onPick={goStep} />}
-            />
-            <Section
-              title="Goals"
-              hint={copy.goalsHint}
-              pinned
-              nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
-            >
-              <GoalsForm />
-            </Section>
-            </div>
-            </div>
-          </div>
-          <div
-            ref={(node) => {
               panelRefs.current.assumptions = node;
             }}
             className={assumptionsPane.className}
@@ -2011,6 +1988,33 @@ function Home() {
           </div>
           <div
             ref={(node) => {
+              panelRefs.current.goals = node;
+            }}
+            className={goalsPane.className}
+            style={goalsPane.style}
+            aria-hidden={goalsPane.hidden}
+            hidden={goalsPane.hidden}
+          >
+            <div className={inputFrame}>
+            <div>
+            <PhaseHead
+              id="ooda-decide"
+              label="Decide"
+              tabs={<PhaseFolderTabs name="Decide" tabs={DECIDE_TABS} active="goals" onPick={goStep} />}
+            />
+            <Section
+              title="Goals"
+              hint={copy.goalsHint}
+              pinned
+              nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
+            >
+              <GoalsForm />
+            </Section>
+            </div>
+            </div>
+          </div>
+          <div
+            ref={(node) => {
               panelRefs.current.contributions = node;
             }}
             className={contributionsPane.className}
@@ -2019,7 +2023,12 @@ function Home() {
             hidden={contributionsPane.hidden}
           >
             <div className={inputFrame}>
-            <PhaseLabel id="ooda-decide" label="Decide" />
+            <div>
+            <PhaseHead
+              id="ooda-decide-contributions"
+              label="Decide"
+              tabs={<PhaseFolderTabs name="Decide" tabs={DECIDE_TABS} active="contributions" onPick={goStep} />}
+            />
             <Section
               title="Contributions"
               hint={copy.contributionsHint}
@@ -2028,6 +2037,7 @@ function Home() {
             >
               <ContributionForm />
             </Section>
+            </div>
             </div>
           </div>
           <div

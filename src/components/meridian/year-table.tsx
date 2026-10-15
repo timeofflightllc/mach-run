@@ -565,7 +565,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
         marked.
       </p>
       <p className="border-t border-border px-4 py-2 text-xs text-subtle">
-        A.I.R. starts at the retirement date in Family. Before that, the column is blank. It is not part of that equation. It is Actual Income Retired, before tax.
+        A.I.R. starts at the retirement date in Goals. Before that, the column is blank. It is not part of that equation. It is Actual Income Retired, before tax.
       </p>
       <div className="max-h-[min(42rem,calc(100dvh-var(--mach-header-h,7rem)-4rem))] overflow-auto">
         <table className="ledger-table w-max min-w-full text-left text-sm">
@@ -759,7 +759,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
             A.I.R.
           </p>
           <p className="mt-1.5 text-sm leading-snug text-fg">
-            Actual Income Retired. Starts at the retirement date in Family.
+            Actual Income Retired. Starts at the retirement date in Goals.
             Military retired pay, VA, Social Security, pension, other
             retirement, plus withdrawals from that month on. Not the job. Not
             the Spendable balance.
@@ -849,7 +849,7 @@ export function YearTable({ plan, sim }: { plan: Plan; sim: SimResult }) {
             <p className="mt-1.5 text-sm text-muted">
               {plan.assumptions.retirementGoalDate
                 ? `A.I.R. starts ${plan.assumptions.retirementGoalDate.slice(0, 7)}. Nothing is counted before that month.`
-                : "Set a retirement date in Family."}
+                : "Set a retirement date in Goals."}
             </p>
           )}
           <p className="mt-2 text-xs leading-snug text-muted">

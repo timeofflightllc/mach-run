@@ -353,7 +353,7 @@ function PlannerFields({
   const set = (patch: Partial<PlannerCopy>) => onChange({ ...value, ...patch });
   const blocks: { hint: keyof PlannerCopy; body?: keyof PlannerCopy; title: string; note?: string }[] = [
     { title: "Observe — Family", hint: "familyHint" },
-    { title: "Observe — Goals", hint: "goalsHint" },
+    { title: "Decide — Goals", hint: "goalsHint" },
     { title: "Observe — Assumptions", hint: "assumptionsHint" },
     {
       title: "Observe — Accounts - Assets",
