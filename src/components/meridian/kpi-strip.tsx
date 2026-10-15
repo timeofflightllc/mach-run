@@ -243,7 +243,7 @@ function MonthlyPayBar({
     canPay != null && Math.abs(canPay - gap.projected) > 1
       ? `Spending entered on this run draws ${usd(gap.projected)} a month. The accounts can pay more and still last.`
       : null,
-    bump != null && bump > 1
+    bump != null && Math.round(bump / 100) * 100 >= 100
       ? `Another $100 a month from now until the goal date adds about ${usd(Math.round(bump / 100) * 100)} to spendable wealth then.`
       : null,
   ]
@@ -327,7 +327,7 @@ function GoalReadout({
   note: string | null;
 }) {
   return (
-    <div className="mt-2 flex h-[14.5rem] flex-col overflow-hidden">
+    <div className="mt-2 flex h-36 flex-col overflow-hidden">
       <p className="text-[13px] font-medium uppercase tracking-wider text-subtle">{title}</p>
       <div className="mt-1 flex items-baseline justify-between gap-3 text-sm font-medium tabular-nums text-fg">
         <span className="min-w-0 truncate">{left}</span>
@@ -336,8 +336,8 @@ function GoalReadout({
       <div className="mt-1.5 h-4 overflow-hidden rounded-full bg-slate-200" role="img" aria-label={aria}>
         <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.max(0, fill))}%` }} />
       </div>
-      <p className="mt-2 line-clamp-2 min-h-10 text-sm font-medium leading-5 text-fg">{status}</p>
-      <p className="mt-1 line-clamp-3 min-h-[3.75rem] text-sm leading-5 text-muted">{note ?? ""}</p>
+      <p className="mt-2 line-clamp-2 text-sm font-medium leading-5 text-fg">{status}</p>
+      <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted">{note ?? ""}</p>
     </div>
   );
 }
