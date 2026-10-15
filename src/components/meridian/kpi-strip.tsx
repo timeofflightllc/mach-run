@@ -524,7 +524,7 @@ export function KpiStrip({
   const roomCache = useRef<{ key: string; value: SustainableIncome | null } | null>(null);
   const key = roomKey(plan);
   if (!roomCache.current || roomCache.current.key !== key) {
-    roomCache.current = { key, value: sustainableRetirementIncome(plan) };
+    roomCache.current = { key, value: sustainableRetirementIncome(plan, sim) };
   }
   const room = roomCache.current.value;
   const drawnAmount = room ? (real ? room.withdrawalReal : room.withdrawalNominal) : null;
@@ -572,39 +572,37 @@ export function KpiStrip({
   includeRef.current = includeGuaranteed;
   useEffect(() => {
     const wanted = wantedRef.current;
+    const active = includeRef.current;
     const jobs: { id: string; include: boolean; already: number }[] = [];
-    if (sustainableAccounts != null && wanted - sustainableAccounts > 1 && !saveCache.current.has(accountsKey)) {
+    if (
+      !active &&
+      sustainableAccounts != null &&
+      wanted - sustainableAccounts > 1 &&
+      !saveCache.current.has(accountsKey)
+    ) {
       jobs.push({ id: accountsKey, include: false, already: sustainableAccounts });
     }
-    if (sustainableAll != null && wanted - sustainableAll > 1 && !saveCache.current.has(allKey)) {
+    if (
+      active &&
+      sustainableAll != null &&
+      wanted - sustainableAll > 1 &&
+      !saveCache.current.has(allKey)
+    ) {
       jobs.push({ id: allKey, include: true, already: sustainableAll });
     }
     if (jobs.length === 0) return;
-    jobs.sort((a, b) => Number(b.include === includeRef.current) - Number(a.include === includeRef.current));
     let cancel = false;
-    let follow = 0;
     const timer = window.setTimeout(() => {
-      const first = jobs[0];
-      if (!first || cancel) return;
-      saveCache.current.set(first.id, extraMonthlyToReach(planRef.current, wanted, first.include, first.already));
+      const job = jobs[0];
+      if (!job || cancel) return;
+      saveCache.current.set(job.id, extraMonthlyToReach(planRef.current, wanted, job.include, job.already));
       if (!cancel) setSaveReady((n) => n + 1);
-      const second = jobs[1];
-      if (!second) return;
-      follow = window.setTimeout(() => {
-        if (cancel) return;
-        saveCache.current.set(
-          second.id,
-          extraMonthlyToReach(planRef.current, wanted, second.include, second.already),
-        );
-        setSaveReady((n) => n + 1);
-      }, 0);
-    }, 0);
+    }, 400);
     return () => {
       cancel = true;
       window.clearTimeout(timer);
-      window.clearTimeout(follow);
     };
-  }, [accountsKey, allKey, sustainableAccounts, sustainableAll]);
+  }, [includeGuaranteed, accountsKey, allKey, sustainableAccounts, sustainableAll]);
   const activeKey = includeGuaranteed ? allKey : accountsKey;
   const extraSave =
     payShort != null && payShort > 1 ? (saveReady >= 0 ? (saveCache.current.get(activeKey) ?? null) : null) : 0;

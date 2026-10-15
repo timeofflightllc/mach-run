@@ -1,5 +1,6 @@
-import { simulate, spendingWindow } from "./engine.ts";
-import type { Plan, SimResult } from "./types.ts";
+import { addMonth, dateAtAge, iso, monthStart, yearlyRateToMonthly } from "./dates.ts";
+import { simulate } from "./engine.ts";
+import type { Plan, Portfolio, SimResult } from "./types.ts";
 
 export type SustainableIncome = {
   /** Annual income in the same retirement year if spending is as high as the plan can stand. */
@@ -13,72 +14,131 @@ export type SustainableIncome = {
   annuityReal: number;
 };
 
-function monthBefore(iso: string): string {
-  const [year, month] = iso.slice(0, 7).split("-").map(Number);
-  const date = new Date(Date.UTC(year ?? 2026, (month ?? 1) - 2, 1));
-  return date.toISOString().slice(0, 10);
+const WITHDRAW_ORDER = ["none", "taxable", "pre_tax", "roth"] as const;
+
+function annualReturn(plan: Plan, portfolio: Portfolio, monthKey: string): number {
+  const goal = plan.assumptions.retirementGoalDate?.slice(0, 7) ?? "";
+  const keepsOwn =
+    portfolio.kind === "real_estate" || portfolio.kind === "cash" || portfolio.kind === "annuity";
+  if (goal && monthKey >= goal && !keepsOwn) {
+    const pct = plan.assumptions.retirementReturnPct;
+    return (Number.isFinite(pct) ? pct : 5) / 100;
+  }
+  return (portfolio.returnPct ?? plan.assumptions.defaultReturnPct) / 100;
 }
 
-/**
- * Retirement lifestyle spending is replaced by the withdrawal being tested.
- * Debt payments stay. Spending before the goal date stays.
- */
-function planForDraw(plan: Plan, monthly: number): Plan {
-  const start = plan.assumptions.retirementGoalDate;
-  if (!start) return plan;
-  const cutoff = monthBefore(start);
-  const spending = [];
-  for (const phase of plan.spending) {
-    if (phase.liabilityId) {
-      spending.push(phase);
-      continue;
-    }
-    const win = spendingWindow(plan, phase);
-    if (win.start >= start) continue;
-    if (!win.end || win.end >= start) {
-      spending.push({
-        ...phase,
-        tiedToStageId: undefined,
-        startDate: win.start,
-        endDate: cutoff,
-      });
-      continue;
-    }
-    spending.push(phase);
+/** Spendable investments at the goal date, nominal dollars. The house is not one of them. */
+function pileAtGoal(
+  plan: Plan,
+  sim: SimResult,
+): { accounts: Portfolio[]; values: Map<string, number>; index: number } | null {
+  const goal = plan.assumptions.retirementGoalDate;
+  if (!goal) return null;
+  const accounts = plan.portfolios.filter((row) => row.spendable && row.kind !== "real_estate");
+  if (accounts.length === 0) return null;
+  const values = new Map<string, number>();
+  let index = 1;
+  for (const row of sim.balancesAtRetirement ?? []) {
+    if (row.real > 100 && row.nominal > 0) index = row.nominal / row.real;
+    if (accounts.some((account) => account.id === row.id)) values.set(row.id, Math.max(0, row.nominal));
   }
-  if (monthly >= 1) {
-    spending.push({
-      id: "sustainable-probe",
-      label: "Withdrawal",
-      monthlyAmount: monthly,
-      startDate: start,
-      endDate: null,
-    });
+  for (const account of accounts) {
+    if (!values.has(account.id)) values.set(account.id, Math.max(0, account.currentValue));
   }
-  return { ...plan, spending };
+  return { accounts, values, index: Math.max(index, 1e-9) };
 }
 
-/** True when the withdrawal is paid every retirement year and the investments do not run out. */
-function drawLasts(plan: Plan, sim: SimResult): boolean {
-  if (sim.depletedAge != null) return false;
+function canWithdraw(
+  plan: Plan,
+  accounts: Portfolio[],
+  start: Map<string, number>,
+  monthlyReal: number,
+  index: number,
+): boolean {
   const goal = plan.assumptions.retirementGoalDate;
   if (!goal) return false;
-  const startYear = Number(goal.slice(0, 4));
-  for (const year of sim.years) {
-    if (year.year < startYear) continue;
-    const covered = year.income + year.withdrawals;
-    const need = year.tax + year.spending;
-    if (need > covered + 1) return false;
+  const values = new Map(start);
+  const taxR = plan.assumptions.ordinaryTaxRatePct / 100;
+  const inflate = yearlyRateToMonthly(plan.assumptions.inflationPct / 100);
+  const endKey = iso(monthStart(iso(dateAtAge(plan.primary.birthDate, plan.assumptions.projectionEndAge)))).slice(0, 7);
+  let cursor = monthStart(goal);
+  let need = monthlyReal * index;
+  for (let guard = 0; guard < 1200; guard += 1) {
+    const key = iso(cursor).slice(0, 7);
+    if (key > endKey) return true;
+    for (const account of accounts) {
+      const rate = yearlyRateToMonthly(annualReturn(plan, account, key));
+      values.set(account.id, (values.get(account.id) ?? 0) * (1 + rate));
+    }
+    let remaining = need;
+    for (const bucket of WITHDRAW_ORDER) {
+      if (remaining <= 0.5) break;
+      for (const account of accounts) {
+        if (account.taxBucket !== bucket || remaining <= 0.5) continue;
+        const balance = values.get(account.id) ?? 0;
+        if (balance <= 0) continue;
+        if (bucket === "pre_tax" && taxR < 0.99) {
+          const gross = Math.min(balance, remaining / (1 - taxR));
+          values.set(account.id, balance - gross);
+          remaining -= gross * (1 - taxR);
+        } else {
+          const take = Math.min(balance, remaining);
+          values.set(account.id, balance - take);
+          remaining -= take;
+        }
+      }
+    }
+    if (remaining > 1) return false;
+    need *= 1 + inflate;
+    cursor = addMonth(cursor);
   }
   return true;
 }
 
-function drawnThatYear(plan: Plan, sim: SimResult, incomeYear: number): { nominal: number; real: number } {
-  const nominal = sim.years.find((row) => row.year === incomeYear)?.airWithdrawals ?? 0;
-  const infl = plan.assumptions.inflationPct / 100;
-  const asOfYear = Number(plan.assumptions.asOfDate.slice(0, 4));
-  const yearsOut = Math.max(0, incomeYear - (Number.isFinite(asOfYear) ? asOfYear : incomeYear));
-  return { nominal, real: nominal / (1 + infl) ** yearsOut };
+function guaranteedMonthlyReal(plan: Plan, sim: SimResult, index: number): number {
+  const goal = plan.assumptions.retirementGoalDate?.slice(0, 7);
+  if (!goal) return 0;
+  const month = sim.months.find((row) => row.date.slice(0, 7) === goal);
+  return (month?.guaranteed ?? 0) / index;
+}
+
+/**
+ * Illustration only. The most that can be withdrawn from the investments
+ * held at the retirement goal, in today's dollars, through longevity.
+ * It does not read the spending you typed, and it does not change the plan.
+ */
+export function sustainableRetirementIncome(plan: Plan, sim?: SimResult): SustainableIncome | null {
+  if (!plan.assumptions.retirementGoalDate) return null;
+  const ran = sim ?? simulate(plan);
+  const pile = pileAtGoal(plan, ran);
+  if (!pile) return null;
+
+  let lo = 0;
+  let hi = 2_000;
+  let guard = 0;
+  while (canWithdraw(plan, pile.accounts, pile.values, hi, pile.index) && hi < 1_000_000 && guard < 18) {
+    lo = hi;
+    hi *= 2;
+    guard += 1;
+  }
+  for (let step = 0; step < 22 && hi - lo > 1; step += 1) {
+    const mid = (lo + hi) / 2;
+    if (canWithdraw(plan, pile.accounts, pile.values, mid, pile.index)) lo = mid;
+    else hi = mid;
+  }
+
+  const monthly = lo;
+  const guaranteed = guaranteedMonthlyReal(plan, ran, pile.index);
+  const withdrawalReal = monthly * 12;
+  const withdrawalNominal = withdrawalReal * pile.index;
+  return {
+    nominal: withdrawalNominal + guaranteed * 12 * pile.index,
+    real: withdrawalReal + guaranteed * 12,
+    withdrawalNominal,
+    withdrawalReal,
+    annuityNominal: 0,
+    annuityReal: 0,
+  };
 }
 
 /** Annuity account draws in that calendar year, nominal dollars. */
@@ -89,63 +149,4 @@ export function annuityDrawnNominal(plan: Plan, sim: SimResult, incomeYear: numb
   return (year?.drawnLines ?? [])
     .filter((line) => ids.has(line.id))
     .reduce((sum, line) => sum + line.amount, 0);
-}
-
-function deflate(plan: Plan, nominal: number, incomeYear: number): number {
-  const infl = plan.assumptions.inflationPct / 100;
-  const asOfYear = Number(plan.assumptions.asOfDate.slice(0, 4));
-  const yearsOut = Math.max(0, incomeYear - (Number.isFinite(asOfYear) ? asOfYear : incomeYear));
-  return nominal / (1 + infl) ** yearsOut;
-}
-
-/**
- * The most that can be withdrawn from investments each month, in today's
- * dollars, from the retirement goal through longevity, without those
- * investments running out. Nominal and real are that withdrawal in the first
- * full retirement year. Guaranteed pay is included in nominal and real.
- */
-export function sustainableRetirementIncome(plan: Plan): SustainableIncome | null {
-  const scheduled = simulate(plan).retirement;
-  if (!scheduled || scheduled.incomeYear == null || !plan.assumptions.retirementGoalDate) return null;
-
-  const incomeYear = scheduled.incomeYear;
-  const read = (monthly: number) => {
-    const sim = simulate(planForDraw(plan, monthly));
-    const drawn = drawnThatYear(plan, sim, incomeYear);
-    const annuityNominal = annuityDrawnNominal(plan, sim, incomeYear);
-    return {
-      lasts: drawLasts(plan, sim),
-      nominal: sim.retirement?.annualIncome ?? 0,
-      real: sim.retirement?.annualIncomeReal ?? 0,
-      withdrawalNominal: drawn.nominal,
-      withdrawalReal: drawn.real,
-      annuityNominal,
-      annuityReal: deflate(plan, annuityNominal, incomeYear),
-    };
-  };
-
-  let lo = 0;
-  let hi = 2_000;
-  let guard = 0;
-  while (read(hi).lasts && hi < 1_000_000 && guard < 16) {
-    lo = hi;
-    hi *= 2;
-    guard += 1;
-  }
-
-  for (let step = 0; step < 18 && hi - lo > 25; step += 1) {
-    const mid = (lo + hi) / 2;
-    if (read(mid).lasts) lo = mid;
-    else hi = mid;
-  }
-
-  const best = read(lo);
-  return {
-    nominal: best.nominal,
-    real: best.real,
-    withdrawalNominal: best.withdrawalNominal,
-    withdrawalReal: best.withdrawalReal,
-    annuityNominal: best.annuityNominal,
-    annuityReal: best.annuityReal,
-  };
 }
