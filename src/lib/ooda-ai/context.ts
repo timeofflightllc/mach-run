@@ -18,7 +18,7 @@ export function buildOodaAskContext(
     lines.push(`Retirement goal: ${plan.assumptions.retirementGoalDate}`);
   }
   lines.push(
-    `Inflation ${plan.assumptions.inflationPct}% · default return ${plan.assumptions.defaultReturnPct}% · dollars ${plan.assumptions.dollars}`,
+    `Inflation ${plan.assumptions.inflationPct}% · default return ${plan.assumptions.defaultReturnPct}% · retirement return ${plan.assumptions.retirementReturnPct}% · dollars ${plan.assumptions.dollars}`,
   );
   if (brief) {
     lines.push(`Headline: ${brief.headline}`);

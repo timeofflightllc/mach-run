@@ -593,6 +593,7 @@ function pageStarted(plan: Plan, id: StepId, calculated: boolean): boolean {
           a.inflationPct !== blank.inflationPct ||
           a.defaultColaPct !== blank.defaultColaPct ||
           a.defaultReturnPct !== blank.defaultReturnPct ||
+          a.retirementReturnPct !== blank.retirementReturnPct ||
           a.ordinaryTaxRatePct !== blank.ordinaryTaxRatePct ||
           a.ssTaxablePct !== blank.ssTaxablePct ||
           a.projectionEndAge !== blank.projectionEndAge,

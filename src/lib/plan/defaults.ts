@@ -18,6 +18,7 @@ export function createDefaultPlan(): Plan {
       inflationPct: 2.5,
       defaultColaPct: 2.5,
       defaultReturnPct: 7,
+      retirementReturnPct: 5,
       ordinaryTaxRatePct: 22,
       ssTaxablePct: 85,
       projectionEndAge: 95,
@@ -51,6 +52,9 @@ export function ensurePlan(plan: Plan): Plan {
   };
   if (!validIso(next.assumptions?.asOfDate)) {
     next.assumptions = { ...next.assumptions, asOfDate: todayIso() };
+  }
+  if (!Number.isFinite(next.assumptions.retirementReturnPct)) {
+    next.assumptions = { ...next.assumptions, retirementReturnPct: 5 };
   }
   const asOf = next.assumptions.asOfDate;
   next.incomes = next.incomes.map((s) => ({

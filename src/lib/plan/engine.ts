@@ -379,6 +379,16 @@ export type ReturnShocks = {
   zForYear: (year: number) => number;
 };
 
+function statedAnnualReturn(plan: Plan, portfolio: { kind: string; returnPct?: number | null }, monthKey: string): number {
+  const goal = plan.assumptions.retirementGoalDate?.slice(0, 7) ?? "";
+  const keepsOwnRate = portfolio.kind === "real_estate" || portfolio.kind === "cash" || portfolio.kind === "annuity";
+  if (goal && monthKey >= goal && !keepsOwnRate) {
+    const pct = plan.assumptions.retirementReturnPct;
+    return (Number.isFinite(pct) ? pct : 5) / 100;
+  }
+  return (portfolio.returnPct ?? plan.assumptions.defaultReturnPct) / 100;
+}
+
 export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnShocks }): SimResult {
   const plan = ensurePlan(raw);
   const wantAudit = Boolean(opts?.audit);
@@ -462,7 +472,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
         values.set(p.id, 0);
         continue;
       }
-      const stated = (p.returnPct ?? plan.assumptions.defaultReturnPct) / 100;
+      const stated = statedAnnualReturn(plan, p, monthKey);
       let annual = stated;
       if (shocks && p.kind !== "real_estate" && stated > 0) {
         const year = cursor.getFullYear();
@@ -992,7 +1002,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
           accountId: p.id,
           accountName: p.name,
           start,
-          annualReturnPct: p.returnPct ?? plan.assumptions.defaultReturnPct,
+          annualReturnPct: statedAnnualReturn(plan, p, monthKey) * 100,
           growth: flow.growth,
           contribution: flow.contribution,
           match: flow.match,

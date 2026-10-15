@@ -41,6 +41,7 @@ function blankPlan(): Plan {
     inflationPct: 0,
     defaultColaPct: 0,
     defaultReturnPct: 0,
+    retirementReturnPct: 0,
     ordinaryTaxRatePct: 0,
     ssTaxablePct: 0,
     projectionEndAge: 90,

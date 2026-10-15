@@ -527,7 +527,6 @@ export function KpiStrip({
     roomCache.current = { key, value: sustainableRetirementIncome(plan) };
   }
   const room = roomCache.current.value;
-  const roomAmount = room ? (real ? room.real : room.nominal) : null;
   const drawnAmount = room ? (real ? room.withdrawalReal : room.withdrawalNominal) : null;
   const gap = incomeGap(plan, sim);
   const [includeGuaranteed, setIncludeGuaranteed] = useState(false);
@@ -561,17 +560,54 @@ export function KpiStrip({
     setSyncedView(savedView);
     setView(savedView);
   }
-  const saveCache = useRef<{ key: string; extra: number | null } | null>(null);
-  const saveKey = `${key}|${includeGuaranteed ? "g" : "a"}|${gap?.wanted ?? 0}|${Math.round(canPay ?? 0)}`;
-  if (payShort != null && payShort > 1 && canPay != null && gap) {
-    if (!saveCache.current || saveCache.current.key !== saveKey) {
-      saveCache.current = {
-        key: saveKey,
-        extra: extraMonthlyToReach(plan, gap.wanted, includeGuaranteed, canPay),
-      };
+  const saveCache = useRef<Map<string, number | null>>(new Map());
+  const [saveReady, setSaveReady] = useState(0);
+  const accountsKey = `${key}|a|${gap?.wanted ?? 0}|${Math.round(sustainableAccounts ?? -1)}`;
+  const allKey = `${key}|g|${gap?.wanted ?? 0}|${Math.round(sustainableAll ?? -1)}`;
+  const planRef = useRef(plan);
+  planRef.current = plan;
+  const wantedRef = useRef(gap?.wanted ?? 0);
+  wantedRef.current = gap?.wanted ?? 0;
+  const includeRef = useRef(includeGuaranteed);
+  includeRef.current = includeGuaranteed;
+  useEffect(() => {
+    const wanted = wantedRef.current;
+    const jobs: { id: string; include: boolean; already: number }[] = [];
+    if (sustainableAccounts != null && wanted - sustainableAccounts > 1 && !saveCache.current.has(accountsKey)) {
+      jobs.push({ id: accountsKey, include: false, already: sustainableAccounts });
     }
-  }
-  const extraSave = payShort != null && payShort > 1 ? (saveCache.current?.extra ?? null) : 0;
+    if (sustainableAll != null && wanted - sustainableAll > 1 && !saveCache.current.has(allKey)) {
+      jobs.push({ id: allKey, include: true, already: sustainableAll });
+    }
+    if (jobs.length === 0) return;
+    jobs.sort((a, b) => Number(b.include === includeRef.current) - Number(a.include === includeRef.current));
+    let cancel = false;
+    let follow = 0;
+    const timer = window.setTimeout(() => {
+      const first = jobs[0];
+      if (!first || cancel) return;
+      saveCache.current.set(first.id, extraMonthlyToReach(planRef.current, wanted, first.include, first.already));
+      if (!cancel) setSaveReady((n) => n + 1);
+      const second = jobs[1];
+      if (!second) return;
+      follow = window.setTimeout(() => {
+        if (cancel) return;
+        saveCache.current.set(
+          second.id,
+          extraMonthlyToReach(planRef.current, wanted, second.include, second.already),
+        );
+        setSaveReady((n) => n + 1);
+      }, 0);
+    }, 0);
+    return () => {
+      cancel = true;
+      window.clearTimeout(timer);
+      window.clearTimeout(follow);
+    };
+  }, [accountsKey, allKey, sustainableAccounts, sustainableAll]);
+  const activeKey = includeGuaranteed ? allKey : accountsKey;
+  const extraSave =
+    payShort != null && payShort > 1 ? (saveReady >= 0 ? (saveCache.current.get(activeKey) ?? null) : null) : 0;
   const retLabel = !ret
     ? "Spendable at retirement"
     : ret.now
@@ -586,13 +622,6 @@ export function KpiStrip({
     if (gap > 1) goalNote = `${usd(gap)} under the ${usd(goal)} goal${where}`;
     else if (gap < -1) goalNote = `${usd(-gap)} over the ${usd(goal)} goal${where}`;
     else goalNote = `On the ${usd(goal)} goal${where}`;
-  }
-  let roomNote: string | null = null;
-  if (annual != null && roomAmount != null) {
-    const roomLeft = roomAmount - annual;
-    if (roomLeft > 1) roomNote = `${usd(roomLeft)} a year of room left, and the money still lasts`;
-    else if (roomLeft < -1) roomNote = `${usd(-roomLeft)} a year over what still lasts`;
-    else roomNote = "No unused room. This is what still lasts.";
   }
   const payTip = [
     ANNUAL_TIP,
@@ -660,11 +689,6 @@ export function KpiStrip({
               "—"
             )}
           </dd>
-          {roomNote ? (
-            <p className="mt-1 font-sans text-[13px] font-normal normal-case leading-snug tracking-normal text-muted">
-              {roomNote}
-            </p>
-          ) : null}
         </div>
       </div>
       <GoalScore

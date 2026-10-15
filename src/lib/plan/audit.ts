@@ -112,6 +112,7 @@ export function assumptionRows(plan: Plan): [string, string | number | null][] {
     ["inflationPct", a.inflationPct],
     ["defaultColaPct", a.defaultColaPct],
     ["defaultReturnPct", a.defaultReturnPct],
+    ["retirementReturnPct", a.retirementReturnPct],
     ["ordinaryTaxRatePct", a.ordinaryTaxRatePct],
     ["ssTaxablePct", a.ssTaxablePct],
     ["projectionEndAge", a.projectionEndAge],

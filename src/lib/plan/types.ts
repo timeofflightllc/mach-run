@@ -219,6 +219,8 @@ export interface Assumptions {
   /** Default COLA on incomes unless a stream sets its own colaPct. */
   defaultColaPct: number;
   defaultReturnPct: number;
+  /** Nominal return on investments from the retirement goal month forward. */
+  retirementReturnPct: number;
   ordinaryTaxRatePct: number;
   ssTaxablePct: number;
   projectionEndAge: number;

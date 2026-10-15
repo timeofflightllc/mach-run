@@ -57,6 +57,7 @@ test("named income stages drive the run", () => {
     person: "primary",
   };
   plan.incomes = [salary, pension];
+  plan.assumptions.asOfDate = "2026-08-01";
   plan.portfolios = [
     {
       id: "port-test",

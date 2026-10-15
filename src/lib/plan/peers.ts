@@ -586,7 +586,7 @@ export function buildPeerBrief(
   add("This MACH Run", snapshot);
   add(
     "Compounding",
-    `Spending starts at ${usd(spendingNow, true)}/mo and inflates at ${plan.assumptions.inflationPct}% a year. Accounts compound at ${plan.assumptions.defaultReturnPct}% nominal unless an account has its own rate. Spendable goes from ${usd(spendable)} now to ${usd(horizon)} at age ${plan.assumptions.projectionEndAge} in today's dollars. Time is on your side if you leave the machine running.`,
+    `Spending starts at ${usd(spendingNow, true)}/mo and inflates at ${plan.assumptions.inflationPct}% a year. Accounts compound at ${plan.assumptions.defaultReturnPct}% nominal unless an account has its own rate. From the retirement goal month, investments use ${plan.assumptions.retirementReturnPct}% nominal. A house, cash, and an annuity keep their own rates. Spendable goes from ${usd(spendable)} now to ${usd(horizon)} at age ${plan.assumptions.projectionEndAge} in today's dollars. Time is on your side if you leave the machine running.`,
   );
 
   return pack();

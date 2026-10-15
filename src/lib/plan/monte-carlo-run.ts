@@ -303,6 +303,7 @@ function assumptionFields(assumptions: Assumptions) {
     inflationPct: assumptions.inflationPct,
     defaultColaPct: assumptions.defaultColaPct,
     defaultReturnPct: assumptions.defaultReturnPct,
+    retirementReturnPct: assumptions.retirementReturnPct,
     ordinaryTaxRatePct: assumptions.ordinaryTaxRatePct,
     ssTaxablePct: assumptions.ssTaxablePct,
     projectionEndAge: assumptions.projectionEndAge,

@@ -353,6 +353,29 @@ export function AssumptionsForm() {
               %
             </span>
           </label>
+          <label className="flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="text-xs font-medium tracking-wide text-muted">
+              Nominal return in retirement (% / yr)
+            </span>
+            <NumberInput
+              min={-5}
+              max={15}
+              step={0.1}
+              value={plan.assumptions.retirementReturnPct ?? 5}
+              onValue={(n) => patchAssumptions({ retirementReturnPct: n })}
+              className={pct}
+            />
+            <span className="text-xs text-subtle">
+              Real ≈{" "}
+              {(
+                ((1 + (plan.assumptions.retirementReturnPct ?? 5) / 100) /
+                  (1 + plan.assumptions.inflationPct / 100) -
+                  1) *
+                100
+              ).toFixed(2)}
+              %
+            </span>
+          </label>
           <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1">
             <span className="text-xs font-medium tracking-wide text-muted">Nominal COLA (% / yr)</span>
             <NumberInput
