@@ -177,6 +177,7 @@ function extraMonthlyForGap(shortfall: number, months: number, annualReal: numbe
 }
 
 export function nestEggTrack(plan: Plan, sim: SimResult) {
+  if (plan.assumptions.goalMode === "income") return null;
   const goal = plan.assumptions.nestEggGoal;
   if (goal == null || goal <= 0) return null;
   const asOf = monthStart(plan.assumptions.asOfDate);

@@ -1,7 +1,12 @@
 import { useRef, useState } from "react";
+import { DateInput, Field, MoneyInput } from "@/components/ui/field";
 import { usd } from "@/lib/plan/format";
 import { startingNetWorth, startingSpendable } from "@/lib/plan/engine";
+import { incomeGap, spendableWithExtraSave } from "@/lib/plan/income-goal";
+import { nestEggTrack } from "@/lib/plan/peers";
+import { cashParkedYears, cashShortYears, paycheckGapNote } from "@/lib/plan/cash-short";
 import { sustainableRetirementIncome, type SustainableIncome } from "@/lib/plan/sustainable-income";
+import { usePlanStore } from "@/lib/plan/store";
 import type { Plan, SimResult } from "@/lib/plan/types";
 
 const ANNUAL_TIP =
@@ -41,11 +46,231 @@ function HoverLabel({ label, tip }: { label: string; tip?: string }) {
   );
 }
 
+function GoalScore({
+  sim,
+  view,
+  setView,
+  egg,
+  gap,
+  canPay,
+  payShort,
+  payFill,
+  bump,
+  onExecute,
+}: {
+  sim: SimResult;
+  view: "nest" | "income";
+  setView: (next: "nest" | "income") => void;
+  egg: ReturnType<typeof nestEggTrack>;
+  gap: ReturnType<typeof incomeGap>;
+  canPay: number | null;
+  payShort: number | null;
+  payFill: number;
+  bump: number | null;
+  onExecute?: () => void;
+}) {
+  const live = usePlanStore((s) => s.plan);
+  const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
+  const ready = view === "nest" ? Boolean(egg) : Boolean(gap);
+  const putDate = (v: string) => {
+    const next = v === "" ? null : v;
+    if (next === (live.assumptions.retirementGoalDate ?? null)) return;
+    patchAssumptions({ retirementGoalDate: next });
+  };
+  const putIncome = (n: number) => {
+    const next = n > 0 ? n : null;
+    if (next === (live.assumptions.incomeGoalMonthly ?? null) && live.assumptions.goalMode === "income") return;
+    patchAssumptions({ incomeGoalMonthly: next, goalMode: "income" });
+  };
+  const putNest = (n: number) => {
+    const next = n > 0 ? n : null;
+    if (next === (live.assumptions.nestEggGoal ?? null) && live.assumptions.goalMode !== "income") return;
+    patchAssumptions({ nestEggGoal: next, goalMode: "nest" });
+  };
+  return (
+    <div className="mt-px bg-surface px-3 py-3 sm:px-4">
+      <div className="inline-flex rounded-lg bg-slate-100 p-0.5">
+        {(
+          [
+            ["nest", "Nest egg"],
+            ["income", "Monthly pay"],
+          ] as const
+        ).map(([id, label]) => {
+          const on = view === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              aria-pressed={on}
+              onClick={() => setView(id)}
+              className={
+                on
+                  ? "h-7 rounded-md bg-white px-2.5 text-xs font-medium text-fg shadow-sm"
+                  : "h-7 rounded-md px-2.5 text-xs font-medium text-muted"
+              }
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+      {ready && view === "nest" && egg ? (
+        <NestEggBar egg={egg} sim={sim} />
+      ) : ready && gap ? (
+        <MonthlyPayBar gap={gap} canPay={canPay} payShort={payShort} payFill={payFill} bump={bump} />
+      ) : (
+        <div className="mt-3 flex flex-col gap-3">
+          <p className="text-sm leading-snug text-muted">
+            Add the retirement date and the goal, then run again. This score stays here.
+          </p>
+          <div className="flex flex-wrap items-end gap-3">
+            <Field label="Retirement goal date" className="w-full min-w-0 max-w-xs">
+              <DateInput
+                value={live.assumptions.retirementGoalDate}
+                onValue={putDate}
+              />
+            </Field>
+            {view === "income" ? (
+              <Field label="Wanted each month (today $)" className="w-full min-w-0 max-w-52">
+                <MoneyInput
+                  value={live.assumptions.incomeGoalMonthly ?? 0}
+                  onValue={putIncome}
+                />
+              </Field>
+            ) : (
+              <Field label="Nest egg goal (today $)" className="w-full min-w-0 max-w-52">
+                <MoneyInput
+                  value={live.assumptions.nestEggGoal ?? 0}
+                  onValue={putNest}
+                />
+              </Field>
+            )}
+          </div>
+          {onExecute ? (
+            <button
+              type="button"
+              onClick={onExecute}
+              className="h-10 w-fit rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
+            >
+              Execute MACH RUN
+            </button>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MonthlyPayBar({
+  gap,
+  canPay,
+  payShort,
+  payFill,
+  bump,
+}: {
+  gap: NonNullable<ReturnType<typeof incomeGap>>;
+  canPay: number | null;
+  payShort: number | null;
+  payFill: number;
+  bump: number | null;
+}) {
+  return (
+    <>
+      <p className="mt-2 text-[13px] font-medium uppercase tracking-wider text-subtle">
+        Monthly pay at retirement
+      </p>
+      <div className="mt-1 flex items-baseline justify-between gap-3 text-sm font-medium tabular-nums text-fg">
+        <span>{usd(canPay ?? gap.projected)} can pay</span>
+        <span>{usd(gap.wanted)} wanted</span>
+      </div>
+      <div
+        className="mt-1.5 h-4 overflow-hidden rounded-full bg-slate-200"
+        role="img"
+        aria-label={`${usd(canPay ?? gap.projected)} a month the accounts can pay, of the ${usd(gap.wanted)} wanted`}
+      >
+        <div className="h-full rounded-full bg-accent" style={{ width: `${payFill}%` }} />
+      </div>
+      <p className="mt-2 text-sm font-medium leading-snug text-fg">
+        {payShort != null && payShort > 1
+          ? `Short ${usd(payShort)} a month, in today's dollars.`
+          : payShort != null && payShort < -1
+            ? `${usd(-payShort)} a month of room, in today's dollars.`
+            : "On the monthly paycheck you asked for."}
+      </p>
+      {canPay != null && Math.abs(canPay - gap.projected) > 1 ? (
+        <p className="mt-1 text-sm leading-snug text-muted">
+          Spending entered on this run draws {usd(gap.projected)} a month. The accounts can pay more and still last.
+        </p>
+      ) : null}
+      {bump != null && bump > 1 ? (
+        <p className="mt-1 text-sm leading-snug text-muted">
+          Another $100 a month from now until the goal date adds about {usd(Math.round(bump / 100) * 100)} to
+          spendable wealth then.
+        </p>
+      ) : null}
+    </>
+  );
+}
+
 function roomKey(plan: Plan): string {
   return JSON.stringify({ ...plan, assumptions: { ...plan.assumptions, dollars: "nominal" } });
 }
 
-export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
+function NestEggBar({
+  egg,
+  sim,
+}: {
+  egg: NonNullable<ReturnType<typeof nestEggTrack>>;
+  sim: SimResult;
+}) {
+  const projected = Math.max(0, egg.projected);
+  const fill = egg.goal > 0 ? Math.min(100, (projected / egg.goal) * 100) : 0;
+  const short = Math.max(0, egg.goal - egg.projected);
+  const early = egg.hitYear != null && egg.hitYear < egg.targetYear;
+  const blocked = paycheckGapNote(
+    cashShortYears(sim).map((row) => row.year),
+    cashParkedYears(sim, egg.targetYear),
+  );
+  let status: string;
+  if (!egg.onTrack) status = `${usd(short)} short of the goal in ${egg.targetYear}.`;
+  else if (early) {
+    status = `You clear ${usd(egg.goal)} in ${egg.hitYear}${egg.hitAge != null ? ` (age ${egg.hitAge})` : ""}.`;
+  } else status = `On the ${usd(egg.goal)} goal in ${egg.targetYear}.`;
+  const lever = !egg.onTrack
+    ? blocked ??
+      `About ${usd(egg.extraMonthly, true)} more a month, on top of what you already save, closes it by ${egg.targetYear}.`
+    : null;
+  return (
+    <>
+      <p className="mt-2 text-[13px] font-medium uppercase tracking-wider text-subtle">
+        Nest egg at the retirement goal
+      </p>
+      <div className="mt-1 flex items-baseline justify-between gap-3 text-sm font-medium tabular-nums text-fg">
+        <span>{usd(projected)} projected</span>
+        <span>{usd(egg.goal)} goal</span>
+      </div>
+      <div
+        className="mt-1.5 h-4 overflow-hidden rounded-full bg-slate-200"
+        role="img"
+        aria-label={`${usd(projected)} of the ${usd(egg.goal)} goal in ${egg.targetYear}`}
+      >
+        <div className="h-full rounded-full bg-accent" style={{ width: `${fill}%` }} />
+      </div>
+      <p className="mt-2 text-sm font-medium leading-snug text-fg">{status}</p>
+      {lever ? <p className="mt-1 text-sm leading-snug text-muted">{lever}</p> : null}
+    </>
+  );
+}
+
+export function KpiStrip({
+  plan,
+  sim,
+  onExecute,
+}: {
+  plan: Plan;
+  sim: SimResult;
+  onExecute?: () => void;
+}) {
   const real = plan.assumptions.dollars === "real";
   const ret = sim.retirement;
   const spendableAtRet = ret
@@ -63,6 +288,36 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
   const room = roomCache.current.value;
   const roomAmount = room ? (real ? room.real : room.nominal) : null;
   const drawnAmount = room ? (real ? room.withdrawalReal : room.withdrawalNominal) : null;
+  const gap = incomeGap(plan, sim);
+  const canPay = gap ? (room && room.real > 0 ? room.real / 12 : gap.projected) : null;
+  const payShort = gap && canPay != null ? gap.wanted - canPay : null;
+  const payFill =
+    gap && canPay != null && gap.wanted > 0
+      ? Math.min(100, Math.max(0, (canPay / gap.wanted) * 100))
+      : 0;
+  const egg = nestEggTrack(
+    { ...plan, assumptions: { ...plan.assumptions, goalMode: "nest" } },
+    sim,
+  );
+  const savedView = plan.assumptions.goalMode === "income" ? "income" : "nest";
+  const [view, setView] = useState<"nest" | "income">(savedView);
+  const [syncedView, setSyncedView] = useState(savedView);
+  if (syncedView !== savedView) {
+    setSyncedView(savedView);
+    setView(savedView);
+  }
+  const bumpCache = useRef<{ key: string; added: number | null } | null>(null);
+  if (payShort != null && payShort > 1) {
+    if (!bumpCache.current || bumpCache.current.key !== key) {
+      const raised = spendableWithExtraSave(plan, 100);
+      const base = sim.retirement?.spendableReal ?? null;
+      bumpCache.current = {
+        key,
+        added: raised != null && base != null ? raised - base : null,
+      };
+    }
+  }
+  const bump = payShort != null && payShort > 1 ? bumpCache.current?.added ?? null : null;
   const retLabel = !ret
     ? "Spendable at retirement"
     : ret.now
@@ -71,7 +326,7 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
   const goal = plan.assumptions.nestEggGoal;
   const goalBasis = real ? spendableAtRet : (ret?.spendableReal ?? null);
   let goalNote: string | null = null;
-  if (goal != null && goal > 0 && goalBasis != null) {
+  if (plan.assumptions.goalMode !== "income" && goal != null && goal > 0 && goalBasis != null) {
     const gap = goal - goalBasis;
     const where = real ? "" : " in today's dollars";
     if (gap > 1) goalNote = `${usd(gap)} under the ${usd(goal)} goal${where}`;
@@ -158,6 +413,18 @@ export function KpiStrip({ plan, sim }: { plan: Plan; sim: SimResult }) {
           ) : null}
         </div>
       </div>
+      <GoalScore
+        sim={sim}
+        view={view}
+        setView={setView}
+        egg={egg}
+        gap={gap}
+        canPay={canPay}
+        payShort={payShort}
+        payFill={payFill}
+        bump={bump}
+        onExecute={onExecute}
+      />
     </dl>
   );
 }

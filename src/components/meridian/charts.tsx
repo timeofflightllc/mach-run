@@ -17,6 +17,7 @@ import {
 import { createPortal } from "react-dom";
 import { Maximize2, X } from "lucide-react";
 import { usd, usdCompact } from "@/lib/plan/format";
+import { chartGoalEnd, chartYears, type ChartSpan } from "@/lib/plan/chart-pdf";
 import type { SurvivalBand, SurvivalScore, SurvivalTraces } from "@/lib/plan/monte-carlo-run";
 import { PinToggle } from "@/components/meridian/chart-pin";
 import { ChartDownload } from "@/components/meridian/chart-download";
@@ -169,10 +170,9 @@ function NetWorthTip({
   );
 }
 
-type ChartSpan = 5 | 10 | 20 | "horizon";
-
 function spanOptions(endAge: number): { id: ChartSpan; label: string }[] {
   return [
+    { id: "goal", label: "To goal" },
     { id: 5, label: "5-Year" },
     { id: 10, label: "10-Year" },
     { id: 20, label: "20-Year" },
@@ -180,13 +180,8 @@ function spanOptions(endAge: number): { id: ChartSpan; label: string }[] {
   ];
 }
 
-function yearsInView(sim: SimResult, asOfDate: string, span: ChartSpan) {
-  const startYear = Number(asOfDate.slice(0, 4));
-  if (span === "horizon") return sim.years;
-  const sliced = sim.years.filter(
-    (y) => y.year >= startYear && y.year <= startYear + span,
-  );
-  return sliced.length ? sliced : sim.years;
+function yearsInView(sim: SimResult, asOfDate: string, span: ChartSpan, goalDate?: string | null) {
+  return chartYears(asOfDate, sim.years, span, goalDate);
 }
 
 function pad2(n: number) {
@@ -267,7 +262,7 @@ function formatCashTip(t: string | number, span: ChartSpan): string {
 }
 
 function formatAxisTick(t: string | number, span: ChartSpan): string {
-  if (span === 20 || span === "horizon") return String(t);
+  if (span === 20 || span === "horizon" || span === "goal") return String(t);
   const raw = String(t);
   if (span === 10) {
     const [y, q] = raw.split("-");
@@ -285,6 +280,67 @@ function axisProps(span: ChartSpan) {
     textAnchor: span === 5 || span === 10 ? ("end" as const) : ("middle" as const),
     height: span === 5 || span === 10 ? 46 : 28,
   };
+}
+
+const GOAL_DATE_NOTE =
+  "To see Retirement Goal Date charts and graphs, set your retirement goal date in OBSERVE > Family";
+
+function GoalDateNote() {
+  return (
+    <div className="flex h-full min-h-[12rem] w-full items-center justify-center bg-white px-6">
+      <p className="max-w-md text-center text-sm leading-relaxed text-slate-600">{GOAL_DATE_NOTE}</p>
+    </div>
+  );
+}
+
+function goalMonthEnd(plan: Plan, sim: SimResult): { year: number; month: number } | null {
+  const date = plan.assumptions.retirementGoalDate;
+  const year = chartGoalEnd(date, sim.years);
+  if (year == null || !date) return null;
+  const asked = Number(date.slice(0, 4));
+  const month = year < asked ? 12 : Number(date.slice(5, 7));
+  return { year, month };
+}
+
+/** Tick treatment for the goal window. Other spans are returned unchanged. */
+function axisFor(span: ChartSpan, plan: Plan, sim: SimResult): ChartSpan {
+  if (span !== "goal") return span;
+  const years = chartYears(
+    plan.assumptions.asOfDate,
+    sim.years,
+    "goal",
+    plan.assumptions.retirementGoalDate,
+  );
+  if (years.length < 2) return "horizon";
+  const len = years[years.length - 1].year - years[0].year;
+  if (len <= 6) return 5;
+  if (len <= 12) return 10;
+  return "horizon";
+}
+
+function goalMissing(plan: Plan, sim: SimResult, span: ChartSpan): boolean {
+  if (span !== "goal") return false;
+  return (
+    chartYears(plan.assumptions.asOfDate, sim.years, "goal", plan.assumptions.retirementGoalDate)
+      .length === 0
+  );
+}
+
+function monthsInGoal(
+  sim: SimResult,
+  asOfDate: string,
+  endYear: number,
+  endMonth: number,
+): MonthSnapshot[] {
+  if (!sim.months.length) return [];
+  const startY = Number(asOfDate.slice(0, 4));
+  const startM = Number(asOfDate.slice(5, 7)) || 1;
+  const startIdx = startY * 12 + startM;
+  const endIdx = endYear * 12 + endMonth;
+  return sim.months.filter((m) => {
+    const i = m.year * 12 + m.month;
+    return i >= startIdx && i <= endIdx;
+  });
 }
 
 function ChartSpanBar({
@@ -482,6 +538,44 @@ function wealthPoints(plan: Plan, sim: SimResult, span: ChartSpan): WealthPoint[
     }
     return point;
   };
+  if (span === "goal") {
+    const end = goalMonthEnd(plan, sim);
+    if (!end) return [];
+    const grain = axisFor(span, plan, sim);
+    const months = monthsInGoal(sim, plan.assumptions.asOfDate, end.year, end.month);
+    if (grain === 5 && months.length) {
+      return months.map((m) =>
+        fill(
+          {
+            t: `${m.year}-${pad2(m.month)}`,
+            spendable: Math.round(real ? m.spendableEndReal : m.spendableEnd),
+            netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
+            liabilities: -Math.round(real ? m.liabilitiesEndReal : m.liabilitiesEnd),
+          },
+          m.detail?.spendableLines,
+          m.spendableEnd,
+          m.spendableEndReal,
+        ),
+      );
+    }
+    if (grain === 10 && months.length) {
+      const byQ = new Map<string, MonthSnapshot>();
+      for (const m of months) byQ.set(`${m.year}-Q${Math.ceil(m.month / 3)}`, m);
+      return [...byQ.entries()].map(([t, m]) =>
+        fill(
+          {
+            t,
+            spendable: Math.round(real ? m.spendableEndReal : m.spendableEnd),
+            netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
+            liabilities: -Math.round(real ? m.liabilitiesEndReal : m.liabilitiesEnd),
+          },
+          m.detail?.spendableLines,
+          m.spendableEnd,
+          m.spendableEndReal,
+        ),
+      );
+    }
+  }
   if (span === 5) {
     return monthsInSpan(sim, plan.assumptions.asOfDate, 5).map((m) =>
       fill(
@@ -517,7 +611,7 @@ function wealthPoints(plan: Plan, sim: SimResult, span: ChartSpan): WealthPoint[
       ),
     );
   }
-  return yearsInView(sim, plan.assumptions.asOfDate, span).map((y) =>
+  return yearsInView(sim, plan.assumptions.asOfDate, span, plan.assumptions.retirementGoalDate).map((y) =>
     fill(
       {
         t: y.year,
@@ -551,6 +645,41 @@ function cashPoints(plan: Plan, sim: SimResult, span: ChartSpan): CashPoint[] {
     return value / (1 + inf) ** yearsOut;
   };
 
+  if (span === "goal") {
+    const end = goalMonthEnd(plan, sim);
+    if (!end) return [];
+    const grain = axisFor(span, plan, sim);
+    const months = monthsInGoal(sim, plan.assumptions.asOfDate, end.year, end.month);
+    if (grain === 5 && months.length) {
+      return months.map((m) => ({
+        t: `${m.year}-${pad2(m.month)}`,
+        income: Math.round(deflate(m.year, m.month, m.income)),
+        spending: Math.round(deflate(m.year, m.month, m.spending)),
+        guaranteed: Math.round(deflate(m.year, m.month, m.guaranteed)),
+        contributions: Math.round(deflate(m.year, m.month, m.contributions)),
+      }));
+    }
+    if (grain === 10 && months.length) {
+      const buckets = new Map<string, MonthSnapshot[]>();
+      for (const m of months) {
+        const key = `${m.year}-Q${Math.ceil(m.month / 3)}`;
+        const arr = buckets.get(key) ?? [];
+        arr.push(m);
+        buckets.set(key, arr);
+      }
+      return [...buckets.entries()].map(([t, arr]) => {
+        const sum = (fn: (m: MonthSnapshot) => number) => arr.reduce((s, m) => s + fn(m), 0);
+        return {
+          t,
+          income: Math.round(sum((m) => deflate(m.year, m.month, m.income))),
+          spending: Math.round(sum((m) => deflate(m.year, m.month, m.spending))),
+          guaranteed: Math.round(sum((m) => deflate(m.year, m.month, m.guaranteed))),
+          contributions: Math.round(sum((m) => deflate(m.year, m.month, m.contributions))),
+        };
+      });
+    }
+  }
+
   if (span === 5) {
     return monthsInSpan(sim, plan.assumptions.asOfDate, 5).map((m) => ({
       t: `${m.year}-${pad2(m.month)}`,
@@ -579,7 +708,7 @@ function cashPoints(plan: Plan, sim: SimResult, span: ChartSpan): CashPoint[] {
       };
     });
   }
-  return yearsInView(sim, plan.assumptions.asOfDate, span).map((y) => {
+  return yearsInView(sim, plan.assumptions.asOfDate, span, plan.assumptions.retirementGoalDate).map((y) => {
     const yearsOut = y.year - asOfYear;
     const deflator = real ? (1 + inf) ** yearsOut : 1;
     return {
@@ -615,6 +744,44 @@ function netWorthPoints(plan: Plan, sim: SimResult, span: ChartSpan): NwPoint[] 
     }
     return point;
   };
+  if (span === "goal") {
+    const end = goalMonthEnd(plan, sim);
+    if (!end) return [];
+    const grain = axisFor(span, plan, sim);
+    const months = monthsInGoal(sim, plan.assumptions.asOfDate, end.year, end.month);
+    if (grain === 5 && months.length) {
+      return months.map((m) =>
+        fill(
+          {
+            t: `${m.year}-${pad2(m.month)}`,
+            assets: Math.round(real ? m.assetsEndReal : m.assetsEnd),
+            liabilities: -Math.round(real ? m.liabilitiesEndReal : m.liabilitiesEnd),
+            netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
+          },
+          m.detail?.netWorthLines,
+          m.assetsEnd,
+          m.assetsEndReal,
+        ),
+      );
+    }
+    if (grain === 10 && months.length) {
+      const byQ = new Map<string, MonthSnapshot>();
+      for (const m of months) byQ.set(`${m.year}-Q${Math.ceil(m.month / 3)}`, m);
+      return [...byQ.entries()].map(([t, m]) =>
+        fill(
+          {
+            t,
+            assets: Math.round(real ? m.assetsEndReal : m.assetsEnd),
+            liabilities: -Math.round(real ? m.liabilitiesEndReal : m.liabilitiesEnd),
+            netWorth: Math.round(real ? m.netWorthEndReal : m.netWorthEnd),
+          },
+          m.detail?.netWorthLines,
+          m.assetsEnd,
+          m.assetsEndReal,
+        ),
+      );
+    }
+  }
   if (span === 5) {
     return monthsInSpan(sim, plan.assumptions.asOfDate, 5).map((m) =>
       fill(
@@ -649,7 +816,7 @@ function netWorthPoints(plan: Plan, sim: SimResult, span: ChartSpan): NwPoint[] 
       ),
     );
   }
-  return yearsInView(sim, plan.assumptions.asOfDate, span).map((y) =>
+  return yearsInView(sim, plan.assumptions.asOfDate, span, plan.assumptions.retirementGoalDate).map((y) =>
     fill(
       {
         t: y.year,
@@ -717,7 +884,16 @@ function axisDollars(n: number, ticks: number[]): string {
   return `${n < 0 ? "-" : ""}$${text}${suffix}`;
 }
 
-function fakeNetWorthPoints(span: ChartSpan): NwPoint[] {
+function fakeNetWorthPoints(span: ChartSpan, goalYears?: number | null): NwPoint[] {
+  if (span === "goal") {
+    const count = Math.max(2, goalYears ?? 2);
+    return Array.from({ length: count }, (_, i) => {
+      const year = 1969 + i;
+      const assets = 1_234_000 + i * 123_400;
+      const liabilities = Math.max(0, 987_000 - i * 48_500);
+      return { t: year, assets, liabilities, netWorth: assets - liabilities };
+    });
+  }
   if (span === 5) {
     const out: NwPoint[] = [];
     for (let i = 0; i < 5; i++) {
@@ -844,15 +1020,17 @@ export function WealthChart({
   const real = plan.assumptions.dollars === "real";
   const ent = useEntitlement();
   const netWorthPaid = hasBalanceSheet(ent.plan);
-  const [span, setSpan] = useState<ChartSpan>("horizon");
+  const [span, setSpan] = useState<ChartSpan>("goal");
   const [shape, setShape] = useState<WealthShape>("stacked");
   const [showLiabilities, setShowLiabilities] = useState(false);
   const [showNetWorth, setShowNetWorth] = useState(true);
   const { expanded, toggle, close } = useChartExpanded();
   const drawn = viewSpan ?? span;
+  const missingGoal = goalMissing(plan, sim, drawn);
+  const ticks = axisFor(drawn, plan, sim);
   const data = wealthPoints(plan, sim, drawn);
   const accounts = spendableSeries(plan, hasHeldCash(sim));
-  const x = axisProps(drawn);
+  const x = axisProps(ticks);
   const debtOn = netWorthPaid && showLiabilities;
 
   const body = (
@@ -907,12 +1085,13 @@ export function WealthChart({
       </>
       )}
       <div className={plotOnly ? "h-full w-full" : plotHeight(expanded, tall)}>
+        {missingGoal ? <GoalDateNote /> : (
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
             <CartesianGrid stroke={gridStroke} vertical={false} />
             <XAxis
               dataKey="t"
-              tickFormatter={(t) => formatAxisTick(t, drawn)}
+              tickFormatter={(t) => formatAxisTick(t, ticks)}
               tick={{ fill: tickFill, fontSize: 11 }}
               tickLine={false}
               axisLine={{ stroke: gridStroke }}
@@ -931,7 +1110,7 @@ export function WealthChart({
             />
             <Tooltip
               formatter={formatTip}
-              labelFormatter={(t) => formatAxisTick(t as string | number, drawn)}
+              labelFormatter={(t) => formatAxisTick(t as string | number, ticks)}
               contentStyle={tooltipStyle}
               labelStyle={{ color: "#1a2330" }}
               itemSorter={stackTipOrder(
@@ -1012,6 +1191,7 @@ export function WealthChart({
             ) : null}
           </ComposedChart>
         </ResponsiveContainer>
+        )}
       </div>
     </div>
   );
@@ -1042,7 +1222,7 @@ export function CashChart({
   viewSpan?: ChartSpan;
   plotOnly?: boolean;
 }) {
-  const [span, setSpan] = useState<ChartSpan>("horizon");
+  const [span, setSpan] = useState<ChartSpan>("goal");
   const [shown, setShown] = useState({
     income: true,
     spending: true,
@@ -1051,8 +1231,10 @@ export function CashChart({
   });
   const { expanded, toggle, close } = useChartExpanded();
   const drawn = viewSpan ?? span;
+  const missingGoal = goalMissing(plan, sim, drawn);
+  const ticks = axisFor(drawn, plan, sim);
   const data = cashPoints(plan, sim, drawn);
-  const x = axisProps(drawn);
+  const x = axisProps(ticks);
   const flip = (key: keyof typeof shown) =>
     setShown((current) => ({ ...current, [key]: !current[key] }));
   const series = [
@@ -1112,12 +1294,13 @@ export function CashChart({
       </>
       )}
       <div className={plotOnly ? "h-full w-full" : plotHeight(expanded, tall)}>
+        {missingGoal ? <GoalDateNote /> : (
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
             <CartesianGrid stroke={gridStroke} vertical={false} />
             <XAxis
               dataKey="t"
-              tickFormatter={(t) => formatAxisTick(t, drawn)}
+              tickFormatter={(t) => formatAxisTick(t, ticks)}
               tick={{ fill: tickFill, fontSize: 11 }}
               tickLine={false}
               axisLine={{ stroke: gridStroke }}
@@ -1136,7 +1319,7 @@ export function CashChart({
             />
             <Tooltip
               formatter={formatTip}
-              labelFormatter={(t) => formatCashTip(t as string | number, drawn)}
+              labelFormatter={(t) => formatCashTip(t as string | number, ticks)}
               contentStyle={tooltipStyle}
               labelStyle={{ color: "#1a2330" }}
               itemStyle={{ color: "#4b5b6e" }}
@@ -1147,7 +1330,7 @@ export function CashChart({
                 type="monotone"
                 dataKey="income"
                 name={
-                  drawn === 5 ? "Income this month" : drawn === 10 ? "Income this quarter" : "Income"
+                  ticks === 5 ? "Income this month" : ticks === 10 ? "Income this quarter" : "Income"
                 }
                 stroke="var(--color-positive)"
                 fill="var(--color-positive)"
@@ -1161,9 +1344,9 @@ export function CashChart({
                 type="monotone"
                 dataKey="spending"
                 name={
-                  drawn === 5
+                  ticks === 5
                     ? "Spending this month"
-                    : drawn === 10
+                    : ticks === 10
                       ? "Spending this quarter"
                       : "Spending"
                 }
@@ -1179,9 +1362,9 @@ export function CashChart({
                 type="monotone"
                 dataKey="contributions"
                 name={
-                  drawn === 5
+                  ticks === 5
                     ? "Contributions this month"
-                    : drawn === 10
+                    : ticks === 10
                       ? "Contributions this quarter"
                       : "Contributions"
                 }
@@ -1196,9 +1379,9 @@ export function CashChart({
                 type="monotone"
                 dataKey="guaranteed"
                 name={
-                  drawn === 5
+                  ticks === 5
                     ? "Guaranteed this month (pension / VA / SS)"
-                    : drawn === 10
+                    : ticks === 10
                       ? "Guaranteed this quarter (pension / VA / SS)"
                       : "Guaranteed (pension / VA / SS)"
                 }
@@ -1210,6 +1393,7 @@ export function CashChart({
             ) : null}
           </ComposedChart>
         </ResponsiveContainer>
+        )}
       </div>
     </div>
     </ChartStage>
@@ -1257,20 +1441,28 @@ export function NetWorthChart({
   plotOnly?: boolean;
 }) {
   const real = plan.assumptions.dollars === "real";
-  const [span, setSpan] = useState<ChartSpan>(10);
+  const [span, setSpan] = useState<ChartSpan>("goal");
   const [shape, setShape] = useState<WealthShape>("stacked");
   const { expanded, toggle, close } = useChartExpanded();
   const [minimized, setMinimized] = useState(readNetWorthMin);
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
   const drawn = viewSpan ?? span;
+  const missingGoal = goalMissing(plan, sim, drawn);
+  const ticks = axisFor(drawn, plan, sim);
   const accounts = netWorthAccountSeries(plan, locked ? false : hasHeldCash(sim));
   const live = netWorthPoints(plan, sim, drawn);
-  const data = locked ? fakeNetWorthPoints(drawn) : live;
+  const goalYears = chartYears(
+    plan.assumptions.asOfDate,
+    sim.years,
+    "goal",
+    plan.assumptions.retirementGoalDate,
+  ).length;
+  const data = locked ? fakeNetWorthPoints(drawn, drawn === "goal" ? goalYears : undefined) : live;
   const hasDebt = data.some((d) => Math.abs(d.liabilities) > 1);
   const accountsLive =
     !locked &&
     accounts.some((account) => data.some((point) => Math.abs(Number(point[account.key] ?? 0)) > 1));
-  const x = axisProps(drawn);
+  const x = axisProps(ticks);
   const shown = (id: string) => !hidden.has(id);
   const flip = (id: string) => {
     setHidden((current) => {
@@ -1377,12 +1569,13 @@ export function NetWorthChart({
         </>
         )}
         <div className={plotOnly ? "h-full w-full" : plotHeight(expanded, tall)}>
+          {missingGoal ? <GoalDateNote /> : (
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
               <CartesianGrid stroke="var(--color-border)" vertical={false} />
               <XAxis
                 dataKey="t"
-                tickFormatter={(t) => formatAxisTick(t, drawn)}
+                tickFormatter={(t) => formatAxisTick(t, ticks)}
                 tick={{ fill: tickFill, fontSize: 11 }}
                 tickLine={false}
                 axisLine={{ stroke: "var(--color-border)" }}
@@ -1404,7 +1597,7 @@ export function NetWorthChart({
               />
               <Tooltip
                 content={<NetWorthTip bottomToTop={visibleKeys} />}
-                labelFormatter={(t) => formatAxisTick(t as string | number, drawn)}
+                labelFormatter={(t) => formatAxisTick(t as string | number, ticks)}
               />
               <Legend wrapperStyle={{ fontSize: 12, color: "#4b5b6e" }} />
               <ReferenceLine
@@ -1496,6 +1689,7 @@ export function NetWorthChart({
               )}
             </ComposedChart>
           </ResponsiveContainer>
+          )}
         </div>
       </div>
       {locked ? (

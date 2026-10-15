@@ -212,10 +212,15 @@ export async function captureChartPictures(input: {
   survival: SurvivalScore | null;
 }): Promise<ChartPicture[]> {
   const size = chartCaptureSize(input.orientation);
-  const years = chartYears(input.plan.assumptions.asOfDate, input.sim.years, input.span);
+  const years = chartYears(
+    input.plan.assumptions.asOfDate,
+    input.sim.years,
+    input.span,
+    input.plan.assumptions.retirementGoalDate,
+  );
   const out: ChartPicture[] = [];
   for (const id of input.charts) {
-    if (id !== "monte" && years.length < 2) continue;
+    if (id !== "monte" && input.span !== "goal" && years.length < 2) continue;
     let node: ReactNode = null;
     if (id === "spendable") {
       node = <WealthChart plan={input.plan} sim={input.sim} viewSpan={input.span} plotOnly />;
@@ -224,7 +229,12 @@ export async function captureChartPictures(input: {
     } else if (id === "net") {
       node = <NetWorthChart plan={input.plan} sim={input.sim} viewSpan={input.span} plotOnly />;
     } else if (input.survival && input.survival.bands.length > 0) {
-      const bands = chartYears(input.plan.assumptions.asOfDate, input.survival.bands, input.span);
+      const bands = chartYears(
+        input.plan.assumptions.asOfDate,
+        input.survival.bands,
+        input.span,
+        input.plan.assumptions.retirementGoalDate,
+      );
       if (bands.length < 2) continue;
       const traces = sliceTraces(input.survival.traces, bands.map((band) => band.year));
       const age = input.plan.assumptions.projectionEndAge;

@@ -231,6 +231,13 @@ export interface Assumptions {
   retirementGoalDate: string | null;
   /** Spendable nest egg target in today's dollars at the retirement date. */
   nestEggGoal: number | null;
+  /**
+   * Monthly retirement paycheck they want, in today's dollars.
+   * Scored only when goalMode is "income".
+   */
+  incomeGoalMonthly?: number | null;
+  /** Which goal Act scores. Absent means the nest egg. */
+  goalMode?: "nest" | "income";
 }
 
 /** A kept answer on an overlap or a contribution the month cannot fund. */

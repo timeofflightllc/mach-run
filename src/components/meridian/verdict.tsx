@@ -11,7 +11,6 @@ import { monthlyIncomeAt } from "@/lib/plan/engine";
 import { usd } from "@/lib/plan/format";
 import { runOutSentence, survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { nestEggTrack, peerRankLine, type PeerBrief } from "@/lib/plan/peers";
-import { cashParkedYears, cashShortYears, paycheckGapNote } from "@/lib/plan/cash-short";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 
@@ -39,53 +38,6 @@ export function NestEggHeadline({
       You are {mark("not")} on track for {usd(egg.goal)} by {egg.targetYear}
       {byAge}.
     </>
-  );
-}
-
-function NestEggGap({
-  sim,
-  egg,
-}: {
-  sim: SimResult;
-  egg: NonNullable<ReturnType<typeof nestEggTrack>>;
-}) {
-  const projected = Math.max(0, egg.projected);
-  const fill = egg.goal > 0 ? Math.min(100, (projected / egg.goal) * 100) : 0;
-  const short = Math.max(0, egg.goal - egg.projected);
-  const early = egg.hitYear != null && egg.hitYear < egg.targetYear;
-  const blocked = paycheckGapNote(
-    cashShortYears(sim).map((row) => row.year),
-    cashParkedYears(sim, egg.targetYear),
-  );
-  let status: string;
-  if (!egg.onTrack) {
-    status = `${usd(short)} short of the goal in ${egg.targetYear}.`;
-  } else if (early) {
-    status = `You clear ${usd(egg.goal)} in ${egg.hitYear}${egg.hitAge != null ? ` (age ${egg.hitAge})` : ""}.`;
-  } else {
-    status = `On the ${usd(egg.goal)} goal in ${egg.targetYear}.`;
-  }
-  const lever = !egg.onTrack
-    ? blocked ??
-      `About ${usd(egg.extraMonthly, true)} more a month, on top of what you already save, closes it by ${egg.targetYear}.`
-    : null;
-  return (
-    <div className="mt-auto hidden border-t border-border pt-3 @min-[36rem]/act:block">
-      <p className="text-xs text-subtle">Spendable at the goal date, today's dollars</p>
-      <div className="mt-1 flex items-baseline justify-between gap-3 text-xs font-medium tabular-nums text-fg">
-        <span>{usd(projected)}</span>
-        <span>{usd(egg.goal)}</span>
-      </div>
-      <div
-        className="mt-1.5 h-4 overflow-hidden rounded-full bg-slate-200"
-        role="img"
-        aria-label={`${usd(projected)} of the ${usd(egg.goal)} goal in ${egg.targetYear}`}
-      >
-        <div className="h-full rounded-full bg-accent" style={{ width: `${fill}%` }} />
-      </div>
-      <p className="mt-2 text-sm font-medium leading-snug text-fg">{status}</p>
-      {lever ? <p className="mt-1 text-sm leading-snug text-muted">{lever}</p> : null}
-    </div>
   );
 }
 
@@ -191,7 +143,6 @@ export function Verdict({
             </p>
           )}
       </div>
-      {egg ? <NestEggGap sim={sim} egg={egg} /> : null}
     </div>
   );
 }

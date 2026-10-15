@@ -63,6 +63,8 @@ export function demoPlan(): Plan {
       defaultReturnPct: 7,
       retirementGoalDate: "2051-04-01",
       nestEggGoal: 2_500_000,
+      incomeGoalMonthly: 10_000,
+      goalMode: "income",
       sweepPortfolioId: "demo-savings",
     },
     portfolios: [

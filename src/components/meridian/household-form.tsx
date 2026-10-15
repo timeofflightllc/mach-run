@@ -273,20 +273,60 @@ export function AssumptionsForm() {
                     />
                   </Field>
                 )}
-                <Field label="Nest egg goal (today $)" className="w-full min-w-0 max-w-40">
-                  <MoneyInput
-                    value={plan.assumptions.nestEggGoal ?? 0}
-                    onValue={(n) => patchAssumptions({ nestEggGoal: n > 0 ? n : null })}
-                    className="w-full max-w-full"
-                  />
-                </Field>
+                <div className="flex w-auto flex-col gap-1.5">
+                  <span className="text-xs font-medium tracking-wide text-muted">Goal</span>
+                  <div className="inline-flex rounded-lg bg-slate-100 p-1">
+                    {(
+                      [
+                        ["nest", "Nest egg"],
+                        ["income", "Monthly pay"],
+                      ] as const
+                    ).map(([id, label]) => {
+                      const on = (plan.assumptions.goalMode === "income" ? "income" : "nest") === id;
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() => patchAssumptions({ goalMode: id })}
+                          className={
+                            on
+                              ? "h-8 rounded-md bg-white px-3 text-xs font-medium text-fg shadow-sm"
+                              : "h-8 rounded-md px-3 text-xs font-medium text-muted"
+                          }
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {plan.assumptions.goalMode === "income" ? (
+                  <Field label="Wanted each month (today $)" className="w-full min-w-0 max-w-52">
+                    <MoneyInput
+                      value={plan.assumptions.incomeGoalMonthly ?? 0}
+                      onValue={(n) => patchAssumptions({ incomeGoalMonthly: n > 0 ? n : null })}
+                      className="w-full max-w-full"
+                    />
+                  </Field>
+                ) : (
+                  <Field label="Nest egg goal (today $)" className="w-full min-w-0 max-w-40">
+                    <MoneyInput
+                      value={plan.assumptions.nestEggGoal ?? 0}
+                      onValue={(n) => patchAssumptions({ nestEggGoal: n > 0 ? n : null })}
+                      className="w-full max-w-full"
+                    />
+                  </Field>
+                )}
               </>
             );
           })()}
         </div>
         <p className="text-xs leading-relaxed text-subtle">
           Balances peg to the as-of date. Blank end dates run through the longevity age. Act’s
-          Spendable strip keys off the retirement date. Blank nest egg means no lump-sum goal.
+          Spendable strip keys off the retirement date. Pick a nest egg or a monthly paycheck.
+          Pension, VA, military retired pay, and Social Security in this run count toward the
+          paycheck. A blank goal is not scored.
         </p>
       </div>
 

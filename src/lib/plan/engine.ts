@@ -46,7 +46,7 @@ import type {
 } from "./types";
 import { CASH_ON_HAND_ID } from "./types.ts";
 
-const WITHDRAW_ORDER: TaxBucket[] = ["taxable", "pre_tax", "roth"];
+const WITHDRAW_ORDER: TaxBucket[] = ["none", "taxable", "pre_tax", "roth"];
 
 function isGuaranteedKind(kind: string): boolean {
   return (

@@ -16,6 +16,20 @@ test("chart year window matches the on-screen span rule", () => {
   );
 });
 
+test("goal span ends at the retirement goal year", () => {
+  const years = [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036, 2037].map(
+    (year) => ({ year }),
+  );
+  const goal = chartYears("2026-01-01", years, "goal", "2036-06-01").map((year) => year.year);
+  assert.deepEqual(goal, [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033, 2034, 2035, 2036]);
+  assert.equal(goal.includes(2037), false);
+  assert.deepEqual(chartYears("2026-01-01", years, "goal", null), []);
+  assert.deepEqual(
+    chartYears("2026-01-01", years.slice(0, 8), "goal", "2036-06-01").map((year) => year.year),
+    [2026, 2027, 2028, 2029, 2030, 2031, 2032, 2033],
+  );
+});
+
 function year(year: number, endSpendable: number): YearSnapshot {
   return {
     year,

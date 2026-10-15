@@ -20,6 +20,7 @@ const CHOICES: { id: ChartPdfChoice; label: string }[] = [
 
 function spanChoices(endAge: number): { id: ChartSpan; label: string }[] {
   return [
+    { id: "goal", label: "To goal" },
     { id: 5, label: "5-Year" },
     { id: 10, label: "10-Year" },
     { id: 20, label: "20-Year" },
@@ -48,7 +49,7 @@ export function ChartDownload({
     monte: false,
   });
   const [orientation, setOrientation] = useState<ChartOrientation>("portrait");
-  const [span, setSpan] = useState<ChartSpan>("horizon");
+  const [span, setSpan] = useState<ChartSpan>("goal");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -69,7 +70,7 @@ export function ChartDownload({
   function openDialog() {
     setPicked({ spendable: true, cash: true, net: true, monte: monteReady });
     setOrientation("portrait");
-    setSpan("horizon");
+    setSpan("goal");
     setError("");
     setOpen(true);
   }

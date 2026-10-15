@@ -27,6 +27,8 @@ export function createDefaultPlan(): Plan {
       dollars: "real",
       retirementGoalDate: null,
       nestEggGoal: null,
+      incomeGoalMonthly: null,
+      goalMode: "nest",
     },
     stages: [],
     portfolios: [],
@@ -128,6 +130,14 @@ export function ensurePlan(plan: Plan): Plan {
   }
   if (next.assumptions.nestEggGoal === undefined) {
     next.assumptions = { ...next.assumptions, nestEggGoal: null };
+  }
+  if (next.assumptions.incomeGoalMonthly == null || !Number.isFinite(next.assumptions.incomeGoalMonthly)) {
+    next.assumptions = { ...next.assumptions, incomeGoalMonthly: null };
+  } else if (next.assumptions.incomeGoalMonthly <= 0) {
+    next.assumptions = { ...next.assumptions, incomeGoalMonthly: null };
+  }
+  if (next.assumptions.goalMode !== "income") {
+    next.assumptions = { ...next.assumptions, goalMode: "nest" };
   }
   if (
     next.assumptions.defaultColaPct == null ||

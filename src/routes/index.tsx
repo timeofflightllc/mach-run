@@ -585,6 +585,7 @@ function pageStarted(plan: Plan, id: StepId, calculated: boolean): boolean {
       return Boolean(
         a.retirementGoalDate ||
           (a.nestEggGoal != null && a.nestEggGoal > 0) ||
+          (a.goalMode === "income" && (a.incomeGoalMonthly ?? 0) > 0) ||
           a.sweepPortfolioId ||
           a.asOfPinned ||
           a.inflationPct !== blank.inflationPct ||
@@ -2097,7 +2098,11 @@ function Home() {
                                   : null
                               }
                             />
-                            <KpiStrip plan={displayPlan} sim={run.sim} />
+                            <KpiStrip
+                              plan={displayPlan}
+                              sim={run.sim}
+                              onExecute={() => void calculate({ stay: true })}
+                            />
                           </div>
                         </div>
                         <div className={cn("flex min-w-0 flex-col gap-3", simulatorFull && "@min-[36rem]/act:h-full")}>

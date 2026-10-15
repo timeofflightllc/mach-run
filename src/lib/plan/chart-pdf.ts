@@ -2,7 +2,7 @@ import type { Plan, SimResult } from "./types";
 import type { SurvivalScore } from "./monte-carlo-run";
 
 /** Same windows as the on-screen span chips. 5 means the as-of year through five years later. */
-export type ChartSpan = 5 | 10 | 20 | "horizon";
+export type ChartSpan = 5 | 10 | 20 | "horizon" | "goal";
 export type ChartPdfChoice = "spendable" | "cash" | "net" | "monte";
 export type ChartOrientation = "portrait" | "landscape";
 
@@ -35,13 +35,33 @@ const TITLES: Record<ChartPdfChoice, string> = {
   monte: "Monte Carlo Plan Survival",
 };
 
+/** Last calendar year of a goal chart. Null when the date is missing or invalid. Not past the last simulated year. */
+export function chartGoalEnd(
+  goalDate: string | null | undefined,
+  years: readonly { year: number }[],
+): number | null {
+  if (!goalDate || !/^\d{4}-\d{2}-\d{2}$/.test(goalDate)) return null;
+  const year = Number(goalDate.slice(0, 4));
+  const month = Number(goalDate.slice(5, 7));
+  if (!Number.isFinite(year) || month < 1 || month > 12) return null;
+  if (!years.length) return year;
+  return Math.min(year, years[years.length - 1].year);
+}
+
 /** Copy of yearsInView. Do not tighten the end year. */
 export function chartYears<T extends { year: number }>(
   asOfDate: string,
   years: readonly T[],
   span: ChartSpan,
+  goalDate?: string | null,
 ): T[] {
   if (span === "horizon") return [...years];
+  if (span === "goal") {
+    const end = chartGoalEnd(goalDate, years);
+    if (end == null) return [];
+    const startYear = Number(asOfDate.slice(0, 4));
+    return years.filter((year) => year.year >= startYear && year.year <= end);
+  }
   const startYear = Number(asOfDate.slice(0, 4));
   const sliced = years.filter((year) => year.year >= startYear && year.year <= startYear + span);
   return sliced.length ? sliced : [...years];
@@ -54,6 +74,7 @@ export function chartCaptureSize(orientation: ChartOrientation): { width: number
 
 function spanLabel(span: ChartSpan, endAge: number): string {
   if (span === "horizon") return `Horizon to age ${endAge}`;
+  if (span === "goal") return "To goal";
   return `${span}-Year`;
 }
 
@@ -404,7 +425,11 @@ export function buildChartPdf(input: {
   const pictures = input.charts.flatMap((id) => {
     const picture = input.pictures.find((item) => item.id === id);
     if (!picture || picture.jpeg.length < 4) return [];
-    if (id !== "monte" && chartYears(input.plan.assumptions.asOfDate, input.sim.years, input.span).length < 2) {
+    if (
+      id !== "monte" &&
+      input.span !== "goal" &&
+      chartYears(input.plan.assumptions.asOfDate, input.sim.years, input.span, input.plan.assumptions.retirementGoalDate).length < 2
+    ) {
       return [];
     }
     return [{ id, jpeg: picture.jpeg, title: TITLES[id], note }];

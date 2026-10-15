@@ -121,5 +121,7 @@ export function assumptionRows(plan: Plan): [string, string | number | null][] {
     ["dollars", a.dollars],
     ["retirementGoalDate", a.retirementGoalDate],
     ["nestEggGoal", a.nestEggGoal],
+    ["incomeGoalMonthly", a.incomeGoalMonthly ?? null],
+    ["goalMode", a.goalMode === "income" ? "income" : "nest"],
   ];
 }

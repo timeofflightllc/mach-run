@@ -28,6 +28,20 @@ function withExtraSpending(plan: Plan, extraMonthly: number): Plan {
   };
 }
 
+function retirementHolds(plan: Plan, sim: SimResult): boolean {
+  if (sim.depletedAge != null) return false;
+  const goal = plan.assumptions.retirementGoalDate;
+  if (!goal) return false;
+  const startYear = Number(goal.slice(0, 4));
+  for (const year of sim.years) {
+    if (year.year < startYear) continue;
+    const covered = year.income + year.withdrawals;
+    const need = year.tax + year.spending + year.contributions;
+    if (need > covered + 1) return false;
+  }
+  return true;
+}
+
 function drawnThatYear(plan: Plan, sim: SimResult, incomeYear: number): { nominal: number; real: number } {
   const nominal = sim.years.find((row) => row.year === incomeYear)?.airWithdrawals ?? 0;
   const infl = plan.assumptions.inflationPct / 100;
@@ -51,7 +65,7 @@ export function sustainableRetirementIncome(plan: Plan): SustainableIncome | nul
     const sim = Math.abs(extraMonthly) < 1 ? base : simulate(withExtraSpending(plan, extraMonthly));
     const drawn = drawnThatYear(plan, sim, incomeYear);
     return {
-      lasts: sim.depletedAge == null,
+      lasts: retirementHolds(plan, sim),
       nominal: sim.retirement?.annualIncome ?? scheduled.annualIncome,
       real: sim.retirement?.annualIncomeReal ?? scheduled.annualIncomeReal,
       withdrawalNominal: drawn.nominal,
@@ -62,7 +76,7 @@ export function sustainableRetirementIncome(plan: Plan): SustainableIncome | nul
   const floor = -plan.spending.reduce((sum, phase) => sum + Math.max(0, phase.monthlyAmount), 0);
   let lo = floor;
   let hi = 0;
-  if (base.depletedAge == null) {
+  if (retirementHolds(plan, base)) {
     lo = 0;
     hi = 2_000;
     let guard = 0;
@@ -73,7 +87,7 @@ export function sustainableRetirementIncome(plan: Plan): SustainableIncome | nul
     }
   }
 
-  for (let step = 0; step < 12 && hi - lo > 25; step += 1) {
+  for (let step = 0; step < 16 && hi - lo > 25; step += 1) {
     const mid = (lo + hi) / 2;
     if (read(mid).lasts) lo = mid;
     else hi = mid;
