@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DateInput, Field, MoneyInput } from "@/components/ui/field";
 import { usd } from "@/lib/plan/format";
 import { startingNetWorth, startingSpendable } from "@/lib/plan/engine";
@@ -72,21 +72,52 @@ function GoalScore({
   const live = usePlanStore((s) => s.plan);
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
   const ready = view === "nest" ? Boolean(egg) : Boolean(gap);
-  const putDate = (v: string) => {
-    const next = v === "" ? null : v;
-    if (next === (live.assumptions.retirementGoalDate ?? null)) return;
-    patchAssumptions({ retirementGoalDate: next });
-  };
-  const putIncome = (n: number) => {
-    const next = n > 0 ? n : null;
-    if (next === (live.assumptions.incomeGoalMonthly ?? null) && live.assumptions.goalMode === "income") return;
-    patchAssumptions({ incomeGoalMonthly: next, goalMode: "income" });
-  };
-  const putNest = (n: number) => {
-    const next = n > 0 ? n : null;
-    if (next === (live.assumptions.nestEggGoal ?? null) && live.assumptions.goalMode !== "income") return;
-    patchAssumptions({ nestEggGoal: next, goalMode: "nest" });
-  };
+  const [dateDraft, setDateDraft] = useState<string | null>(live.assumptions.retirementGoalDate);
+  const [incomeDraft, setIncomeDraft] = useState(live.assumptions.incomeGoalMonthly ?? 0);
+  const [nestDraft, setNestDraft] = useState(live.assumptions.nestEggGoal ?? 0);
+  const dateRef = useRef(dateDraft);
+  const incomeRef = useRef(incomeDraft);
+  const nestRef = useRef(nestDraft);
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  useEffect(() => {
+    dateRef.current = live.assumptions.retirementGoalDate;
+    setDateDraft(live.assumptions.retirementGoalDate);
+  }, [live.assumptions.retirementGoalDate]);
+  useEffect(() => {
+    const next = live.assumptions.incomeGoalMonthly ?? 0;
+    incomeRef.current = next;
+    setIncomeDraft(next);
+  }, [live.assumptions.incomeGoalMonthly]);
+  useEffect(() => {
+    const next = live.assumptions.nestEggGoal ?? 0;
+    nestRef.current = next;
+    setNestDraft(next);
+  }, [live.assumptions.nestEggGoal]);
+  function flushGoal() {
+    const date = dateRef.current && /^\d{4}-\d{2}-\d{2}$/.test(dateRef.current) ? dateRef.current : null;
+    const amount = viewRef.current === "income" ? incomeRef.current : nestRef.current;
+    if (!date || !(amount > 0)) return;
+    if (viewRef.current === "income") {
+      if (
+        date === (live.assumptions.retirementGoalDate ?? null) &&
+        amount === (live.assumptions.incomeGoalMonthly ?? null) &&
+        live.assumptions.goalMode === "income"
+      ) {
+        return;
+      }
+      patchAssumptions({ retirementGoalDate: date, incomeGoalMonthly: amount, goalMode: "income" });
+      return;
+    }
+    if (
+      date === (live.assumptions.retirementGoalDate ?? null) &&
+      amount === (live.assumptions.nestEggGoal ?? null) &&
+      live.assumptions.goalMode !== "income"
+    ) {
+      return;
+    }
+    patchAssumptions({ retirementGoalDate: date, nestEggGoal: amount, goalMode: "nest" });
+  }
   return (
     <div className="mt-px bg-surface px-3 py-3 sm:px-4">
       <div className="inline-flex rounded-lg bg-slate-100 p-0.5">
@@ -119,29 +150,46 @@ function GoalScore({
       ) : ready && gap ? (
         <MonthlyPayBar gap={gap} canPay={canPay} payShort={payShort} payFill={payFill} bump={bump} />
       ) : (
-        <div className="mt-3 flex flex-col gap-3">
+        <div
+          className="mt-3 flex flex-col gap-3"
+          onBlur={(event) => {
+            const next = event.relatedTarget;
+            if (next instanceof Node && event.currentTarget.contains(next)) return;
+            flushGoal();
+          }}
+        >
           <p className="text-sm leading-snug text-muted">
-            Add the retirement date and the goal, then run again. This score stays here.
+            Add the retirement date and the goal, then Execute MACH RUN.
           </p>
           <div className="flex flex-wrap items-end gap-3">
             <Field label="Retirement goal date" className="w-full min-w-0 max-w-xs">
               <DateInput
-                value={live.assumptions.retirementGoalDate}
-                onValue={putDate}
+                value={dateDraft}
+                onValue={(v) => {
+                  const next = v === "" ? null : v;
+                  dateRef.current = next;
+                  setDateDraft(next);
+                }}
               />
             </Field>
             {view === "income" ? (
               <Field label="Wanted each month (today $)" className="w-full min-w-0 max-w-52">
                 <MoneyInput
-                  value={live.assumptions.incomeGoalMonthly ?? 0}
-                  onValue={putIncome}
+                  value={incomeDraft}
+                  onValue={(n) => {
+                    incomeRef.current = n;
+                    setIncomeDraft(n);
+                  }}
                 />
               </Field>
             ) : (
               <Field label="Nest egg goal (today $)" className="w-full min-w-0 max-w-52">
                 <MoneyInput
-                  value={live.assumptions.nestEggGoal ?? 0}
-                  onValue={putNest}
+                  value={nestDraft}
+                  onValue={(n) => {
+                    nestRef.current = n;
+                    setNestDraft(n);
+                  }}
                 />
               </Field>
             )}
@@ -149,7 +197,10 @@ function GoalScore({
           {onExecute ? (
             <button
               type="button"
-              onClick={onExecute}
+              onClick={() => {
+                flushGoal();
+                onExecute();
+              }}
               className="h-10 w-fit rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
             >
               Execute MACH RUN

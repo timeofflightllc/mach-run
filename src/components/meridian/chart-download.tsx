@@ -130,7 +130,7 @@ export function ChartDownload({
               onMouseDown={(event) => event.stopPropagation()}
             >
               <h2 id="chart-download-title" className="font-display text-lg">
-                Download chart
+                Download chart in PDF Format
               </h2>
               {noRun ? (
                 <p className="mt-3 text-sm leading-relaxed">There is no MACH RUN yet.</p>
@@ -225,7 +225,7 @@ export function ChartDownload({
         onClick={openDialog}
         className="shrink-0 text-sm font-medium text-slate-700 underline decoration-slate-300 underline-offset-2 hover:text-slate-900"
       >
-        Download chart
+        Download chart in PDF Format
       </button>
       {dialog}
     </>
