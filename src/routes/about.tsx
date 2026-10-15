@@ -49,13 +49,20 @@ function About() {
           </figure>
           <div className="min-w-0 space-y-8">
             <SiteCopyBody body={page.body} />
-            <figure className="max-w-sm">
+            <div className="flex items-center gap-4 sm:gap-10">
               <img
                 src="/brand/cain-signature.png?v=4"
                 alt="Cain"
-                className="h-20 w-auto sm:h-24"
+                className="h-auto w-auto min-w-0 max-w-[68%] object-contain object-left sm:max-h-24 sm:max-w-[26rem]"
               />
-            </figure>
+              <img
+                src="/brand/veteran-owned.png"
+                alt="U.S. Veteran Owned Business"
+                width={338}
+                height={292}
+                className="h-20 w-auto shrink-0 sm:h-40"
+              />
+            </div>
           </div>
         </div>
         <RelatedPieces path="/about" />
