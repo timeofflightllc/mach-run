@@ -275,11 +275,11 @@ export function AssumptionsForm() {
                 )}
                 <div className="flex w-auto flex-col gap-1.5">
                   <span className="text-xs font-medium tracking-wide text-muted">Goal</span>
-                  <div className="inline-flex rounded-lg bg-slate-100 p-1">
+                  <div className="inline-flex max-w-full flex-wrap rounded-lg bg-slate-100 p-1">
                     {(
                       [
-                        ["nest", "Nest egg"],
-                        ["income", "Monthly pay"],
+                        ["nest", "Retirement Nest Egg Goal"],
+                        ["income", "Monthly Retirement Income Goal"],
                       ] as const
                     ).map(([id, label]) => {
                       const on = (plan.assumptions.goalMode === "income" ? "income" : "nest") === id;
@@ -291,8 +291,8 @@ export function AssumptionsForm() {
                           onClick={() => patchAssumptions({ goalMode: id })}
                           className={
                             on
-                              ? "h-8 rounded-md bg-white px-3 text-xs font-medium text-fg shadow-sm"
-                              : "h-8 rounded-md px-3 text-xs font-medium text-muted"
+                              ? "h-8 whitespace-nowrap rounded-md bg-white px-3 text-xs font-medium text-fg shadow-sm"
+                              : "h-8 whitespace-nowrap rounded-md px-3 text-xs font-medium text-muted"
                           }
                         >
                           {label}

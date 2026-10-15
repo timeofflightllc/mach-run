@@ -136,11 +136,11 @@ function GoalScore({
   const showForm = editing || !(view === "nest" ? egg : gap);
   return (
     <div className="mt-px bg-surface px-3 py-3 sm:px-4">
-      <div className="inline-flex rounded-lg bg-slate-100 p-0.5">
+      <div className="inline-flex max-w-full flex-wrap rounded-lg bg-slate-100 p-0.5">
         {(
           [
-            ["nest", "Nest egg"],
-            ["income", "Monthly pay"],
+            ["nest", "Retirement Nest Egg Goal"],
+            ["income", "Monthly Retirement Income Goal"],
           ] as const
         ).map(([id, label]) => {
           const on = view === id;
@@ -152,8 +152,8 @@ function GoalScore({
               onClick={() => setView(id)}
               className={
                 on
-                  ? "h-7 rounded-md bg-white px-2.5 text-xs font-medium text-fg shadow-sm"
-                  : "h-7 rounded-md px-2.5 text-xs font-medium text-muted"
+                  ? "h-7 whitespace-nowrap rounded-md bg-white px-2.5 text-xs font-medium text-fg shadow-sm"
+                  : "h-7 whitespace-nowrap rounded-md px-2.5 text-xs font-medium text-muted"
               }
             >
               {label}
@@ -309,7 +309,7 @@ function MonthlyPayBar({
             : "On the monthly paycheck you asked for."
       }
       note={detail || null}
-      action={onEdit ? <EditGoalButton label="Edit monthly pay" onClick={onEdit} /> : null}
+      action={onEdit ? <EditGoalButton label="Edit Monthly Retirement Income Goal" onClick={onEdit} /> : null}
     />
   );
 }
@@ -353,7 +353,7 @@ function NestEggBar({
       fill={fill}
       status={status}
       note={lever}
-      action={onEdit ? <EditGoalButton label="Edit nest egg" onClick={onEdit} /> : null}
+      action={onEdit ? <EditGoalButton label="Edit Retirement Nest Egg Goal" onClick={onEdit} /> : null}
     />
   );
 }
