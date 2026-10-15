@@ -20,6 +20,15 @@ export interface AdvisorySide {
   end: string | null;
 }
 
+export interface AdvisoryAhead {
+  id: string;
+  name: string;
+  /** Same ask every month of the conflict. Null when the months differ. */
+  monthly: number | null;
+  months: { date: string; asked: number }[];
+  period: number;
+}
+
 export interface AdvisoryMonth {
   date: string;
   asked: number;
@@ -53,7 +62,8 @@ export type AdvisoryDetail =
       laterYears: number;
       months: AdvisoryMonth[];
       lines: string[];
-      ahead: string[];
+      ahead: AdvisoryAhead[];
+      aheadSpan: string;
       notes: string[];
     };
 
@@ -259,8 +269,8 @@ function cashAdvisories(plan: Plan): Advisory[] {
         ? plan.incomes.find((stream) => stream.id === rule.percentOfIncomeId)
         : undefined;
     const shortHits = list.filter((hit) => hit.short);
-    const names = aheadNames(plan, rule.id, shortHits, rows);
-    const copy = cashCopy(year, list, later, names);
+    const ahead = aheadAsks(plan, rule.id, shortHits, rows);
+    const copy = cashCopy(year, list, later, ahead);
     out.push({
       id: `cash:${rule.id}`,
       cardId: `card-contributions-${rule.id}`,
@@ -309,6 +319,7 @@ function cashAdvisories(plan: Plan): Advisory[] {
         })),
         lines: copy.lines,
         ahead: copy.ahead,
+        aheadSpan: monthSpan(shortHits),
         notes: copy.notes,
       },
     });
@@ -361,8 +372,8 @@ function cashCopy(
   year: number,
   hits: MonthHit[],
   laterYears: number,
-  names: string[],
-): { body: string; lines: string[]; ahead: string[]; notes: string[] } {
+  aheadItems: AdvisoryAhead[],
+): { body: string; lines: string[]; ahead: AdvisoryAhead[]; notes: string[] } {
   const ordered = [...hits].sort((a, b) => a.date.localeCompare(b.date));
   const short = ordered.filter((hit) => hit.short);
   const covered = ordered.filter((hit) => !hit.short);
@@ -373,11 +384,12 @@ function cashCopy(
   const broke = short.length > 0 && short.every((hit) => hit.leftover <= 0.5);
   const sample = short[0] ?? ordered[0];
   const brokeNote = `This is not an IRS limit. Income does not cover taxes and spending, so nothing is left to invest. ${monthLabel(sample.date)}: income ${usd(sample.income)}, tax ${usd(sample.tax)}, spending ${usd(sample.spending)}. MACH RUN will not take this contribution from savings.`;
-  const ahead = broke ? [] : names;
+  const names = aheadItems.map((item) => item.name);
+  const ahead = broke ? [] : aheadItems;
   const reason = broke
     ? brokeNote
     : ahead.length
-      ? `Tax-qualified contributions are funded first. Paid before this one: ${joinNames(ahead)}.`
+      ? `Tax-qualified contributions are funded first. Paid before this one: ${joinNames(names)}.`
       : "The cash after tax and spending is not enough. Nothing else was funded ahead of this one.";
   const lines = cashLines(year, ordered, covered, short);
   const notes = [broke ? brokeNote : ahead.length ? "" : reason, again].filter(Boolean);
@@ -434,12 +446,12 @@ function fundingRank(plan: Plan): Map<string, number> {
   return new Map(ordered.map((row, index) => [row.id, index]));
 }
 
-function aheadNames(
+function aheadAsks(
   plan: Plan,
   ruleId: string,
   short: MonthHit[],
-  rows: { date: string; ruleId: string; invested: number }[],
-): string[] {
+  rows: { date: string; ruleId: string; invested: number; eligible?: number; planned?: number }[],
+): AdvisoryAhead[] {
   const order = fundingRank(plan);
   const mine = order.get(ruleId) ?? 0;
   const nameOf = new Map(
@@ -457,7 +469,25 @@ function aheadNames(
     }
   }
   ids.sort((a, b) => (order.get(a) ?? 0) - (order.get(b) ?? 0));
-  return ids.map((id) => nameOf.get(id) ?? "Contribution");
+  return ids.map((id) => {
+    const months = [...short]
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .flatMap((hit) => {
+        const row = rows.find((item) => item.date === hit.date && item.ruleId === id);
+        if (!row) return [];
+        return [{ date: hit.date, asked: row.eligible ?? row.planned ?? 0 }];
+      });
+    const period = months.reduce((sum, month) => sum + month.asked, 0);
+    const first = months[0]?.asked ?? 0;
+    const flat = months.length > 0 && months.every((month) => Math.abs(month.asked - first) < 1);
+    return {
+      id,
+      name: nameOf.get(id) ?? "Contribution",
+      monthly: flat ? first : null,
+      months,
+      period,
+    };
+  });
 }
 
 function joinNames(names: string[]): string {

@@ -913,6 +913,14 @@ test("October shortfall funds Roths before the taxable contribution listed first
   assert.match(cash.body, /Tax-qualified contributions are funded first/);
   assert.match(cash.body, /Paid before this one: Matt Roth AMS and Sarah Roth AMS/);
   assert.doesNotMatch(cash.body, /above this one/);
+  if (cash.detail.kind === "cash") {
+    const matt = cash.detail.ahead.find((item) => item.name === "Matt Roth AMS");
+    const sarah = cash.detail.ahead.find((item) => item.name === "Sarah Roth AMS");
+    assert.equal(matt?.monthly, 625);
+    assert.equal(sarah?.monthly, 625);
+    assert.ok((matt?.period ?? 0) >= 625);
+    assert.ok((sarah?.period ?? 0) >= 625);
+  }
 });
 
 test("529 leaves the plan the month the child owner turns 23", () => {

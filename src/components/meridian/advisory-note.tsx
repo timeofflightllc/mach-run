@@ -123,10 +123,15 @@ function CashReadout({ advisory }: { advisory: Advisory }) {
       ))}
       {detail.ahead.length > 0 ? (
         <div>
-          <p className="font-medium">Paid first</p>
+          <p className="font-medium">
+            Paid first{detail.aheadSpan ? `, ${detail.aheadSpan}` : ""}
+          </p>
           <ul className="mt-0.5 list-disc pl-5">
-            {detail.ahead.map((name) => (
-              <li key={name}>{name}</li>
+            {detail.ahead.map((item) => (
+              <li key={item.id}>
+                {item.name}
+                <span> — {aheadMoney(item)}</span>
+              </li>
             ))}
           </ul>
         </div>
@@ -136,6 +141,19 @@ function CashReadout({ advisory }: { advisory: Advisory }) {
       ))}
     </div>
   );
+}
+
+function aheadMoney(item: {
+  monthly: number | null;
+  months: { date: string; asked: number }[];
+  period: number;
+}): string {
+  if (item.months.length <= 1) return `${usd(item.period)} asked`;
+  if (item.monthly != null) return `${usd(item.monthly)}/mo · ${usd(item.period)} asked`;
+  const each = item.months
+    .map((month) => `${format(monthStart(month.date), "MMM")} ${usd(month.asked)}`)
+    .join(", ");
+  return `${each} · ${usd(item.period)} asked`;
 }
 
 function monthLabel(iso: string): string {
