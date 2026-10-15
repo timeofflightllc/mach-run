@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { DateInput, Field, MoneyInput } from "@/components/ui/field";
+import { DateInput, MoneyInput } from "@/components/ui/field";
 import { usd } from "@/lib/plan/format";
 import { startingNetWorth, startingSpendable } from "@/lib/plan/engine";
 import { incomeGap, spendableWithExtraSave } from "@/lib/plan/income-goal";
@@ -151,18 +151,19 @@ function GoalScore({
         <MonthlyPayBar gap={gap} canPay={canPay} payShort={payShort} payFill={payFill} bump={bump} />
       ) : (
         <div
-          className="mt-3 flex flex-col gap-3"
+          className="mt-2 flex h-[14.5rem] flex-col overflow-hidden"
           onBlur={(event) => {
             const next = event.relatedTarget;
             if (next instanceof Node && event.currentTarget.contains(next)) return;
             flushGoal();
           }}
         >
-          <p className="text-sm leading-snug text-muted">
+          <p className="line-clamp-2 min-h-10 text-sm leading-5 text-muted">
             Add the retirement date and the goal, then Execute MACH RUN.
           </p>
-          <div className="flex flex-wrap items-end gap-3">
-            <Field label="Retirement goal date" className="w-full min-w-0 max-w-xs">
+          <div className="mt-2 flex flex-col gap-2">
+            <label className="flex flex-col gap-1">
+              <span className="h-4 truncate text-xs font-medium tracking-wide text-muted">Retirement goal date</span>
               <DateInput
                 value={dateDraft}
                 onValue={(v) => {
@@ -171,9 +172,12 @@ function GoalScore({
                   setDateDraft(next);
                 }}
               />
-            </Field>
-            {view === "income" ? (
-              <Field label="Wanted each month (today $)" className="w-full min-w-0 max-w-52">
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className="h-4 truncate text-xs font-medium tracking-wide text-muted">
+                {view === "income" ? "Wanted each month" : "Nest egg goal"}
+              </span>
+              {view === "income" ? (
                 <MoneyInput
                   value={incomeDraft}
                   onValue={(n) => {
@@ -181,9 +185,7 @@ function GoalScore({
                     setIncomeDraft(n);
                   }}
                 />
-              </Field>
-            ) : (
-              <Field label="Nest egg goal (today $)" className="w-full min-w-0 max-w-52">
+              ) : (
                 <MoneyInput
                   value={nestDraft}
                   onValue={(n) => {
@@ -191,8 +193,8 @@ function GoalScore({
                     setNestDraft(n);
                   }}
                 />
-              </Field>
-            )}
+              )}
+            </label>
           </div>
           {onExecute ? (
             <button
@@ -201,7 +203,7 @@ function GoalScore({
                 flushGoal();
                 onExecute();
               }}
-              className="h-10 w-fit rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
+              className="mt-auto h-9 w-fit rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
             >
               Execute MACH RUN
             </button>
@@ -225,41 +227,32 @@ function MonthlyPayBar({
   payFill: number;
   bump: number | null;
 }) {
+  const detail = [
+    canPay != null && Math.abs(canPay - gap.projected) > 1
+      ? `Spending entered on this run draws ${usd(gap.projected)} a month. The accounts can pay more and still last.`
+      : null,
+    bump != null && bump > 1
+      ? `Another $100 a month from now until the goal date adds about ${usd(Math.round(bump / 100) * 100)} to spendable wealth then.`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
   return (
-    <>
-      <p className="mt-2 text-[13px] font-medium uppercase tracking-wider text-subtle">
-        Monthly pay at retirement
-      </p>
-      <div className="mt-1 flex items-baseline justify-between gap-3 text-sm font-medium tabular-nums text-fg">
-        <span>{usd(canPay ?? gap.projected)} can pay</span>
-        <span>{usd(gap.wanted)} wanted</span>
-      </div>
-      <div
-        className="mt-1.5 h-4 overflow-hidden rounded-full bg-slate-200"
-        role="img"
-        aria-label={`${usd(canPay ?? gap.projected)} a month the accounts can pay, of the ${usd(gap.wanted)} wanted`}
-      >
-        <div className="h-full rounded-full bg-accent" style={{ width: `${payFill}%` }} />
-      </div>
-      <p className="mt-2 text-sm font-medium leading-snug text-fg">
-        {payShort != null && payShort > 1
+    <GoalReadout
+      title="Monthly pay at retirement"
+      left={`${usd(canPay ?? gap.projected)} can pay`}
+      right={`${usd(gap.wanted)} wanted`}
+      aria={`${usd(canPay ?? gap.projected)} a month the accounts can pay, of the ${usd(gap.wanted)} wanted`}
+      fill={payFill}
+      status={
+        payShort != null && payShort > 1
           ? `Short ${usd(payShort)} a month, in today's dollars.`
           : payShort != null && payShort < -1
             ? `${usd(-payShort)} a month of room, in today's dollars.`
-            : "On the monthly paycheck you asked for."}
-      </p>
-      {canPay != null && Math.abs(canPay - gap.projected) > 1 ? (
-        <p className="mt-1 text-sm leading-snug text-muted">
-          Spending entered on this run draws {usd(gap.projected)} a month. The accounts can pay more and still last.
-        </p>
-      ) : null}
-      {bump != null && bump > 1 ? (
-        <p className="mt-1 text-sm leading-snug text-muted">
-          Another $100 a month from now until the goal date adds about {usd(Math.round(bump / 100) * 100)} to
-          spendable wealth then.
-        </p>
-      ) : null}
-    </>
+            : "On the monthly paycheck you asked for."
+      }
+      note={detail || null}
+    />
   );
 }
 
@@ -292,24 +285,48 @@ function NestEggBar({
       `About ${usd(egg.extraMonthly, true)} more a month, on top of what you already save, closes it by ${egg.targetYear}.`
     : null;
   return (
-    <>
-      <p className="mt-2 text-[13px] font-medium uppercase tracking-wider text-subtle">
-        Nest egg at the retirement goal
-      </p>
+    <GoalReadout
+      title="Nest egg at the retirement goal"
+      left={`${usd(projected)} projected`}
+      right={`${usd(egg.goal)} goal`}
+      aria={`${usd(projected)} of the ${usd(egg.goal)} goal in ${egg.targetYear}`}
+      fill={fill}
+      status={status}
+      note={lever}
+    />
+  );
+}
+
+function GoalReadout({
+  title,
+  left,
+  right,
+  aria,
+  fill,
+  status,
+  note,
+}: {
+  title: string;
+  left: string;
+  right: string;
+  aria: string;
+  fill: number;
+  status: string;
+  note: string | null;
+}) {
+  return (
+    <div className="mt-2 flex h-[14.5rem] flex-col overflow-hidden">
+      <p className="text-[13px] font-medium uppercase tracking-wider text-subtle">{title}</p>
       <div className="mt-1 flex items-baseline justify-between gap-3 text-sm font-medium tabular-nums text-fg">
-        <span>{usd(projected)} projected</span>
-        <span>{usd(egg.goal)} goal</span>
+        <span className="min-w-0 truncate">{left}</span>
+        <span className="shrink-0">{right}</span>
       </div>
-      <div
-        className="mt-1.5 h-4 overflow-hidden rounded-full bg-slate-200"
-        role="img"
-        aria-label={`${usd(projected)} of the ${usd(egg.goal)} goal in ${egg.targetYear}`}
-      >
-        <div className="h-full rounded-full bg-accent" style={{ width: `${fill}%` }} />
+      <div className="mt-1.5 h-4 overflow-hidden rounded-full bg-slate-200" role="img" aria-label={aria}>
+        <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.max(0, fill))}%` }} />
       </div>
-      <p className="mt-2 text-sm font-medium leading-snug text-fg">{status}</p>
-      {lever ? <p className="mt-1 text-sm leading-snug text-muted">{lever}</p> : null}
-    </>
+      <p className="mt-2 line-clamp-2 min-h-10 text-sm font-medium leading-5 text-fg">{status}</p>
+      <p className="mt-1 line-clamp-3 min-h-[3.75rem] text-sm leading-5 text-muted">{note ?? ""}</p>
+    </div>
   );
 }
 
