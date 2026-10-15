@@ -256,11 +256,13 @@ function ActChartColumn({
   sim,
   tall,
   only,
+  survival = null,
 }: {
   plan: Plan;
   sim: SimResult;
   tall?: boolean;
   only?: BriefChart;
+  survival?: SurvivalScore | null;
 }) {
   const pins = useChartPins();
   const ent = useEntitlement();
@@ -277,6 +279,7 @@ function ActChartColumn({
               pinned={pins.pinWealth}
               onPin={pins.toggleWealth}
               tall={tall}
+              survival={survival}
             />
           </Pinnable>
         </div>
@@ -289,11 +292,12 @@ function ActChartColumn({
             pinned={pins.pinCash}
             onPin={pins.toggleCash}
             tall={tall}
+            survival={survival}
           />
         </Pinnable>
       ) : null}
       {show("net") ? (
-        <NetWorthChart plan={plan} sim={sim} locked={!unlocked} tall={tall} />
+        <NetWorthChart plan={plan} sim={sim} locked={!unlocked} tall={tall} survival={survival} />
       ) : null}
     </div>
   );
@@ -467,6 +471,8 @@ function MonteCarloTab({
   running,
   progress,
   onRun,
+  plan,
+  sim,
 }: {
   unlocked: boolean;
   real: boolean;
@@ -475,6 +481,8 @@ function MonteCarloTab({
   running: boolean;
   progress: number;
   onRun: () => void;
+  plan: Plan;
+  sim: SimResult;
 }) {
   const ranOut = score ? runOutSentence(score, longevityAge) : null;
   const quotes = useBoydQuotes();
@@ -487,6 +495,9 @@ function MonteCarloTab({
             bands={score.bands}
             traces={score.traces}
             real={real}
+            plan={plan}
+            sim={sim}
+            survival={score}
             note={
               <div
                 className="rounded-md px-4 py-3"
@@ -2125,14 +2136,38 @@ function Home() {
                             );
                           })}
                         </div>
-                        <ActChartColumn plan={displayPlan} sim={run.sim} only={briefChart} />
+                        <ActChartColumn
+                          plan={displayPlan}
+                          sim={run.sim}
+                          only={briefChart}
+                          survival={
+                            sheet &&
+                            survivalView?.status === "ready" &&
+                            survivalView.runId === run.id &&
+                            survivalView.score
+                              ? survivalView.score
+                              : null
+                          }
+                        />
                       </div>
                     </div>
                   ) : null}
                   {actTab === "charts" ? (
                     <div className="flex min-w-0 flex-col gap-3">
                       <PhaseLabel id="ooda-radar" label="Financial Radar" />
-                      <ActChartColumn plan={displayPlan} sim={run.sim} tall />
+                      <ActChartColumn
+                        plan={displayPlan}
+                        sim={run.sim}
+                        tall
+                        survival={
+                          sheet &&
+                          survivalView?.status === "ready" &&
+                          survivalView.runId === run.id &&
+                          survivalView.score
+                            ? survivalView.score
+                            : null
+                        }
+                      />
                     </div>
                   ) : null}
                   {actTab === "analysis" ? (
@@ -2191,6 +2226,8 @@ function Home() {
                           : 0
                       }
                       onRun={runMonteCarlo}
+                      plan={displayPlan}
+                      sim={run.sim}
                     />
                   ) : null}
                 </div>

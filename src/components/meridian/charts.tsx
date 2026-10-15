@@ -17,8 +17,9 @@ import {
 import { createPortal } from "react-dom";
 import { Maximize2, X } from "lucide-react";
 import { usd, usdCompact } from "@/lib/plan/format";
-import type { SurvivalBand, SurvivalTraces } from "@/lib/plan/monte-carlo-run";
+import type { SurvivalBand, SurvivalScore, SurvivalTraces } from "@/lib/plan/monte-carlo-run";
 import { PinToggle } from "@/components/meridian/chart-pin";
+import { ChartDownload } from "@/components/meridian/chart-download";
 import { hasBalanceSheet } from "@/lib/billing/limits";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { CASH_ON_HAND_ID, type MonthSnapshot, type Plan, type SimResult, type YearSnapshot } from "@/lib/plan/types";
@@ -826,12 +827,14 @@ export function WealthChart({
   pinned,
   onPin,
   tall,
+  survival = null,
 }: {
   plan: Plan;
   sim: SimResult;
   pinned?: boolean;
   onPin?: () => void;
   tall?: boolean;
+  survival?: SurvivalScore | null;
 }) {
   const real = plan.assumptions.dollars === "real";
   const ent = useEntitlement();
@@ -849,7 +852,10 @@ export function WealthChart({
   return (
     <ChartStage expanded={expanded} onClose={close} label="Spendable Wealth">
     <div className={cn(chartCard, expanded && "flex h-full min-h-0 flex-1 flex-col")}>
-      <h2 className="font-display text-xl font-bold text-slate-900">Spendable Wealth</h2>
+      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+        <h2 className="font-display text-xl font-bold text-slate-900">Spendable Wealth</h2>
+        <ChartDownload plan={plan} sim={sim} survival={survival} />
+      </div>
       <p className="mb-4 mt-1 text-xs text-slate-600">
         {real ? "Inflation-adjusted (today's dollars)" : "Future dollars"} ·
         Accounts labeled Spendable listed on this chart (liquid cash, investment accounts, etc).
@@ -1009,12 +1015,14 @@ export function CashChart({
   pinned,
   onPin,
   tall,
+  survival = null,
 }: {
   plan: Plan;
   sim: SimResult;
   pinned?: boolean;
   onPin?: () => void;
   tall?: boolean;
+  survival?: SurvivalScore | null;
 }) {
   const [span, setSpan] = useState<ChartSpan>("horizon");
   const [shown, setShown] = useState({
@@ -1038,7 +1046,10 @@ export function CashChart({
   return (
     <ChartStage expanded={expanded} onClose={close} label="Cash Flow">
     <div className={cn(chartCard, expanded && "flex h-full min-h-0 flex-1 flex-col")}>
-      <h2 className="font-display text-xl font-bold text-slate-900">Cash Flow</h2>
+      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+        <h2 className="font-display text-xl font-bold text-slate-900">Cash Flow</h2>
+        <ChartDownload plan={plan} sim={sim} survival={survival} />
+      </div>
       <p className="mb-4 mt-1 text-xs text-slate-600">
         Gross income vs spending vs planned contributions.
         {expanded ? " Esc closes this view." : ""}
@@ -1208,6 +1219,7 @@ export function NetWorthChart({
   onPin,
   locked = false,
   tall,
+  survival = null,
 }: {
   plan: Plan;
   sim: SimResult;
@@ -1215,6 +1227,7 @@ export function NetWorthChart({
   onPin?: () => void;
   locked?: boolean;
   tall?: boolean;
+  survival?: SurvivalScore | null;
 }) {
   const real = plan.assumptions.dollars === "real";
   const [span, setSpan] = useState<ChartSpan>(10);
@@ -1283,7 +1296,10 @@ export function NetWorthChart({
     <ChartStage expanded={expanded} onClose={close} label="Net Worth">
     <div className={cn("relative", chartCard, expanded && "flex h-full min-h-0 flex-1 flex-col")}>
       <div className={cn(locked && "pointer-events-none select-none opacity-60", expanded && "flex min-h-0 flex-1 flex-col")}>
-        <h2 className="font-display text-xl font-bold text-slate-900">Net Worth</h2>
+        <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+          <h2 className="font-display text-xl font-bold text-slate-900">Net Worth</h2>
+          <ChartDownload plan={plan} sim={sim} survival={survival} locked={locked} />
+        </div>
         <p className="mb-4 mt-1 text-xs text-slate-600">
           {locked
             ? "Sample only — 1969 dollars, made-up balances. Your numbers unlock on Individual Unlimited."
@@ -1510,11 +1526,17 @@ export function MonteCarloBandChart({
   traces,
   real,
   note,
+  plan,
+  sim,
+  survival = null,
 }: {
   bands: SurvivalBand[];
   traces?: SurvivalTraces | null;
   real: boolean;
   note?: ReactNode;
+  plan?: Plan;
+  sim?: SimResult;
+  survival?: SurvivalScore | null;
 }) {
   const series = traces ? (real ? traces.real : traces.nominal) : null;
   const years = traces?.years ?? [];
@@ -1551,7 +1573,10 @@ export function MonteCarloBandChart({
   }
   return (
     <div className={chartCard}>
-      <h2 className="font-display text-xl font-bold text-slate-900">1000 Spendable Futures</h2>
+      <div className="flex flex-wrap items-start justify-between gap-x-3 gap-y-1">
+        <h2 className="font-display text-xl font-bold text-slate-900">1000 Spendable Futures</h2>
+        {plan && sim ? <ChartDownload plan={plan} sim={sim} survival={survival} /> : null}
+      </div>
       <p className="mt-1 text-sm leading-relaxed text-slate-700">
         Your plan is run 1,000 times. The markets are different each time, so each run is one
         possible future. The chart is how much spendable money is left at the end of the year.
