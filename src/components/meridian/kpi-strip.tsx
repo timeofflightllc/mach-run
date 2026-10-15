@@ -2,12 +2,53 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DateInput, MoneyInput } from "@/components/ui/field";
 import { usd } from "@/lib/plan/format";
 import { startingNetWorth, startingSpendable } from "@/lib/plan/engine";
-import { incomeGap, spendableWithExtraSave } from "@/lib/plan/income-goal";
+import { extraMonthlyToReach, incomeGap } from "@/lib/plan/income-goal";
 import { nestEggTrack } from "@/lib/plan/peers";
 import { cashParkedYears, cashShortYears, paycheckGapNote } from "@/lib/plan/cash-short";
-import { sustainableRetirementIncome, type SustainableIncome } from "@/lib/plan/sustainable-income";
+import { annuityDrawnNominal, sustainableRetirementIncome, type SustainableIncome } from "@/lib/plan/sustainable-income";
 import { usePlanStore } from "@/lib/plan/store";
 import type { Plan, SimResult } from "@/lib/plan/types";
+
+const GUARANTEED_LABELS: [string, string][] = [
+  ["military", "military retirement"],
+  ["va", "VA"],
+  ["ss", "Social Security"],
+  ["pension", "pension"],
+  ["other_retirement", "other retirement"],
+];
+
+function sourceList(sources: string[]): string {
+  if (sources.length <= 1) return sources[0] ?? "";
+  if (sources.length === 2) return `${sources[0]} and ${sources[1]}`;
+  return `${sources.slice(0, -1).join(", ")}, and ${sources[sources.length - 1]}`;
+}
+
+function guaranteedAtGoal(plan: Plan, sim: SimResult): { monthly: number; sources: string[] } | null {
+  const yearNum = sim.retirement?.incomeYear;
+  if (yearNum == null) return null;
+  const year = sim.years.find((row) => row.year === yearNum);
+  if (!year || year.air == null) return null;
+  const infl = plan.assumptions.inflationPct / 100;
+  const asOfYear = Number(plan.assumptions.asOfDate.slice(0, 4));
+  const yearsOut = Math.max(0, year.year - (Number.isFinite(asOfYear) ? asOfYear : year.year));
+  const sources: string[] = [];
+  let nominal = 0;
+  for (const [kind, label] of GUARANTEED_LABELS) {
+    const amount = year.airByKind[kind] ?? 0;
+    if (amount > 1) {
+      nominal += amount;
+      sources.push(label);
+    }
+  }
+  const annuity = annuityDrawnNominal(plan, sim, year.year);
+  if (annuity > 1) {
+    nominal += annuity;
+    sources.push(plan.portfolios.filter((row) => row.kind === "annuity").length > 1 ? "annuities" : "annuity");
+  }
+  const monthly = Math.round(nominal / (1 + infl) ** yearsOut / 12);
+  if (monthly < 1 || sources.length === 0) return null;
+  return { monthly, sources };
+}
 
 const ANNUAL_TIP =
   "The first full calendar year of Actual Income Retired (A.I.R.) in the ledger. That is the income your spending is scheduled to take: guaranteed retirement pay plus withdrawals.";
@@ -55,7 +96,10 @@ function GoalScore({
   canPay,
   payShort,
   payFill,
-  bump,
+  longevityAge,
+  extraSave,
+  includeGuaranteed,
+  onIncludeGuaranteed,
   onExecute,
   onArmExecute,
 }: {
@@ -67,7 +111,10 @@ function GoalScore({
   canPay: number | null;
   payShort: number | null;
   payFill: number;
-  bump: number | null;
+  longevityAge: number;
+  extraSave: number | null;
+  includeGuaranteed: boolean;
+  onIncludeGuaranteed: (next: boolean) => void;
   onExecute?: () => void;
   onArmExecute?: () => void;
 }) {
@@ -82,6 +129,7 @@ function GoalScore({
   const incomeRef = useRef(incomeDraft);
   const nestRef = useRef(nestDraft);
   const viewRef = useRef(view);
+  const guaranteed = guaranteedAtGoal(live, sim);
   viewRef.current = view;
   useEffect(() => {
     dateRef.current = live.assumptions.retirementGoalDate;
@@ -136,7 +184,7 @@ function GoalScore({
   const showForm = editing || !(view === "nest" ? egg : gap);
   return (
     <div className="mt-px bg-surface px-3 py-3 sm:px-4">
-      <div className="inline-flex max-w-full flex-wrap rounded-lg bg-slate-100 p-0.5">
+      <div className="inline-flex max-w-full flex-wrap rounded-md bg-slate-100 p-0.5 shadow-[0_0_0_1px_#c8d2de]">
         {(
           [
             ["nest", "Retirement Nest Egg Goal"],
@@ -152,8 +200,8 @@ function GoalScore({
               onClick={() => setView(id)}
               className={
                 on
-                  ? "h-7 whitespace-nowrap rounded-md bg-white px-2.5 text-xs font-medium text-fg shadow-sm"
-                  : "h-7 whitespace-nowrap rounded-md px-2.5 text-xs font-medium text-muted"
+                  ? "h-7 whitespace-nowrap rounded bg-accent px-2 text-[11px] font-medium leading-none text-accent-fg"
+                  : "h-7 whitespace-nowrap rounded px-2 text-[11px] font-medium leading-none text-slate-600 hover:text-slate-900"
               }
             >
               {label}
@@ -161,6 +209,45 @@ function GoalScore({
           );
         })}
       </div>
+      {view === "income" ? (
+        <div className="mt-2 flex items-start gap-2">
+          <div
+            className="inline-flex shrink-0 rounded-md bg-slate-100 p-0.5 shadow-[0_0_0_1px_#c8d2de]"
+            role="group"
+            aria-label="Include guaranteed retirement income"
+          >
+            {(
+              [
+                ["yes", "YES"],
+                ["no", "NO"],
+              ] as const
+            ).map(([id, label]) => {
+              const on = includeGuaranteed === (id === "yes");
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => onIncludeGuaranteed(id === "yes")}
+                  className={
+                    on
+                      ? "h-7 rounded bg-accent px-2 text-[11px] font-medium leading-none text-accent-fg"
+                      : "h-7 rounded px-2 text-[11px] font-medium leading-none text-slate-600 hover:text-slate-900"
+                  }
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+          <span className="text-sm leading-5 text-fg">
+            Include guaranteed retirement income
+            <span className="mt-0.5 block text-xs leading-snug text-muted">
+              Military, VA, Social Security, pension, and annuity at the goal date.
+            </span>
+          </span>
+        </div>
+      ) : null}
       {!showForm && view === "nest" && egg ? (
         <NestEggBar egg={egg} sim={sim} onEdit={() => setEditing(true)} />
       ) : !showForm && gap ? (
@@ -169,7 +256,8 @@ function GoalScore({
           canPay={canPay}
           payShort={payShort}
           payFill={payFill}
-          bump={bump}
+          longevityAge={longevityAge}
+          extraSave={extraSave}
           onEdit={() => setEditing(true)}
         />
       ) : (
@@ -209,17 +297,27 @@ function GoalScore({
               />
             </label>
             <label className="flex flex-col gap-1">
-              <span className="h-4 truncate text-xs font-medium tracking-wide text-muted">
-                {view === "income" ? "Wanted each month" : "Nest egg goal"}
+              <span className="text-xs font-medium leading-snug tracking-wide text-muted">
+                {view === "income" ? "Desired Monthly Income In Retirement From Nest Egg" : "Nest egg goal"}
               </span>
               {view === "income" ? (
-                <MoneyInput
-                  value={incomeDraft}
-                  onValue={(n) => {
-                    incomeRef.current = n;
-                    setIncomeDraft(n);
-                  }}
-                />
+                <div className="flex items-center gap-3">
+                  <div className="w-40 shrink-0">
+                    <MoneyInput
+                      value={incomeDraft}
+                      onValue={(n) => {
+                        incomeRef.current = n;
+                        setIncomeDraft(n);
+                      }}
+                      className="max-w-none"
+                    />
+                  </div>
+                  {guaranteed ? (
+                    <p className="min-w-0 text-sm leading-snug text-muted">
+                      plus {usd(guaranteed.monthly)} guaranteed a month from {sourceList(guaranteed.sources)}.
+                    </p>
+                  ) : null}
+                </div>
               ) : (
                 <MoneyInput
                   value={nestDraft}
@@ -274,41 +372,38 @@ function MonthlyPayBar({
   canPay,
   payShort,
   payFill,
-  bump,
+  longevityAge,
+  extraSave,
   onEdit,
 }: {
   gap: NonNullable<ReturnType<typeof incomeGap>>;
   canPay: number | null;
   payShort: number | null;
   payFill: number;
-  bump: number | null;
+  longevityAge: number;
+  extraSave: number | null;
   onEdit?: () => void;
 }) {
-  const detail = [
-    canPay != null && Math.abs(canPay - gap.projected) > 1
-      ? `Spending entered on this run draws ${usd(gap.projected)} a month. The accounts can pay more and still last.`
-      : null,
-    bump != null && Math.round(bump / 100) * 100 >= 100
-      ? `Another $100 a month from now until the goal date adds about ${usd(Math.round(bump / 100) * 100)} to spendable wealth then.`
-      : null,
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const take = canPay ?? gap.projected;
+  const meets = payShort == null || payShort <= 1;
+  const spare = payShort != null && payShort < -1 ? -payShort : 0;
+  const status = `A withdrawal of ${usd(take)} a month lasts through age ${longevityAge}.`;
+  const note = meets
+    ? spare > 1
+      ? `That meets the ${usd(gap.wanted)} goal, with ${usd(spare)} a month to spare.`
+      : `That meets the ${usd(gap.wanted)} goal.`
+    : extraSave != null && extraSave > 0
+      ? `That is ${usd(payShort)} a month short of the ${usd(gap.wanted)} goal. Invest about ${usd(extraSave)} more a month until then.`
+      : `That is ${usd(payShort)} a month short of the ${usd(gap.wanted)} goal.`;
   return (
     <GoalReadout
       title="Monthly pay at retirement"
-      left={`${usd(canPay ?? gap.projected)} can pay`}
-      right={`${usd(gap.wanted)} wanted`}
-      aria={`${usd(canPay ?? gap.projected)} a month the accounts can pay, of the ${usd(gap.wanted)} wanted`}
+      left={`${usd(take)} a month`}
+      right={`${usd(gap.wanted)} goal`}
+      aria={`A withdrawal of ${usd(take)} a month through age ${longevityAge}, of the ${usd(gap.wanted)} goal`}
       fill={payFill}
-      status={
-        payShort != null && payShort > 1
-          ? `Short ${usd(payShort)} a month, in today's dollars.`
-          : payShort != null && payShort < -1
-            ? `${usd(-payShort)} a month of room, in today's dollars.`
-            : "On the monthly paycheck you asked for."
-      }
-      note={detail || null}
+      status={status}
+      note={note}
       action={onEdit ? <EditGoalButton label="Edit Monthly Retirement Income Goal" onClick={onEdit} /> : null}
     />
   );
@@ -400,7 +495,7 @@ function GoalReadout({
         <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.max(0, fill))}%` }} />
       </div>
       <p className="mt-2 line-clamp-2 text-sm font-medium leading-5 text-fg">{status}</p>
-      {note ? <p className="mt-1 line-clamp-2 text-sm leading-5 text-muted">{note}</p> : null}
+      {note ? <p className="mt-1 line-clamp-3 text-sm leading-5 text-muted">{note}</p> : null}
       {action}
     </div>
   );
@@ -435,7 +530,21 @@ export function KpiStrip({
   const roomAmount = room ? (real ? room.real : room.nominal) : null;
   const drawnAmount = room ? (real ? room.withdrawalReal : room.withdrawalNominal) : null;
   const gap = incomeGap(plan, sim);
-  const canPay = gap ? (room && room.real > 0 ? room.real / 12 : gap.projected) : null;
+  const [includeGuaranteed, setIncludeGuaranteed] = useState(false);
+  const airYear = ret?.incomeYear != null ? sim.years.find((row) => row.year === ret.incomeYear) : undefined;
+  const scheduledAccounts =
+    airYear && airYear.air != null
+      ? (() => {
+          const infl = plan.assumptions.inflationPct / 100;
+          const asOfYear = Number(plan.assumptions.asOfDate.slice(0, 4));
+          const yearsOut = Math.max(0, airYear.year - (Number.isFinite(asOfYear) ? asOfYear : airYear.year));
+          const annuity = annuityDrawnNominal(plan, sim, airYear.year);
+          return Math.max(0, airYear.airWithdrawals - annuity) / (1 + infl) ** yearsOut / 12;
+        })()
+      : null;
+  const sustainableAll = room && room.real > 0 ? room.real / 12 : (gap?.projected ?? null);
+  const sustainableAccounts = room ? Math.max(0, room.withdrawalReal - room.annuityReal) / 12 : scheduledAccounts;
+  const canPay = gap ? (includeGuaranteed ? sustainableAll : sustainableAccounts) : null;
   const payShort = gap && canPay != null ? gap.wanted - canPay : null;
   const payFill =
     gap && canPay != null && gap.wanted > 0
@@ -452,18 +561,17 @@ export function KpiStrip({
     setSyncedView(savedView);
     setView(savedView);
   }
-  const bumpCache = useRef<{ key: string; added: number | null } | null>(null);
-  if (payShort != null && payShort > 1) {
-    if (!bumpCache.current || bumpCache.current.key !== key) {
-      const raised = spendableWithExtraSave(plan, 100);
-      const base = sim.retirement?.spendableReal ?? null;
-      bumpCache.current = {
-        key,
-        added: raised != null && base != null ? raised - base : null,
+  const saveCache = useRef<{ key: string; extra: number | null } | null>(null);
+  const saveKey = `${key}|${includeGuaranteed ? "g" : "a"}|${gap?.wanted ?? 0}|${Math.round(canPay ?? 0)}`;
+  if (payShort != null && payShort > 1 && canPay != null && gap) {
+    if (!saveCache.current || saveCache.current.key !== saveKey) {
+      saveCache.current = {
+        key: saveKey,
+        extra: extraMonthlyToReach(plan, gap.wanted, includeGuaranteed, canPay),
       };
     }
   }
-  const bump = payShort != null && payShort > 1 ? bumpCache.current?.added ?? null : null;
+  const extraSave = payShort != null && payShort > 1 ? (saveCache.current?.extra ?? null) : 0;
   const retLabel = !ret
     ? "Spendable at retirement"
     : ret.now
@@ -568,7 +676,10 @@ export function KpiStrip({
         canPay={canPay}
         payShort={payShort}
         payFill={payFill}
-        bump={bump}
+        longevityAge={plan.assumptions.projectionEndAge}
+        extraSave={extraSave}
+        includeGuaranteed={includeGuaranteed}
+        onIncludeGuaranteed={setIncludeGuaranteed}
         onExecute={onExecute}
         onArmExecute={onArmExecute}
       />

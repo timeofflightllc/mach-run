@@ -8,6 +8,9 @@ export type SustainableIncome = {
   /** Portfolio withdrawals inside that income. Not pension, VA, Social Security, or military pay. */
   withdrawalNominal: number;
   withdrawalReal: number;
+  /** Non-qualified annuity withdrawals inside the withdrawal figures. */
+  annuityNominal: number;
+  annuityReal: number;
 };
 
 function withExtraSpending(plan: Plan, extraMonthly: number): Plan {
@@ -50,6 +53,23 @@ function drawnThatYear(plan: Plan, sim: SimResult, incomeYear: number): { nomina
   return { nominal, real: nominal / (1 + infl) ** yearsOut };
 }
 
+/** Annuity account draws in that calendar year, nominal dollars. */
+export function annuityDrawnNominal(plan: Plan, sim: SimResult, incomeYear: number): number {
+  const ids = new Set(plan.portfolios.filter((row) => row.kind === "annuity").map((row) => row.id));
+  if (ids.size === 0) return 0;
+  const year = sim.years.find((row) => row.year === incomeYear);
+  return (year?.drawnLines ?? [])
+    .filter((line) => ids.has(line.id))
+    .reduce((sum, line) => sum + line.amount, 0);
+}
+
+function deflate(plan: Plan, nominal: number, incomeYear: number): number {
+  const infl = plan.assumptions.inflationPct / 100;
+  const asOfYear = Number(plan.assumptions.asOfDate.slice(0, 4));
+  const yearsOut = Math.max(0, incomeYear - (Number.isFinite(asOfYear) ? asOfYear : incomeYear));
+  return nominal / (1 + infl) ** yearsOut;
+}
+
 /**
  * The most annual income that first full retirement year can pay, including
  * the withdrawals your spending asks for, without the plan running out.
@@ -64,12 +84,15 @@ export function sustainableRetirementIncome(plan: Plan): SustainableIncome | nul
   const read = (extraMonthly: number) => {
     const sim = Math.abs(extraMonthly) < 1 ? base : simulate(withExtraSpending(plan, extraMonthly));
     const drawn = drawnThatYear(plan, sim, incomeYear);
+    const annuityNominal = annuityDrawnNominal(plan, sim, incomeYear);
     return {
       lasts: retirementHolds(plan, sim),
       nominal: sim.retirement?.annualIncome ?? scheduled.annualIncome,
       real: sim.retirement?.annualIncomeReal ?? scheduled.annualIncomeReal,
       withdrawalNominal: drawn.nominal,
       withdrawalReal: drawn.real,
+      annuityNominal,
+      annuityReal: deflate(plan, annuityNominal, incomeYear),
     };
   };
 
@@ -99,5 +122,7 @@ export function sustainableRetirementIncome(plan: Plan): SustainableIncome | nul
     real: best.real,
     withdrawalNominal: best.withdrawalNominal,
     withdrawalReal: best.withdrawalReal,
+    annuityNominal: best.annuityNominal,
+    annuityReal: best.annuityReal,
   };
 }

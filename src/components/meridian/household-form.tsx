@@ -275,7 +275,7 @@ export function AssumptionsForm() {
                 )}
                 <div className="flex w-auto flex-col gap-1.5">
                   <span className="text-xs font-medium tracking-wide text-muted">Goal</span>
-                  <div className="inline-flex max-w-full flex-wrap rounded-lg bg-slate-100 p-1">
+                  <div className="inline-flex max-w-full flex-wrap rounded-md bg-slate-100 p-0.5 shadow-[0_0_0_1px_#c8d2de]">
                     {(
                       [
                         ["nest", "Retirement Nest Egg Goal"],
@@ -291,8 +291,8 @@ export function AssumptionsForm() {
                           onClick={() => patchAssumptions({ goalMode: id })}
                           className={
                             on
-                              ? "h-8 whitespace-nowrap rounded-md bg-white px-3 text-xs font-medium text-fg shadow-sm"
-                              : "h-8 whitespace-nowrap rounded-md px-3 text-xs font-medium text-muted"
+                              ? "h-7 whitespace-nowrap rounded bg-accent px-2 text-[11px] font-medium leading-none text-accent-fg"
+                              : "h-7 whitespace-nowrap rounded px-2 text-[11px] font-medium leading-none text-slate-600 hover:text-slate-900"
                           }
                         >
                           {label}
@@ -302,7 +302,7 @@ export function AssumptionsForm() {
                   </div>
                 </div>
                 {plan.assumptions.goalMode === "income" ? (
-                  <Field label="Wanted each month (today $)" className="w-full min-w-0 max-w-52">
+                  <Field label="Desired Monthly Income In Retirement From Nest Egg" className="w-full min-w-0 max-w-52">
                     <MoneyInput
                       value={plan.assumptions.incomeGoalMonthly ?? 0}
                       onValue={(n) => patchAssumptions({ incomeGoalMonthly: n > 0 ? n : null })}
