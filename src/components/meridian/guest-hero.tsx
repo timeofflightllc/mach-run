@@ -265,9 +265,13 @@ export function GuestHero({
   }
 
   return (
-    <section className="overflow-x-clip border-t border-border bg-bg">
+    <section className="relative overflow-x-clip border-t border-border bg-bg">
+      <div
+        aria-hidden="true"
+        className="hero-sky"
+      />
       <div className="page-gutter mx-auto flex max-w-none flex-col items-center pt-2 sm:pt-7">
-        <h1 className="max-w-4xl text-center font-display text-[1.25rem] font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
+        <h1 className="hero-backlight max-w-4xl text-center font-display text-[1.25rem] font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
           <HeroLines text={hero.headline} />
         </h1>
         <div className="mt-1.5 max-w-3xl text-center text-[0.667rem] leading-relaxed text-muted sm:mt-4 sm:text-lg">
@@ -275,23 +279,6 @@ export function GuestHero({
             <HeroLines text={hero.text} />
           </p>
         </div>
-        <p className="mt-4 max-w-none px-4 text-center text-lg font-medium italic leading-snug text-[#1a2330] sm:mt-5 sm:text-2xl">
-          <span className="sm:whitespace-nowrap">
-            “Households that plan arrive with three times the wealth
-          </span>
-          <br className="hidden sm:inline" />
-          <span className="sm:whitespace-nowrap"> of households that do not.”</span>
-        </p>
-        <p className="mt-1 max-w-3xl text-center text-[0.65rem] leading-snug text-muted sm:text-xs">
-          <a
-            href="https://www.nber.org/papers/w17078"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="italic underline underline-offset-4 hover:text-fg"
-          >
-            Lusardi and Mitchell, National Bureau of Economic Research, Working Paper 17078 (2011).
-          </a>
-        </p>
         <div className="mt-3 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:mt-6 sm:flex-row sm:flex-wrap sm:gap-3">
           <PrimaryButton
             className="h-auto min-h-11 whitespace-normal px-4 py-2.5 text-center leading-snug sm:whitespace-nowrap sm:text-base"
@@ -328,12 +315,6 @@ export function GuestHero({
         >
           Start with just six questions
         </Link>
-        <p className="mt-3 w-full max-w-3xl px-6 text-center text-[calc(0.667rem-1pt)] leading-relaxed text-muted sm:mt-4 sm:px-10 sm:text-[calc(1.125rem-1pt)]">
-          Spreadsheets take time you'll never get back, and FIRECalc isn't built for TSP, military,
-          and veterans. MACH RUN saves that time and is built for those paychecks. Use the fighter
-          pilot's OODA Loop and Monte Carlo Simulator to inform your financial path quickly and
-          efficiently, <span className="font-bold">giving you time back</span>.
-        </p>
         {confirming ? (
           <div className="mt-4 w-full max-w-xl rounded-lg bg-surface px-4 py-3 text-center shadow-[0_0_0_1px_var(--color-border)]">
             <p className="text-sm text-fg">
@@ -452,7 +433,14 @@ function LaptopPane({ slide }: { slide: LaptopSlide }) {
   const width = { width: `${100 / STRIP_COUNT}%` };
   if (slide === "ooda") {
     return (
-      <div className="h-full shrink-0 bg-[#ddd4c2] p-2 sm:p-3" style={width}>
+      <div
+        className="h-full shrink-0 p-2 sm:p-3"
+        style={{
+          ...width,
+          background:
+            "linear-gradient(to bottom, rgba(26, 35, 48, 0.2) 0%, rgba(26, 35, 48, 0.07) 38%, #fff 78%)",
+        }}
+      >
         <OodaLoop />
       </div>
     );
@@ -569,6 +557,23 @@ export function MilitaryHousehold() {
           The Hale sample starts with two paychecks, three kids, and a $2,500,000 nest-egg goal. With
           MACH RUN, they iterate and build a household that is on track for more than $2,500,000,
           with their money lasting at least through age 95.
+        </p>
+        <p className="mt-4 max-w-none px-4 text-center text-lg font-medium italic leading-snug text-[#1a2330] sm:text-2xl">
+          <span className="sm:whitespace-nowrap">
+            “Households that plan arrive with three times the wealth
+          </span>
+          <br className="hidden sm:inline" />
+          <span className="sm:whitespace-nowrap"> of households that do not.”</span>
+        </p>
+        <p className="mt-1 max-w-3xl text-center text-[0.65rem] leading-snug text-muted sm:text-xs">
+          <a
+            href="https://www.nber.org/papers/w17078"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="italic underline underline-offset-4 hover:text-fg"
+          >
+            Lusardi and Mitchell, National Bureau of Economic Research, Working Paper 17078 (2011).
+          </a>
         </p>
         <FlagStripe />
         <p className="font-display text-lg font-semibold uppercase tracking-[0.14em] text-[#3a8a58] sm:text-2xl">

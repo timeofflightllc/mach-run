@@ -1792,7 +1792,7 @@ function Home() {
       {heroOn ? <MilitaryHousehold /> : null}
       {heroOn ? (
         <section className="bg-bg">
-          <div className="page-gutter mx-auto w-full max-w-3xl pb-8 sm:pb-12">
+          <div className="page-gutter mx-auto w-full max-w-3xl">
             <div className="grid gap-3 sm:grid-cols-3">
               {[
                 "Change the savings rate and contributions.",
@@ -1816,6 +1816,12 @@ function Home() {
               </p>
             </div>
           </div>
+          <p className="page-gutter mx-auto mt-7 mb-7 w-full max-w-5xl text-center text-[calc(0.667rem-1pt)] leading-relaxed text-muted sm:mt-9 sm:mb-9 sm:text-[calc(1.125rem-1pt)]">
+            Spreadsheets take time you'll never get back, and FIRECalc isn't built for TSP, military,
+            and veterans. MACH RUN saves that time and is built for those paychecks. Use the fighter
+            pilot's OODA Loop and Monte Carlo Simulator to inform your financial path quickly and
+            efficiently, <span className="font-bold">giving you time back</span>.
+          </p>
         </section>
       ) : null}
       {heroOn ? (
