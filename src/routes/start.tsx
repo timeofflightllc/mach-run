@@ -445,6 +445,7 @@ function StartQuiz() {
                 ))}
               </div>
               <div className="relative overflow-hidden">
+                {praise && step === 4 ? null : (
                 <div
                   className={
                     (instant ? "transition-none " : "transition-transform duration-500 ease-out ") +
@@ -657,9 +658,12 @@ function StartQuiz() {
               </div>
                   </div>
                 </div>
+                )}
                 <div
                   className={
-                    "absolute inset-0 flex flex-col items-center justify-center bg-[#f3f0e8] sm:bg-white " +
+                    (praise && step === 4
+                      ? "relative flex flex-col items-center bg-[#f3f0e8] pt-2 sm:bg-white "
+                      : "absolute inset-0 flex flex-col items-center justify-center bg-[#f3f0e8] sm:bg-white ") +
                     (instant ? "transition-none " : "transition-transform duration-500 ease-out ") +
                     (praise ? "translate-x-0" : "pointer-events-none translate-x-full")
                   }
@@ -686,7 +690,7 @@ function StartQuiz() {
                   {money(built?.asked ?? monthlyNeed)}
                 </p>
               </div>
-              <div className="mt-8 text-center">
+              <div className="mt-5 text-center">
                 <p className="text-sm text-[#3d4a54]">This account can pay</p>
                 <p className="font-display text-[clamp(3.4rem,14vw,4.75rem)] font-semibold tabular-nums leading-none tracking-tight text-[#3a8a58]">
                   {money(built?.canPay ?? 0)}
@@ -694,20 +698,41 @@ function StartQuiz() {
                 <p className="mt-2 text-sm text-[#3d4a54]">a month, in today's dollars</p>
                 {PAYS.some((row) => pays[row.id] > 0) ? (
                   <>
-                    <div className="mt-6 flex items-center justify-center whitespace-nowrap">
-                      {PAYS.filter((row) => pays[row.id] > 0).map((row, index) => (
-                        <div key={row.id} className="flex items-center">
+                    <div className="mt-6 flex items-end justify-center whitespace-nowrap">
+                      {PAYS.filter((row) => pays[row.id] > 0).map((row, index, shown) => (
+                        <div key={row.id} className="flex items-end">
                           {index > 0 ? (
-                            <span className="px-1.5 text-lg text-[#3d4a54] sm:px-3 sm:text-2xl">+</span>
+                            <span
+                              className={
+                                "px-1 pb-4 text-[#3d4a54] sm:px-3 " +
+                                (shown.length > 2 ? "text-lg sm:text-2xl" : "text-2xl sm:text-3xl")
+                              }
+                            >
+                              +
+                            </span>
                           ) : null}
                           <div className="text-center">
-                            <p className="text-[10px] font-medium tracking-tight text-[#3d4a54] sm:text-sm">
+                            <p
+                              className={
+                                "font-medium tracking-tight text-[#3d4a54] " +
+                                (shown.length > 2 ? "text-[12px] sm:text-sm" : "text-sm sm:text-base")
+                              }
+                            >
                               {row.id === "military" ? "Military Retirement" : row.label}
                             </p>
-                            <p className="font-display text-[clamp(1.15rem,4.6vw,2.25rem)] font-semibold tabular-nums leading-none">
+                            <p
+                              className={
+                                "font-display font-semibold tabular-nums leading-none " +
+                                (shown.length > 2
+                                  ? "text-[clamp(1.45rem,7vw,2rem)]"
+                                  : "text-[clamp(2rem,9vw,2.6rem)]")
+                              }
+                            >
                               {money(pays[row.id])}
                             </p>
-                            <p className="mt-1 text-[10px] text-[#3d4a54] sm:text-sm">a month</p>
+                            <p className={"mt-1 text-[#3d4a54] " + (shown.length > 2 ? "text-[11px] sm:text-sm" : "text-xs sm:text-sm")}>
+                              a month
+                            </p>
                           </div>
                         </div>
                       ))}
@@ -720,22 +745,8 @@ function StartQuiz() {
                     </p>
                   </>
                 ) : null}
-                {(built?.nest ?? 0) > 0 ? (
-                  <p className="mt-4 text-center text-base leading-snug">
-                    In order to receive {money(built?.asked ?? monthlyNeed)} a month in retirement withdrawals, you would
-                    need a {money(built?.nest ?? 0)} nest egg.
-                  </p>
-                ) : null}
-                <p className="mt-3 text-xs text-[#3d4a54]">For information and education. Not financial advice.</p>
               </div>
-              <form onSubmit={onSave} className="mt-8 flex flex-col gap-3">
-                <button
-                  type="button"
-                  className="h-8 self-start px-0 text-base text-[#3d4a54]"
-                  onClick={() => setStep(5)}
-                >
-                  Back
-                </button>
+              <form onSubmit={onSave} className="mt-4 flex flex-col gap-3">
                 {signedInEmail ? (
                   <p className="text-center text-lg">
                     This run will live with <span className="font-medium">{signedInEmail}</span>.
@@ -769,6 +780,12 @@ function StartQuiz() {
                     <p className="text-center text-sm text-[#3d4a54]">No credit card.</p>
                   </>
                 )}
+                {(built?.nest ?? 0) > 0 ? (
+                  <p className="mt-1 text-center text-base leading-snug">
+                    In order to receive {money(built?.asked ?? monthlyNeed)} a month from investments through age{" "}
+                    {built?.plan.assumptions.projectionEndAge ?? 95}, you would need a {money(built?.nest ?? 0)} nest egg.
+                  </p>
+                ) : null}
                 {error ? <p className="text-center text-sm text-[#a34b45]">{error}</p> : null}
                 <p className="text-center text-base font-bold">
                   {monthCover(
@@ -784,12 +801,13 @@ function StartQuiz() {
                 >
                   {busy ? "Working" : "See full MACH RUN"}
                 </button>
+                <p className="text-center text-xs text-[#3d4a54]">For information and education. Not financial advice.</p>
               </form>
             </div>
           )}
         </div>
         {boydLine ? (
-          <div className="mt-6 text-center">
+          <div className={(praise && step === 4 ? "mt-2" : "mt-6") + " text-center"}>
             <span aria-hidden="true" className="block font-serif text-5xl leading-none text-[#d05838]">
               “
             </span>
