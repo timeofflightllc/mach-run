@@ -132,6 +132,7 @@ function freshenStoredCopy(body: string): string {
     .replaceAll("Seven-day trial, then $69/month.", "14-day trial, then $69/month.")
     .replaceAll("7-day free trial", "14-day free trial")
     .replaceAll("7-day trial, we throw in two months", "14-day trial, we throw in two months")
+    .replaceAll("7-day trial, 2 months free", "14-day trial, 2 months free")
     .replaceAll("7-day trial, then $69/month", "14-day trial, then $69/month")
     .replaceAll("A 7-day Advisor trial", "A 14-day Advisor Lite or Advisor Unlimited trial")
     .replaceAll(
