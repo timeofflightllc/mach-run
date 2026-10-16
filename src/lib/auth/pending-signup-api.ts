@@ -25,10 +25,26 @@ export const startPendingSignup = createServerFn({ method: "POST" })
     return start(data);
   });
 
+export const startQuizSignup = createServerFn({ method: "POST" })
+  .validator((input: { email?: string; name?: string; captcha?: string; honeypot?: string; answers?: unknown }) => ({
+    email: cleanEmail(input?.email),
+    name: String(input?.name ?? "").trim(),
+    captcha: String(input?.captcha ?? ""),
+    honeypot: String(input?.honeypot ?? ""),
+    answers: input?.answers ?? null,
+  }))
+  .handler(async ({ data }) => {
+    const { assertSameSiteRequest } = await import("./isolation.server");
+    assertSameSiteRequest();
+    const { startQuizSignup: start } = await import("./pending-signup.server");
+    return start(data);
+  });
+
 export const completePendingSignup = createServerFn({ method: "POST" })
-  .validator((input: { email?: string; code?: string }) => ({
+  .validator((input: { email?: string; code?: string; password?: string }) => ({
     email: cleanEmail(input?.email),
     code: String(input?.code ?? ""),
+    password: String(input?.password ?? ""),
   }))
   .handler(async ({ data }) => {
     const { assertSameSiteRequest } = await import("./isolation.server");
@@ -46,4 +62,20 @@ export const resendPendingSignup = createServerFn({ method: "POST" })
     assertSameSiteRequest();
     const { resendPendingSignup: resend } = await import("./pending-signup.server");
     return resend(data.email);
+  });
+
+export const passwordLaterStatus = createServerFn({ method: "GET" }).handler(async () => {
+  const { passwordLaterStatus: status } = await import("./pending-signup.server");
+  return status();
+});
+
+export const setLaterPassword = createServerFn({ method: "POST" })
+  .validator((input: { password?: string }) => ({
+    password: String(input?.password ?? ""),
+  }))
+  .handler(async ({ data }) => {
+    const { assertSameSiteRequest } = await import("./isolation.server");
+    assertSameSiteRequest();
+    const { setLaterPassword: set } = await import("./pending-signup.server");
+    return set(data.password);
   });

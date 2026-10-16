@@ -6,6 +6,7 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes, randomInt } from "node:crypto";
 import { getRequest } from "@tanstack/react-start/server";
 import { getSql } from "@/lib/db";
+import { accountCanPay, parseQuizAnswers, quizPlan, type QuizAnswers } from "@/lib/plan/quiz-plan";
 import { isDisposableEmail } from "./disposable-email";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "./email-password";
 import { clientIp, tooManySignups, turnstileFailureReason, verifyTurnstile } from "./signup-gate.server";
@@ -13,7 +14,9 @@ import { clientIp, tooManySignups, turnstileFailureReason, verifyTurnstile } fro
 const TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_ATTEMPTS = 8;
 
-export type PendingResult = { ok: true } | { ok: false; reason: string };
+export type PendingResult =
+  | { ok: true; quiz?: { password: string; answers: QuizAnswers | null } }
+  | { ok: false; reason: string };
 
 function secret(): string {
   return (process.env.BETTER_AUTH_SECRET ?? "mach-run-pending").trim();
@@ -60,6 +63,14 @@ async function ensurePendingTable() {
       emailed_at timestamptz
     )
   `);
+  await sql.query(`alter table pending_signups add column if not exists quiz_snapshot text`);
+  await sql.query(`
+    create table if not exists mach_password_later (
+      user_id text primary key,
+      password_blob text not null,
+      created_at timestamptz not null default now()
+    )
+  `);
 }
 
 async function purgeStaleUnverifiedUsers() {
@@ -78,6 +89,25 @@ async function purgeStaleUnverifiedUsers() {
     /* table names differ in some previews — skip */
   }
   await sql.query(`delete from pending_signups where expires_at < now()`);
+}
+
+function randomPassword(): string {
+  return randomBytes(18).toString("base64url");
+}
+
+function quizSnapshot(raw: unknown): string | null {
+  const answers = parseQuizAnswers(raw);
+  return answers ? JSON.stringify(answers) : null;
+}
+
+function payFromSnapshot(raw: string | null): number | null {
+  const answers = parseQuizAnswers(raw);
+  if (!answers) return null;
+  try {
+    return accountCanPay(quizPlan(answers));
+  } catch {
+    return null;
+  }
 }
 
 function requestIp(): string {
@@ -162,12 +192,105 @@ export async function startPendingSignup(input: {
   return { ok: true };
 }
 
+function requestOrigin(): string {
+  const req = getRequest();
+  const host = (req?.headers.get("x-forwarded-host") || req?.headers.get("host") || "")
+    .split(",")[0]
+    .trim();
+  const proto = (req?.headers.get("x-forwarded-proto") || "https").split(",")[0].trim() || "https";
+  if (host && !/^(localhost|127\.0\.0\.1)(:\d+)?$/i.test(host)) return `${proto}://${host}`;
+  return "https://machrun.com";
+}
+
+/** Quiz path. No password yet. The email link opens the saved sketch. */
+export async function startQuizSignup(input: {
+  email: string;
+  name?: string;
+  captcha: string;
+  honeypot: string;
+  answers?: unknown;
+}): Promise<PendingResult> {
+  await ensurePendingTable();
+  await purgeStaleUnverifiedUsers();
+  if (input.honeypot.trim()) return { ok: true };
+
+  const email = input.email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { ok: false, reason: "Enter a valid email address." };
+  }
+  if (isDisposableEmail(email)) {
+    return { ok: false, reason: "Use a lasting email address, not a temporary inbox." };
+  }
+
+  const ip = requestIp();
+  const turnstile = await verifyTurnstile(input.captcha);
+  if (!turnstile.ok) {
+    return { ok: false, reason: turnstileFailureReason(turnstile.code) };
+  }
+  if (await tooManySignups(ip)) {
+    return { ok: false, reason: "Too many new accounts from this network. Try again later." };
+  }
+
+  const sql = await getSql();
+  const existing = await sql.query<{ id: string }>(
+    `select id from "user" where lower(email) = $1 limit 1`,
+    [email],
+  );
+  if (existing[0]) {
+    return { ok: false, reason: "That email already has an account. Sign in instead." };
+  }
+
+  const prior = await sql.query<{ emailed_at: string | Date | null }>(
+    `select emailed_at from pending_signups where email = $1 limit 1`,
+    [email],
+  );
+  const emailedAt = prior[0]?.emailed_at ? new Date(prior[0].emailed_at).getTime() : 0;
+  if (emailedAt && Date.now() - emailedAt < 2 * 60 * 1000) {
+    return { ok: true };
+  }
+
+  const code = String(randomInt(100000, 1000000));
+  const name = input.name?.trim().split(/\s+/)[0] || email;
+  const snapshot = quizSnapshot(input.answers);
+  await sql.query(
+    `insert into pending_signups (email, name, password_blob, code_hash, expires_at, attempts, created_at, emailed_at, quiz_snapshot)
+     values ($1, $2, '', $3, $4, 0, now(), now(), $5)
+     on conflict (email) do update set
+       name = excluded.name,
+       password_blob = '',
+       code_hash = excluded.code_hash,
+       expires_at = excluded.expires_at,
+       attempts = 0,
+       emailed_at = now(),
+       quiz_snapshot = excluded.quiz_snapshot`,
+    [email, name, hashCode(email, code), new Date(Date.now() + TTL_MS).toISOString(), snapshot],
+  );
+
+  const { sendQuizChoosePasswordEmail } = await import("../notify/signup");
+  const sent = await sendQuizChoosePasswordEmail({
+    email,
+    name,
+    code,
+    origin: requestOrigin(),
+    canPay: payFromSnapshot(snapshot),
+  });
+  if (!sent.ok && !sent.skipped) {
+    return { ok: false, reason: "Could not send the email. Try again in a minute." };
+  }
+  return { ok: true };
+}
+
 export async function resendPendingSignup(emailRaw: string): Promise<PendingResult> {
   await ensurePendingTable();
   const email = emailRaw.trim().toLowerCase();
   const sql = await getSql();
-  const rows = await sql.query<{ name: string | null; emailed_at: string | Date | null }>(
-    `select name, emailed_at from pending_signups where email = $1 limit 1`,
+  const rows = await sql.query<{
+    name: string | null;
+    emailed_at: string | Date | null;
+    password_blob: string | null;
+    quiz_snapshot: string | null;
+  }>(
+    `select name, emailed_at, password_blob, quiz_snapshot from pending_signups where email = $1 limit 1`,
     [email],
   );
   const row = rows[0];
@@ -183,6 +306,21 @@ export async function resendPendingSignup(emailRaw: string): Promise<PendingResu
      where email = $1`,
     [email, hashCode(email, code), new Date(Date.now() + TTL_MS).toISOString()],
   );
+  const chooseLater = !row.password_blob;
+  if (chooseLater) {
+    const { sendQuizChoosePasswordEmail } = await import("../notify/signup");
+    const sent = await sendQuizChoosePasswordEmail({
+      email,
+      name: row.name || undefined,
+      code,
+      origin: requestOrigin(),
+      canPay: payFromSnapshot(row.quiz_snapshot),
+    });
+    if (!sent.ok && !sent.skipped) {
+      return { ok: false, reason: "Could not resend. Try again in a minute." };
+    }
+    return { ok: true };
+  }
   const { sendWelcomeSignupEmail } = await import("../notify/signup");
   const sent = await sendWelcomeSignupEmail({
     id: "pending",
@@ -199,6 +337,7 @@ export async function resendPendingSignup(emailRaw: string): Promise<PendingResu
 export async function completePendingSignup(input: {
   email: string;
   code: string;
+  password?: string;
 }): Promise<PendingResult> {
   await ensurePendingTable();
   const email = input.email.trim().toLowerCase();
@@ -212,8 +351,9 @@ export async function completePendingSignup(input: {
     code_hash: string;
     expires_at: string | Date;
     attempts: number;
+    quiz_snapshot: string | null;
   }>(
-    `select name, password_blob, code_hash, expires_at, attempts from pending_signups where email = $1 limit 1`,
+    `select name, password_blob, code_hash, expires_at, attempts, quiz_snapshot from pending_signups where email = $1 limit 1`,
     [email],
   );
   const row = rows[0];
@@ -232,10 +372,16 @@ export async function completePendingSignup(input: {
   }
 
   let password: string;
-  try {
-    password = decryptPassword(row.password_blob);
-  } catch {
-    return { ok: false, reason: "That registration is damaged. Start at Register again." };
+  let quizOpen = false;
+  if (!row.password_blob) {
+    password = randomPassword();
+    quizOpen = true;
+  } else {
+    try {
+      password = decryptPassword(row.password_blob);
+    } catch {
+      return { ok: false, reason: "That registration is damaged. Start at Register again." };
+    }
   }
 
   const { auth } = await import("./server");
@@ -261,6 +407,21 @@ export async function completePendingSignup(input: {
   await sql.query(`update "user" set "emailVerified" = true, "updatedAt" = now() where lower(email) = $1`, [
     email,
   ]);
+  const answers = quizOpen ? parseQuizAnswers(row.quiz_snapshot) : null;
+  if (quizOpen) {
+    const created = await sql.query<{ id: string }>(
+      `select id from "user" where lower(email) = $1 limit 1`,
+      [email],
+    );
+    const id = created[0]?.id;
+    if (id) {
+      await sql.query(
+        `insert into mach_password_later (user_id, password_blob) values ($1, $2)
+         on conflict (user_id) do update set password_blob = excluded.password_blob`,
+        [id, encryptPassword(password)],
+      );
+    }
+  }
   await sql.query(`delete from pending_signups where email = $1`, [email]);
 
   try {
@@ -286,5 +447,58 @@ export async function completePendingSignup(input: {
     /* cookies may still have been set by sign-up */
   }
 
+  if (quizOpen) return { ok: true, quiz: { password, answers } };
+  return { ok: true };
+}
+
+export async function passwordLaterStatus(): Promise<{ needed: boolean }> {
+  await ensurePendingTable();
+  const { getSessionUser } = await import("./verify.server");
+  const user = await getSessionUser();
+  if (!user) return { needed: false };
+  const sql = await getSql();
+  const rows = await sql.query<{ user_id: string }>(
+    `select user_id from mach_password_later where user_id = $1 limit 1`,
+    [user.id],
+  );
+  return { needed: Boolean(rows[0]) };
+}
+
+export async function setLaterPassword(newPassword: string): Promise<PendingResult> {
+  await ensurePendingTable();
+  if (newPassword.length < PASSWORD_MIN_LENGTH) {
+    return { ok: false, reason: "Password must be at least 8 characters." };
+  }
+  if (newPassword.length > PASSWORD_MAX_LENGTH) {
+    return { ok: false, reason: "Password must be 128 characters or fewer." };
+  }
+  const { getSessionUser } = await import("./verify.server");
+  const user = await getSessionUser();
+  if (!user) return { ok: false, reason: "Sign in first." };
+  const sql = await getSql();
+  const rows = await sql.query<{ password_blob: string }>(
+    `select password_blob from mach_password_later where user_id = $1 limit 1`,
+    [user.id],
+  );
+  const blob = rows[0]?.password_blob;
+  if (!blob) return { ok: false, reason: "Password is already set. Use your current password to change it." };
+  let current = "";
+  try {
+    current = decryptPassword(blob);
+  } catch {
+    return { ok: false, reason: "Could not update that password. Use Account after you sign in again." };
+  }
+  const { auth } = await import("./server");
+  const req = getRequest();
+  try {
+    await auth.api.changePassword({
+      body: { currentPassword: current, newPassword, revokeOtherSessions: false },
+      headers: req?.headers,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "";
+    return { ok: false, reason: msg || "Could not set that password." };
+  }
+  await sql.query(`delete from mach_password_later where user_id = $1`, [user.id]);
   return { ok: true };
 }

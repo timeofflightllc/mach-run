@@ -23,6 +23,7 @@ import { Route as MethodRouteImport } from './routes/method'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as StartRouteImport } from './routes/start'
 import { Route as Top3DeskRouteImport } from './routes/top-3-desk'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as ApiContactRouteImport } from './routes/api/contact'
@@ -99,6 +100,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StartRoute = StartRouteImport.update({
+  id: '/start',
+  path: '/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Top3DeskRoute = Top3DeskRouteImport.update({
   id: '/top-3-desk',
   path: '/top-3-desk',
@@ -140,6 +146,7 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/start': typeof StartRoute
   '/top-3-desk': typeof Top3DeskRoute
   '/verify-email': typeof VerifyEmailRoute
   '/api/contact': typeof ApiContactRoute
@@ -161,6 +168,7 @@ export interface FileRoutesByTo {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/start': typeof StartRoute
   '/top-3-desk': typeof Top3DeskRoute
   '/verify-email': typeof VerifyEmailRoute
   '/api/contact': typeof ApiContactRoute
@@ -183,6 +191,7 @@ export interface FileRoutesById {
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/start': typeof StartRoute
   '/top-3-desk': typeof Top3DeskRoute
   '/verify-email': typeof VerifyEmailRoute
   '/api/contact': typeof ApiContactRoute
@@ -206,6 +215,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/sitemap.xml'
+    | '/start'
     | '/top-3-desk'
     | '/verify-email'
     | '/api/contact'
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/sitemap.xml'
+    | '/start'
     | '/top-3-desk'
     | '/verify-email'
     | '/api/contact'
@@ -248,6 +259,7 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/privacy'
     | '/sitemap.xml'
+    | '/start'
     | '/top-3-desk'
     | '/verify-email'
     | '/api/contact'
@@ -270,6 +282,7 @@ export interface RootRouteChildren {
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  StartRoute: typeof StartRoute
   Top3DeskRoute: typeof Top3DeskRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   ApiContactRoute: typeof ApiContactRoute
@@ -377,6 +390,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/start': {
+      id: '/start'
+      path: '/start'
+      fullPath: '/start'
+      preLoaderRoute: typeof StartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/top-3-desk': {
       id: '/top-3-desk'
       path: '/top-3-desk'
@@ -430,6 +450,7 @@ const rootRouteChildren: RootRouteChildren = {
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  StartRoute: StartRoute,
   Top3DeskRoute: Top3DeskRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   ApiContactRoute: ApiContactRoute,

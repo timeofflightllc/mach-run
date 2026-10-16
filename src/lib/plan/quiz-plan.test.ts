@@ -1,0 +1,177 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { accountCanPay, appendQuizAccount, quizPlan, retireCaption, retirementIso } from "./quiz-plan.ts";
+
+const today = new Date(2026, 9, 15);
+
+test("retirement is January of birth year plus age, or this month if that January has passed", () => {
+  assert.equal(retirementIso(1994, 55, today), "2049-01-01");
+  assert.equal(retireCaption(1994, 55, today), "That's 2049.");
+  assert.equal(retirementIso(1970, 55, today), "2026-10-01");
+  assert.equal(retireCaption(1970, 55, today), "That's this year.");
+});
+
+test("the sketch is one account, savings stop before retirement, and spending starts then", () => {
+  const plan = quizPlan(
+    {
+      monthlyNeed: 5000,
+      retireAge: 55,
+      birthYear: 1994,
+      accountName: "",
+      kind: "tsp",
+      balance: 50000,
+      monthlySave: 500,
+      pay: "military",
+      payMonthly: 2000,
+    },
+    today,
+  );
+  assert.equal(plan.primary.birthDate, "1994-01-01");
+  assert.equal(plan.primary.name, "");
+  assert.equal(plan.assumptions.dollars, "real");
+  assert.equal(plan.assumptions.retirementGoalDate, "2049-01-01");
+  assert.equal(plan.assumptions.careerEndDate, "2049-01-01");
+  assert.equal(plan.assumptions.militaryRetireDate, "2049-01-01");
+  assert.equal(plan.portfolios.length, 1);
+  assert.equal(plan.portfolios[0]?.name, "TSP");
+  assert.equal(plan.portfolios[0]?.kind, "tsp");
+  assert.equal(plan.portfolios[0]?.currentValue, 50000);
+  assert.equal(plan.contributions.length, 1);
+  assert.equal(plan.contributions[0]?.endDate, "2048-12-01");
+  assert.equal(plan.spending[0]?.startDate, "2049-01-01");
+  assert.equal(plan.spending[0]?.monthlyAmount, 5000);
+  const military = plan.incomes.find((row) => row.kind === "military");
+  assert.equal(military?.startDate, "2049-01-01");
+  const savings = plan.incomes.find((row) => row.kind === "other");
+  assert.equal(savings?.monthlyAmount, 500);
+  assert.equal(savings?.endDate, "2048-12-01");
+  assert.equal(savings?.taxTreatment, "tax_free");
+  assert.equal(plan.children.length, 0);
+  assert.equal(plan.liabilities.length, 0);
+  assert.equal(plan.spouse.birthDate, "");
+  assert.equal(plan.assumptions.goalMode, "nest");
+  assert.equal(plan.assumptions.incomeGoalMonthly, null);
+});
+
+test("VA starts now and a pension starts at retirement", () => {
+  const va = quizPlan(
+    {
+      monthlyNeed: 4000,
+      retireAge: 60,
+      birthYear: 1990,
+      accountName: "Brokerage",
+      kind: "taxable",
+      balance: 10000,
+      monthlySave: 0,
+      pay: "va",
+      payMonthly: 1500,
+    },
+    today,
+  );
+  assert.equal(va.incomes[0]?.startDate, va.assumptions.asOfDate);
+  assert.equal(va.incomes[0]?.taxTreatment, "tax_free");
+  assert.equal(va.contributions.length, 0);
+  const pension = quizPlan(
+    {
+      monthlyNeed: 4000,
+      retireAge: 60,
+      birthYear: 1990,
+      accountName: "IRA",
+      kind: "ira",
+      balance: 10000,
+      monthlySave: 100,
+      pay: "pension",
+      payMonthly: 800,
+    },
+    today,
+  );
+  assert.equal(pension.incomes.find((row) => row.kind === "pension")?.startDate, "2050-01-01");
+  assert.equal(pension.assumptions.militaryRetireDate, "2026-09-01");
+});
+
+test("savings grow the one account, and guaranteed pay still does not", () => {
+  const base = {
+    monthlyNeed: 8000,
+    retireAge: 55,
+    birthYear: 1994,
+    accountName: "Roth",
+    kind: "roth_ira" as const,
+    balance: 200000,
+    payMonthly: 3000,
+  };
+  const plain = accountCanPay(quizPlan({ ...base, monthlySave: 0, pay: "none" }, today));
+  const saving = accountCanPay(quizPlan({ ...base, monthlySave: 500, pay: "none" }, today));
+  const withPay = accountCanPay(quizPlan({ ...base, monthlySave: 500, pay: "military" }, today));
+  assert.ok(saving > plain);
+  assert.equal(withPay, saving);
+});
+
+test("a first name on the sketch is the first word only", () => {
+  const named = quizPlan(
+    {
+      firstName: "Cain Olde",
+      monthlyNeed: 5000,
+      retireAge: 55,
+      birthYear: 1994,
+      accountName: "TSP",
+      kind: "tsp",
+      balance: 50000,
+      monthlySave: 0,
+      pay: "none",
+      payMonthly: 0,
+    },
+    today,
+  );
+  assert.equal(named.primary.name, "Cain");
+});
+
+test("a signed-in quiz adds the account and leaves the rest of the household", () => {
+  const existing = quizPlan(
+    {
+      monthlyNeed: 7000,
+      retireAge: 57,
+      birthYear: 1979,
+      accountName: "TSP",
+      kind: "tsp",
+      balance: 180000,
+      monthlySave: 1000,
+      pay: "none",
+      payMonthly: 0,
+    },
+    today,
+  );
+  existing.primary.name = "Cain";
+  existing.spouse = { ...existing.spouse, name: "Sarah", birthDate: "1986-01-01" };
+  const keptId = existing.portfolios[0]?.id;
+  const sketch = quizPlan(
+    {
+      firstName: "Someone",
+      monthlyNeed: 3000,
+      retireAge: 50,
+      birthYear: 1990,
+      accountName: "Brokerage",
+      kind: "taxable",
+      balance: 10000,
+      monthlySave: 200,
+      pay: "military",
+      payMonthly: 4000,
+    },
+    today,
+  );
+  const merged = appendQuizAccount(existing, sketch);
+  assert.equal(existing.portfolios.length, 1);
+  assert.equal(merged.portfolios.length, 2);
+  assert.equal(merged.portfolios[0]?.id, keptId);
+  assert.equal(merged.portfolios[0]?.currentValue, 180000);
+  assert.equal(merged.portfolios[1]?.name, "Brokerage");
+  assert.equal(merged.portfolios[1]?.kind, "taxable");
+  assert.equal(merged.portfolios[1]?.currentValue, 10000);
+  assert.equal(merged.contributions.length, 2);
+  assert.equal(merged.contributions[1]?.portfolioId, merged.portfolios[1]?.id);
+  assert.equal(merged.primary.name, "Cain");
+  assert.equal(merged.spouse.name, "Sarah");
+  assert.equal(merged.assumptions.retirementGoalDate, existing.assumptions.retirementGoalDate);
+  assert.equal(merged.spending[0]?.monthlyAmount, 7000);
+  assert.equal(merged.incomes.some((row) => row.kind === "military"), false);
+  assert.equal(merged.incomes.filter((row) => row.name === "Put in each month").length, 2);
+});

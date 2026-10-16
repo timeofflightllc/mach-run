@@ -44,6 +44,7 @@ import { usePlanStore } from "@/lib/plan/store";
 import { createDefaultPlan } from "@/lib/plan/defaults";
 import { MACH_PROFILE_REMOVED, useProfileStore } from "@/lib/plan/profile-store";
 import { useCloudPlan } from "@/lib/plan/use-cloud-plan";
+import { quizOpenPending, takeQuizOpen } from "@/lib/plan/quiz-plan";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { hasBalanceSheet } from "@/lib/billing/limits";
 import { getEntitlement } from "@/lib/billing/api";
@@ -57,6 +58,7 @@ import {
 import { cn } from "@/lib/utils";
 import { WelcomeEmailPreviewOverlay } from "@/components/meridian/welcome-email-preview";
 import { EmailVerifyBanner } from "@/components/meridian/email-verify-banner";
+import { PasswordLaterBanner } from "@/components/meridian/password-later-banner";
 import { GuestHero, MilitaryHousehold } from "@/components/meridian/guest-hero";
 import { homeJsonLd, pageHead } from "@/lib/seo";
 import { GhostButton, PrimaryButton } from "@/components/ui/field";
@@ -1289,6 +1291,37 @@ function Home() {
     });
   }
 
+  useEffect(() => {
+    if (!quizOpenPending()) return;
+    let opened = false;
+    let tries = 0;
+    const timer = window.setInterval(() => {
+      tries += 1;
+      const target = document.getElementById("master-caution") ?? document.getElementById("ooda-observe");
+      if (!target) {
+        if (tries > 20) window.clearInterval(timer);
+        return;
+      }
+      if (!opened) {
+        if (!takeQuizOpen()) {
+          window.clearInterval(timer);
+          return;
+        }
+        opened = true;
+        setStep("family");
+      }
+      const header = document.getElementById("mach-header");
+      const headerH = header?.getBoundingClientRect().height ?? 0;
+      const top = target.getBoundingClientRect().top;
+      if (Math.abs(top - headerH - 8) > 20) {
+        window.scrollTo(0, Math.max(0, window.scrollY + top - headerH - 8));
+        engageSteps();
+      }
+      if (tries > 12) window.clearInterval(timer);
+    }, 120);
+    return () => window.clearInterval(timer);
+  }, [heroOn]);
+
   function onNext() {
     const next = route[shownIndex + 1]?.id;
     if (!next) return;
@@ -1752,6 +1785,7 @@ function Home() {
           </div>
         </nav>
         <EmailVerifyBanner />
+        <PasswordLaterBanner />
       </header>
       {heroOn ? <GuestHero onShowFamily={showFamily} onDemo={showDemo} /> : null}
       <div id={heroOn ? "guest-dock" : undefined}>

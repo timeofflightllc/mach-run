@@ -13,6 +13,7 @@ import { sendTestSignupAlert, signupAlertStatus, emailPrefsStatus, setOptionalEm
 import { authClient, signIn, signInWithApple, signInWithGoogle, signInWithX, signOut } from "@/lib/auth/client";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/auth/email-password";
 import { deleteMyAccount, getDeleteOptions } from "@/lib/auth/delete-account-api";
+import { passwordLaterStatus, setLaterPassword } from "@/lib/auth/pending-signup-api";
 import type { DeleteProvider } from "@/lib/auth/delete-account";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { RedirectToSignIn } from "@/lib/auth/gates";
@@ -53,6 +54,7 @@ function Account() {
   const [email, setEmail] = useState(user?.primaryEmail ?? "");
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [laterNeeded, setLaterNeeded] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<"profile" | "password" | "billing" | "card" | "alert" | null>(null);
@@ -80,6 +82,9 @@ function Account() {
     if (!user) return;
     setName(user.displayName ?? "");
     setEmail(user.primaryEmail ?? "");
+    void passwordLaterStatus()
+      .then((s) => setLaterNeeded(s.needed))
+      .catch(() => setLaterNeeded(false));
     void signupAlertStatus()
       .then((s) => {
         setAlertOwner(s.owner);
@@ -103,8 +108,8 @@ function Account() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.location.hash !== "#email-preferences") return;
-    document.getElementById("email-preferences")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (window.location.hash !== "#email-preferences" && window.location.hash !== "#password") return;
+    document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [user, prefsReady]);
 
   useEffect(() => {
@@ -256,6 +261,14 @@ function Account() {
       }
       if (newPassword.length > PASSWORD_MAX_LENGTH) {
         throw new Error("New password must be 128 characters or fewer.");
+      }
+      if (laterNeeded) {
+        const result = await setLaterPassword({ data: { password: newPassword } });
+        if (!result.ok) throw new Error(result.reason);
+        setLaterNeeded(false);
+        setNewPassword("");
+        setMsg("Password set. This plan is unchanged.");
+        return;
       }
       const { error: err } = await authClient.changePassword({
         currentPassword,
@@ -502,24 +515,28 @@ function Account() {
         </div>
 
         <form
+          id="password"
           onSubmit={(e) => void savePassword(e)}
           className="h-full space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
         >
           <p className="font-display text-lg text-fg">Password</p>
           <p className="text-sm text-muted">
-            Only applies if you registered with email. Continue with Apple, Google
-            and X keep their own passwords.
+            {laterNeeded
+              ? "Choose a password for next time. This plan stays as it is."
+              : "Only applies if you registered with email. Continue with Apple, Google and X keep their own passwords."}
           </p>
-          <Field label="Current password">
-            <TextInput
-              type="password"
-              autoComplete="current-password"
-              maxLength={PASSWORD_MAX_LENGTH}
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-            />
-          </Field>
-          <Field label="New password" hint="8 to 128 characters">
+          {laterNeeded ? null : (
+            <Field label="Current password">
+              <TextInput
+                type="password"
+                autoComplete="current-password"
+                maxLength={PASSWORD_MAX_LENGTH}
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+              />
+            </Field>
+          )}
+          <Field label={laterNeeded ? "Password" : "New password"} hint="8 to 128 characters">
             <TextInput
               type="password"
               autoComplete="new-password"
@@ -529,8 +546,8 @@ function Account() {
               onChange={(e) => setNewPassword(e.target.value)}
             />
           </Field>
-          <PrimaryButton disabled={busy !== null || !currentPassword || !newPassword}>
-            {busy === "password" ? "Saving…" : "Update password"}
+          <PrimaryButton disabled={busy !== null || !newPassword || (!laterNeeded && !currentPassword)}>
+            {busy === "password" ? "Saving…" : laterNeeded ? "Set password" : "Update password"}
           </PrimaryButton>
         </form>
 

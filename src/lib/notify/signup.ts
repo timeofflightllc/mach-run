@@ -296,6 +296,100 @@ export function welcomeSignupEmail(notice: SignupNotice): { subject: string; htm
   return { subject, html, text };
 }
 
+export function quizFinishUrl(origin: string, email: string, code: string): string {
+  const base = origin.replace(/\/$/, "");
+  const q = new URLSearchParams({
+    email: email.trim().toLowerCase(),
+    code: code.replace(/\D/g, "").slice(0, 6),
+    choose: "1",
+  });
+  return `${base}/verify-email?${q.toString()}`;
+}
+
+/** Quiz sign-up. The account does not exist until they open this link. */
+export function quizPaySubject(canPay: number | null): string {
+  if (canPay == null || !Number.isFinite(canPay)) return "Your MACH RUN sketch is saved.";
+  const dollars = Math.round(canPay).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  });
+  return `Your account can pay ${dollars} a month.`;
+}
+
+export function quizChoosePasswordEmail(input: {
+  email: string;
+  name?: string;
+  code: string;
+  url: string;
+  canPay?: number | null;
+}): { subject: string; html: string; text: string } {
+  const url = input.url;
+  const first = input.name?.trim().split(/\s+/)[0] ?? "";
+  const hello = first && first.includes("@") === false ? `Hi ${first},` : "Hi,";
+  const subject = quizPaySubject(input.canPay ?? null);
+  const text = [
+    hello,
+    "",
+    "Your sketch is saved.",
+    "",
+    "Open your MACH RUN:",
+    url,
+    "",
+    "This link expires in 24 hours. The account is not created until you open it.",
+    "",
+    "MACH RUN is for entertainment and education only. It is not financial advice.",
+    "",
+    "— MACH RUN",
+    "The Supersonic Retirement Calculator",
+    "https://machrun.com",
+  ].join("\n");
+  const html = wrapEmail(
+    "Your sketch is saved",
+    `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#3D4A54;">
+          ${escapeHtml(hello)}
+        </td></tr>
+        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#3D4A54;">
+          Your sketch is saved.
+        </td></tr>
+        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#3D4A54;">
+          This link expires in 24 hours. The account is not created until you open it.
+        </td></tr>
+        <tr><td align="center" style="padding:8px 28px 28px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td align="center" bgcolor="#3A8A58" style="background-color:#3A8A58;">
+                <a href="${escapeHtml(url)}" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#FFF8F4;text-decoration:none;">Open your MACH RUN</a>
+              </td>
+            </tr>
+          </table>
+        </td></tr>`,
+    "Your sketch is saved. Open your MACH RUN.",
+    "left",
+    true,
+  );
+  return { subject, html, text };
+}
+
+export async function sendQuizChoosePasswordEmail(input: {
+  email: string;
+  name?: string;
+  code: string;
+  origin: string;
+  canPay?: number | null;
+}): Promise<NotifyResult> {
+  const to = input.email.trim().toLowerCase();
+  if (!to) return { ok: false, skipped: true, reason: "No email." };
+  const mail = quizChoosePasswordEmail({
+    email: to,
+    name: input.name,
+    code: input.code,
+    url: quizFinishUrl(input.origin, to, input.code),
+    canPay: input.canPay,
+  });
+  return sendResend({ to: [to], ...mail });
+}
+
 export async function deliverNotify(mail: {
   to: string[];
   subject: string;

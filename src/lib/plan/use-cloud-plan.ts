@@ -9,6 +9,7 @@ import {
 } from "@/lib/billing/limits";
 import { pickDisplayedPlan } from "./cloud-hydrate";
 import { clearLocalMachRunWorkspace } from "./clear-local";
+import { appendQuizAccount, consumeHeldQuizPlan, quizPlanHeld } from "./quiz-plan";
 import { loadMachPlan, saveMachPlan } from "./plan-api";
 import { usePlanStore } from "./store";
 import { useProfileStore } from "./profile-store";
@@ -55,7 +56,15 @@ export function useCloudPlan() {
   useEffect(() => {
     if (isPending) return;
     if (!userId) {
-      clearLocalMachRunWorkspace();
+      if (quizPlanHeld()) {
+        const held = consumeHeldQuizPlan();
+        if (held && !held.add) {
+          setPlan(held.plan);
+          useProfileStore.getState().hydrateFromPlan(held.plan);
+        }
+      } else {
+        clearLocalMachRunWorkspace();
+      }
       setCloudReady(false);
       setStatus("guest");
       return;
@@ -70,6 +79,7 @@ export function useCloudPlan() {
       .then((saved) => {
         if (cancelled) return;
         const local = usePlanStore.getState().plan;
+        const held = quizPlanHeld() ? consumeHeldQuizPlan() : null;
         const cloudPlan =
           saved && typeof saved === "object" && "plan" in saved ? saved.plan : saved;
         const library =
@@ -78,13 +88,14 @@ export function useCloudPlan() {
         else if (!useProfileStore.getState().profiles.length) {
           useProfileStore.getState().hydrateFromPlan(local);
         }
-        setPlan(
-          pickDisplayedPlan({
-            local,
-            cloudPlan: cloudPlan ?? null,
-            library,
-          }),
-        );
+        const base = pickDisplayedPlan({
+          local,
+          cloudPlan: cloudPlan ?? null,
+          library,
+        });
+        const next = held?.add ? appendQuizAccount(base, held.plan) : held ? held.plan : base;
+        if (held) useProfileStore.getState().hydrateFromPlan(next);
+        setPlan(next);
         setCloudReady(true);
         setStatus("saved");
       })

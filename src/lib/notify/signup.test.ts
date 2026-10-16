@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { isNotifyOwner, ownerSignupEmail, welcomeSignupEmail, firstFlightEmail } from "./signup.ts";
+import { isNotifyOwner, ownerSignupEmail, welcomeSignupEmail, firstFlightEmail, quizChoosePasswordEmail } from "./signup.ts";
 
 test("owner signup email names the new account and is not a welcome letter", () => {
   const mail = ownerSignupEmail({
@@ -113,6 +113,24 @@ test("first-flight email escapes a hostile first name", () => {
   });
   assert.doesNotMatch(mail.html, /<script>/);
   assert.match(mail.html, /lt;script/);
+});
+
+test("quiz email leads with the monthly number and opens the run", () => {
+  const mail = quizChoosePasswordEmail({
+    email: "pat@example.com",
+    name: "Pat Flyer",
+    code: "482917",
+    url: "https://machrun.com/verify-email?choose=1&code=482917",
+    canPay: 783.4,
+  });
+  assert.equal(mail.subject, "Your account can pay $783 a month.");
+  assert.match(mail.text, /Your sketch is saved/);
+  assert.match(mail.text, /Open your MACH RUN/);
+  assert.match(mail.html, /Open your MACH RUN/);
+  assert.match(mail.html, /Your sketch is saved/);
+  assert.doesNotMatch(mail.subject, /Choose a password/);
+  assert.doesNotMatch(mail.html, /Choose a password/);
+  assert.doesNotMatch(mail.text, /Choose a password/);
 });
 
 test("isNotifyOwner is case-insensitive and ignores blanks", () => {

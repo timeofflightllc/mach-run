@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type TransitionEvent } from "react";
+import { Link } from "@tanstack/react-router";
 import { OodaLoop } from "@/components/meridian/how-it-works";
 import { PrimaryButton } from "@/components/ui/field";
 import { demoPlan, planHasEntries } from "@/lib/plan/demo-plan";
@@ -300,12 +301,12 @@ export function GuestHero({
             }}
           >
             <span className="sm:hidden">
-              Start with your info --
+              I have my numbers.
               <br />
-              no credit card needed.
+              Start a MACH RUN.
             </span>
             <span className="hidden sm:inline">
-              Start with your info -- no credit card needed.
+              I have my numbers. Start a MACH RUN.
             </span>
           </PrimaryButton>
           <PrimaryButton
@@ -317,6 +318,16 @@ export function GuestHero({
             an example MACH RUN
           </PrimaryButton>
         </div>
+        <p className="mt-2 text-center text-sm text-[#3d4a54]">No credit card needed.</p>
+        <p className="mt-4 max-w-3xl px-4 text-center text-base font-medium leading-snug text-[#1a2330] sm:text-lg">
+          Six questions. One account. About a minute. See what it pays you each month.
+        </p>
+        <Link
+          to="/start"
+          className="mt-3 inline-flex h-11 items-center justify-center rounded-lg border border-[#1a2330] bg-white px-5 text-base font-medium text-[#1a2330] hover:bg-[#f3faf6]"
+        >
+          Start with just six questions
+        </Link>
         <p className="mt-3 w-full max-w-3xl px-6 text-center text-[calc(0.667rem-1pt)] leading-relaxed text-muted sm:mt-4 sm:px-10 sm:text-[calc(1.125rem-1pt)]">
           Spreadsheets take time you'll never get back, and FIRECalc isn't built for TSP, military,
           and veterans. MACH RUN saves that time and is built for those paychecks. Use the fighter
@@ -633,6 +644,12 @@ export function MilitaryHousehold() {
             ? "Mouse over a payment above. Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at the required-withdrawal age, 75."
             : "Tap a payment above. Tap it again, or tap outside the cards, to return to the sample. Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at the required-withdrawal age, 75."}
         </p>
+        <Link
+          to="/start"
+          className="mt-6 inline-flex h-11 items-center justify-center rounded-lg border border-[#1a2330] bg-white px-5 text-base font-medium text-[#1a2330] hover:bg-[#f3faf6]"
+        >
+          Start with just six questions
+        </Link>
         <FlagStripe />
       </div>
     </section>

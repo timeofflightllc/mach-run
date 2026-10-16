@@ -80,10 +80,22 @@ export function pricingSearch(search: Record<string, unknown>): PricingSearch {
   };
 }
 
-export function verifySearch(search: Record<string, unknown>): Omit<LoginSearch, "mode"> {
+export type VerifySearch = Omit<LoginSearch, "mode"> & {
+  email?: string;
+  code?: string;
+  choose?: "1";
+};
+
+export function verifySearch(search: Record<string, unknown>): VerifySearch {
   const intent = parseCheckoutIntent(search);
+  const email = typeof search.email === "string" ? search.email.trim().toLowerCase() : "";
+  const code = typeof search.code === "string" ? search.code.replace(/\D/g, "").slice(0, 6) : "";
+  const choose = search.choose === "1" || search.choose === 1;
   return {
     ...(intent.package ? { package: intent.package } : {}),
     ...(intent.interval ? { interval: intent.interval } : {}),
+    ...(email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? { email } : {}),
+    ...(code.length === 6 ? { code } : {}),
+    ...(choose ? { choose: "1" as const } : {}),
   };
 }
