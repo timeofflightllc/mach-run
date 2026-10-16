@@ -1,6 +1,6 @@
 import { monthBefore, todayIso } from "./dates.ts";
 import { clonePlan, createDefaultPlan, ensurePlan } from "./defaults.ts";
-import { sustainableRetirementIncome } from "./sustainable-income.ts";
+import { sustainableRetirementIncome, nestEggForMonthlyWithdrawal } from "./sustainable-income.ts";
 import type { AccountKind, Plan, TaxBucket, TaxTreatment } from "./types.ts";
 
 function newId(prefix: string) {
@@ -13,6 +13,8 @@ const OPEN_KEY = "mach-quiz-open";
 
 export type QuizKindId = "tsp" | "ira" | "roth_ira" | "401k" | "taxable" | "cash";
 export type QuizPayId = "none" | "military" | "va" | "pension";
+export type QuizPayKind = Exclude<QuizPayId, "none">;
+export type QuizPays = Record<QuizPayKind, number>;
 
 export const QUIZ_KINDS: { id: QuizKindId; label: string; kind: AccountKind; bucket: TaxBucket }[] = [
   { id: "tsp", label: "TSP", kind: "tsp", bucket: "pre_tax" },
@@ -34,6 +36,8 @@ export type QuizAnswers = {
   monthlySave: number;
   pay: QuizPayId;
   payMonthly: number;
+  /** Set when more than one paycheck is on. Zero means that one is off. */
+  pays?: QuizPays;
 };
 
 const QUIZ_KIND_IDS = new Set<QuizKindId>(QUIZ_KINDS.map((row) => row.id));
@@ -57,8 +61,9 @@ export function parseQuizAnswers(raw: unknown): QuizAnswers | null {
   if (!value || typeof value !== "object") return null;
   const row = value as Record<string, unknown>;
   const kind = String(row.kind ?? "");
-  const pay = String(row.pay ?? "");
-  if (!QUIZ_KIND_IDS.has(kind as QuizKindId) || !QUIZ_PAY_IDS.has(pay as QuizPayId)) return null;
+  const pay = String(row.pay ?? "none");
+  const pays = parsePays(row.pays);
+  if (!QUIZ_KIND_IDS.has(kind as QuizKindId) || (!pays && !QUIZ_PAY_IDS.has(pay as QuizPayId))) return null;
   const first = String(row.firstName ?? "").trim().split(/\s+/)[0] ?? "";
   return {
     firstName: first.slice(0, 40),
@@ -69,9 +74,44 @@ export function parseQuizAnswers(raw: unknown): QuizAnswers | null {
     kind: kind as QuizKindId,
     balance: quizNum(row.balance, 0),
     monthlySave: quizNum(row.monthlySave, 0),
-    pay: pay as QuizPayId,
+    pay: QUIZ_PAY_IDS.has(pay as QuizPayId) ? (pay as QuizPayId) : "none",
     payMonthly: quizNum(row.payMonthly, 0),
+    pays,
   };
+}
+
+function parsePays(raw: unknown): QuizPays | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const row = raw as Record<string, unknown>;
+  return {
+    military: Math.max(0, quizNum(row.military, 0)),
+    va: Math.max(0, quizNum(row.va, 0)),
+    pension: Math.max(0, quizNum(row.pension, 0)),
+  };
+}
+
+const PAY_LABEL: Record<QuizPayKind, { name: string; tax: TaxTreatment; start: "now" | "retire" }> = {
+  military: { name: "Military retirement", tax: "ordinary", start: "retire" },
+  va: { name: "VA", tax: "tax_free", start: "now" },
+  pension: { name: "Pension", tax: "ordinary", start: "retire" },
+};
+
+/** Every paycheck they turned on. Older snapshots had only one. */
+export function selectedPays(answers: QuizAnswers): { id: QuizPayKind; monthly: number }[] {
+  const fromList = answers.pays
+    ? (["military", "va", "pension"] as const)
+        .filter((id) => answers.pays![id] > 0)
+        .map((id) => ({ id, monthly: answers.pays![id] }))
+    : [];
+  if (fromList.length > 0) return fromList;
+  if (answers.pay !== "none" && answers.payMonthly > 0) {
+    return [{ id: answers.pay, monthly: answers.payMonthly }];
+  }
+  return [];
+}
+
+export function emptyPays(): QuizPays {
+  return { military: 0, va: 0, pension: 0 };
 }
 
 export function holdQuizPlan(plan?: Plan, mode: "replace" | "add" = "replace") {
@@ -199,7 +239,9 @@ export function quizPlan(answers: QuizAnswers, today = new Date()): Plan {
     dollars: "real",
     retirementGoalDate: retire,
     careerEndDate: retire,
-    militaryRetireDate: answers.pay === "military" ? retire : plan.assumptions.militaryRetireDate,
+    militaryRetireDate: selectedPays(answers).some((row) => row.id === "military")
+      ? retire
+      : plan.assumptions.militaryRetireDate,
   };
   plan.portfolios = [
     {
@@ -251,18 +293,17 @@ export function quizPlan(answers: QuizAnswers, today = new Date()): Plan {
       endDate: null,
     },
   ];
-  if (answers.pay !== "none" && answers.payMonthly > 0) {
-    const tax: TaxTreatment = answers.pay === "va" ? "tax_free" : "ordinary";
-    const start = answers.pay === "va" ? asOf : retire;
+  for (const row of selectedPays(answers)) {
+    const spec = PAY_LABEL[row.id];
     plan.incomes.push({
       id: newId("inc"),
-      name: answers.pay === "military" ? "Military retirement" : answers.pay === "va" ? "VA" : "Pension",
-      kind: answers.pay,
-      monthlyAmount: answers.payMonthly,
-      startDate: start,
+      name: spec.name,
+      kind: row.id,
+      monthlyAmount: row.monthly,
+      startDate: spec.start === "now" ? asOf : retire,
       endDate: null,
       colaPct: null,
-      taxTreatment: tax,
+      taxTreatment: spec.tax,
       person: "primary",
     });
   }
@@ -274,4 +315,15 @@ export function accountCanPay(plan: Plan): number {
   const room = sustainableRetirementIncome(plan);
   if (!room) return 0;
   return Math.max(0, Math.round(room.withdrawalReal / 12));
+}
+
+/** Nest egg, in today's dollars, that can pay the month they asked for. Not their current balance. */
+export function nestEggForAskedMonth(answers: QuizAnswers, today = new Date()): number {
+  const monthly = answers.monthlyNeed;
+  if (!(monthly > 0)) return 0;
+  const probe = quizPlan(
+    { ...answers, balance: 100_000, monthlySave: 0, pay: "none", payMonthly: 0, pays: emptyPays() },
+    today,
+  );
+  return nestEggForMonthlyWithdrawal(probe, monthly) ?? 0;
 }

@@ -141,6 +141,46 @@ export function sustainableRetirementIncome(plan: Plan, sim?: SimResult): Sustai
   };
 }
 
+/**
+ * Illustration only. The nest egg, in today's dollars, that can pay this
+ * monthly withdrawal from the retirement goal through longevity.
+ * It uses the same withdrawal rules as sustainableRetirementIncome.
+ * It does not change the plan.
+ */
+export function nestEggForMonthlyWithdrawal(plan: Plan, monthlyReal: number): number | null {
+  if (!(monthlyReal > 0) || !plan.assumptions.retirementGoalDate) return null;
+  const ran = simulate(plan);
+  const pile = pileAtGoal(plan, ran);
+  if (!pile) return null;
+  const nominalPile = [...pile.values.values()].reduce((sum, value) => sum + value, 0);
+  const realPile = nominalPile / pile.index;
+  if (!(realPile > 1)) return null;
+
+  const scaled = (scale: number) => {
+    const values = new Map<string, number>();
+    for (const [id, value] of pile.values) values.set(id, value * scale);
+    return values;
+  };
+  const lasts = (scale: number) =>
+    canWithdraw(plan, pile.accounts, scaled(scale), monthlyReal, pile.index);
+
+  let lo = 0;
+  let hi = 1;
+  let guard = 0;
+  while (!lasts(hi) && hi < 1e7 && guard < 40) {
+    lo = hi;
+    hi *= 2;
+    guard += 1;
+  }
+  if (!lasts(hi)) return null;
+  for (let step = 0; step < 40 && realPile * (hi - lo) > 500; step += 1) {
+    const mid = (lo + hi) / 2;
+    if (lasts(mid)) hi = mid;
+    else lo = mid;
+  }
+  return Math.max(0, Math.ceil((realPile * hi) / 1000) * 1000);
+}
+
 /** Annuity account draws in that calendar year, nominal dollars. */
 export function annuityDrawnNominal(plan: Plan, sim: SimResult, incomeYear: number): number {
   const ids = new Set(plan.portfolios.filter((row) => row.kind === "annuity").map((row) => row.id));

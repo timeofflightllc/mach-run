@@ -14,11 +14,12 @@ import {
   ageFloor,
   armQuizOpen,
   holdQuizPlan,
+  nestEggForAskedMonth,
   quizPlan,
   retireCaption,
   type QuizAnswers,
   type QuizKindId,
-  type QuizPayId,
+  type QuizPayKind,
 } from "@/lib/plan/quiz-plan";
 import { useProfileStore } from "@/lib/plan/profile-store";
 import { usePlanStore } from "@/lib/plan/store";
@@ -35,8 +36,7 @@ export const Route = createFileRoute("/start")({
   component: StartQuiz,
 });
 
-const PAYS: { id: QuizPayId; label: string }[] = [
-  { id: "none", label: "None" },
+const PAYS: { id: QuizPayKind; label: string }[] = [
   { id: "military", label: "Military retirement" },
   { id: "va", label: "VA" },
   { id: "pension", label: "Pension" },
@@ -55,19 +55,37 @@ function withName(first: string, line: string) {
   return `${first}, ${line.charAt(0).toLowerCase()}${line.slice(1)}`;
 }
 
-/** Plain share of the month they asked for. No shortfall when the account already covers it. */
-function monthCover(asked: number, canPay: number): string {
+/** Plain share of the month they asked for. Paychecks they turned on count with the account. */
+function monthCover(asked: number, canPay: number, extras: { label: string; amount: number }[] = []): string {
+  const named = extras.filter((row) => row.amount > 0);
+  const total = canPay + named.reduce((sum, row) => sum + row.amount, 0);
+  const parts = ["This account", ...named.map((row) => (row.label === "VA" ? "VA" : row.label.toLowerCase()))];
+  const subject =
+    parts.length === 1 ? parts[0] : parts.length === 2 ? `${parts[0]} and ${parts[1]}` : `${parts.slice(0, -1).join(", ")}, and ${parts[parts.length - 1]}`;
+  const verb = parts.length > 1 ? "cover" : "covers";
   const gap = " Add another account to help complete the picture.";
+  const none = parts.length > 1 ? "do" : "does";
   if (!(asked > 0)) {
-    return canPay > 0 ? "This account covers the month you asked for." : `This account does not cover the month you asked for.${gap}`;
+    return total > 0
+      ? `${subject} ${verb} the monthly income you asked for. You can add your other accounts, incomes, and spending with a full MACH RUN.`
+      : `${subject} ${none} not cover the monthly income you asked for.${gap}`;
   }
-  const ratio = canPay / asked;
-  if (ratio >= 1) return "This account covers the month you asked for.";
-  if (!(ratio > 0)) return `This account does not cover the month you asked for.${gap}`;
-  if (ratio >= 0.8) return `This account covers most of the month you asked for.${gap}`;
+  const ratio = total / asked;
+  if (ratio >= 1) {
+    return `${subject} ${verb} the monthly income you asked for. You can add your other accounts, incomes, and spending with a full MACH RUN.`;
+  }
+  if (!(ratio > 0)) return `${subject} ${none} not cover the monthly income you asked for.${gap}`;
+  if (ratio >= 0.8) return `${subject} ${verb} most of the monthly income you asked for.${gap}`;
   const share =
     ratio < 0.175 ? "about a tenth" : ratio < 0.292 ? "about a quarter" : ratio < 0.417 ? "about a third" : ratio < 0.583 ? "about half" : "about two thirds";
-  return `This account covers ${share} of the month you asked for.${gap}`;
+  return `${subject} ${verb} ${share} of the monthly income you asked for.${gap}`;
+}
+
+function retirementCheer(total: number, asked: number): string {
+  const line = `That is ${money(total)}/month in retirement.`;
+  if (!(asked > 0) || total >= asked) return `${line} Awesome job!`;
+  if (total >= asked * 0.5) return `${line} That's a strong start. There's still time!`;
+  return `${line} You have something to build on. There's still time!`;
 }
 
 function kindLabel(id: QuizKindId) {
@@ -91,8 +109,7 @@ function quizCompliment(
     kind: QuizKindId;
     balance: number;
     monthlySave: number;
-    pay: QuizPayId;
-    payMonthly: number;
+    pays: { military: number; va: number; pension: number };
   },
 ): string {
   const say = (line: string) => (step >= 5 ? withName(a.first, line) : line);
@@ -141,22 +158,28 @@ function quizCompliment(
     return say(`${money(a.monthlySave)} a month is real commitment. That kind of saving changes what this account can pay.`);
   }
   if (step === 4) {
-    if (a.pay === "none") {
+    const chosen = PAYS.filter((row) => a.pays[row.id] > 0);
+    if (chosen.length === 0) {
       return say("No military retirement, VA, or pension. That is fine. This sketch will price the account on its own.");
     }
-    if (a.pay === "military") {
+    if (chosen.length === 1 && chosen[0]?.id === "military") {
       return say(
-        `${money(a.payMonthly)} a month of military retirement is a powerful second paycheck. It will not be counted as what the account itself can pay.`,
+        `${money(a.pays.military)} a month of military retirement is a powerful second paycheck. It will not be counted as what the account itself can pay.`,
       );
     }
-    if (a.pay === "va") {
+    if (chosen.length === 1 && chosen[0]?.id === "va") {
       return say(
-        `${money(a.payMonthly)} a month from the VA is earned, and it is tax-free. The account's number stays separate, so you can see both.`,
+        `${money(a.pays.va)} a month from the VA is earned, and it is tax-free. The account's number stays separate, so you can see both.`,
       );
     }
-    return say(
-      `${money(a.payMonthly)} a month from a pension is steady ground. The sketch keeps it beside the account, not inside it.`,
-    );
+    if (chosen.length === 1 && chosen[0]?.id === "pension") {
+      return say(
+        `${money(a.pays.pension)} a month from a pension is steady ground. The sketch keeps it beside the account, not inside it.`,
+      );
+    }
+    const bits = chosen.map((row) => `${money(a.pays[row.id])} a month from ${row.label}`);
+    const list = bits.length === 2 ? `${bits[0]} and ${bits[1]}` : `${bits.slice(0, -1).join(", ")}, and ${bits[bits.length - 1]}`;
+    return say(`${list}. The sketch keeps each one beside the account, not inside what the account can pay.`);
   }
   return a.first
     ? `Good to meet you, ${a.first}. Let's see what this account can pay you.`
@@ -188,14 +211,14 @@ function StartQuiz() {
   const [kind, setKind] = useState<QuizKindId>("tsp");
   const [balance, setBalance] = useState(50000);
   const [monthlySave, setMonthlySave] = useState(500);
-  const [pay, setPay] = useState<QuizPayId>("none");
-  const [payMonthly, setPayMonthly] = useState(2000);
+  const [payOn, setPayOn] = useState<Record<QuizPayKind, boolean>>({ military: false, va: false, pension: false });
+  const [payAmounts, setPayAmounts] = useState<Record<QuizPayKind, number>>({ military: 2000, va: 2000, pension: 2000 });
   const [email, setEmail] = useState("");
   const [captcha, setCaptcha] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [built, setBuilt] = useState<{ asked: number; canPay: number; plan: ReturnType<typeof quizPlan> } | null>(null);
+  const [built, setBuilt] = useState<{ asked: number; canPay: number; nest: number; plan: ReturnType<typeof quizPlan> } | null>(null);
   const [praise, setPraise] = useState<string | null>(null);
   const [praiseId, setPraiseId] = useState(0);
   const [waitMs, setWaitMs] = useState(7000);
@@ -216,6 +239,12 @@ function StartQuiz() {
   const floor = ageFloor(birthYear);
   const age = Math.min(Math.max(retireAge, floor), Math.max(75, floor));
   const first = firstWord(firstName);
+  const pays = {
+    military: payOn.military ? payAmounts.military : 0,
+    va: payOn.va ? payAmounts.va : 0,
+    pension: payOn.pension ? payAmounts.pension : 0,
+  };
+  const firstPay = PAYS.find((row) => pays[row.id] > 0);
   const answers: QuizAnswers = {
     firstName: first,
     monthlyNeed,
@@ -225,8 +254,9 @@ function StartQuiz() {
     kind,
     balance,
     monthlySave,
-    pay,
-    payMonthly,
+    pay: firstPay?.id ?? "none",
+    payMonthly: firstPay ? pays[firstPay.id] : 0,
+    pays,
   };
 
   function openPlan(plan = built?.plan) {
@@ -257,14 +287,13 @@ function StartQuiz() {
       kind,
       balance,
       monthlySave,
-      pay,
-      payMonthly,
+      pays,
     };
   }
 
   function pricePlan(named: string) {
     const plan = quizPlan({ ...answers, firstName: named });
-    return { asked: answers.monthlyNeed, canPay: accountCanPay(plan), plan };
+    return { asked: answers.monthlyNeed, canPay: accountCanPay(plan), nest: nestEggForAskedMonth(answers), plan };
   }
 
   async function onSave(e: FormEvent) {
@@ -525,36 +554,49 @@ function StartQuiz() {
                 ) : null}
                 {step === 4 ? (
                   <div>
-                    <p className="text-center text-sm text-[#3d4a54]">Leave it at none if there isn't one. This is not the account.</p>
+                    <p className="text-center text-sm text-[#3d4a54]">Pick any that apply. Leave them off if there isn't one. This is not the account.</p>
                     <div className="mt-4 flex flex-col gap-2">
+                      <button
+                        type="button"
+                        aria-pressed={!firstPay}
+                        onClick={() => setPayOn({ military: false, va: false, pension: false })}
+                        className={
+                          !firstPay
+                            ? "min-h-14 rounded-xl bg-[#3a8a58] px-4 text-left text-lg font-medium text-white"
+                            : "min-h-14 rounded-xl bg-[#e7e2d8] px-4 text-left text-lg text-[#1a2330] sm:bg-[#f3f0e8]"
+                        }
+                      >
+                        None
+                      </button>
                       {PAYS.map((row) => (
-                        <button
-                          key={row.id}
-                          type="button"
-                          aria-pressed={pay === row.id}
-                          onClick={() => setPay(row.id)}
-                          className={
-                            pay === row.id
-                              ? "min-h-14 rounded-xl bg-[#3a8a58] px-4 text-left text-lg font-medium text-white"
-                              : "min-h-14 rounded-xl bg-[#e7e2d8] px-4 text-left text-lg text-[#1a2330] sm:bg-[#f3f0e8]"
-                          }
-                        >
-                          {row.label}
-                        </button>
+                        <div key={row.id}>
+                          <button
+                            type="button"
+                            aria-pressed={payOn[row.id]}
+                            onClick={() => setPayOn((current) => ({ ...current, [row.id]: !current[row.id] }))}
+                            className={
+                              payOn[row.id]
+                                ? "min-h-14 w-full rounded-xl bg-[#3a8a58] px-4 text-left text-lg font-medium text-white"
+                                : "min-h-14 w-full rounded-xl bg-[#e7e2d8] px-4 text-left text-lg text-[#1a2330] sm:bg-[#f3f0e8]"
+                            }
+                          >
+                            {row.label}
+                          </button>
+                          {payOn[row.id] ? (
+                            <div className="mt-4 mb-2">
+                              <SliderHero
+                                value={payAmounts[row.id]}
+                                min={0}
+                                max={8000}
+                                step={50}
+                                caption="Each month."
+                                onChange={(n) => setPayAmounts((current) => ({ ...current, [row.id]: n }))}
+                              />
+                            </div>
+                          ) : null}
+                        </div>
                       ))}
                     </div>
-                    {pay !== "none" ? (
-                      <div className="mt-6">
-                        <SliderHero
-                          value={payMonthly}
-                          min={0}
-                          max={8000}
-                          step={50}
-                          caption="Each month."
-                          onChange={setPayMonthly}
-                        />
-                      </div>
-                    ) : null}
                   </div>
                 ) : null}
                 {step === 5 ? (
@@ -617,13 +659,13 @@ function StartQuiz() {
                 </div>
                 <div
                   className={
-                    "absolute inset-0 flex flex-col justify-center bg-[#f3f0e8] sm:bg-white " +
+                    "absolute inset-0 flex flex-col items-center justify-center bg-[#f3f0e8] sm:bg-white " +
                     (instant ? "transition-none " : "transition-transform duration-500 ease-out ") +
                     (praise ? "translate-x-0" : "pointer-events-none translate-x-full")
                   }
                   aria-hidden={praise ? undefined : true}
                 >
-                  <p className="text-center font-sans text-[1.45rem] font-medium leading-snug">{praise}</p>
+                  <p className="w-full text-center font-sans text-[1.45rem] font-medium leading-snug">{praise}</p>
                   <button
                     type="button"
                     className="relative mt-6 h-14 w-full overflow-hidden rounded-xl bg-[#1a2330] text-lg font-medium text-white"
@@ -650,6 +692,40 @@ function StartQuiz() {
                   {money(built?.canPay ?? 0)}
                 </p>
                 <p className="mt-2 text-sm text-[#3d4a54]">a month, in today's dollars</p>
+                {PAYS.some((row) => pays[row.id] > 0) ? (
+                  <>
+                    <div className="mt-6 flex items-center justify-center whitespace-nowrap">
+                      {PAYS.filter((row) => pays[row.id] > 0).map((row, index) => (
+                        <div key={row.id} className="flex items-center">
+                          {index > 0 ? (
+                            <span className="px-1.5 text-lg text-[#3d4a54] sm:px-3 sm:text-2xl">+</span>
+                          ) : null}
+                          <div className="text-center">
+                            <p className="text-[10px] font-medium tracking-tight text-[#3d4a54] sm:text-sm">
+                              {row.id === "military" ? "Military Retirement" : row.label}
+                            </p>
+                            <p className="font-display text-[clamp(1.15rem,4.6vw,2.25rem)] font-semibold tabular-nums leading-none">
+                              {money(pays[row.id])}
+                            </p>
+                            <p className="mt-1 text-[10px] text-[#3d4a54] sm:text-sm">a month</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="mt-4 text-base font-medium leading-snug">
+                      {retirementCheer(
+                        (built?.canPay ?? 0) + PAYS.reduce((sum, row) => sum + pays[row.id], 0),
+                        built?.asked ?? monthlyNeed,
+                      )}
+                    </p>
+                  </>
+                ) : null}
+                {(built?.nest ?? 0) > 0 ? (
+                  <p className="mt-4 text-center text-base leading-snug">
+                    In order to receive {money(built?.asked ?? monthlyNeed)} a month in retirement withdrawals, you would
+                    need a {money(built?.nest ?? 0)} nest egg.
+                  </p>
+                ) : null}
                 <p className="mt-3 text-xs text-[#3d4a54]">For information and education. Not financial advice.</p>
               </div>
               <form onSubmit={onSave} className="mt-8 flex flex-col gap-3">
@@ -694,7 +770,13 @@ function StartQuiz() {
                   </>
                 )}
                 {error ? <p className="text-center text-sm text-[#a34b45]">{error}</p> : null}
-                <p className="text-center text-base">{monthCover(built?.asked ?? monthlyNeed, built?.canPay ?? 0)}</p>
+                <p className="text-center text-base font-bold">
+                  {monthCover(
+                    built?.asked ?? monthlyNeed,
+                    built?.canPay ?? 0,
+                    PAYS.filter((row) => pays[row.id] > 0).map((row) => ({ label: row.label, amount: pays[row.id] })),
+                  )}
+                </p>
                 <button
                   type="submit"
                   disabled={busy}

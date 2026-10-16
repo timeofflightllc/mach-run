@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { accountCanPay, appendQuizAccount, quizPlan, retireCaption, retirementIso } from "./quiz-plan.ts";
+import { accountCanPay, appendQuizAccount, nestEggForAskedMonth, quizPlan, retireCaption, retirementIso } from "./quiz-plan.ts";
 
 const today = new Date(2026, 9, 15);
 
@@ -89,6 +89,34 @@ test("VA starts now and a pension starts at retirement", () => {
   assert.equal(pension.assumptions.militaryRetireDate, "2026-09-01");
 });
 
+test("more than one paycheck can sit beside the account", () => {
+  const plan = quizPlan(
+    {
+      monthlyNeed: 5000,
+      retireAge: 55,
+      birthYear: 1994,
+      accountName: "TSP",
+      kind: "tsp",
+      balance: 50000,
+      monthlySave: 0,
+      pay: "none",
+      payMonthly: 0,
+      pays: { military: 3200, va: 1800, pension: 0 },
+    },
+    today,
+  );
+  assert.equal(plan.incomes.find((row) => row.kind === "military")?.monthlyAmount, 3200);
+  assert.equal(plan.incomes.find((row) => row.kind === "military")?.startDate, "2049-01-01");
+  assert.equal(plan.incomes.find((row) => row.kind === "va")?.monthlyAmount, 1800);
+  assert.equal(plan.incomes.find((row) => row.kind === "va")?.taxTreatment, "tax_free");
+  assert.equal(plan.incomes.find((row) => row.kind === "va")?.startDate, plan.assumptions.asOfDate);
+  assert.equal(plan.incomes.find((row) => row.kind === "pension"), undefined);
+  assert.equal(plan.assumptions.militaryRetireDate, "2049-01-01");
+  assert.equal(accountCanPay(plan), accountCanPay(quizPlan({ ...{
+    monthlyNeed: 5000, retireAge: 55, birthYear: 1994, accountName: "TSP", kind: "tsp", balance: 50000, monthlySave: 0, pay: "none", payMonthly: 0,
+  } }, today)));
+});
+
 test("savings grow the one account, and guaranteed pay still does not", () => {
   const base = {
     monthlyNeed: 8000,
@@ -104,6 +132,28 @@ test("savings grow the one account, and guaranteed pay still does not", () => {
   const withPay = accountCanPay(quizPlan({ ...base, monthlySave: 500, pay: "military" }, today));
   assert.ok(saving > plain);
   assert.equal(withPay, saving);
+});
+
+test("the nest egg is the capital that pays the month they asked for", () => {
+  const asked = {
+    monthlyNeed: 8000,
+    retireAge: 60,
+    birthYear: 1985,
+    accountName: "TSP",
+    kind: "tsp" as const,
+    balance: 200000,
+    monthlySave: 500,
+    pay: "military" as const,
+    payMonthly: 3000,
+  };
+  const nest = nestEggForAskedMonth(asked, today);
+  const half = nestEggForAskedMonth({ ...asked, monthlyNeed: 4000 }, today);
+  const roth = nestEggForAskedMonth({ ...asked, kind: "roth_ira" }, today);
+  const later = nestEggForAskedMonth({ ...asked, retireAge: 70 }, today);
+  assert.ok(nest > 1_000_000);
+  assert.ok(Math.abs(nest / 2 - half) / nest < 0.02);
+  assert.ok(roth < nest);
+  assert.ok(later < nest);
 });
 
 test("a first name on the sketch is the first word only", () => {
