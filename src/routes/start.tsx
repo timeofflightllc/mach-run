@@ -871,7 +871,7 @@ function StartQuiz() {
                     />
                     {turnstileEnabled() ? <TurnstileBox onToken={setCaptcha} /> : null}
                     <p className="text-center text-sm text-[#3d4a54]">We'll email you a link.</p>
-                    <p className="text-center text-sm text-[#3d4a54]">No credit card.</p>
+                    <p className="text-center text-sm text-[#3d4a54]">No credit card required.</p>
                   </>
                 )}
                 {(built?.nest ?? 0) > 0 ? (
@@ -893,7 +893,9 @@ function StartQuiz() {
                   disabled={busy}
                   className="h-14 w-full rounded-xl bg-[#1a2330] text-lg font-medium text-white disabled:opacity-50"
                 >
-                  {busy ? "Working" : "See full MACH RUN"}
+                  <span className={busy ? undefined : "mach-run-pulse inline-block"}>
+                    {busy ? "Working" : "See full MACH RUN"}
+                  </span>
                 </button>
                 <p className="text-center text-xs text-[#3d4a54]">For information and education. Not financial advice.</p>
               </form>
