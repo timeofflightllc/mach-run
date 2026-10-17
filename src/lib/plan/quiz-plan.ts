@@ -283,20 +283,6 @@ export function quizPlan(answers: QuizAnswers, today = new Date()): Plan {
         amountMode: "fixed",
       },
     ];
-    // The engine only deposits a contribution out of leftover income.
-    // This line is that cash, flat, and it stops the month before retirement
-    // so it is not retirement pay and does not change what the account can pay.
-    plan.incomes.push({
-      id: newId("inc"),
-      name: "Put in each month",
-      kind: "other",
-      monthlyAmount: answers.monthlySave,
-      startDate: asOf,
-      endDate: saveUntil,
-      colaPct: 0,
-      taxTreatment: "tax_free",
-      person: "primary",
-    });
   }
   plan.spending = [
     {
@@ -310,15 +296,6 @@ export function quizPlan(answers: QuizAnswers, today = new Date()): Plan {
   const vaRating = answers.vaRating ?? 0;
   const vaKids = Math.max(0, Math.floor(answers.vaDependents ?? 0));
   const vaSpouse = answers.vaSpouse === true;
-  const vaOn = selectedPays(answers).some((row) => row.id === "va");
-  if (vaOn && vaKids > 0) {
-    const year = today.getFullYear() - 10;
-    plan.children = Array.from({ length: vaKids }, (_, i) => ({
-      id: newId("child"),
-      name: vaKids === 1 ? "Dependent" : `Dependent ${i + 1}`,
-      birthDate: `${year}-01-01`,
-    }));
-  }
   for (const row of selectedPays(answers)) {
     const spec = PAY_LABEL[row.id];
     const table = row.id === "va" && vaRating >= 10 ? vaSchedularPay(vaRating, vaSpouse, vaKids) : row.monthly;
@@ -332,7 +309,6 @@ export function quizPlan(answers: QuizAnswers, today = new Date()): Plan {
       colaPct: null,
       taxTreatment: spec.tax,
       person: "primary",
-      ...(row.id === "va" && vaRating >= 10 ? { vaRatingPct: vaRating, vaSpouseDependent: vaSpouse } : {}),
     });
   }
   return plan;

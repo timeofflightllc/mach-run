@@ -56,9 +56,11 @@ test("a VA rating and dependents use the 2026 table, with no spouse", () => {
   const va = plan.incomes.find((row) => row.kind === "va");
   const table = vaSchedularPay(100, false, 1);
   assert.equal(va?.monthlyAmount, table);
-  assert.equal(va?.vaRatingPct, 100);
-  assert.equal(va?.vaSpouseDependent, false);
-  assert.equal(plan.children.length, 1);
+  assert.equal(va?.vaRatingPct, undefined);
+  assert.equal(va?.vaSpouseDependent, undefined);
+  assert.equal(plan.children.length, 0);
+  assert.equal(plan.spouse.name, "");
+  assert.equal(plan.spouse.birthDate, "");
   assert.equal(vaPayTodayDollars(plan, va!, today), table);
   const withSpouse = quizPlan(
     {
@@ -80,7 +82,10 @@ test("a VA rating and dependents use the 2026 table, with no spouse", () => {
   );
   const spousePay = withSpouse.incomes.find((row) => row.kind === "va");
   assert.equal(spousePay?.monthlyAmount, vaSchedularPay(100, true, 1));
-  assert.equal(spousePay?.vaSpouseDependent, true);
+  assert.equal(spousePay?.vaRatingPct, undefined);
+  assert.equal(spousePay?.vaSpouseDependent, undefined);
+  assert.equal(withSpouse.children.length, 0);
+  assert.equal(withSpouse.spouse.name, "");
   assert.equal(vaPayTodayDollars(withSpouse, spousePay!, today), vaSchedularPay(100, true, 1));
 });
 
@@ -115,10 +120,7 @@ test("the sketch is one account, savings stop before retirement, and spending st
   assert.equal(plan.spending[0]?.monthlyAmount, 5000);
   const military = plan.incomes.find((row) => row.kind === "military");
   assert.equal(military?.startDate, "2049-01-01");
-  const savings = plan.incomes.find((row) => row.kind === "other");
-  assert.equal(savings?.monthlyAmount, 500);
-  assert.equal(savings?.endDate, "2048-12-01");
-  assert.equal(savings?.taxTreatment, "tax_free");
+  assert.equal(plan.incomes.some((row) => row.name === "Put in each month"), false);
   assert.equal(plan.children.length, 0);
   assert.equal(plan.liabilities.length, 0);
   assert.equal(plan.spouse.birthDate, "");
@@ -190,7 +192,7 @@ test("more than one paycheck can sit beside the account", () => {
   } }, today)));
 });
 
-test("savings grow the one account, and guaranteed pay still does not", () => {
+test("an unfunded contribution does not grow the account, and guaranteed pay still does not", () => {
   const base = {
     monthlyNeed: 8000,
     retireAge: 55,
@@ -203,7 +205,7 @@ test("savings grow the one account, and guaranteed pay still does not", () => {
   const plain = accountCanPay(quizPlan({ ...base, monthlySave: 0, pay: "none" }, today));
   const saving = accountCanPay(quizPlan({ ...base, monthlySave: 500, pay: "none" }, today));
   const withPay = accountCanPay(quizPlan({ ...base, monthlySave: 500, pay: "military" }, today));
-  assert.ok(saving > plain);
+  assert.equal(saving, plain);
   assert.equal(withPay, saving);
 });
 
@@ -296,5 +298,5 @@ test("a signed-in quiz adds the account and leaves the rest of the household", (
   assert.equal(merged.assumptions.retirementGoalDate, existing.assumptions.retirementGoalDate);
   assert.equal(merged.spending[0]?.monthlyAmount, 7000);
   assert.equal(merged.incomes.some((row) => row.kind === "military"), false);
-  assert.equal(merged.incomes.filter((row) => row.name === "Put in each month").length, 2);
+  assert.equal(merged.incomes.filter((row) => row.name === "Put in each month").length, 0);
 });
