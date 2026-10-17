@@ -1792,7 +1792,7 @@ function Home() {
       {heroOn ? <MilitaryHousehold /> : null}
       {heroOn ? (
         <section className="bg-bg">
-          <div className="page-gutter mx-auto w-full max-w-3xl">
+          <div className="page-gutter mx-auto w-full max-w-5xl">
             <div className="grid gap-3 sm:grid-cols-3">
               {[
                 "Change the savings rate and contributions.",
@@ -1801,13 +1801,15 @@ function Home() {
               ].map((line) => (
                 <p
                   key={line}
-                  className="rounded-lg bg-white px-4 py-4 text-center text-sm leading-snug text-[#1a2330] shadow-[0_0_0_1px_var(--color-border)] sm:text-base"
+                  className="rounded-lg bg-white px-3 py-4 text-center text-sm leading-snug text-[#1a2330] shadow-[0_0_0_1px_var(--color-border)] [text-wrap:wrap] sm:text-base"
                 >
                   {line}
                 </p>
               ))}
             </div>
-            <div className="mt-3 rounded-lg bg-white px-4 py-4 text-center shadow-[0_0_0_1px_var(--color-border)]">
+          </div>
+          <div className="page-gutter mx-auto mt-3 w-full max-w-3xl">
+            <div className="rounded-lg bg-white px-4 py-4 text-center shadow-[0_0_0_1px_var(--color-border)]">
               <p className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-[#3a8a58]">
                 Sample, from the pre-filled demo. Not your plan.
               </p>
