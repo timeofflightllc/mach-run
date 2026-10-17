@@ -143,6 +143,11 @@ export function PortfolioForm() {
         ))}
       </ul>
       </div>
+      {plan.portfolios.some((p) => p.quizPile) ? (
+        <p className="text-center text-sm leading-snug text-muted">
+          This is the combined balance you entered. Split it with Add account.
+        </p>
+      ) : null}
       {capped ? (
         <UpgradeNudge kind="accounts" />
       ) : (

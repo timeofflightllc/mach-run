@@ -242,7 +242,9 @@ export function quizPlan(answers: QuizAnswers, today = new Date()): Plan {
   const asOf = todayIso();
   const retire = retirementIso(answers.birthYear, answers.retireAge, today);
   const piled = answers.scope === "all";
-  const kind = piled ? QUIZ_KINDS.find((row) => row.id === "ira") ?? QUIZ_KINDS[0] : QUIZ_KINDS.find((row) => row.id === answers.kind) ?? QUIZ_KINDS[0];
+  const kind = piled
+    ? QUIZ_KINDS.find((row) => row.id === "taxable") ?? QUIZ_KINDS[0]
+    : QUIZ_KINDS.find((row) => row.id === answers.kind) ?? QUIZ_KINDS[0];
   const accountId = newId("port");
   const name = piled ? "All accounts" : answers.accountName.trim() || kind.label;
   const first = answers.firstName?.trim().split(/\s+/)[0] ?? "";
@@ -268,6 +270,7 @@ export function quizPlan(answers: QuizAnswers, today = new Date()): Plan {
       taxBucket: kind.bucket,
       spendable: true,
       includeInNetWorth: true,
+      ...(piled ? { quizPile: true } : {}),
     },
   ];
   const saveUntil = monthBefore(retire);

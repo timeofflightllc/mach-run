@@ -93,6 +93,8 @@ export interface Portfolio {
    * and every later month. Blank keeps the account through longevity.
    */
   sunsetAge?: number | null;
+  /** Combined quiz balance. Not a real single account. */
+  quizPile?: boolean;
 }
 
 export type LiabilityKind =

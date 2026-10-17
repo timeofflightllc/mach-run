@@ -140,7 +140,7 @@ function quizCompliment(
         return say("Starting from zero is honest. What you add from here is what the sketch can use.");
       }
       return say(
-        `${money(a.balance)} across everything is a real total. This sketch prices it as one traditional account until you split it.`,
+        `${money(a.balance)} across everything is a real total. This sketch prices it as one taxable account until you split it.`,
       );
     }
     const where = accountPhrase(a.accountName, a.kind);
@@ -787,7 +787,7 @@ function StartQuiz() {
                 <p className="mt-2 text-sm text-[#3d4a54]">a month, in today's dollars</p>
                 {scope === "all" ? (
                   <p className="mt-3 text-center text-base leading-snug">
-                    This total is priced as one traditional account. Split the accounts in the full MACH RUN for the real number.
+                    This total is priced as one taxable account. Split the accounts in the full MACH RUN for the real number.
                   </p>
                 ) : null}
                 {PAYS.some((row) => pays[row.id] > 0) ? (

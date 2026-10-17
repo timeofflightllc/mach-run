@@ -12,7 +12,7 @@ test("retirement is January of birth year plus age, or this month if that Januar
   assert.equal(retireCaption(1970, 55, today), "That's this year.");
 });
 
-test("everything they have is one traditional pile named All accounts", () => {
+test("everything they have is one taxable pile named All accounts", () => {
   const plan = quizPlan(
     {
       monthlyNeed: 5000,
@@ -30,8 +30,9 @@ test("everything they have is one traditional pile named All accounts", () => {
   );
   assert.equal(plan.portfolios.length, 1);
   assert.equal(plan.portfolios[0]?.name, "All accounts");
-  assert.equal(plan.portfolios[0]?.kind, "ira");
-  assert.equal(plan.portfolios[0]?.taxBucket, "pre_tax");
+  assert.equal(plan.portfolios[0]?.kind, "taxable");
+  assert.equal(plan.portfolios[0]?.taxBucket, "taxable");
+  assert.equal(plan.portfolios[0]?.quizPile, true);
   assert.equal(plan.portfolios[0]?.currentValue, 400000);
 });
 
