@@ -1797,7 +1797,7 @@ function Home() {
               {[
                 "Change the savings rate and contributions.",
                 "Watch that date and FIRE number move.",
-                "See whether the money lasts across 1,000 futures.",
+                "Test if your money lasts across 1,000 futures.",
               ].map((line) => (
                 <p
                   key={line}

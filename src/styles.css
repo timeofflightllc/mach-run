@@ -137,16 +137,16 @@
   position: absolute;
   z-index: -1;
   left: 50%;
-  top: 55%;
+  top: 50%;
   width: 108%;
-  height: 170%;
+  height: 100%;
   transform: translate(-50%, -50%);
   pointer-events: none;
   background: radial-gradient(
     ellipse at center,
-    rgba(243, 240, 232, 0.94) 0%,
-    rgba(243, 240, 232, 0.55) 46%,
-    transparent 74%
+    rgba(255, 252, 246, 0.92) 0%,
+    rgba(243, 240, 232, 0.55) 42%,
+    transparent 68%
   );
 }
 .hero-sky {

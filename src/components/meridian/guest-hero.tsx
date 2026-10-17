@@ -270,11 +270,11 @@ export function GuestHero({
         aria-hidden="true"
         className="hero-sky"
       />
-      <div className="page-gutter mx-auto flex max-w-none flex-col items-center pt-2 sm:pt-7">
+      <div className="page-gutter mx-auto flex max-w-none flex-col items-center pt-[calc(0.5rem+0.25in)] sm:pt-[calc(1.75rem+0.25in)]">
         <h1 className="hero-backlight max-w-4xl text-center font-display text-[1.25rem] font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
           <HeroLines text={hero.headline} />
         </h1>
-        <div className="mt-1.5 max-w-3xl text-center text-[0.667rem] leading-relaxed text-muted sm:mt-4 sm:text-lg">
+        <div className="mt-1.5 max-w-3xl text-center text-[0.667rem] leading-relaxed text-[#3d4a54] sm:mt-4 sm:text-lg">
           <p>
             <HeroLines text={hero.text} />
           </p>
