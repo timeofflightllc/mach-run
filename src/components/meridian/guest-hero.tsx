@@ -279,9 +279,19 @@ export function GuestHero({
             <HeroLines text={hero.text} />
           </p>
         </div>
-        <div className="mt-3 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:mt-6 sm:flex-row sm:flex-wrap sm:gap-3">
+        <Link
+          to="/start"
+          className="mt-3 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-5 text-base font-medium text-accent-fg hover:opacity-90 sm:mt-6"
+        >
+          Start with just six questions
+        </Link>
+        <p className="mt-4 max-w-3xl px-4 text-center text-base font-medium leading-snug text-[#1a2330] sm:text-lg">
+          Six questions. One account. About a minute. See what it pays you each month.
+        </p>
+        <p className="mt-2 text-center text-sm text-[#3d4a54]">No credit card needed.</p>
+        <div className="mt-3 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
           <PrimaryButton
-            className="h-auto min-h-11 whitespace-normal px-4 py-2.5 text-center leading-snug sm:whitespace-nowrap sm:text-base"
+            className="h-auto min-h-11 whitespace-normal border border-[#3a8a58] bg-white px-4 py-2.5 text-center leading-snug text-[#3a8a58] hover:bg-[#f3faf6]"
             onClick={() => {
               setConfirming(false);
               onShowFamily();
@@ -305,16 +315,6 @@ export function GuestHero({
             an example MACH RUN
           </PrimaryButton>
         </div>
-        <p className="mt-2 text-center text-sm text-[#3d4a54]">No credit card needed.</p>
-        <p className="mt-4 max-w-3xl px-4 text-center text-base font-medium leading-snug text-[#1a2330] sm:text-lg">
-          Six questions. One account. About a minute. See what it pays you each month.
-        </p>
-        <Link
-          to="/start"
-          className="mt-3 inline-flex h-11 items-center justify-center rounded-lg border border-[#1a2330] bg-white px-5 text-base font-medium text-[#1a2330] hover:bg-[#f3faf6]"
-        >
-          Start with just six questions
-        </Link>
         {confirming ? (
           <div className="mt-4 w-full max-w-xl rounded-lg bg-surface px-4 py-3 text-center shadow-[0_0_0_1px_var(--color-border)]">
             <p className="text-sm text-fg">
