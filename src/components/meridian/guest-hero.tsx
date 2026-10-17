@@ -307,7 +307,7 @@ export function GuestHero({
             </span>
           </PrimaryButton>
           <PrimaryButton
-            className="h-auto min-h-11 whitespace-normal border border-[#3a8a58] bg-white px-4 py-2.5 text-center leading-snug text-[#3a8a58] hover:bg-[#f3faf6] sm:max-w-xs"
+            className="h-auto min-h-11 whitespace-normal border border-[#1a2330] bg-white px-4 py-2.5 text-center leading-snug text-[#1a2330] hover:bg-[#f3faf6] sm:max-w-xs"
             onClick={prefill}
           >
             Use Pre-Filled Demo for
@@ -651,7 +651,7 @@ export function MilitaryHousehold() {
         </p>
         <Link
           to="/start"
-          className="mt-6 inline-flex h-11 items-center justify-center rounded-lg border border-[#1a2330] bg-white px-5 text-base font-medium text-[#1a2330] hover:bg-[#f3faf6]"
+          className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-5 text-base font-medium text-accent-fg hover:opacity-90"
         >
           Start with just six questions
         </Link>
