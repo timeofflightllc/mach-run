@@ -1792,7 +1792,7 @@ function Home() {
       {heroOn ? <MilitaryHousehold /> : null}
       {heroOn ? (
         <section className="bg-bg">
-          <div className="page-gutter mx-auto w-full max-w-5xl">
+          <div className="mx-auto w-full max-w-6xl px-4 sm:px-8">
             <div className="grid gap-3 sm:grid-cols-3">
               {[
                 "Change the savings rate and contributions.",
@@ -1801,14 +1801,14 @@ function Home() {
               ].map((line) => (
                 <p
                   key={line}
-                  className="rounded-lg bg-white px-3 py-4 text-center text-sm leading-snug text-[#1a2330] shadow-[0_0_0_1px_var(--color-border)] [text-wrap:wrap] sm:text-base"
+                  className="rounded-lg bg-white px-3 py-4 text-center text-sm leading-snug text-[#1a2330] shadow-[0_0_0_1px_var(--color-border)] [text-wrap:wrap] xl:text-base"
                 >
                   {line}
                 </p>
               ))}
             </div>
           </div>
-          <div className="page-gutter mx-auto mt-3 w-full max-w-3xl">
+          <div className="mx-auto mt-3 w-full max-w-4xl px-4 sm:px-8">
             <div className="rounded-lg bg-white px-4 py-4 text-center shadow-[0_0_0_1px_var(--color-border)]">
               <p className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-[#3a8a58]">
                 Sample, from the pre-filled demo. Not your plan.
@@ -1818,7 +1818,7 @@ function Home() {
               </p>
             </div>
           </div>
-          <p className="page-gutter mx-auto mt-7 mb-7 w-full max-w-5xl text-center text-[calc(0.667rem-1pt)] leading-relaxed text-muted sm:mt-9 sm:mb-9 sm:text-[calc(1.125rem-1pt)]">
+          <p className="mx-auto mt-7 mb-7 w-full max-w-6xl px-4 text-center text-[calc(0.667rem-1pt)] leading-relaxed text-muted sm:mt-9 sm:mb-9 sm:px-8 sm:text-[calc(1.125rem-1pt)]">
             Spreadsheets take time you'll never get back, and FIRECalc isn't built for TSP, military,
             and veterans. MACH RUN saves that time and is built for those paychecks. Use the fighter
             pilot's OODA Loop and Monte Carlo Simulator to inform your financial path quickly and
