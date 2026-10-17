@@ -449,6 +449,14 @@
   background: #3a8a58;
 }
 
+.quiz-account-name:empty::before {
+  content: "401(k)";
+  color: #9aa3ab;
+}
+.quiz-account-name:focus:empty::before {
+  content: none;
+}
+
 @keyframes quiz-swipe-in {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }

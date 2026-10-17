@@ -244,7 +244,7 @@ export function quizPlan(answers: QuizAnswers, today = new Date()): Plan {
   const piled = answers.scope === "all";
   const kind = piled ? QUIZ_KINDS.find((row) => row.id === "ira") ?? QUIZ_KINDS[0] : QUIZ_KINDS.find((row) => row.id === answers.kind) ?? QUIZ_KINDS[0];
   const accountId = newId("port");
-  const name = piled ? "All accounts" : answers.accountName.trim() || "TSP";
+  const name = piled ? "All accounts" : answers.accountName.trim() || kind.label;
   const first = answers.firstName?.trim().split(/\s+/)[0] ?? "";
   plan.primary = { name: first, birthDate: `${answers.birthYear}-01-01` };
   plan.assumptions = {

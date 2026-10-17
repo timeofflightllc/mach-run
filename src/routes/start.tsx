@@ -219,7 +219,7 @@ function StartQuiz() {
   const [birthYear, setBirthYear] = useState(1985);
   const [retireAge, setRetireAge] = useState(55);
   const [accountName, setAccountName] = useState("");
-  const [kind, setKind] = useState<QuizKindId>("tsp");
+  const [kind, setKind] = useState<QuizKindId>("401k");
   const [scope, setScope] = useState<"one" | "all">("one");
   const [balance, setBalance] = useState(50000);
   const [monthlySave, setMonthlySave] = useState(500);
@@ -502,24 +502,13 @@ function StartQuiz() {
                     />
                     <div className="mt-6">
                       <p className="text-center text-sm text-[#3d4a54]">What year were you born?</p>
-                      <div className="mt-2 flex items-center justify-between gap-3">
-                        <button
-                          type="button"
-                          className="h-14 w-14 rounded-full bg-[#1a2330] text-3xl leading-none text-white"
-                          aria-label="Earlier year"
-                          onClick={() => setBirthYear((y) => Math.max(1920, y - 1))}
-                        >
-                          −
-                        </button>
-                        <p className="text-center font-display text-[clamp(3.4rem,16vw,5rem)] font-semibold tabular-nums leading-none">{birthYear}</p>
-                        <button
-                          type="button"
-                          className="h-14 w-14 rounded-full bg-[#1a2330] text-3xl leading-none text-white"
-                          aria-label="Later year"
-                          onClick={() => setBirthYear((y) => Math.min(new Date().getFullYear(), y + 1))}
-                        >
-                          +
-                        </button>
+                      <div className="mt-2">
+                        <YearDial
+                          value={birthYear}
+                          min={1920}
+                          max={new Date().getFullYear()}
+                          onChange={setBirthYear}
+                        />
                       </div>
                     </div>
                   </div>
@@ -554,17 +543,28 @@ function StartQuiz() {
                     </div>
                     {scope === "one" ? (
                       <div className="mt-4 grid grid-cols-2 gap-2">
-                        <label className="min-w-0 text-center text-xs text-[#3d4a54]">
-                          Account
-                          <input
-                            value={accountName}
-                            placeholder="TSP"
-                            onChange={(e) => setAccountName(e.target.value)}
-                            className="mt-1 h-11 w-full rounded-lg border border-[#d5d0c6] bg-white px-2 text-left text-base text-[#1a2330]"
+                        <div className="min-w-0 text-center text-xs text-[#3d4a54]">
+                          Account Name (Optional)
+                          <div
+                            role="textbox"
+                            aria-multiline="false"
+                            aria-label="Optional label for this balance"
+                            contentEditable
+                            suppressContentEditableWarning
+                            className="quiz-account-name mt-1 flex h-11 w-full items-center overflow-hidden rounded-lg border border-[#d5d0c6] bg-white px-2 text-left text-base text-[#1a2330] outline-none"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") e.preventDefault();
+                            }}
+                            onInput={(e) => setAccountName((e.currentTarget.textContent ?? "").replace(/\n/g, ""))}
+                            onBlur={(e) => {
+                              const text = (e.currentTarget.textContent ?? "").replace(/\n/g, "").trim();
+                              e.currentTarget.textContent = text;
+                              setAccountName(text);
+                            }}
                           />
-                        </label>
+                        </div>
                         <label className="min-w-0 text-center text-xs text-[#3d4a54]">
-                          Kind
+                          Type of Account
                           <select
                             value={kind}
                             onChange={(e) => setKind(e.target.value as QuizKindId)}
@@ -891,7 +891,7 @@ function StartQuiz() {
                 <button
                   type="submit"
                   disabled={busy}
-                  className="h-14 w-full rounded-xl bg-[#1a2330] text-lg font-medium text-white disabled:opacity-50"
+                  className="h-14 w-full rounded-xl bg-[#3a8a58] text-lg font-medium text-white disabled:opacity-50"
                 >
                   <span className={busy ? undefined : "mach-run-pulse inline-block"}>
                     {busy ? "Working" : "See full MACH RUN"}
@@ -913,6 +913,83 @@ function StartQuiz() {
         ) : null}
       </div>
     </main>
+  );
+}
+
+function YearDial({
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  onChange: (n: number) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const typed = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (editing) typed.current?.select();
+  }, [editing]);
+
+  function commit(raw: string) {
+    const digits = raw.replace(/[^0-9]/g, "");
+    setEditing(false);
+    if (!digits) return;
+    const n = Number(digits);
+    if (!Number.isFinite(n)) return;
+    onChange(Math.min(max, Math.max(min, Math.round(n))));
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <button
+        type="button"
+        className="h-14 w-14 shrink-0 rounded-full bg-[#1a2330] text-3xl leading-none text-white"
+        aria-label="Earlier year"
+        onClick={() => onChange(Math.max(min, value - 1))}
+      >
+        −
+      </button>
+      {editing ? (
+        <input
+          ref={typed}
+          value={draft}
+          inputMode="numeric"
+          aria-label="Birth year"
+          className="w-full min-w-0 bg-transparent text-center font-display text-[clamp(3.4rem,16vw,5rem)] font-semibold tabular-nums leading-none outline-none"
+          onChange={(e) => setDraft(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
+          onBlur={() => commit(draft)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              e.currentTarget.blur();
+            }
+          }}
+        />
+      ) : (
+        <button
+          type="button"
+          className="min-w-0 flex-1 text-center font-display text-[clamp(3.4rem,16vw,5rem)] font-semibold tabular-nums leading-none"
+          onClick={() => {
+            setDraft(String(value));
+            setEditing(true);
+          }}
+        >
+          {value}
+        </button>
+      )}
+      <button
+        type="button"
+        className="h-14 w-14 shrink-0 rounded-full bg-[#1a2330] text-3xl leading-none text-white"
+        aria-label="Later year"
+        onClick={() => onChange(Math.min(max, value + 1))}
+      >
+        +
+      </button>
+    </div>
   );
 }
 
@@ -975,8 +1052,15 @@ function SliderHero({
     onChange(snap(n));
   }
 
+  function moneyDraft(raw: string) {
+    const digits = raw.replace(/[^0-9]/g, "");
+    if (!digits) return "$";
+    return `$${Number(digits).toLocaleString("en-US")}`;
+  }
+
   const span = Math.max(1, max - min);
   const tick = ease ? Math.round(Math.sqrt(Math.min(1, Math.max(0, (value - min) / span))) * 1000) : value;
+  const moneyField = display == null;
 
   const shown = display ?? money(value);
   return (
@@ -988,7 +1072,30 @@ function SliderHero({
           inputMode="numeric"
           aria-label={shown}
           className="w-full bg-transparent text-center font-display text-[clamp(3.4rem,16vw,5rem)] font-semibold tabular-nums leading-none tracking-tight outline-none"
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => {
+            if (!moneyField) {
+              setDraft(e.target.value);
+              return;
+            }
+            const el = e.target;
+            const digitsBefore = el.value.slice(0, el.selectionStart ?? 0).replace(/[^0-9]/g, "").length;
+            const next = moneyDraft(el.value);
+            setDraft(next);
+            requestAnimationFrame(() => {
+              const input = typed.current;
+              if (!input) return;
+              let seen = 0;
+              let pos = next.length;
+              for (let i = 0; i < next.length; i += 1) {
+                if (/\d/.test(next[i] ?? "")) seen += 1;
+                if (seen >= digitsBefore) {
+                  pos = i + 1;
+                  break;
+                }
+              }
+              input.setSelectionRange(pos, pos);
+            });
+          }}
           onBlur={() => commit(draft)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
@@ -1002,7 +1109,7 @@ function SliderHero({
           type="button"
           className="w-full text-center font-display text-[clamp(3.4rem,16vw,5rem)] font-semibold tabular-nums leading-none tracking-tight"
           onClick={() => {
-            setDraft(String(value));
+            setDraft(moneyField ? money(value) : String(value));
             setEditing(true);
           }}
         >
