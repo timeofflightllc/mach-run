@@ -23,6 +23,7 @@ import {
 } from "@/lib/plan/quiz-plan";
 import { useProfileStore } from "@/lib/plan/profile-store";
 import { usePlanStore } from "@/lib/plan/store";
+import { vaSchedularPay } from "@/lib/plan/va";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/start")({
@@ -109,6 +110,7 @@ function quizCompliment(
     kind: QuizKindId;
     balance: number;
     monthlySave: number;
+    scope: "one" | "all";
     pays: { military: number; va: number; pension: number };
   },
 ): string {
@@ -133,6 +135,14 @@ function quizCompliment(
     return say(`${a.age} gives this account more time. ${when} That patience is a plan.`);
   }
   if (step === 2) {
+    if (a.scope === "all") {
+      if (a.balance <= 0) {
+        return say("Starting from zero is honest. What you add from here is what the sketch can use.");
+      }
+      return say(
+        `${money(a.balance)} across everything is a real total. This sketch prices it as one traditional account until you split it.`,
+      );
+    }
     const where = accountPhrase(a.accountName, a.kind);
     if (a.balance <= 0) {
       return say(`Starting ${where} at zero is honest. What you add from here is what the sketch can use.`);
@@ -146,6 +156,7 @@ function quizCompliment(
     return say(`${money(a.balance)} in ${where} is serious progress. We'll see what that balance can carry.`);
   }
   if (step === 3) {
+    const into = a.scope === "all" ? "across that total" : "into that account";
     if (a.monthlySave <= 0) {
       return say("Putting in nothing extra is a fair answer. The balance you already named still counts.");
     }
@@ -153,9 +164,9 @@ function quizCompliment(
       return say(`${money(a.monthlySave)} a month is a start. Small amounts, kept up, are discipline.`);
     }
     if (a.monthlySave < 1500) {
-      return say(`${money(a.monthlySave)} a month is a strong habit. That is how an account becomes a retirement.`);
+      return say(`${money(a.monthlySave)} a month ${into} is a strong habit. That is how a balance becomes a retirement.`);
     }
-    return say(`${money(a.monthlySave)} a month is real commitment. That kind of saving changes what this account can pay.`);
+    return say(`${money(a.monthlySave)} a month ${into} is real commitment. That kind of saving changes what this sketch can pay.`);
   }
   if (step === 4) {
     const chosen = PAYS.filter((row) => a.pays[row.id] > 0);
@@ -209,10 +220,14 @@ function StartQuiz() {
   const [retireAge, setRetireAge] = useState(55);
   const [accountName, setAccountName] = useState("");
   const [kind, setKind] = useState<QuizKindId>("tsp");
+  const [scope, setScope] = useState<"one" | "all">("one");
   const [balance, setBalance] = useState(50000);
   const [monthlySave, setMonthlySave] = useState(500);
   const [payOn, setPayOn] = useState<Record<QuizPayKind, boolean>>({ military: false, va: false, pension: false });
   const [payAmounts, setPayAmounts] = useState<Record<QuizPayKind, number>>({ military: 2000, va: 2000, pension: 2000 });
+  const [vaRating, setVaRating] = useState(10);
+  const [vaDependents, setVaDependents] = useState(0);
+  const [vaSpouse, setVaSpouse] = useState(false);
   const [email, setEmail] = useState("");
   const [captcha, setCaptcha] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState("");
@@ -241,7 +256,7 @@ function StartQuiz() {
   const first = firstWord(firstName);
   const pays = {
     military: payOn.military ? payAmounts.military : 0,
-    va: payOn.va ? payAmounts.va : 0,
+    va: payOn.va ? vaSchedularPay(vaRating, vaSpouse, vaDependents) : 0,
     pension: payOn.pension ? payAmounts.pension : 0,
   };
   const firstPay = PAYS.find((row) => pays[row.id] > 0);
@@ -250,13 +265,17 @@ function StartQuiz() {
     monthlyNeed,
     retireAge: age,
     birthYear,
-    accountName,
-    kind,
+    accountName: scope === "all" ? "All accounts" : accountName,
+    kind: scope === "all" ? "ira" : kind,
     balance,
     monthlySave,
     pay: firstPay?.id ?? "none",
     payMonthly: firstPay ? pays[firstPay.id] : 0,
     pays,
+    scope,
+    vaRating,
+    vaDependents,
+    vaSpouse,
   };
 
   function openPlan(plan = built?.plan) {
@@ -287,6 +306,7 @@ function StartQuiz() {
       kind,
       balance,
       monthlySave,
+      scope,
       pays,
     };
   }
@@ -400,7 +420,7 @@ function StartQuiz() {
   const titles = [
     "How much money do you need each month in retirement?",
     "What age do you want to retire?",
-    "One account and a rough balance.",
+    "A rough balance.",
     "What can you put in each month?",
     "Any of these coming in?",
     "What should we call you?",
@@ -463,7 +483,7 @@ function StartQuiz() {
                   <SliderHero
                     value={monthlyNeed}
                     min={1500}
-                    max={20000}
+                    max={30000}
                     step={100}
                     caption="House, food, kids, the car."
                     onChange={setMonthlyNeed}
@@ -506,38 +526,67 @@ function StartQuiz() {
                 ) : null}
                 {step === 2 ? (
                   <div className="flex flex-col">
-                    <div className="grid grid-cols-2 gap-2">
-                      <label className="min-w-0 text-center text-xs text-[#3d4a54]">
-                        Account
-                        <input
-                          value={accountName}
-                          placeholder="TSP"
-                          onChange={(e) => setAccountName(e.target.value)}
-                          className="mt-1 h-11 w-full rounded-lg border border-[#d5d0c6] bg-white px-2 text-left text-base text-[#1a2330]"
-                        />
-                      </label>
-                      <label className="min-w-0 text-center text-xs text-[#3d4a54]">
-                        Kind
-                        <select
-                          value={kind}
-                          onChange={(e) => setKind(e.target.value as QuizKindId)}
-                          className="mt-1 h-11 w-full rounded-lg border border-[#d5d0c6] bg-white px-2 text-left text-base text-[#1a2330]"
-                        >
-                          {QUIZ_KINDS.map((row) => (
-                            <option key={row.id} value={row.id}>
-                              {row.label}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                    <div className="grid grid-cols-[1fr_1.4fr] gap-2">
+                      <button
+                        type="button"
+                        aria-pressed={scope === "one"}
+                        onClick={() => setScope("one")}
+                        className={
+                          scope === "one"
+                            ? "min-h-14 whitespace-nowrap rounded-xl bg-[#3a8a58] px-2 text-base font-medium text-white sm:text-lg"
+                            : "min-h-14 whitespace-nowrap rounded-xl bg-[#e7e2d8] px-2 text-base text-[#1a2330] sm:bg-[#f3f0e8] sm:text-lg"
+                        }
+                      >
+                        One account
+                      </button>
+                      <button
+                        type="button"
+                        aria-pressed={scope === "all"}
+                        onClick={() => setScope("all")}
+                        className={
+                          scope === "all"
+                            ? "min-h-14 whitespace-nowrap rounded-xl bg-[#3a8a58] px-2 text-base font-medium text-white sm:text-lg"
+                            : "min-h-14 whitespace-nowrap rounded-xl bg-[#e7e2d8] px-2 text-base text-[#1a2330] sm:bg-[#f3f0e8] sm:text-lg"
+                        }
+                      >
+                        Everything I have
+                      </button>
                     </div>
+                    {scope === "one" ? (
+                      <div className="mt-4 grid grid-cols-2 gap-2">
+                        <label className="min-w-0 text-center text-xs text-[#3d4a54]">
+                          Account
+                          <input
+                            value={accountName}
+                            placeholder="TSP"
+                            onChange={(e) => setAccountName(e.target.value)}
+                            className="mt-1 h-11 w-full rounded-lg border border-[#d5d0c6] bg-white px-2 text-left text-base text-[#1a2330]"
+                          />
+                        </label>
+                        <label className="min-w-0 text-center text-xs text-[#3d4a54]">
+                          Kind
+                          <select
+                            value={kind}
+                            onChange={(e) => setKind(e.target.value as QuizKindId)}
+                            className="mt-1 h-11 w-full rounded-lg border border-[#d5d0c6] bg-white px-2 text-left text-base text-[#1a2330]"
+                          >
+                            {QUIZ_KINDS.map((row) => (
+                              <option key={row.id} value={row.id}>
+                                {row.label}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                    ) : null}
                     <div className="mt-6">
                       <SliderHero
                         value={balance}
                         min={0}
-                        max={500000}
+                        max={5000000}
                         step={5000}
-                        caption="A guess is fine."
+                        ease
+                        caption={scope === "all" ? "A rough total is fine." : "A guess is fine."}
                         onChange={setBalance}
                       />
                     </div>
@@ -547,9 +596,10 @@ function StartQuiz() {
                   <SliderHero
                     value={monthlySave}
                     min={0}
-                    max={5000}
+                    max={50000}
                     step={50}
-                    caption="Added to that one account until you retire."
+                    ease
+                    caption={scope === "all" ? "Added until you retire." : "Added to that one account until you retire."}
                     onChange={setMonthlySave}
                   />
                 ) : null}
@@ -583,7 +633,46 @@ function StartQuiz() {
                           >
                             {row.label}
                           </button>
-                          {payOn[row.id] ? (
+                          {payOn[row.id] && row.id === "va" ? (
+                            <div className="mt-4 mb-2 flex flex-col gap-4">
+                              <SliderHero
+                                value={vaRating}
+                                min={10}
+                                max={100}
+                                step={10}
+                                display={`${vaRating}%`}
+                                caption="VA disability rating."
+                                onChange={setVaRating}
+                              />
+                              <button
+                                type="button"
+                                aria-pressed={vaSpouse}
+                                onClick={() => setVaSpouse((on) => !on)}
+                                className={
+                                  vaSpouse
+                                    ? "min-h-14 rounded-xl bg-[#3a8a58] px-4 text-lg font-medium text-white"
+                                    : "min-h-14 rounded-xl bg-[#e7e2d8] px-4 text-lg text-[#1a2330] sm:bg-[#f3f0e8]"
+                                }
+                              >
+                                Spouse on the award
+                              </button>
+                              <SliderHero
+                                value={vaDependents}
+                                min={0}
+                                max={8}
+                                step={1}
+                                display={String(vaDependents)}
+                                caption="Children under 18."
+                                onChange={setVaDependents}
+                              />
+                              <p className="text-center text-base font-medium">
+                                {money(vaSchedularPay(vaRating, vaSpouse, vaDependents))} a month, from the 2026 VA table.
+                              </p>
+                              {vaRating < 30 && (vaDependents > 0 || vaSpouse) ? (
+                                <p className="text-center text-sm text-[#3d4a54]">Dependent pay starts at 30%.</p>
+                              ) : null}
+                            </div>
+                          ) : payOn[row.id] ? (
                             <div className="mt-4 mb-2">
                               <SliderHero
                                 value={payAmounts[row.id]}
@@ -696,6 +785,11 @@ function StartQuiz() {
                   {money(built?.canPay ?? 0)}
                 </p>
                 <p className="mt-2 text-sm text-[#3d4a54]">a month, in today's dollars</p>
+                {scope === "all" ? (
+                  <p className="mt-3 text-center text-base leading-snug">
+                    This total is priced as one traditional account. Split the accounts in the full MACH RUN for the real number.
+                  </p>
+                ) : null}
                 {PAYS.some((row) => pays[row.id] > 0) ? (
                   <>
                     <div className="mt-6 flex items-end justify-center whitespace-nowrap">
@@ -846,6 +940,7 @@ function SliderHero({
   step,
   caption,
   display,
+  ease,
   onChange,
 }: {
   value: number;
@@ -854,24 +949,83 @@ function SliderHero({
   step: number;
   caption: string;
   display?: string;
+  /** More track at the low end, so a wide range does not jump by a fortune. */
+  ease?: boolean;
   onChange: (n: number) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const typed = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (editing) typed.current?.select();
+  }, [editing]);
+
+  function snap(n: number) {
+    const clamped = Math.min(max, Math.max(min, n));
+    const snapped = min + Math.round((clamped - min) / step) * step;
+    return Math.min(max, Math.max(min, snapped));
+  }
+
+  function commit(raw: string) {
+    const n = Number(raw.replace(/[^0-9.]/g, ""));
+    setEditing(false);
+    if (!Number.isFinite(n)) return;
+    onChange(snap(n));
+  }
+
+  const span = Math.max(1, max - min);
+  const tick = ease ? Math.round(Math.sqrt(Math.min(1, Math.max(0, (value - min) / span))) * 1000) : value;
+
+  const shown = display ?? money(value);
   return (
     <div>
-      <p className="text-center font-display text-[clamp(3.4rem,16vw,5rem)] font-semibold tabular-nums leading-none tracking-tight">
-        {display ?? money(value)}
-      </p>
+      {editing ? (
+        <input
+          ref={typed}
+          value={draft}
+          inputMode="numeric"
+          aria-label={shown}
+          className="w-full bg-transparent text-center font-display text-[clamp(3.4rem,16vw,5rem)] font-semibold tabular-nums leading-none tracking-tight outline-none"
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={() => commit(draft)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              e.currentTarget.blur();
+            }
+          }}
+        />
+      ) : (
+        <button
+          type="button"
+          className="w-full text-center font-display text-[clamp(3.4rem,16vw,5rem)] font-semibold tabular-nums leading-none tracking-tight"
+          onClick={() => {
+            setDraft(String(value));
+            setEditing(true);
+          }}
+        >
+          {shown}
+        </button>
+      )}
       <div className="mt-5 px-[22px]">
         <input
           type="range"
           className="quiz-range"
-          min={min}
-          max={max}
-          step={step}
-          value={Math.min(max, Math.max(min, value))}
-          aria-label={display ?? money(value)}
-          aria-valuetext={display ?? money(value)}
-          onChange={(e) => onChange(Number(e.target.value))}
+          min={ease ? 0 : min}
+          max={ease ? 1000 : max}
+          step={ease ? 1 : step}
+          value={ease ? tick : Math.min(max, Math.max(min, value))}
+          aria-label={shown}
+          aria-valuetext={shown}
+          onChange={(e) => {
+            const raw = Number(e.target.value);
+            if (!ease) {
+              onChange(raw);
+              return;
+            }
+            const t = raw / 1000;
+            onChange(snap(min + span * t * t));
+          }}
         />
       </div>
       <p className="mt-2 text-center text-sm text-[#3d4a54]">{caption}</p>

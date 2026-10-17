@@ -1,6 +1,7 @@
 import { monthBefore, todayIso } from "./dates.ts";
 import { clonePlan, createDefaultPlan, ensurePlan } from "./defaults.ts";
 import { sustainableRetirementIncome, nestEggForMonthlyWithdrawal } from "./sustainable-income.ts";
+import { vaSchedularPay } from "./va.ts";
 import type { AccountKind, Plan, TaxBucket, TaxTreatment } from "./types.ts";
 
 function newId(prefix: string) {
@@ -38,6 +39,14 @@ export type QuizAnswers = {
   payMonthly: number;
   /** Set when more than one paycheck is on. Zero means that one is off. */
   pays?: QuizPays;
+  /** "all" is every account in one traditional pile. Missing means one account. */
+  scope?: "one" | "all";
+  /** VA disability rating, 10–100. The dollar comes from the 2026 table. */
+  vaRating?: number;
+  /** Children under 18. */
+  vaDependents?: number;
+  /** Spouse on the VA award. Missing means no. */
+  vaSpouse?: boolean;
 };
 
 const QUIZ_KIND_IDS = new Set<QuizKindId>(QUIZ_KINDS.map((row) => row.id));
@@ -77,6 +86,10 @@ export function parseQuizAnswers(raw: unknown): QuizAnswers | null {
     pay: QUIZ_PAY_IDS.has(pay as QuizPayId) ? (pay as QuizPayId) : "none",
     payMonthly: quizNum(row.payMonthly, 0),
     pays,
+    scope: row.scope === "all" ? "all" : "one",
+    vaRating: quizNum(row.vaRating, 0),
+    vaDependents: Math.max(0, Math.floor(quizNum(row.vaDependents, 0))),
+    vaSpouse: row.vaSpouse === true,
   };
 }
 
@@ -228,9 +241,10 @@ export function quizPlan(answers: QuizAnswers, today = new Date()): Plan {
   const plan = createDefaultPlan();
   const asOf = todayIso();
   const retire = retirementIso(answers.birthYear, answers.retireAge, today);
-  const kind = QUIZ_KINDS.find((row) => row.id === answers.kind) ?? QUIZ_KINDS[0];
+  const piled = answers.scope === "all";
+  const kind = piled ? QUIZ_KINDS.find((row) => row.id === "ira") ?? QUIZ_KINDS[0] : QUIZ_KINDS.find((row) => row.id === answers.kind) ?? QUIZ_KINDS[0];
   const accountId = newId("port");
-  const name = answers.accountName.trim() || "TSP";
+  const name = piled ? "All accounts" : answers.accountName.trim() || "TSP";
   const first = answers.firstName?.trim().split(/\s+/)[0] ?? "";
   plan.primary = { name: first, birthDate: `${answers.birthYear}-01-01` };
   plan.assumptions = {
@@ -293,18 +307,32 @@ export function quizPlan(answers: QuizAnswers, today = new Date()): Plan {
       endDate: null,
     },
   ];
+  const vaRating = answers.vaRating ?? 0;
+  const vaKids = Math.max(0, Math.floor(answers.vaDependents ?? 0));
+  const vaSpouse = answers.vaSpouse === true;
+  const vaOn = selectedPays(answers).some((row) => row.id === "va");
+  if (vaOn && vaKids > 0) {
+    const year = today.getFullYear() - 10;
+    plan.children = Array.from({ length: vaKids }, (_, i) => ({
+      id: newId("child"),
+      name: vaKids === 1 ? "Dependent" : `Dependent ${i + 1}`,
+      birthDate: `${year}-01-01`,
+    }));
+  }
   for (const row of selectedPays(answers)) {
     const spec = PAY_LABEL[row.id];
+    const table = row.id === "va" && vaRating >= 10 ? vaSchedularPay(vaRating, vaSpouse, vaKids) : row.monthly;
     plan.incomes.push({
       id: newId("inc"),
       name: spec.name,
       kind: row.id,
-      monthlyAmount: row.monthly,
+      monthlyAmount: table,
       startDate: spec.start === "now" ? asOf : retire,
       endDate: null,
       colaPct: null,
       taxTreatment: spec.tax,
       person: "primary",
+      ...(row.id === "va" && vaRating >= 10 ? { vaRatingPct: vaRating, vaSpouseDependent: vaSpouse } : {}),
     });
   }
   return plan;

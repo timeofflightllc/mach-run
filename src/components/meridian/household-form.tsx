@@ -201,9 +201,9 @@ export function GoalsForm() {
 
   return (
     <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-3 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
-      <div className="flex flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
-        <div className="card-fields flex flex-wrap items-end gap-x-5 gap-y-3">
-          <div className="flex w-auto flex-col gap-1.5">
+      <div className="flex flex-col gap-4 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
+        <div className="grid items-end gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-[minmax(11rem,1fr)_14.5rem_minmax(18rem,1.6fr)]">
+          <div className="flex min-w-0 flex-col gap-1.5">
             <span className="text-xs font-medium tracking-wide text-muted">As-of date</span>
             {editingAsOf ? (
               <DateInput
@@ -217,7 +217,7 @@ export function GoalsForm() {
                 <p className="min-w-0 text-sm text-fg">{longDate(plan.assumptions.asOfDate)}</p>
                 <button
                   type="button"
-                  className="shrink-0 text-[11px] text-fg underline-offset-4 hover:underline"
+                  className="shrink-0 text-xs text-fg underline-offset-4 hover:underline"
                   onClick={() => setEditingAsOf(true)}
                 >
                   Change
@@ -225,8 +225,7 @@ export function GoalsForm() {
               </div>
             )}
           </div>
-          <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fg">
-            <span className="text-xs font-medium tracking-wide text-muted">Project through longevity age</span>
+          <Field label="Project through longevity age" className="w-full whitespace-nowrap">
             <NumberInput
               min={70}
               max={110}
@@ -235,43 +234,48 @@ export function GoalsForm() {
               onValue={(n) => patchAssumptions({ projectionEndAge: n })}
               className={pct}
             />
-          </label>
-          <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1 text-sm text-fg">
-            <input
-              type="checkbox"
-              checked={already}
-              onChange={(e) => {
-                if (e.target.checked) {
-                  patchAssumptions({ retirementGoalDate: `${asOf}-01` });
-                } else {
-                  patchAssumptions({ retirementGoalDate: null });
-                }
-              }}
-            />
-            Already retired
-          </label>
-          {already ? (
-            <Field label="Retired" className="w-full min-w-0 max-w-xs">
-              <MonthInput
-                value={goal}
-                onValue={(v) => patchAssumptions({ retirementGoalDate: v === "" ? null : v })}
+          </Field>
+          <div className="flex min-w-0 items-end gap-3">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <span className="text-xs font-medium tracking-wide text-muted">
+                {already ? "Retired" : "Retirement goal date"}
+              </span>
+              {already ? (
+                <MonthInput
+                  value={goal}
+                  onValue={(v) => patchAssumptions({ retirementGoalDate: v === "" ? null : v })}
+                />
+              ) : (
+                <DateInput
+                  value={goal}
+                  onValue={(v) => patchAssumptions({ retirementGoalDate: v === "" ? null : v })}
+                />
+              )}
+            </div>
+            <label className="flex h-11 shrink-0 items-center gap-1.5 text-xs text-fg">
+              <input
+                type="checkbox"
+                checked={already}
+                onChange={(e) => {
+                  if (e.target.checked) {
+                    patchAssumptions({ retirementGoalDate: `${asOf}-01` });
+                  } else {
+                    patchAssumptions({ retirementGoalDate: null });
+                  }
+                }}
               />
-            </Field>
-          ) : (
-            <Field label="Retirement goal date" className="w-full min-w-0 max-w-xs">
-              <DateInput
-                value={goal}
-                onValue={(v) => patchAssumptions({ retirementGoalDate: v === "" ? null : v })}
-              />
-            </Field>
-          )}
-          <div className="flex w-auto flex-col gap-1.5">
+              Already retired
+            </label>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
+          <div className="flex min-w-0 flex-col gap-1.5">
             <span className="text-xs font-medium tracking-wide text-muted">Goal</span>
-            <div className="inline-flex max-w-full flex-wrap rounded-md bg-slate-100 p-0.5 shadow-[0_0_0_1px_#c8d2de]">
+            <div className="inline-flex h-11 items-center rounded-lg bg-slate-100 p-0.5 shadow-[0_0_0_1px_#c8d2de]">
               {(
                 [
-                  ["nest", "Retirement Nest Egg Goal"],
-                  ["income", "Monthly Retirement Income Goal"],
+                  ["nest", "Nest egg"],
+                  ["income", "Monthly income"],
                 ] as const
               ).map(([id, label]) => {
                 const on = (plan.assumptions.goalMode === "income" ? "income" : "nest") === id;
@@ -283,8 +287,8 @@ export function GoalsForm() {
                     onClick={() => patchAssumptions({ goalMode: id })}
                     className={
                       on
-                        ? "h-7 whitespace-nowrap rounded bg-accent px-2 text-[11px] font-medium leading-none text-accent-fg"
-                        : "h-7 whitespace-nowrap rounded px-2 text-[11px] font-medium leading-none text-slate-600 hover:text-slate-900"
+                        ? "h-10 whitespace-nowrap rounded-md bg-accent px-3 text-sm font-medium text-accent-fg"
+                        : "h-10 whitespace-nowrap rounded-md px-3 text-sm font-medium text-slate-600 hover:text-slate-900"
                     }
                   >
                     {label}
@@ -294,24 +298,28 @@ export function GoalsForm() {
             </div>
           </div>
           {plan.assumptions.goalMode === "income" ? (
-            <Field label="Desired Monthly Income In Retirement From Nest Egg" className="w-full min-w-0 max-w-52">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <span className="text-xs font-medium tracking-wide text-muted">
+                Desired monthly income in retirement from the nest egg
+              </span>
               <MoneyInput
                 value={plan.assumptions.incomeGoalMonthly ?? 0}
                 onValue={(n) => patchAssumptions({ incomeGoalMonthly: n > 0 ? n : null })}
-                className="w-full max-w-full"
+                className="w-full max-w-52"
               />
-            </Field>
+            </div>
           ) : (
-            <Field label="Nest egg goal (today $)" className="w-full min-w-0 max-w-40">
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <span className="text-xs font-medium tracking-wide text-muted">Nest egg goal (today $)</span>
               <MoneyInput
                 value={plan.assumptions.nestEggGoal ?? 0}
                 onValue={(n) => patchAssumptions({ nestEggGoal: n > 0 ? n : null })}
-                className="w-full max-w-full"
+                className="w-full max-w-52"
               />
-            </Field>
+            </div>
           )}
         </div>
-        <p className="text-xs leading-relaxed text-subtle">
+        <p className="max-w-4xl text-xs leading-relaxed text-subtle">
           Balances peg to the as-of date. Blank end dates run through the longevity age. Act’s
           Spendable strip keys off the retirement date. Pick a nest egg or a monthly paycheck.
           Pension, VA, military retired pay, and Social Security in this run count toward the

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { accountCanPay, appendQuizAccount, nestEggForAskedMonth, quizPlan, retireCaption, retirementIso } from "./quiz-plan.ts";
+import { vaPayTodayDollars, vaSchedularPay } from "./va.ts";
 
 const today = new Date(2026, 9, 15);
 
@@ -9,6 +10,78 @@ test("retirement is January of birth year plus age, or this month if that Januar
   assert.equal(retireCaption(1994, 55, today), "That's 2049.");
   assert.equal(retirementIso(1970, 55, today), "2026-10-01");
   assert.equal(retireCaption(1970, 55, today), "That's this year.");
+});
+
+test("everything they have is one traditional pile named All accounts", () => {
+  const plan = quizPlan(
+    {
+      monthlyNeed: 5000,
+      retireAge: 55,
+      birthYear: 1994,
+      accountName: "TSP",
+      kind: "roth_ira",
+      balance: 400000,
+      monthlySave: 500,
+      pay: "none",
+      payMonthly: 0,
+      scope: "all",
+    },
+    today,
+  );
+  assert.equal(plan.portfolios.length, 1);
+  assert.equal(plan.portfolios[0]?.name, "All accounts");
+  assert.equal(plan.portfolios[0]?.kind, "ira");
+  assert.equal(plan.portfolios[0]?.taxBucket, "pre_tax");
+  assert.equal(plan.portfolios[0]?.currentValue, 400000);
+});
+
+test("a VA rating and dependents use the 2026 table, with no spouse", () => {
+  const plan = quizPlan(
+    {
+      monthlyNeed: 5000,
+      retireAge: 55,
+      birthYear: 1994,
+      accountName: "TSP",
+      kind: "tsp",
+      balance: 50000,
+      monthlySave: 0,
+      pay: "va",
+      payMonthly: 1,
+      pays: { military: 0, va: 1, pension: 0 },
+      vaRating: 100,
+      vaDependents: 1,
+    },
+    today,
+  );
+  const va = plan.incomes.find((row) => row.kind === "va");
+  const table = vaSchedularPay(100, false, 1);
+  assert.equal(va?.monthlyAmount, table);
+  assert.equal(va?.vaRatingPct, 100);
+  assert.equal(va?.vaSpouseDependent, false);
+  assert.equal(plan.children.length, 1);
+  assert.equal(vaPayTodayDollars(plan, va!, today), table);
+  const withSpouse = quizPlan(
+    {
+      monthlyNeed: 5000,
+      retireAge: 55,
+      birthYear: 1994,
+      accountName: "TSP",
+      kind: "tsp",
+      balance: 50000,
+      monthlySave: 0,
+      pay: "va",
+      payMonthly: 1,
+      pays: { military: 0, va: 1, pension: 0 },
+      vaRating: 100,
+      vaDependents: 1,
+      vaSpouse: true,
+    },
+    today,
+  );
+  const spousePay = withSpouse.incomes.find((row) => row.kind === "va");
+  assert.equal(spousePay?.monthlyAmount, vaSchedularPay(100, true, 1));
+  assert.equal(spousePay?.vaSpouseDependent, true);
+  assert.equal(vaPayTodayDollars(withSpouse, spousePay!, today), vaSchedularPay(100, true, 1));
 });
 
 test("the sketch is one account, savings stop before retirement, and spending starts then", () => {
