@@ -56,13 +56,13 @@ const ANNUAL_TIP =
 function HoverLabel({ label, tip }: { label: string; tip?: string }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   if (!tip) {
-    return <dt className="text-[13px] font-medium uppercase tracking-wider text-subtle">{label}</dt>;
+    return <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted">{label}</dt>;
   }
   return (
-    <dt className="text-[13px] font-medium uppercase tracking-wider text-subtle">
+    <dt className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
       <button
         type="button"
-        className="cursor-help border-0 bg-transparent p-0 text-left font-sans text-[13px] font-medium uppercase tracking-wider text-subtle underline decoration-dotted underline-offset-2"
+        className="cursor-help border-0 bg-transparent p-0 text-left font-sans text-[11px] font-medium uppercase tracking-[0.14em] text-muted underline decoration-dotted decoration-muted/70 underline-offset-[3px]"
         onMouseEnter={(e) => setPos({ x: e.clientX, y: e.clientY })}
         onMouseMove={(e) => setPos({ x: e.clientX, y: e.clientY })}
         onMouseLeave={() => setPos(null)}
@@ -183,8 +183,8 @@ function GoalScore({
   }
   const showForm = editing || !(view === "nest" ? egg : gap);
   return (
-    <div className="mt-px bg-surface px-3 py-3 sm:px-4">
-      <div className="inline-flex max-w-full flex-wrap rounded-md bg-slate-100 p-0.5 shadow-[0_0_0_1px_#c8d2de]">
+    <div className="mt-5 border-t border-border pt-5">
+      <div className="inline-flex max-w-full flex-wrap rounded-full bg-bg p-1">
         {(
           [
             ["nest", "Retirement Nest Egg Goal"],
@@ -200,8 +200,8 @@ function GoalScore({
               onClick={() => setView(id)}
               className={
                 on
-                  ? "h-7 whitespace-nowrap rounded bg-accent px-2 text-[11px] font-medium leading-none text-accent-fg"
-                  : "h-7 whitespace-nowrap rounded px-2 text-[11px] font-medium leading-none text-slate-600 hover:text-slate-900"
+                  ? "h-8 whitespace-nowrap rounded-full bg-surface px-3 text-xs font-medium leading-none text-fg shadow-[0_1px_2px_rgba(26,35,48,0.08)]"
+                  : "h-8 whitespace-nowrap rounded-full px-3 text-xs font-medium leading-none text-muted hover:text-fg"
               }
             >
               {label}
@@ -212,7 +212,7 @@ function GoalScore({
       {view === "income" ? (
         <div className="mt-2 flex items-start gap-2">
           <div
-            className="inline-flex shrink-0 rounded-md bg-slate-100 p-0.5 shadow-[0_0_0_1px_#c8d2de]"
+            className="inline-flex shrink-0 rounded-full bg-bg p-1"
             role="group"
             aria-label="Include guaranteed retirement income"
           >
@@ -231,8 +231,8 @@ function GoalScore({
                   onClick={() => onIncludeGuaranteed(id === "yes")}
                   className={
                     on
-                      ? "h-7 rounded bg-accent px-2 text-[11px] font-medium leading-none text-accent-fg"
-                      : "h-7 rounded px-2 text-[11px] font-medium leading-none text-slate-600 hover:text-slate-900"
+                      ? "h-7 rounded-full bg-surface px-2.5 text-[11px] font-medium leading-none text-fg shadow-[0_1px_2px_rgba(26,35,48,0.08)]"
+                      : "h-7 rounded-full px-2.5 text-[11px] font-medium leading-none text-muted hover:text-fg"
                   }
                 >
                   {label}
@@ -458,7 +458,7 @@ function EditGoalButton({ label, onClick }: { label: string; onClick: () => void
     <button
       type="button"
       onClick={onClick}
-      className="mt-3 h-8 w-fit rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-fg hover:bg-slate-50"
+      className="mt-4 h-9 w-fit rounded-full border border-border bg-surface px-3.5 text-sm font-medium text-fg hover:bg-bg"
     >
       {label}
     </button>
@@ -485,17 +485,17 @@ function GoalReadout({
   action?: ReactNode;
 }) {
   return (
-    <div className="mt-2 flex flex-col">
-      <p className="text-[13px] font-medium uppercase tracking-wider text-subtle">{title}</p>
-      <div className="mt-1 flex items-baseline justify-between gap-3 text-sm font-medium tabular-nums text-fg">
-        <span className="min-w-0 truncate">{left}</span>
-        <span className="shrink-0">{right}</span>
+    <div className="mt-5 flex flex-col">
+      <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted">{title}</p>
+      <div className="mt-1.5 flex items-baseline justify-between gap-3">
+        <span className="min-w-0 truncate font-display text-xl font-semibold tabular-nums tracking-tight text-fg">{left}</span>
+        <span className="shrink-0 text-sm tabular-nums text-muted">{right}</span>
       </div>
-      <div className="mt-1.5 h-4 overflow-hidden rounded-full bg-slate-200" role="img" aria-label={aria}>
+      <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-[#e4e7df]" role="img" aria-label={aria}>
         <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.max(0, fill))}%` }} />
       </div>
-      <p className="mt-2 line-clamp-2 text-sm font-medium leading-5 text-fg">{status}</p>
-      {note ? <p className="mt-1 line-clamp-3 text-sm leading-5 text-muted">{note}</p> : null}
+      <p className="mt-3 text-sm leading-5 text-fg">{status}</p>
+      {note ? <p className="mt-1 text-sm leading-5 text-muted">{note}</p> : null}
       {action}
     </div>
   );
@@ -632,34 +632,32 @@ export function KpiStrip({
   const payLabel = ret?.incomeYear ? `Retirement pay (${ret.incomeYear})` : "Retirement pay";
 
   return (
-    <dl className="@container/kpi overflow-hidden rounded-xl bg-border shadow-[0_0_0_1px_var(--color-border)]">
-      <div className="grid grid-cols-2 gap-px">
-        <div className="bg-surface px-3 py-3 sm:px-4">
+    <dl className="@container/kpi rounded-2xl bg-surface px-5 py-5 shadow-[0_1px_2px_rgba(26,35,48,0.05),0_0_0_1px_var(--color-border)] sm:px-6">
+      <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+        <div>
           <HoverLabel
             label="Current spendable"
             tip="Balances marked spendable, as of today. Not grown. A house or other account left unmarked is not included."
           />
-          <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg sm:text-xl">
+          <dd className="mt-1 font-display text-xl font-semibold tabular-nums tracking-tight text-fg sm:text-2xl">
             {usd(startingSpendable(plan))}
           </dd>
         </div>
-        <div className="bg-surface px-3 py-3 sm:px-4">
+        <div>
           <HoverLabel
             label="Current net worth"
             tip="Accounts counted in net worth, minus remaining loans."
           />
-          <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg sm:text-xl">
+          <dd className="mt-1 font-display text-xl font-semibold tabular-nums tracking-tight text-fg sm:text-2xl">
             {usd(startingNetWorth(plan))}
           </dd>
         </div>
-      </div>
-      <div className="mt-px grid grid-cols-1 gap-px @min-[28rem]/kpi:grid-cols-2">
-        <div className="bg-surface px-3 py-3 sm:px-4">
+        <div>
           <HoverLabel
             label={retLabel}
             tip="Spendable balance the month before the goal date, in this run’s dollars."
           />
-          <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg sm:text-xl">
+          <dd className="mt-1 font-display text-xl font-semibold tabular-nums tracking-tight text-fg sm:text-2xl">
             {spendableAtRet != null ? usd(spendableAtRet) : "Set date in Goals"}
           </dd>
           {goalNote ? (
@@ -668,19 +666,19 @@ export function KpiStrip({
             </p>
           ) : null}
         </div>
-        <div className="bg-surface px-3 py-3 sm:px-4">
+        <div>
           <HoverLabel label={payLabel} tip={payTip} />
-          <dd className="mt-1 font-display text-lg font-medium tabular-nums text-fg sm:text-xl">
+          <dd className="mt-1 font-display text-xl font-semibold tabular-nums tracking-tight text-fg sm:text-2xl">
             {annual != null ? (
-              <span className="flex flex-wrap items-baseline gap-x-2">
-                <span>{usd(annual)}</span>
-                <span className="font-sans text-sm font-normal normal-case tracking-normal text-muted">a year</span>
+              <span className="block">
+                <span className="flex flex-wrap items-baseline gap-x-1.5">
+                  <span>{usd(annual)}</span>
+                  <span className="font-sans text-sm font-normal normal-case tracking-normal text-muted">a year</span>
+                </span>
                 {monthly != null ? (
-                  <>
-                    <span className="font-sans text-sm font-normal text-muted">·</span>
-                    <span>{usd(monthly, true)}</span>
-                    <span className="font-sans text-sm font-normal normal-case tracking-normal text-muted">a month</span>
-                  </>
+                  <span className="mt-0.5 block font-sans text-sm font-normal normal-case tracking-normal text-muted">
+                    {usd(monthly, true)} a month
+                  </span>
                 ) : null}
               </span>
             ) : (

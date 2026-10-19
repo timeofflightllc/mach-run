@@ -87,26 +87,26 @@ export function Verdict({
   const egg = nestEggTrack(plan, sim);
 
   return (
-    <div className={cn("@container/bluf flex h-full flex-col rounded-xl bg-surface px-5 py-4 shadow-[0_0_0_1px_var(--color-border)]", className)}>
-      <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
+    <div className={cn("@container/bluf flex h-full flex-col rounded-2xl bg-surface px-5 py-5 shadow-[0_1px_2px_rgba(26,35,48,0.05),0_0_0_1px_var(--color-border)] sm:px-6", className)}>
+      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
         BLUF (Bottom Line Up Front)
       </p>
-      <p className="mt-2 font-display text-xl font-medium leading-snug text-fg sm:text-2xl">
+      <p className="mt-2 font-display text-xl font-semibold leading-snug tracking-tight text-fg sm:text-2xl">
         {egg ? <NestEggHeadline egg={egg} /> : body}
       </p>
       {egg ? (
-        <p className="mt-2 text-base font-medium leading-snug text-fg">{body}</p>
+        <p className="mt-2 text-base leading-snug text-fg">{body}</p>
       ) : null}
       {retLine ? (
         <p className="mt-3 text-sm leading-relaxed text-muted">{retLine}</p>
       ) : null}
-      <div className={cn("mt-3 grid items-start gap-x-6 gap-y-3", rank && "@min-[32rem]/bluf:grid-cols-2")}>
+      <div className={cn("mt-4 grid items-start gap-3", rank && "@min-[32rem]/bluf:grid-cols-2")}>
           {rank ? (
-            <div>
-              <p className="font-display text-lg font-semibold uppercase tracking-[0.08em] text-fg">
+            <div className="rounded-xl bg-bg px-3.5 py-3">
+              <p className="text-sm font-semibold text-fg">
                 {rank.title}
               </p>
-              <ul className="mt-1.5 list-disc space-y-1 pl-5 text-left text-sm leading-snug text-fg">
+              <ul className="mt-2 list-disc space-y-1 pl-4 text-left text-sm leading-snug text-fg">
                 {rank.lines.map((line) => (
                   <li key={line}>{line}</li>
                 ))}
@@ -114,17 +114,17 @@ export function Verdict({
             </div>
           ) : null}
           {survivalUnlocked ? (
-            <div>
-              <p className="text-xs font-medium uppercase tracking-[0.14em] text-subtle">
+            <div className="rounded-xl bg-bg px-3.5 py-3">
+              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-muted">
                 Plan Survival
               </p>
               {survival ? (
-                <p className="mt-1 text-sm leading-snug text-fg">
+                <p className="mt-2 text-sm leading-snug text-fg">
                   {survivalSentence(survival.score, longevityAge)}
                   {ranOut ? ` ${ranOut}` : ""}
                 </p>
               ) : (
-                <p className="mt-1 text-sm leading-snug text-muted">
+                <p className="mt-2 text-sm leading-snug text-muted">
                   Run Monte Carlo Simulation on the card{" "}
                   <span className="@min-[36rem]/act:hidden">below.</span>
                   <span className="hidden @min-[36rem]/act:inline">to the right.</span>
@@ -132,14 +132,14 @@ export function Verdict({
               )}
             </div>
           ) : (
-            <p className="rounded-md px-3 py-2 text-xs leading-relaxed text-subtle shadow-[0_0_0_1px_var(--color-border)]">
+            <p className="rounded-xl bg-bg px-3.5 py-3 text-xs leading-relaxed text-muted">
               <Link
                 to="/pricing"
                 className="font-medium text-accent underline underline-offset-2 hover:text-fg"
               >
                 Upgrade
               </Link>{" "}
-              <span className="opacity-70">to access Plan Survival (Monte Carlo Simulations)</span>
+              <span>to access Plan Survival (Monte Carlo Simulations)</span>
             </p>
           )}
       </div>
