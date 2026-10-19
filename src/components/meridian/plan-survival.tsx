@@ -76,6 +76,27 @@ function nextBoydLine(quotes: string[], current: string) {
   return line;
 }
 
+function SurvivalChance({ percent }: { percent: number | null }) {
+  const value = percent == null ? 0 : Math.max(0, Math.min(100, percent));
+  const color = percent == null ? "#c8d2de" : value >= 80 ? "#3a8a58" : value >= 50 ? "#c4922a" : "#a34b45";
+  return (
+    <div className="mt-4 flex flex-col items-center" aria-label={percent == null ? "Chance of success, not run yet" : `${percent} percent chance of success`}>
+      <div
+        className="grid h-[4.75rem] w-[4.75rem] place-items-center rounded-full"
+        style={{ background: `conic-gradient(${color} ${value * 3.6}deg, #e6ebf0 0deg)` }}
+        aria-hidden="true"
+      >
+        <div className="grid h-[3.7rem] w-[3.7rem] place-items-center rounded-full bg-white">
+          <span className="font-display text-xl font-semibold tabular-nums leading-none text-slate-900">
+            {percent == null ? "—" : `${percent}%`}
+          </span>
+        </div>
+      </div>
+      <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">Chance of success</p>
+    </div>
+  );
+}
+
 export function BoydQuote({
   quotes,
   pulse,
@@ -325,6 +346,7 @@ export function PlanSurvival({
   return (
     <div className={cn(card, "@min-[36rem]:flex @min-[36rem]:min-h-0 @min-[36rem]:flex-1 @min-[36rem]:flex-col")}>
       <SurvivalTitle />
+      <SurvivalChance percent={view.score ? view.score.score : null} />
       <BoydQuote quotes={quotes} pulse={checking} />
       <div
         className="mt-4 flex h-[9rem] shrink-0 flex-col items-center justify-center overflow-hidden rounded-md px-3 text-center"

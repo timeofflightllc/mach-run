@@ -214,7 +214,7 @@ function GoalScore({
           <div
             className="inline-flex shrink-0 rounded-full bg-bg p-1"
             role="group"
-            aria-label="Include guaranteed retirement income"
+            aria-label="Include guaranteed retirement income starting on Retirement Goal Date"
           >
             {(
               [
@@ -241,9 +241,9 @@ function GoalScore({
             })}
           </div>
           <span className="text-sm leading-5 text-fg">
-            Include guaranteed retirement income
+            Include guaranteed retirement income starting on Retirement Goal Date.
             <span className="mt-0.5 block text-xs leading-snug text-muted">
-              Military, VA, Social Security, pension, and annuity at the goal date.
+              Non-investment sources such as military, VA, Social Security, pension, and annuity, etc.
             </span>
           </span>
         </div>
