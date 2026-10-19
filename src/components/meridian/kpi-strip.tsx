@@ -643,7 +643,7 @@ export function KpiStrip({
 
   return (
     <dl className="@container/kpi rounded-2xl bg-surface px-5 py-5 shadow-[0_1px_2px_rgba(26,35,48,0.05),0_0_0_1px_var(--color-border)] sm:px-6">
-      <div className="grid grid-cols-2 gap-x-6 gap-y-5">
+      <div className="grid grid-cols-1 gap-x-6 gap-y-5 @min-[40rem]/kpi:grid-cols-2">
         <div>
           <HoverLabel
             label="Current spendable"

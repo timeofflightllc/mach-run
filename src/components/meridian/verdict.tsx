@@ -100,7 +100,7 @@ export function Verdict({
       {retLine ? (
         <p className="mt-3 text-sm leading-relaxed text-muted">{retLine}</p>
       ) : null}
-      <div className={cn("mt-4 grid items-start gap-3", rank && "@min-[32rem]/bluf:grid-cols-2")}>
+      <div className={cn("mt-4 grid items-start gap-3", rank && "@min-[40rem]/bluf:grid-cols-2")}>
           {rank ? (
             <div className="rounded-xl bg-bg px-3.5 py-3">
               <p className="text-sm font-semibold text-fg">
@@ -126,8 +126,8 @@ export function Verdict({
               ) : (
                 <p className="mt-2 text-sm leading-snug text-muted">
                   Run Monte Carlo Simulation on the card{" "}
-                  <span className="@min-[36rem]/act:hidden">below.</span>
-                  <span className="hidden @min-[36rem]/act:inline">to the right.</span>
+                  <span className="@min-[56rem]/act:hidden">below.</span>
+                  <span className="hidden @min-[56rem]/act:inline">to the right.</span>
                 </p>
               )}
             </div>
