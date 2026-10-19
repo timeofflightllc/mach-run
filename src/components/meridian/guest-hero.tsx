@@ -655,6 +655,13 @@ export function MilitaryHousehold() {
         >
           Start with just six questions
         </Link>
+        <img
+          src="/brand/veteran-owned.png"
+          alt="U.S. Veteran Owned Business"
+          width={338}
+          height={292}
+          className="mt-5 h-28 w-auto sm:h-32"
+        />
         <FlagStripe />
       </div>
     </section>
