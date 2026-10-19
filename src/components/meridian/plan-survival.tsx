@@ -82,12 +82,12 @@ function SurvivalChance({ percent }: { percent: number | null }) {
   return (
     <div className="mt-4 flex flex-col items-center" aria-label={percent == null ? "Chance of success, not run yet" : `${percent} percent chance of success`}>
       <div
-        className="grid h-[4.75rem] w-[4.75rem] place-items-center rounded-full"
+        className="grid h-32 w-32 place-items-center rounded-full"
         style={{ background: `conic-gradient(${color} ${value * 3.6}deg, #e6ebf0 0deg)` }}
         aria-hidden="true"
       >
-        <div className="grid h-[3.7rem] w-[3.7rem] place-items-center rounded-full bg-white">
-          <span className="font-display text-xl font-semibold tabular-nums leading-none text-slate-900">
+        <div className="grid h-[6.35rem] w-[6.35rem] place-items-center rounded-full bg-white">
+          <span className="font-display text-4xl font-semibold tabular-nums leading-none text-slate-900">
             {percent == null ? "—" : `${percent}%`}
           </span>
         </div>
