@@ -491,8 +491,8 @@ function GoalReadout({
         <span className="min-w-0 truncate font-display text-xl font-semibold tabular-nums tracking-tight text-fg">{left}</span>
         <span className="shrink-0 text-sm tabular-nums text-muted">{right}</span>
       </div>
-      <div className="mt-2.5 h-2 overflow-hidden rounded-full bg-[#e4e7df]" role="img" aria-label={aria}>
-        <div className="h-full rounded-full bg-accent" style={{ width: `${Math.min(100, Math.max(0, fill))}%` }} />
+      <div className="mt-3 h-5 overflow-hidden rounded-full bg-[#d7eadc]" role="img" aria-label={aria}>
+        <div className="h-full rounded-full bg-[#3a8a58]" style={{ width: `${Math.min(100, Math.max(0, fill))}%` }} />
       </div>
       <p className="mt-3 text-sm leading-5 text-fg">{status}</p>
       {note ? <p className="mt-1 text-sm leading-5 text-muted">{note}</p> : null}
