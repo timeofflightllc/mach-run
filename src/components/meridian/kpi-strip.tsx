@@ -258,6 +258,7 @@ function GoalScore({
           payFill={payFill}
           longevityAge={longevityAge}
           extraSave={extraSave}
+          includeGuaranteed={includeGuaranteed}
           onEdit={() => setEditing(true)}
         />
       ) : (
@@ -374,6 +375,7 @@ function MonthlyPayBar({
   payFill,
   longevityAge,
   extraSave,
+  includeGuaranteed,
   onEdit,
 }: {
   gap: NonNullable<ReturnType<typeof incomeGap>>;
@@ -382,11 +384,15 @@ function MonthlyPayBar({
   payFill: number;
   longevityAge: number;
   extraSave: number | null;
+  includeGuaranteed: boolean;
   onEdit?: () => void;
 }) {
   const take = canPay ?? gap.projected;
   const meets = payShort == null || payShort <= 1;
   const spare = payShort != null && payShort < -1 ? -payShort : 0;
+  const from = includeGuaranteed
+    ? "from all sources (investments withdrawals and guaranteed income)"
+    : "from only investment withdrawals";
   const status = `A withdrawal of ${usd(take)} a month lasts through age ${longevityAge}.`;
   const note = meets
     ? spare > 1
@@ -398,9 +404,13 @@ function MonthlyPayBar({
   return (
     <GoalReadout
       title="Monthly pay at retirement"
-      left={`${usd(take)} a month`}
+      left={
+        <>
+          <span className="tabular-nums">{usd(take)}</span> a month {from}
+        </>
+      }
       right={`${usd(gap.wanted)} goal`}
-      aria={`A withdrawal of ${usd(take)} a month through age ${longevityAge}, of the ${usd(gap.wanted)} goal`}
+      aria={`${usd(take)} a month ${from}, through age ${longevityAge}, of the ${usd(gap.wanted)} goal`}
       fill={payFill}
       status={status}
       note={note}
@@ -476,7 +486,7 @@ function GoalReadout({
   action,
 }: {
   title: string;
-  left: string;
+  left: ReactNode;
   right: string;
   aria: string;
   fill: number;
@@ -487,9 +497,9 @@ function GoalReadout({
   return (
     <div className="mt-5 flex flex-col">
       <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted">{title}</p>
-      <div className="mt-1.5 flex items-baseline justify-between gap-3">
-        <span className="min-w-0 truncate font-display text-xl font-semibold tabular-nums tracking-tight text-fg">{left}</span>
-        <span className="shrink-0 text-sm tabular-nums text-muted">{right}</span>
+      <div className="mt-1.5 flex items-start justify-between gap-3">
+        <span className="min-w-0 font-display text-xl font-semibold leading-snug tracking-tight text-fg">{left}</span>
+        <span className="shrink-0 pt-1 text-sm tabular-nums text-muted">{right}</span>
       </div>
       <div className="mt-3 h-5 overflow-hidden rounded-full bg-[#d7eadc]" role="img" aria-label={aria}>
         <div className="h-full rounded-full bg-[#3a8a58]" style={{ width: `${Math.min(100, Math.max(0, fill))}%` }} />
