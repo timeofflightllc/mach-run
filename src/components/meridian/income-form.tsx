@@ -1,15 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
 import {
-  DangerButton,
   DateInput,
   Field,
-  GhostButton,
   NumberInput,
   MonthYearMoney,
   PaycheckMoney,
   MoneyInput,
-  PrimaryButton,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
@@ -46,9 +42,8 @@ const TAX: { value: TaxTreatment; label: string }[] = [
 ];
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const summaryCols =
-  "w-full @min-[46rem]:min-w-[42rem] @min-[46rem]:grid @min-[46rem]:grid-cols-[minmax(5rem,1.15fr)_minmax(5.5rem,1fr)_minmax(6.5rem,10rem)_minmax(9.5rem,13rem)_minmax(5.5rem,8rem)_minmax(6.25rem,7.25rem)] @min-[46rem]:items-center @min-[46rem]:gap-x-3";
-const control = "h-10 max-w-none";
+const ask = "w-full items-center text-center [&>span]:w-full";
+const control = "max-w-none text-center text-base";
 
 function kindLabel(kind: IncomeKind): string {
   return KINDS.find((row) => row.value === kind)?.label ?? "Income";
@@ -189,71 +184,83 @@ export function IncomeForm() {
     .map((id) => plan.incomes.find((stream) => stream.id === id))
     .filter((stream): stream is IncomeStream => Boolean(stream));
 
+  const bar = (on: boolean) => (on ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]");
+  const named = plan.incomes.some((stream) => stream.name.trim().length > 0);
+  const funded = plan.incomes.some((stream) => {
+    if (stream.monthlyAmount > 0) return true;
+    if (stream.kind === "ss" && (stream.ssPia ?? 0) > 0) return true;
+    if (stream.kind === "va") return vaPayTodayDollars(plan, stream, monthStart(plan.assumptions.asOfDate)) > 0;
+    return false;
+  });
+  const dated = plan.incomes.length > 0 && plan.incomes.every((stream) => Boolean(stream.startDate));
+
   return (
-    <div className="@container mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
-      {copy.incomeBody.trim() ? (
-        <p className="whitespace-pre-wrap text-sm text-muted">{copy.incomeBody}</p>
-      ) : null}
-      <div className="min-w-0 w-full overflow-x-auto">
-      <ul className={`flex flex-col gap-2 ${summaryCols}`}>
-        {rows.length > 0 ? (
-          <li className="col-span-full hidden grid-cols-subgrid items-center text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid">
-            <span className="min-w-0 pl-3">Name</span>
-            <span className="min-w-0">Kind</span>
-            <span className="min-w-0">Amount</span>
-            <span className="min-w-0">When</span>
-            <span className="min-w-0">Tax</span>
-            <span className="pr-3" />
-          </li>
-        ) : null}
-        {rows.map((stream, index) => (
-          <IncomeRow
-            key={stream.id}
-            stream={stream}
-            index={index}
-            open={openId === stream.id}
-            advisory={advisories.find((row) => row.cardId === `card-income-${stream.id}`)}
-            onEdit={() => {
-              holdOrder();
-              setOpenId(stream.id);
-            }}
-            onSave={() => {
-              setOpenId(null);
-              releaseOrder();
-              offerSocialSecurity(stream);
-            }}
-            onRemove={() => setPendingRemove(stream.id)}
-          />
-        ))}
-      </ul>
+    <div className="flex w-full flex-col">
+      <div className="mb-4 flex gap-1.5" aria-hidden="true">
+        <span className={bar(named)} />
+        <span className={bar(funded)} />
+        <span className={bar(dated)} />
       </div>
-      {capped ? (
-        <UpgradeNudge kind="incomes" />
-      ) : (
-        <GhostButton
-          onClick={() => {
-            const id = newId("inc");
-            freshIds.current.add(id);
-            const base = frozen ?? sortedIncomes(plan, plan.incomes).map((stream) => stream.id);
-            setFrozen([...base, id]);
-            addIncome({
-              id,
-              name: "",
-              kind: "salary",
-              monthlyAmount: 0,
-              startDate: plan.assumptions.asOfDate,
-              endDate: null,
-              colaPct: null,
-              taxTreatment: "ordinary",
-              person: "household",
-            });
-            setOpenId(id);
-          }}
-        >
-          <Plus className="size-4" />
-          Add income
-        </GhostButton>
-      )}
+      <h2 className="text-center font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
+        What income is coming in?
+      </h2>
+      {copy.incomeBody.trim() ? (
+        <p className="mt-2 whitespace-pre-wrap text-center text-sm text-[#3d4a54]">{copy.incomeBody}</p>
+      ) : null}
+      <div className="mt-6 flex flex-col gap-4">
+        {rows.length ? (
+          <ul className="flex flex-col gap-2">
+            {rows.map((stream, index) => (
+              <IncomeRow
+                key={stream.id}
+                stream={stream}
+                index={index}
+                open={openId === stream.id}
+                advisory={advisories.find((row) => row.cardId === `card-income-${stream.id}`)}
+                onEdit={() => {
+                  holdOrder();
+                  setOpenId(stream.id);
+                }}
+                onSave={() => {
+                  setOpenId(null);
+                  releaseOrder();
+                  offerSocialSecurity(stream);
+                }}
+                onRemove={() => setPendingRemove(stream.id)}
+              />
+            ))}
+          </ul>
+        ) : null}
+        {capped ? (
+          <UpgradeNudge kind="incomes" />
+        ) : (
+          <button
+            type="button"
+            className="min-h-12 rounded-xl bg-[#f3f0e8] px-3 text-base text-[#1a2330] hover:bg-[#e7e2d8]"
+            onClick={() => {
+              const id = newId("inc");
+              freshIds.current.add(id);
+              const base = frozen ?? sortedIncomes(plan, plan.incomes).map((stream) => stream.id);
+              setFrozen([...base, id]);
+              addIncome({
+                id,
+                name: "",
+                kind: "salary",
+                monthlyAmount: 0,
+                startDate: plan.assumptions.asOfDate,
+                endDate: null,
+                colaPct: null,
+                taxTreatment: "ordinary",
+                person: "household",
+              });
+              setOpenId(id);
+            }}
+          >
+            Add income
+          </button>
+        )}
+      </div>
+
       {pendingRemove ? (
         <ConfirmRemove
           title="Remove income"
@@ -420,18 +427,10 @@ function IncomeRow({
   }
 
   return (
-    <li
-      id={`card-income-${s.id}`}
-      className="col-span-full rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)] @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid @min-[46rem]:items-center @min-[46rem]:px-0"
-    >
-      <div
-        className="col-span-full grid px-0 transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:px-3"
-        style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
-        inert={!open}
-      >
-        <div className="min-h-0 overflow-hidden">
-          <div className="card-fields flex flex-wrap items-end gap-x-3 gap-y-3 pb-1">
-            <Field label="Name" className="w-44 shrink-0">
+    <li id={`card-income-${s.id}`} className="rounded-xl bg-[#f3f0e8] px-3 py-2">
+      {open ? (
+          <div className="flex flex-col gap-4 py-2">
+            <Field label="Name" className={ask}>
               <TextInput
                 value={s.name}
                 placeholder="Name this income"
@@ -439,7 +438,7 @@ function IncomeRow({
                 className={control}
               />
             </Field>
-            <Field label="Kind" className="w-[18rem] shrink-0">
+            <Field label="Kind" className={ask}>
               <SelectInput
                 value={s.kind}
                 className={control}
@@ -453,7 +452,7 @@ function IncomeRow({
               </SelectInput>
             </Field>
             {s.kind === "salary" || s.kind === "bonus" ? (
-              <Field label="Who earns this?" className="w-44 shrink-0">
+              <Field label="Who earns this?" className={ask}>
                 <SelectInput
                   value={s.person === "spouse" ? "spouse" : "primary"}
                   className={control}
@@ -468,7 +467,7 @@ function IncomeRow({
             ) : null}
             {s.kind === "ss" ? (
               <>
-                <Field label="Who is this Social Security for?" className="w-[16.5rem] shrink-0">
+                <Field label="Who is this Social Security for?" className={ask}>
                   <SelectInput
                     value={person}
                     className={control}
@@ -483,8 +482,9 @@ function IncomeRow({
                   </SelectInput>
                 </Field>
                 {person === "other" ? (
-                  <Field label="Their birth date" className="shrink-0">
+                  <Field label="Their birth date" className={ask}>
                     <DateInput
+                      className="justify-center"
                       value={s.ssBirthDate ?? ""}
                       onValue={(v) => {
                         const window = ssScheduleDates(v, claimAge, endAge);
@@ -493,7 +493,7 @@ function IncomeRow({
                     />
                   </Field>
                 ) : null}
-                <Field label="PIA at FRA (today $)" className="w-40 shrink-0">
+                <Field label="PIA at FRA (today $)" className={ask}>
                   <MoneyInput
                     value={s.ssPia ?? 0}
                     className={control}
@@ -505,7 +505,7 @@ function IncomeRow({
                     }
                   />
                 </Field>
-                <Field label="Claiming age" className="w-[7.5rem] shrink-0">
+                <Field label="Claiming age" className={ask}>
                   <NumberInput
                     min={62}
                     max={70}
@@ -519,6 +519,7 @@ function IncomeRow({
             ) : s.kind === "va" ? null : s.kind === "salary" ||
               s.kind === "bonus" ||
               s.kind === "allowance" ? (
+              <div className="flex justify-center">
               <PaycheckMoney
                 compact
                 monthly={s.monthlyAmount}
@@ -526,17 +527,20 @@ function IncomeRow({
                 cadence={s.payCadence}
                 onChange={(next) => updateIncome(s.id, next)}
               />
+              </div>
             ) : (
               <MonthYearMoney
                 compact
+                fieldClassName={ask}
                 monthLabel="$ / month"
                 yearLabel="$ / year"
                 monthly={s.monthlyAmount}
                 onMonthly={(n) => updateIncome(s.id, { monthlyAmount: n })}
               />
             )}
-            <Field label="Start" className="shrink-0">
+            <Field label="Start" className={ask}>
               <DateInput
+                      className="justify-center"
                 value={s.startDate}
                 onValue={(v) =>
                   updateIncome(s.id, {
@@ -549,9 +553,10 @@ function IncomeRow({
             </Field>
             <Field
               label={blankEndLabel(plan.primary.birthDate, plan.assumptions.projectionEndAge)}
-              className="shrink-0"
+              className={ask}
             >
               <DateInput
+                      className="justify-center"
                 value={s.endDate}
                 clearable
                 onValue={(v) =>
@@ -562,7 +567,7 @@ function IncomeRow({
                 }
               />
             </Field>
-            <Field label="Tax" className="w-[11.5rem] shrink-0">
+            <Field label="Tax" className={ask}>
               <SelectInput
                 value={s.kind === "ss" ? "ss" : s.taxTreatment}
                 className={control}
@@ -577,7 +582,7 @@ function IncomeRow({
                 ))}
               </SelectInput>
             </Field>
-            <Field label="COLA % / yr" className="w-[7rem] shrink-0">
+            <Field label="COLA % / yr" className={ask}>
               <NumberInput
                 step={0.1}
                 value={s.colaPct ?? plan.assumptions.defaultColaPct ?? 2.5}
@@ -586,7 +591,7 @@ function IncomeRow({
               />
             </Field>
             {monthAfterPrevious && s.kind !== "ss" ? (
-              <label className="flex h-10 max-w-xs items-center gap-2 self-end text-sm text-fg">
+              <label className="flex items-center justify-center gap-2 text-center text-sm text-[#1a2330]">
                 <input
                   type="checkbox"
                   className="size-4 shrink-0"
@@ -602,41 +607,32 @@ function IncomeRow({
                 Start the month after {previousLabel} ends
               </label>
             ) : null}
-            <PrimaryButton className="h-10 self-end" onClick={onSave}>
+            <button type="button" className="min-h-12 rounded-xl bg-[#3a8a58] px-3 text-base font-medium text-white" onClick={onSave}>
               Save income
-            </PrimaryButton>
-            <div className="flex items-end justify-end">
-              <DangerButton
-                aria-label={`Remove ${s.name || "income"}`}
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  onRemove();
-                }}
-              >
-                <Trash2 className="size-4" />
-              </DangerButton>
-            </div>
+            </button>
+            <button type="button" className="text-sm text-muted hover:text-negative" onClick={onRemove}>
+              Remove
+            </button>
             {s.kind === "ss" ? (
-              <p className="basis-full text-xs leading-relaxed text-subtle">
+              <p className="text-center text-sm leading-relaxed text-subtle">
                 Primary and spouse come from Family. Other is anyone else in the household.
               </p>
             ) : null}
             {s.kind === "ss" && ssOrdinal >= 3 ? (
-              <p className="basis-full text-xs leading-relaxed text-[#5c4a18]">
+              <p className="text-center text-sm leading-relaxed text-[#5c4a18]">
                 You already have two Social Security incomes. Are you sure you want a third? That’s
                 unusual unless another family member lives with you and has their own benefit.
               </p>
             ) : null}
             {s.kind === "ss" ? (
               !ssWindow ? (
-                <p className="basis-full text-xs leading-relaxed text-[#5c4a18]">
+                <p className="text-center text-sm leading-relaxed text-[#5c4a18]">
                   {person === "other"
                     ? "Add a birth date for this other household member so MACH RUN can set the Social Security start and end dates."
                     : `Add a birth date for ${ownerLabel} in Family so MACH RUN can set the Social Security start and end dates.`}
                 </p>
               ) : (
-                <p className="basis-full text-xs leading-relaxed text-[#5c4a18]">
+                <p className="text-center text-sm leading-relaxed text-[#5c4a18]">
                   Social Security for {ownerLabel} starts at claiming age {claimAge} and is set to
                   expire at age {endAge} (Family → Project through longevity age). Pays{" "}
                   {s.ssPia
@@ -647,92 +643,58 @@ function IncomeRow({
               )
             ) : null}
             {s.kind === "ss" ? (
-              <p className="basis-full text-xs leading-relaxed text-subtle">
+              <p className="text-center text-sm leading-relaxed text-subtle">
                 Social Security tax treatment is set automatically when Kind is Social Security.
               </p>
             ) : null}
             {s.kind === "ss" && s.ssEstimated ? (
-              <p className="basis-full text-xs leading-relaxed text-[#5c4a18]">
+              <p className="text-center text-sm leading-relaxed text-[#5c4a18]">
                 Estimated from covered pay since age 22, in today's dollars, capped at the wage base.
                 Not a Social Security statement.
               </p>
             ) : null}
             {s.kind === "ss" && s.ssEstimated === false ? (
-              <p className="basis-full text-xs leading-relaxed text-subtle">
+              <p className="text-center text-sm leading-relaxed text-subtle">
                 The plan is using your amount, not the covered-pay estimate.
               </p>
             ) : null}
-            <p className="basis-full text-xs leading-relaxed text-subtle">
+            <p className="text-center text-sm leading-relaxed text-subtle">
               COLA starts at the Family default. Type over it for this income only.
             </p>
             {s.kind === "va" ? (
-              <div className="basis-full">
+              <div>
                 <VaKids stream={s} />
               </div>
             ) : null}
             {open && advisory ? (
-              <div className="basis-full">
+              <div>
                 <AdvisoryNote advisory={advisory} />
               </div>
             ) : null}
           </div>
-        </div>
-      </div>
-      <div
-        className="col-span-full grid transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:grid-cols-subgrid"
-        style={{ gridTemplateRows: open ? "0fr" : "1fr" }}
-        inert={open}
-      >
-        <div className="col-span-full min-h-0 overflow-hidden @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid">
-          <div className="col-span-full flex items-center gap-3 @min-[46rem]:hidden">
-            <p className="min-w-0 flex-1 truncate text-sm text-fg">
-              <span className="font-medium">{name}</span>
-              <span className="text-muted"> · {kindLabel(s.kind)}</span>
-              <span className="text-muted"> · {amountLabel(plan, s)}</span>
-              <span className="text-muted"> · {whenLabel(plan, s)}</span>
-              <span className="text-muted"> · {taxLabel(s.kind, s.taxTreatment)}</span>
-            </p>
-            <button
-              type="button"
-              className="shrink-0 text-xs text-muted hover:text-negative"
-              onClick={onRemove}
-            >
-              Remove
-            </button>
-            <button type="button" className="shrink-0 text-sm font-medium text-fg" onClick={onEdit}>
-              Edit
-            </button>
-          </div>
-          <div className="col-span-full hidden grid-cols-subgrid items-center text-sm @min-[46rem]:grid">
-            <span className="min-w-0 truncate pl-3 font-medium text-fg">{name}</span>
-            <span className="min-w-0 truncate text-muted">{kindLabel(s.kind)}</span>
-            <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-fg">
-              {amountLabel(plan, s)}
+      ) : (
+        <div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="min-w-0 text-left">
+              <span className="block truncate text-sm font-medium text-fg">{name}</span>
+              <span className="block text-xs text-muted">{kindLabel(s.kind)} · {amountLabel(plan, s)}</span>
             </span>
-            <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-muted">
-              {whenLabel(plan, s)}
-            </span>
-            <span className="min-w-0 truncate text-muted">{taxLabel(s.kind, s.taxTreatment)}</span>
-            <span className="flex min-w-0 items-center justify-end gap-3 pr-3">
-              <button
-                type="button"
-                className="text-xs text-muted hover:text-negative"
-                onClick={onRemove}
-              >
+            <span className="flex shrink-0 items-center gap-3">
+              <button type="button" className="text-xs text-muted hover:text-negative" onClick={onRemove}>
                 Remove
               </button>
-              <button type="button" className="font-medium text-fg" onClick={onEdit}>
+              <button type="button" className="text-sm font-medium text-fg" onClick={onEdit}>
                 Edit
               </button>
             </span>
           </div>
-          {!open && advisory ? (
-            <div className="col-span-full mt-2 px-3">
+          {advisory ? (
+            <div className="mt-2">
               <AdvisoryNote advisory={advisory} />
             </div>
           ) : null}
         </div>
-      </div>
+      )}
     </li>
   );
 }

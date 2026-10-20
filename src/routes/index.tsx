@@ -681,11 +681,13 @@ function PhaseFolderTabs({
   tabs,
   active,
   onPick,
+  face = "surface",
 }: {
   name: string;
   tabs: readonly { id: StepId; label: string }[];
   active: StepId;
   onPick: (id: StepId) => void;
+  face?: "surface" | "white";
 }) {
   return (
     <div
@@ -705,7 +707,9 @@ function PhaseFolderTabs({
             className={cn(
               "whitespace-nowrap rounded-t-lg rounded-b-none px-1.5 font-display text-[12px] font-medium leading-none tracking-normal min-[400px]:text-[13px] min-[520px]:px-2 min-[520px]:font-sans min-[520px]:text-xs sm:px-3.5 sm:text-sm",
               on
-                ? "z-10 bg-surface pb-2.5 pt-2 text-fg shadow-[0_-1px_0_0_var(--color-border),1px_0_0_0_var(--color-border),-1px_0_0_0_var(--color-border)]"
+                ? face === "white"
+                  ? "z-10 bg-white pb-2.5 pt-2 text-[#1a2330] shadow-[0_-1px_0_0_#d5d0c6,1px_0_0_0_#d5d0c6,-1px_0_0_0_#d5d0c6]"
+                  : "z-10 bg-surface pb-2.5 pt-2 text-fg shadow-[0_-1px_0_0_var(--color-border),1px_0_0_0_var(--color-border),-1px_0_0_0_var(--color-border)]"
                 : "z-0 mb-1.5 bg-section-lift pb-2 pt-1.5 text-muted shadow-[0_0_0_1px_var(--color-section-lift-border)]",
             )}
           >
@@ -731,6 +735,37 @@ function PhaseHead({
       <PhaseLabel id={id} label={label} className="mb-2 shrink-0 leading-none" />
       {tabs}
     </div>
+  );
+}
+
+function WhiteStep({
+  id,
+  phase,
+  title,
+  tabs,
+  nav,
+  narrow,
+  children,
+}: {
+  id: string;
+  phase: string;
+  title: string;
+  tabs: ReactNode;
+  nav: ReactNode;
+  narrow?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <>
+      <PhaseHead id={id} label={phase} tabs={tabs} />
+      <section className="rounded-xl bg-white px-4 pb-6 pt-5 shadow-[0_0_0_1px_#d5d0c6] sm:px-8">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">{title}</h2>
+          <div className="flex shrink-0 items-center gap-2">{nav}</div>
+        </div>
+        {narrow ? <div className="mx-auto w-full max-w-lg">{children}</div> : children}
+      </section>
+    </>
   );
 }
 
@@ -1994,19 +2029,16 @@ function Home() {
           >
             <div className={inputFrame}>
             <div>
-            <PhaseHead
+            <WhiteStep
               id="ooda-observe"
-              label="Observe"
-              tabs={<PhaseFolderTabs name="Observe" tabs={OBSERVE_TABS} active="family" onPick={goStep} />}
-            />
-            <Section
+              phase="Observe"
               title="Family"
-              hint={copy.familyHint}
-              pinned
+              tabs={<PhaseFolderTabs name="Observe" tabs={OBSERVE_TABS} active="family" onPick={goStep} face="white" />}
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
+              narrow
             >
               <HouseholdForm />
-            </Section>
+            </WhiteStep>
             </div>
             </div>
           </div>
@@ -2021,19 +2053,16 @@ function Home() {
           >
             <div className={inputFrame}>
             <div>
-            <PhaseHead
+            <WhiteStep
               id="ooda-observe-assumptions"
-              label="Observe"
-              tabs={<PhaseFolderTabs name="Observe" tabs={OBSERVE_TABS} active="assumptions" onPick={goStep} />}
-            />
-            <Section
+              phase="Observe"
               title="Assumptions"
-              hint={copy.assumptionsHint}
-              pinned
+              tabs={<PhaseFolderTabs name="Observe" tabs={OBSERVE_TABS} active="assumptions" onPick={goStep} face="white" />}
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
+              narrow
             >
               <AssumptionsForm />
-            </Section>
+            </WhiteStep>
             </div>
             </div>
           </div>
@@ -2048,19 +2077,16 @@ function Home() {
           >
             <div className={inputFrame}>
             <div>
-            <PhaseHead
+            <WhiteStep
               id="ooda-observe-assets"
-              label="Observe"
-              tabs={<PhaseFolderTabs name="Observe" tabs={OBSERVE_TABS} active="assets" onPick={goStep} />}
-            />
-            <Section
-              title="Accounts - Assets"
-              hint={copy.assetsHint}
-              pinned
+              phase="Observe"
+              title="Assets"
+              tabs={<PhaseFolderTabs name="Observe" tabs={OBSERVE_TABS} active="assets" onPick={goStep} face="white" />}
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
+              narrow
             >
               <PortfolioForm />
-            </Section>
+            </WhiteStep>
             </div>
             </div>
           </div>
@@ -2075,19 +2101,16 @@ function Home() {
           >
             <div className={inputFrame}>
             <div>
-            <PhaseHead
+            <WhiteStep
               id="ooda-observe-liabilities"
-              label="Observe"
-              tabs={<PhaseFolderTabs name="Observe" tabs={OBSERVE_TABS} active="liabilities" onPick={goStep} />}
-            />
-            <Section
-              title="Accounts - Liabilities"
-              hint={copy.liabilitiesHint}
-              pinned
+              phase="Observe"
+              title="Liabilities"
+              tabs={<PhaseFolderTabs name="Observe" tabs={OBSERVE_TABS} active="liabilities" onPick={goStep} face="white" />}
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
+              narrow
             >
               <LiabilityForm onNone={() => goStep("income")} />
-            </Section>
+            </WhiteStep>
             </div>
             </div>
           </div>
@@ -2102,19 +2125,16 @@ function Home() {
           >
             <div className={inputFrame}>
             <div>
-            <PhaseHead
+            <WhiteStep
               id="ooda-orient"
-              label="Orient"
-              tabs={<PhaseFolderTabs name="Orient" tabs={ORIENT_TABS} active="income" onPick={goStep} />}
-            />
-            <Section
+              phase="Orient"
               title="Income"
-              hint={copy.incomeHint}
-              pinned
+              tabs={<PhaseFolderTabs name="Orient" tabs={ORIENT_TABS} active="income" onPick={goStep} face="white" />}
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
+              narrow
             >
               <IncomeForm />
-            </Section>
+            </WhiteStep>
             </div>
             </div>
           </div>
@@ -2129,19 +2149,16 @@ function Home() {
           >
             <div className={inputFrame}>
             <div>
-            <PhaseHead
+            <WhiteStep
               id="ooda-orient-spending"
-              label="Orient"
-              tabs={<PhaseFolderTabs name="Orient" tabs={ORIENT_TABS} active="spending" onPick={goStep} />}
-            />
-            <Section
+              phase="Orient"
               title="Spending"
-              hint={copy.spendingHint}
-              pinned
+              tabs={<PhaseFolderTabs name="Orient" tabs={ORIENT_TABS} active="spending" onPick={goStep} face="white" />}
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
+              narrow
             >
               <SpendingForm />
-            </Section>
+            </WhiteStep>
             </div>
             </div>
           </div>
@@ -2156,19 +2173,16 @@ function Home() {
           >
             <div className={inputFrame}>
             <div>
-            <PhaseHead
+            <WhiteStep
               id="ooda-decide"
-              label="Decide"
-              tabs={<PhaseFolderTabs name="Decide" tabs={DECIDE_TABS} active="goals" onPick={goStep} />}
-            />
-            <Section
+              phase="Decide"
               title="Goals"
-              hint={copy.goalsHint}
-              pinned
+              tabs={<PhaseFolderTabs name="Decide" tabs={DECIDE_TABS} active="goals" onPick={goStep} face="white" />}
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
+              narrow
             >
               <GoalsForm />
-            </Section>
+            </WhiteStep>
             </div>
             </div>
           </div>
@@ -2183,19 +2197,16 @@ function Home() {
           >
             <div className={inputFrame}>
             <div>
-            <PhaseHead
+            <WhiteStep
               id="ooda-decide-contributions"
-              label="Decide"
-              tabs={<PhaseFolderTabs name="Decide" tabs={DECIDE_TABS} active="contributions" onPick={goStep} />}
-            />
-            <Section
+              phase="Decide"
               title="Contributions"
-              hint={copy.contributionsHint}
-              pinned
+              tabs={<PhaseFolderTabs name="Decide" tabs={DECIDE_TABS} active="contributions" onPick={goStep} face="white" />}
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
+              narrow
             >
               <ContributionForm />
-            </Section>
+            </WhiteStep>
             </div>
             </div>
           </div>

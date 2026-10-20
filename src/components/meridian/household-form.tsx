@@ -13,77 +13,107 @@ export function HouseholdForm() {
   const updateChild = usePlanStore((s) => s.updateChild);
   const removeChild = usePlanStore((s) => s.removeChild);
   const spouseOnFile = Boolean(plan.spouse.name.trim() || plan.spouse.birthDate);
+  const [householdPick, setHouseholdPick] = useState<"me" | "spouse" | null>(spouseOnFile ? "spouse" : null);
   const [includeSpouse, setIncludeSpouse] = useState(spouseOnFile);
   const [addingDependent, setAddingDependent] = useState(false);
   const [editingChildId, setEditingChildId] = useState<string | null>(null);
   const [removingChildId, setRemovingChildId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (spouseOnFile) setIncludeSpouse(true);
+    if (spouseOnFile) {
+      setIncludeSpouse(true);
+      setHouseholdPick("spouse");
+    }
   }, [spouseOnFile]);
 
   return (
-    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-5 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
-          <Field label="Primary name" className="w-full max-w-[16rem]">
-            <TextInput
-              value={plan.primary.name}
-              onChange={(e) => patchPrimary({ name: e.target.value })}
-              placeholder="Name"
-            />
-          </Field>
-          <Field label="Primary birthday" className="w-auto">
-            <DateInput
-              value={plan.primary.birthDate}
-              onValue={(v) => patchPrimary({ birthDate: v })}
-            />
-          </Field>
-          <label className="flex h-11 items-center gap-2 text-sm text-fg">
-            <input
-              type="checkbox"
-              checked={includeSpouse}
-              onChange={(e) => {
-                const on = e.target.checked;
-                setIncludeSpouse(on);
-                if (!on) patchSpouse({ name: "", birthDate: "" });
-              }}
-            />
-            Include spouse or significant other
-          </label>
+    <div className="flex w-full flex-col">
+      <div className="mb-4 flex gap-1.5" aria-hidden="true">
+        <span className={plan.primary.name.trim() || plan.primary.birthDate ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]"} />
+        <span className={householdPick ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]"} />
+        <span className={plan.children.length ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]"} />
+      </div>
+      <h2 className="text-center font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
+        Who is this plan for?
+      </h2>
+      <p className="mt-2 text-center text-sm text-[#3d4a54]">Start with you. Add a spouse or a child if they belong here.</p>
+      <div className="mt-6 flex flex-col gap-4">
+        <Field label="Your name" className="w-full items-center text-center [&>span]:w-full">
+          <TextInput
+            value={plan.primary.name}
+            onChange={(e) => patchPrimary({ name: e.target.value })}
+            placeholder="Name"
+            className="max-w-none text-center text-base"
+          />
+        </Field>
+        <Field label="Your birthday" className="w-full items-center text-center [&>span]:w-full">
+          <DateInput
+            value={plan.primary.birthDate}
+            onValue={(v) => patchPrimary({ birthDate: v })}
+            className="justify-center"
+          />
+        </Field>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            aria-pressed={householdPick === "me"}
+            onClick={() => {
+              setHouseholdPick("me");
+              setIncludeSpouse(false);
+              patchSpouse({ name: "", birthDate: "" });
+            }}
+            className={
+              householdPick === "me"
+                ? "min-h-14 rounded-xl bg-[#3a8a58] px-2 text-base font-medium text-white"
+                : "min-h-14 rounded-xl bg-[#f3f0e8] px-2 text-base text-[#1a2330]"
+            }
+          >
+            Just me
+          </button>
+          <button
+            type="button"
+            aria-pressed={householdPick === "spouse"}
+            onClick={() => {
+              setHouseholdPick("spouse");
+              setIncludeSpouse(true);
+            }}
+            className={
+              householdPick === "spouse"
+                ? "min-h-14 rounded-xl bg-[#3a8a58] px-2 text-base font-medium text-white"
+                : "min-h-14 rounded-xl bg-[#f3f0e8] px-2 text-base text-[#1a2330]"
+            }
+          >
+            Spouse or partner
+          </button>
         </div>
         {includeSpouse ? (
-          <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
-            <Field label="Spouse or Significant Other's Name" className="w-full max-w-[16rem]">
+          <div className="flex flex-col gap-4">
+            <Field label="Their name" className="w-full items-center text-center [&>span]:w-full">
               <TextInput
                 value={plan.spouse.name}
                 onChange={(e) => patchSpouse({ name: e.target.value })}
                 placeholder="Name"
+                className="max-w-none text-center text-base"
               />
             </Field>
-            <Field label="Birth date" className="w-auto">
+            <Field label="Their birthday" className="w-full items-center text-center [&>span]:w-full">
               <DateInput
                 value={plan.spouse.birthDate}
                 onValue={(v) => patchSpouse({ birthDate: v })}
+                className="justify-center"
               />
             </Field>
           </div>
         ) : null}
         <button
           type="button"
-          className="h-10 self-start rounded-lg px-3 text-sm text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-surface"
+          className="min-h-12 rounded-xl bg-[#f3f0e8] px-3 text-base text-[#1a2330] hover:bg-[#e7e2d8]"
           onClick={() => setAddingDependent(true)}
         >
-          Add additional child
+          Add a child
         </button>
         {plan.children.length ? (
-          <div className="flex flex-col gap-2">
-            <div className="grid grid-cols-[minmax(0,1fr)_2.75rem_auto] items-center gap-x-3 px-3 text-xs font-medium text-muted sm:grid-cols-[minmax(0,11rem)_4rem_minmax(0,1fr)_auto] sm:gap-x-6">
-              <span className="text-left">Child's Name</span>
-              <span className="text-left">Age</span>
-              <span className="hidden text-left sm:block">Birthday</span>
-              <span className="sm:hidden" />
-            </div>
+          <div className="flex flex-col gap-2 border-t border-[#e7e2d8] pt-4">
             <ul className="flex flex-col gap-2">
             {[...plan.children]
               .sort((a, b) => {
@@ -100,59 +130,43 @@ export function HouseholdForm() {
                 ? String(ageYears(child.birthDate, parseDate(plan.assumptions.asOfDate)))
                 : "—";
               return (
-                <li
-                  key={child.id}
-                  className="rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)]"
-                >
+                <li key={child.id} className="rounded-xl bg-[#f3f0e8] px-3 py-2">
                   {editing ? (
-                    <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
-                      <Field label="First name" className="w-full max-w-[16rem]">
+                    <div className="flex flex-col gap-3">
+                      <Field label="First name" className="w-full items-center text-center [&>span]:w-full">
                         <TextInput
                           value={child.name}
                           onChange={(e) => updateChild(child.id, { name: e.target.value })}
+                          className="max-w-none text-center"
                         />
                       </Field>
-                      <Field label="Birthday" className="w-auto">
+                      <Field label="Birthday" className="w-full items-center text-center [&>span]:w-full">
                         <DateInput
                           value={child.birthDate}
                           onValue={(v) => updateChild(child.id, { birthDate: v })}
+                          className="justify-center"
                         />
                       </Field>
-                      <div className="flex h-11 items-center gap-3">
-                        <button
-                          type="button"
-                          className="text-sm font-medium text-fg"
-                          onClick={() => setEditingChildId(null)}
-                        >
+                      <div className="flex items-center justify-center gap-4">
+                        <button type="button" className="text-sm font-medium text-fg" onClick={() => setEditingChildId(null)}>
                           Save and Close
                         </button>
-                        <button
-                          type="button"
-                          className="text-xs text-muted hover:text-negative"
-                          onClick={() => setRemovingChildId(child.id)}
-                        >
+                        <button type="button" className="text-xs text-muted hover:text-negative" onClick={() => setRemovingChildId(child.id)}>
                           Remove
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-[minmax(0,1fr)_2.75rem_auto] items-center gap-x-3 sm:grid-cols-[minmax(0,11rem)_4rem_minmax(0,1fr)_auto] sm:gap-x-6">
-                      <span className="truncate text-left text-sm font-medium text-fg">{name}</span>
-                      <span className="text-left text-sm tabular-nums text-fg">{age}</span>
-                      <span className="hidden truncate text-left text-sm text-fg sm:block">{born}</span>
-                      <span className="flex items-center justify-end gap-3">
-                        <button
-                          type="button"
-                          className="shrink-0 text-xs text-muted hover:text-negative"
-                          onClick={() => setRemovingChildId(child.id)}
-                        >
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="min-w-0 text-left">
+                        <span className="block truncate text-sm font-medium text-fg">{name}</span>
+                        <span className="block text-xs text-muted">{age === "—" ? born : `Age ${age} · ${born}`}</span>
+                      </span>
+                      <span className="flex shrink-0 items-center gap-3">
+                        <button type="button" className="text-xs text-muted hover:text-negative" onClick={() => setRemovingChildId(child.id)}>
                           Remove
                         </button>
-                        <button
-                          type="button"
-                          className="shrink-0 text-sm font-medium text-fg"
-                          onClick={() => setEditingChildId(child.id)}
-                        >
+                        <button type="button" className="text-sm font-medium text-fg" onClick={() => setEditingChildId(child.id)}>
                           Edit
                         </button>
                       </span>
@@ -194,255 +208,252 @@ export function GoalsForm() {
   const plan = usePlanStore((s) => s.plan);
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
   const [editingAsOf, setEditingAsOf] = useState(false);
-  const pct = "w-[4.75rem] max-w-full";
+  const ask = "w-full items-center text-center [&>span]:w-full";
+  const num = "max-w-none text-center text-base";
   const goal = plan.assumptions.retirementGoalDate;
   const asOf = plan.assumptions.asOfDate.slice(0, 7);
   const already = Boolean(goal && goal.slice(0, 7) <= asOf);
+  const incomeMode = plan.assumptions.goalMode === "income";
+  const bar = (on: boolean) => (on ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]");
+  const dated = Boolean(goal);
+  const longevity = Number.isFinite(plan.assumptions.projectionEndAge);
+  const aimed = incomeMode
+    ? (plan.assumptions.incomeGoalMonthly ?? 0) > 0
+    : (plan.assumptions.nestEggGoal ?? 0) > 0;
+  const pill = (on: boolean) =>
+    on
+      ? "min-h-14 rounded-xl bg-[#3a8a58] px-2 text-base font-medium text-white"
+      : "min-h-14 rounded-xl bg-[#f3f0e8] px-2 text-base text-[#1a2330]";
 
   return (
-    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-3 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
-      <div className="flex flex-col gap-4 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
-        <div className="grid items-end gap-x-6 gap-y-4 sm:grid-cols-2 xl:grid-cols-[minmax(11rem,1fr)_14.5rem_minmax(18rem,1.6fr)]">
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <span className="text-xs font-medium tracking-wide text-muted">As-of date</span>
-            {editingAsOf ? (
-              <DateInput
-                value={plan.assumptions.asOfDate}
-                onValue={(v) => {
-                  if (v) patchAssumptions({ asOfDate: v });
-                }}
-              />
-            ) : (
-              <div className="flex h-11 items-center gap-3">
-                <p className="min-w-0 text-sm text-fg">{longDate(plan.assumptions.asOfDate)}</p>
-                <button
-                  type="button"
-                  className="shrink-0 text-xs text-fg underline-offset-4 hover:underline"
-                  onClick={() => setEditingAsOf(true)}
-                >
-                  Change
-                </button>
-              </div>
-            )}
-          </div>
-          <Field label="Project through longevity age" className="w-full whitespace-nowrap">
-            <NumberInput
-              min={70}
-              max={110}
-              step={1}
-              value={plan.assumptions.projectionEndAge}
-              onValue={(n) => patchAssumptions({ projectionEndAge: n })}
-              className={pct}
+    <div className="flex w-full flex-col">
+      <div className="mb-4 flex gap-1.5" aria-hidden="true">
+        <span className={bar(dated)} />
+        <span className={bar(longevity)} />
+        <span className={bar(aimed)} />
+      </div>
+      <h2 className="text-center font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
+        What are you aiming for?
+      </h2>
+      <p className="mt-2 text-center text-sm text-[#3d4a54]">
+        Balances peg to the as-of date. Blank end dates run through the longevity age. Act’s Spendable strip keys off the retirement date. Pick a nest egg or a monthly paycheck. Pension, VA, military retired pay, and Social Security in this run count toward the paycheck. A blank goal is not scored.
+      </p>
+      <div className="mt-6 flex flex-col gap-4">
+        <Field label="As-of date" className={ask}>
+          {editingAsOf ? (
+            <DateInput
+              className="justify-center"
+              value={plan.assumptions.asOfDate}
+              onValue={(v) => {
+                if (v) patchAssumptions({ asOfDate: v });
+              }}
             />
-          </Field>
-          <div className="flex min-w-0 items-end gap-3">
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <span className="text-xs font-medium tracking-wide text-muted">
-                {already ? "Retired" : "Retirement goal date"}
-              </span>
-              {already ? (
-                <MonthInput
-                  value={goal}
-                  onValue={(v) => patchAssumptions({ retirementGoalDate: v === "" ? null : v })}
-                />
-              ) : (
-                <DateInput
-                  value={goal}
-                  onValue={(v) => patchAssumptions({ retirementGoalDate: v === "" ? null : v })}
-                />
-              )}
-            </div>
-            <label className="flex h-11 shrink-0 items-center gap-1.5 text-xs text-fg">
-              <input
-                type="checkbox"
-                checked={already}
-                onChange={(e) => {
-                  if (e.target.checked) {
-                    patchAssumptions({ retirementGoalDate: `${asOf}-01` });
-                  } else {
-                    patchAssumptions({ retirementGoalDate: null });
-                  }
-                }}
-              />
-              Already retired
-            </label>
-          </div>
-        </div>
-        <div className="flex flex-wrap items-end gap-x-4 gap-y-3">
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <span className="text-xs font-medium tracking-wide text-muted">Goal</span>
-            <div className="inline-flex h-11 items-center rounded-lg bg-slate-100 p-0.5 shadow-[0_0_0_1px_#c8d2de]">
-              {(
-                [
-                  ["nest", "Nest egg"],
-                  ["income", "Monthly income"],
-                ] as const
-              ).map(([id, label]) => {
-                const on = (plan.assumptions.goalMode === "income" ? "income" : "nest") === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    aria-pressed={on}
-                    onClick={() => patchAssumptions({ goalMode: id })}
-                    className={
-                      on
-                        ? "h-10 whitespace-nowrap rounded-md bg-accent px-3 text-sm font-medium text-accent-fg"
-                        : "h-10 whitespace-nowrap rounded-md px-3 text-sm font-medium text-slate-600 hover:text-slate-900"
-                    }
-                  >
-                    {label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-          {plan.assumptions.goalMode === "income" ? (
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <span className="text-xs font-medium tracking-wide text-muted">
-                Desired monthly income in retirement from the nest egg
-              </span>
-              <MoneyInput
-                value={plan.assumptions.incomeGoalMonthly ?? 0}
-                onValue={(n) => patchAssumptions({ incomeGoalMonthly: n > 0 ? n : null })}
-                className="w-full max-w-52"
-              />
-            </div>
           ) : (
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <span className="text-xs font-medium tracking-wide text-muted">Nest egg goal (today $)</span>
-              <MoneyInput
-                value={plan.assumptions.nestEggGoal ?? 0}
-                onValue={(n) => patchAssumptions({ nestEggGoal: n > 0 ? n : null })}
-                className="w-full max-w-52"
-              />
+            <div className="flex h-11 items-center justify-center gap-3">
+              <p className="min-w-0 text-base text-[#1a2330]">{longDate(plan.assumptions.asOfDate)}</p>
+              <button
+                type="button"
+                className="shrink-0 text-sm text-[#1a2330] underline-offset-4 hover:underline"
+                onClick={() => setEditingAsOf(true)}
+              >
+                Change
+              </button>
             </div>
           )}
+        </Field>
+        <Field label="Project through longevity age" className={ask}>
+          <NumberInput
+            min={70}
+            max={110}
+            step={1}
+            value={plan.assumptions.projectionEndAge}
+            onValue={(n) => patchAssumptions({ projectionEndAge: n })}
+            className={num}
+          />
+        </Field>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            aria-pressed={!already}
+            className={pill(!already)}
+            onClick={() => patchAssumptions({ retirementGoalDate: null })}
+          >
+            Still working
+          </button>
+          <button
+            type="button"
+            aria-pressed={already}
+            className={pill(already)}
+            onClick={() => patchAssumptions({ retirementGoalDate: `${asOf}-01` })}
+          >
+            Already retired
+          </button>
         </div>
-        <p className="max-w-4xl text-xs leading-relaxed text-subtle">
-          Balances peg to the as-of date. Blank end dates run through the longevity age. Act’s
-          Spendable strip keys off the retirement date. Pick a nest egg or a monthly paycheck.
-          Pension, VA, military retired pay, and Social Security in this run count toward the
-          paycheck. A blank goal is not scored.
-        </p>
+        <Field label={already ? "Retired" : "Retirement goal date"} className={ask}>
+          {already ? (
+            <MonthInput
+              className="justify-center"
+              value={goal}
+              onValue={(v) => patchAssumptions({ retirementGoalDate: v === "" ? null : v })}
+            />
+          ) : (
+            <DateInput
+              className="justify-center"
+              value={goal}
+              onValue={(v) => patchAssumptions({ retirementGoalDate: v === "" ? null : v })}
+            />
+          )}
+        </Field>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            aria-pressed={!incomeMode}
+            className={pill(!incomeMode)}
+            onClick={() => patchAssumptions({ goalMode: "nest" })}
+          >
+            Nest egg
+          </button>
+          <button
+            type="button"
+            aria-pressed={incomeMode}
+            className={pill(incomeMode)}
+            onClick={() => patchAssumptions({ goalMode: "income" })}
+          >
+            Monthly income
+          </button>
+        </div>
+        {incomeMode ? (
+          <Field label="Desired monthly income in retirement from the nest egg" className={ask}>
+            <MoneyInput
+              value={plan.assumptions.incomeGoalMonthly ?? 0}
+              onValue={(n) => patchAssumptions({ incomeGoalMonthly: n > 0 ? n : null })}
+              className={num}
+            />
+          </Field>
+        ) : (
+          <Field label="Nest egg goal (today $)" className={ask}>
+            <MoneyInput
+              value={plan.assumptions.nestEggGoal ?? 0}
+              onValue={(n) => patchAssumptions({ nestEggGoal: n > 0 ? n : null })}
+              className={num}
+            />
+          </Field>
+        )}
       </div>
     </div>
   );
 }
 
+
 export function AssumptionsForm() {
   const plan = usePlanStore((s) => s.plan);
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
-
-  const pct = "w-[4.75rem] max-w-full";
+  const inflation = plan.assumptions.inflationPct;
+  const realNow = (
+    ((1 + plan.assumptions.defaultReturnPct / 100) / (1 + inflation / 100) - 1) *
+    100
+  ).toFixed(2);
+  const realLater = (
+    ((1 + (plan.assumptions.retirementReturnPct ?? 5) / 100) / (1 + inflation / 100) - 1) *
+    100
+  ).toFixed(2);
+  const ask = "w-full items-center text-center [&>span]:w-full";
+  const num = "max-w-none text-center text-base";
+  const returnsOn = Number.isFinite(plan.assumptions.defaultReturnPct);
+  const laterOn = Number.isFinite(plan.assumptions.retirementReturnPct);
+  const restOn =
+    Number.isFinite(plan.assumptions.defaultColaPct) &&
+    Number.isFinite(plan.assumptions.inflationPct) &&
+    Number.isFinite(plan.assumptions.ordinaryTaxRatePct);
+  const bar = (on: boolean) => (on ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]");
 
   return (
-    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-3 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
-      <div className="flex min-w-0 flex-col gap-3 rounded-lg bg-section-lift p-3 shadow-[0_0_0_1px_var(--color-section-lift-border)]">
-        <div className="card-fields flex min-w-0 flex-wrap items-center gap-x-5 gap-y-3">
-          <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-xs font-medium tracking-wide text-muted">Nominal return (% / yr)</span>
-            <NumberInput
-              min={-5}
-              max={15}
-              step={0.1}
-              value={plan.assumptions.defaultReturnPct}
-              onValue={(n) => patchAssumptions({ defaultReturnPct: n })}
-              className={pct}
-            />
-            <span className="text-xs text-subtle">
-              Real ≈{" "}
-              {(
-                ((1 + plan.assumptions.defaultReturnPct / 100) /
-                  (1 + plan.assumptions.inflationPct / 100) -
-                  1) *
-                100
-              ).toFixed(2)}
-              %
-            </span>
-          </label>
-          <label className="flex w-full min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-xs font-medium tracking-wide text-muted">
-              Nominal return in retirement (% / yr)
-            </span>
-            <NumberInput
-              min={-5}
-              max={15}
-              step={0.1}
-              value={plan.assumptions.retirementReturnPct ?? 5}
-              onValue={(n) => patchAssumptions({ retirementReturnPct: n })}
-              className={pct}
-            />
-            <span className="text-xs text-subtle">
-              Real ≈{" "}
-              {(
-                ((1 + (plan.assumptions.retirementReturnPct ?? 5) / 100) /
-                  (1 + plan.assumptions.inflationPct / 100) -
-                  1) *
-                100
-              ).toFixed(2)}
-              %
-            </span>
-          </label>
-          <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-xs font-medium tracking-wide text-muted">Nominal COLA (% / yr)</span>
-            <NumberInput
-              min={0}
-              max={15}
-              step={0.1}
-              value={plan.assumptions.defaultColaPct ?? 2.5}
-              onValue={(n) => patchAssumptions({ defaultColaPct: n })}
-              className={pct}
-            />
-          </label>
-          <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-xs font-medium tracking-wide text-muted">Inflation (% / yr)</span>
-            <NumberInput
-              min={0}
-              max={10}
-              step={0.1}
-              value={plan.assumptions.inflationPct}
-              onValue={(n) => patchAssumptions({ inflationPct: n })}
-              className={pct}
-            />
-          </label>
-        </div>
-        <p className="text-xs leading-relaxed text-[#5c4a18]">
-          COLA is the default for every income. It steps up each January and stays flat the rest of
-          the year. Set a different COLA on an income in Orient.
+    <div className="flex w-full flex-col">
+      <div className="mb-4 flex gap-1.5" aria-hidden="true">
+        <span className={bar(returnsOn)} />
+        <span className={bar(laterOn)} />
+        <span className={bar(restOn)} />
+      </div>
+      <h2 className="text-center font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
+        What should this plan assume?
+      </h2>
+      <p className="mt-2 text-center text-sm text-[#3d4a54]">
+        Returns, COLA, inflation, tax, and where a surplus goes.
+      </p>
+      <div className="mt-6 flex flex-col gap-4">
+        <Field label="Nominal return, percent a year" className={ask}>
+          <NumberInput
+            min={-5}
+            max={15}
+            step={0.1}
+            value={plan.assumptions.defaultReturnPct}
+            onValue={(n) => patchAssumptions({ defaultReturnPct: n })}
+            className={num}
+          />
+          <span className="text-center text-sm text-[#3d4a54]">Real, about {realNow}%</span>
+        </Field>
+        <Field label="Nominal return in retirement, percent a year" className={ask}>
+          <NumberInput
+            min={-5}
+            max={15}
+            step={0.1}
+            value={plan.assumptions.retirementReturnPct ?? 5}
+            onValue={(n) => patchAssumptions({ retirementReturnPct: n })}
+            className={num}
+          />
+          <span className="text-center text-sm text-[#3d4a54]">Real, about {realLater}%</span>
+        </Field>
+        <Field label="Nominal COLA, percent a year" className={ask}>
+          <NumberInput
+            min={0}
+            max={15}
+            step={0.1}
+            value={plan.assumptions.defaultColaPct ?? 2.5}
+            onValue={(n) => patchAssumptions({ defaultColaPct: n })}
+            className={num}
+          />
+        </Field>
+        <Field label="Inflation, percent a year" className={ask}>
+          <NumberInput
+            min={0}
+            max={10}
+            step={0.1}
+            value={plan.assumptions.inflationPct}
+            onValue={(n) => patchAssumptions({ inflationPct: n })}
+            className={num}
+          />
+        </Field>
+        <p className="text-center text-sm leading-relaxed text-[#3d4a54]">
+          COLA is the default for every income. It steps up each January and stays flat the rest of the year. Set a different COLA on an income in Orient.
         </p>
-        <div className="card-fields flex min-w-0 flex-wrap items-center gap-x-5 gap-y-3">
-          <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-xs font-medium tracking-wide text-muted">Ordinary tax rate (%)</span>
-            <NumberInput
-              min={0}
-              max={50}
-              step={1}
-              value={plan.assumptions.ordinaryTaxRatePct}
-              onValue={(n) => patchAssumptions({ ordinaryTaxRatePct: n })}
-              className={pct}
-            />
-          </label>
-          <label className="flex min-w-0 max-w-full flex-wrap items-center gap-x-2 gap-y-1">
-            <span className="text-xs font-medium tracking-wide text-muted">Sweep surplus into</span>
-            <SelectInput
-              value={plan.assumptions.sweepPortfolioId ?? ""}
-              onChange={(e) =>
-                patchAssumptions({
-                  sweepPortfolioId: e.target.value === "" ? null : e.target.value,
-                })
-              }
-              className="w-full min-w-0 max-w-[18rem]"
-            >
-              <option value="">Do not sweep (hold as cash)</option>
-              {plan.portfolios.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name.trim() || "Untitled account"}
-                </option>
-              ))}
-            </SelectInput>
-          </label>
-        </div>
+        <Field label="Ordinary tax rate, percent" className={ask}>
+          <NumberInput
+            min={0}
+            max={50}
+            step={1}
+            value={plan.assumptions.ordinaryTaxRatePct}
+            onValue={(n) => patchAssumptions({ ordinaryTaxRatePct: n })}
+            className={num}
+          />
+        </Field>
+        <Field label="Sweep surplus into" className={ask}>
+          <SelectInput
+            value={plan.assumptions.sweepPortfolioId ?? ""}
+            onChange={(e) =>
+              patchAssumptions({
+                sweepPortfolioId: e.target.value === "" ? null : e.target.value,
+              })
+            }
+            className={num}
+          >
+            <option value="">Do not sweep (hold as cash)</option>
+            {plan.portfolios.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name.trim() || "Untitled account"}
+              </option>
+            ))}
+          </SelectInput>
+        </Field>
       </div>
     </div>
   );

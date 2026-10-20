@@ -1,14 +1,10 @@
-import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   ContributionMoney,
   DateInput,
   Field,
-  GhostButton,
   NumberInput,
   MonthInput,
-  PrimaryButton,
-  DangerButton,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
@@ -28,7 +24,6 @@ import {
   scheduledEmployerMatchMonthly,
 } from "@/lib/plan/contribution-now";
 import { irsCapPerson, irsEmployeeAnnualLimit, irsOverLimitWarning } from "@/lib/plan/irs-limits";
-import { institutionById, resolveInstitution } from "@/lib/plan/institutions";
 import { ageInCalendarYear } from "@/lib/plan/rmd";
 import type { ContributionRule, Plan } from "@/lib/plan/types";
 
@@ -48,10 +43,9 @@ const FULL_MONTHS = [
   "November",
   "December",
 ];
-const summaryCols =
-  "w-full @min-[46rem]:min-w-[40rem] @min-[46rem]:grid @min-[46rem]:grid-cols-[minmax(5rem,1fr)_minmax(6rem,1.15fr)_minmax(7.5rem,1.45fr)_minmax(9.5rem,13rem)_minmax(3rem,3.5rem)_minmax(6.25rem,7.25rem)] @min-[46rem]:items-center @min-[46rem]:gap-x-3";
-const bandField = "w-[9.5rem] shrink-0";
-const bandControl = "h-10 max-w-none";
+const ask = "w-full items-center text-center [&>span]:w-full";
+const bandField = ask;
+const bandControl = "max-w-none text-center text-base";
 
 function isWorkplace(kind: string): boolean {
   return kind === "401k" || kind === "401k_roth" || kind === "tsp" || kind === "tsp_roth";
@@ -60,14 +54,6 @@ function isWorkplace(kind: string): boolean {
 function accountLabel(plan: Plan, rule: ContributionRule): string {
   const dest = plan.portfolios.find((p) => p.id === rule.portfolioId);
   return dest?.name.trim() || "Account";
-}
-
-function accountLogo(plan: Plan, rule: ContributionRule): string | undefined {
-  const dest = plan.portfolios.find((p) => p.id === rule.portfolioId);
-  if (!dest) return undefined;
-  const byId = institutionById(dest.institutionId);
-  if (byId?.logo) return byId.logo;
-  return institutionById(resolveInstitution(dest.institutionName ?? "").institutionId)?.logo;
 }
 
 function summaryAmount(plan: Plan, rule: ContributionRule): { main: string; title?: string } {
@@ -243,9 +229,22 @@ export function ContributionForm() {
     .filter((rule): rule is ContributionRule => Boolean(rule));
   void orderTick;
 
+  const bar = (on: boolean) => (on ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]");
+  const named = plan.contributions.some((rule) => rule.label.trim().length > 0);
+  const funded = plan.contributions.some((rule) => rule.monthlyAmount > 0 || ((rule.percentOfIncome ?? 0) > 0 && Boolean(rule.percentOfIncomeId)));
+  const dated = plan.contributions.length > 0 && plan.contributions.every((rule) => Boolean(rule.startDate));
+
   return (
-    <div className="@container mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
-      <div className="flex flex-col gap-3 text-sm text-muted">
+    <div className="flex w-full flex-col">
+      <div className="mb-4 flex gap-1.5" aria-hidden="true">
+        <span className={bar(named)} />
+        <span className={bar(funded)} />
+        <span className={bar(dated)} />
+      </div>
+      <h2 className="text-center font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
+        What goes into the accounts?
+      </h2>
+      <div className="mt-2 flex flex-col gap-3 text-center text-sm text-[#3d4a54]">
         {copy.contributionsP1.trim() ? <p className="whitespace-pre-wrap">{copy.contributionsP1}</p> : null}
         {copy.contributionsP2.trim() || matchLine ? (
           <p className="whitespace-pre-wrap">
@@ -255,19 +254,9 @@ export function ContributionForm() {
         ) : null}
         {copy.contributionsP3.trim() ? <p className="whitespace-pre-wrap">{copy.contributionsP3}</p> : null}
       </div>
-      <div className="min-w-0 w-full overflow-x-auto">
-      <ul className={`flex flex-col gap-2 ${summaryCols}`}>
-        {rows.length > 0 ? (
-          <li className="col-span-full hidden grid-cols-subgrid items-center text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid">
-            <span className="min-w-0 pl-3">Name</span>
-            <span className="min-w-0">Account</span>
-            <span className="min-w-0">Amount</span>
-            <span className="min-w-0">When</span>
-            <span className="min-w-0">Match</span>
-            <span className="pr-3" />
-          </li>
-        ) : null}
-        {rows.map((c) => {
+      <div className="mt-6 flex flex-col gap-4">
+      <ul className="flex flex-col gap-2">
+                {rows.map((c) => {
           const dest = plan.portfolios.find((p) => p.id === c.portfolioId);
           const workplace = dest ? isWorkplace(dest.kind) : false;
           const emp = employeeMonthlyNow(plan, c);
@@ -291,21 +280,11 @@ export function ContributionForm() {
           const advisory = advisories.find((row) => row.cardId === `card-contributions-${c.id}`);
           const income = plan.incomes.find((s) => s.id === c.percentOfIncomeId);
           const amount = summaryAmount(plan, c);
-          const logo = accountLogo(plan, c);
           return (
-            <li
-              key={c.id}
-              id={`card-contributions-${c.id}`}
-              className="col-span-full rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)] @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid @min-[46rem]:items-center @min-[46rem]:px-0"
-            >
-              <div
-                className="col-span-full grid px-0 transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:px-3"
-                style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
-                inert={!open}
-              >
-                <div className="min-h-0 overflow-hidden">
-                  <div className="card-fields flex flex-wrap items-end gap-x-3 gap-y-3 pb-1">
-                    <Field label="Name" className="w-40 shrink-0">
+            <li key={c.id} id={`card-contributions-${c.id}`} className="rounded-xl bg-[#f3f0e8] px-3 py-2">
+              {open ? (
+                  <div className="flex flex-col gap-4 py-2">
+                    <Field label="Name" className={ask}>
                       <TextInput
                         value={c.label}
                         replaceSeed="New contribution"
@@ -314,7 +293,7 @@ export function ContributionForm() {
                         className={bandControl}
                       />
                     </Field>
-                    <Field label="Account" className="w-44 shrink-0">
+                    <Field label="Account" className={ask}>
                       <SelectInput
                         value={c.portfolioId}
                         onChange={(e) =>
@@ -333,7 +312,7 @@ export function ContributionForm() {
                         ))}
                       </SelectInput>
                     </Field>
-                    <Field label="Amount is" className="w-44 shrink-0">
+                    <Field label="Amount is" className={ask}>
                       <SelectInput
                         value={c.amountMode === "percent" ? "percent" : "fixed"}
                         onChange={(e) =>
@@ -359,7 +338,7 @@ export function ContributionForm() {
                             className={bandControl}
                           />
                         </Field>
-                        <Field label="Which income" className="w-44 shrink-0">
+                        <Field label="Which income" className={ask}>
                           <SelectInput
                             value={c.percentOfIncomeId ?? ""}
                             onChange={(e) => {
@@ -384,6 +363,7 @@ export function ContributionForm() {
                         </Field>
                       </>
                     ) : (
+                      <div className="flex justify-center">
                       <ContributionMoney
                         compact
                         monthly={c.monthlyAmount}
@@ -391,10 +371,12 @@ export function ContributionForm() {
                         cadence={c.payCadence}
                         onChange={(next) => updateContribution(c.id, next)}
                       />
+                      </div>
                     )}
                     {c.amountMode === "percent" ? (
-                      <Field label="Stops" className="shrink-0">
+                      <Field label="Stops" className={ask}>
                         <MonthInput
+                            className="justify-center"
                           value={c.stopDate ?? null}
                           clearable
                           onValue={(v) => updateContribution(c.id, { stopDate: v || null })}
@@ -402,14 +384,16 @@ export function ContributionForm() {
                       </Field>
                     ) : (
                       <>
-                        <Field label="Start" className="shrink-0">
+                        <Field label="Start" className={ask}>
                           <DateInput
+                            className="justify-center"
                             value={c.startDate}
                             onValue={(v) => updateContribution(c.id, { startDate: v })}
                           />
                         </Field>
-                        <Field label={blankEndLabel(plan.primary.birthDate, plan.assumptions.projectionEndAge)} className="shrink-0">
+                        <Field label={blankEndLabel(plan.primary.birthDate, plan.assumptions.projectionEndAge)} className={ask}>
                           <DateInput
+                            className="justify-center"
                             value={c.endDate}
                             clearable
                             onValue={(v) =>
@@ -423,7 +407,7 @@ export function ContributionForm() {
                       </>
                     )}
                     {irsCappedKind ? (
-                      <label className="flex h-10 items-center gap-2 self-end text-sm text-fg">
+                      <label className="flex items-center justify-center gap-2 text-center text-sm text-[#1a2330]">
                         <input
                           type="checkbox"
                           checked={Boolean(c.capToIrsLimit)}
@@ -435,7 +419,7 @@ export function ContributionForm() {
                       </label>
                     ) : null}
                     {workplace ? (
-                      <label className="flex h-10 items-center gap-2 self-end text-sm text-fg">
+                      <label className="flex items-center justify-center gap-2 text-center text-sm text-[#1a2330]">
                         <input
                           type="checkbox"
                           checked={Boolean(c.employerMatch)}
@@ -452,7 +436,7 @@ export function ContributionForm() {
                       </label>
                     ) : null}
                     {workplace && c.employerMatch ? (
-                      <Field label="Match" className="w-24 shrink-0">
+                      <Field label="Match" className={ask}>
                         <SelectInput
                           value={String(c.employerMatchPct ?? 100)}
                           onChange={(e) =>
@@ -470,7 +454,7 @@ export function ContributionForm() {
                         </SelectInput>
                       </Field>
                     ) : null}
-                    <label className="flex h-10 max-w-xs items-center gap-2 self-end text-sm text-[#5c4a18]">
+                    <label className="flex items-center justify-center gap-2 text-center text-sm text-[#1a2330]">
                       <input
                         type="checkbox"
                         checked={Boolean(c.endAtRetirement)}
@@ -485,171 +469,103 @@ export function ContributionForm() {
                       />
                       Stop at planned retirement
                     </label>
-                    <PrimaryButton className="h-10 self-end" onClick={saveOpen}>
+                    <button type="button" className="min-h-12 rounded-xl bg-[#3a8a58] px-3 text-base font-medium text-white" onClick={saveOpen}>
                       Save contribution
-                    </PrimaryButton>
-                    <div className="flex items-end justify-end">
-                      <DangerButton
-                        aria-label={`Remove ${c.label.trim() || "contribution"}`}
-                        onClick={(event) => {
-                          event.preventDefault();
-                          event.stopPropagation();
-                          setPendingRemove(c.id);
-                        }}
-                      >
-                        <Trash2 className="size-4" />
-                      </DangerButton>
-                    </div>
+                    </button>
+                    <button type="button" className="text-sm text-muted hover:text-negative" onClick={() => setPendingRemove(c.id)}>
+                      Remove
+                    </button>
                     {c.amountMode === "percent" ? (
-                      <p className="basis-full text-xs leading-relaxed text-subtle">
+                      <p className="text-center text-sm leading-relaxed text-subtle">
                         {income
                           ? `About ${usd(emp, true)}/mo at today’s amount of ${income.name.trim() || "that income"}. Blank stop follows that paycheck (${formatMonthYear(income.startDate)} → ${income.endDate ? formatMonthYear(income.endDate) : projectionEndMonth(plan.primary.birthDate, plan.assumptions.projectionEndAge)}). A stop date ends this contribution only. The paycheck keeps paying.`
                           : "Pick an income. This contribution follows that paycheck until you set a stop date."}
                       </p>
                     ) : null}
                     {overIrs ? (
-                      <p className="basis-full text-xs leading-relaxed text-[#5c4a18]">{overIrs}</p>
+                      <p className="text-center text-sm leading-relaxed text-[#5c4a18]">{overIrs}</p>
                     ) : null}
                     {c.endAtRetirement && !plan.assumptions.retirementGoalDate ? (
-                      <p className="basis-full text-xs leading-relaxed text-[#5c4a18]">
+                      <p className="text-center text-sm leading-relaxed text-[#5c4a18]">
                         Set a retirement goal date in Goals first.
                       </p>
                     ) : null}
-                    {open && advisory ? <div className="basis-full"><AdvisoryNote advisory={advisory} /></div> : null}
+                    {open && advisory ? <div><AdvisoryNote advisory={advisory} /></div> : null}
                   </div>
-                </div>
-              </div>
-              <div
-                className="col-span-full grid transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:grid-cols-subgrid"
-                style={{ gridTemplateRows: open ? "0fr" : "1fr" }}
-                inert={open}
-              >
-                <div className="col-span-full min-h-0 overflow-hidden @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid">
-                  <div className="col-span-full flex items-center gap-3 @min-[46rem]:hidden">
-                    <p className="min-w-0 flex-1 text-sm text-fg">
-                      <span className="font-medium">{c.label.trim() || "Contribution"}</span>
-                      <span className="text-muted"> · {accountLabel(plan, c)}</span>
-                      <span className="text-muted" title={amount.title}> · {amount.main}</span>
-                      <span className="text-muted">
-                        {" "}
-                        · {shortDate(c.startDate)} → {c.endDate ? shortDate(c.endDate) : projectionEndMonth(plan.primary.birthDate, plan.assumptions.projectionEndAge)}
-                      </span>
-                      {c.employerMatch ? (
-                        <span className="text-muted"> · {c.employerMatchPct ?? 0}% match</span>
-                      ) : null}
-                    </p>
-                    <button
-                      type="button"
-                      className="shrink-0 text-xs text-muted hover:text-negative"
-                      onClick={() => setPendingRemove(c.id)}
-                    >
-                      Remove
-                    </button>
-                    <button
-                      type="button"
-                      className="shrink-0 text-sm font-medium text-fg"
-                      onClick={() => beginEdit(c.id)}
-                    >
-                      Edit
-                    </button>
-                  </div>
-                  <div className="col-span-full hidden grid-cols-subgrid items-center text-sm @min-[46rem]:grid">
-                    <span className="min-w-0 truncate pl-3 font-medium text-fg">{c.label.trim() || "Contribution"}</span>
-                    <span className="flex min-w-0 items-center justify-start gap-1.5 text-muted">
-                      <span className="min-w-0 truncate">{accountLabel(plan, c)}</span>
-                      {logo ? (
-                        <img
-                          src={logo}
-                          alt=""
-                          width={18}
-                          height={18}
-                          className="size-[18px] shrink-0 rounded-sm bg-white object-contain"
-                        />
-                      ) : null}
+              ) : (
+                <div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="min-w-0 text-left">
+                      <span className="block truncate text-sm font-medium text-fg">{c.label.trim() || "Contribution"}</span>
+                      <span className="block text-xs text-muted">{accountLabel(plan, c)} · {amount.main}</span>
                     </span>
-                    <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-fg" title={amount.title}>
-                      {amount.main}
-                    </span>
-                    <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-muted">
-                      {shortDate(c.startDate)} → {c.endDate ? shortDate(c.endDate) : projectionEndMonth(plan.primary.birthDate, plan.assumptions.projectionEndAge)}
-                    </span>
-                    <span className="min-w-0 truncate tabular-nums text-muted">
-                      {c.employerMatch ? `${c.employerMatchPct ?? 0}%` : "—"}
-                    </span>
-                    <span className="flex min-w-0 items-center justify-end gap-3 pr-3">
-                      <button
-                        type="button"
-                        className="text-xs text-muted hover:text-negative"
-                        onClick={() => setPendingRemove(c.id)}
-                      >
+                    <span className="flex shrink-0 items-center gap-3">
+                      <button type="button" className="text-xs text-muted hover:text-negative" onClick={() => setPendingRemove(c.id)}>
                         Remove
                       </button>
-                      <button
-                        type="button"
-                        className="font-medium text-fg"
-                        onClick={() => beginEdit(c.id)}
-                      >
+                      <button type="button" className="text-sm font-medium text-fg" onClick={() => beginEdit(c.id)}>
                         Edit
                       </button>
                     </span>
                   </div>
                   {!open && advisory ? (
-                    <div className="col-span-full mt-2 px-3">
+                    <div className="mt-2">
                       <AdvisoryNote advisory={advisory} />
                     </div>
                   ) : null}
                 </div>
-              </div>
+              )}
             </li>
           );
         })}
       </ul>
+        {capped ? (
+          <UpgradeNudge kind="contributions" />
+        ) : (
+          <>
+            {needAccount || !plan.portfolios.length ? (
+              <p className="text-center text-sm text-[#3d4a54]">
+                Add an account in Observe first — then this button will attach a rule to it.
+              </p>
+            ) : null}
+            <button
+              type="button"
+              className="min-h-12 rounded-xl bg-[#f3f0e8] px-3 text-base text-[#1a2330] hover:bg-[#e7e2d8]"
+              onClick={() => {
+                const dest = plan.portfolios[0];
+                if (!dest) {
+                  setNeedAccount(true);
+                  return;
+                }
+                setNeedAccount(false);
+                cancelSort();
+                const id = newId("c");
+                const base = frozenOrder.current ?? sortedIds(plan);
+                frozenOrder.current = [...base.filter((row) => row !== id), id];
+                addContribution({
+                  id,
+                  label: "",
+                  portfolioId: dest.id,
+                  monthlyAmount: 0,
+                  startDate: plan.assumptions.asOfDate,
+                  endDate: null,
+                  amountMode: "fixed",
+                  percentOfIncome: null,
+                  percentOfIncomeId: null,
+                  employerMatch: false,
+                  employerMatchPct: 0,
+                  capToIrsLimit: false,
+                  endAtRetirement: false,
+                });
+                setOpenId(id);
+              }}
+            >
+              Add contribution rule
+            </button>
+          </>
+        )}
       </div>
-      {capped ? (
-        <UpgradeNudge kind="contributions" />
-      ) : (
-        <>
-          {needAccount || !plan.portfolios.length ? (
-            <p className="text-sm text-muted">
-              Add an account in Observe first — then this button will attach a
-              rule to it.
-            </p>
-          ) : null}
-          <GhostButton
-            onClick={() => {
-              const dest = plan.portfolios[0];
-              if (!dest) {
-                setNeedAccount(true);
-                return;
-              }
-              setNeedAccount(false);
-              cancelSort();
-              const id = newId("c");
-              const base = frozenOrder.current ?? sortedIds(plan);
-              frozenOrder.current = [...base.filter((row) => row !== id), id];
-              addContribution({
-                id,
-                label: "",
-                portfolioId: dest.id,
-                monthlyAmount: 0,
-                startDate: plan.assumptions.asOfDate,
-                endDate: null,
-                amountMode: "fixed",
-                percentOfIncome: null,
-                percentOfIncomeId: null,
-                employerMatch: false,
-                employerMatchPct: 0,
-                capToIrsLimit: false,
-                endAtRetirement: false,
-              });
-              setOpenId(id);
-            }}
-          >
-            <Plus className="size-4" />
-            Add contribution rule
-          </GhostButton>
-        </>
-      )}
+
       {pendingRemove ? (
         <ConfirmRemove
           title="Remove contribution"

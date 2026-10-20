@@ -1,15 +1,11 @@
-import { Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AdvisoryNote, useOpenAdvisories } from "@/components/meridian/advisory-note";
 import { ConfirmRemove } from "@/components/meridian/confirm-remove";
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import {
-  DangerButton,
   DateInput,
   Field,
-  GhostButton,
   MonthYearMoney,
-  PrimaryButton,
   TextInput,
 } from "@/components/ui/field";
 import type { Advisory } from "@/lib/plan/advisories";
@@ -19,9 +15,8 @@ import { newId, usePlanStore } from "@/lib/plan/store";
 import type { Plan, SpendingPhase } from "@/lib/plan/types";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const summaryCols =
-  "@min-[46rem]:grid @min-[46rem]:min-w-[48rem] @min-[46rem]:grid-cols-[minmax(9rem,1.4fr)_minmax(10rem,12rem)_14rem_7.25rem] @min-[46rem]:items-center @min-[46rem]:gap-x-4";
-const control = "h-10 max-w-none";
+const ask = "w-full items-center text-center [&>span]:w-full";
+const control = "max-w-none text-center text-base";
 
 function shortDate(value: string | null | undefined): string {
   if (!value) return "ongoing";
@@ -113,58 +108,69 @@ export function SpendingForm() {
     .map((id) => plan.spending.find((phase) => phase.id === id))
     .filter((phase): phase is SpendingPhase => Boolean(phase));
 
+  const bar = (on: boolean) => (on ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]");
+  const named = plan.spending.some((phase) => phase.label.trim().length > 0 || Boolean(phase.liabilityId));
+  const funded = plan.spending.some((phase) => phase.monthlyAmount > 0);
+  const dated = plan.spending.length > 0 && plan.spending.every((phase) => Boolean(phase.startDate));
+
   return (
-    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
+    <div className="flex w-full flex-col">
+      <div className="mb-4 flex gap-1.5" aria-hidden="true">
+        <span className={bar(named)} />
+        <span className={bar(funded)} />
+        <span className={bar(dated)} />
+      </div>
+      <h2 className="text-center font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
+        What does the household spend?
+      </h2>
       {copy.spendingBody.trim() ? (
-        <p className="whitespace-pre-wrap text-sm text-muted">{copy.spendingBody}</p>
+        <p className="mt-2 whitespace-pre-wrap text-center text-sm text-[#3d4a54]">{copy.spendingBody}</p>
       ) : null}
-      <ul className={`flex flex-col gap-2 overflow-x-auto ${summaryCols}`}>
-        {rows.length > 0 ? (
-          <li className="col-span-full hidden grid-cols-subgrid items-center text-[0.7rem] font-medium uppercase tracking-[0.12em] text-subtle @min-[46rem]:grid">
-            <span className="min-w-0 pl-3">Name</span>
-            <span className="min-w-0">Amount</span>
-            <span className="min-w-0">When</span>
-            <span className="pr-3" />
-          </li>
+      <div className="mt-6 flex flex-col gap-4">
+        {rows.length ? (
+          <ul className="flex flex-col gap-2">
+            {rows.map((phase, index) => (
+              <SpendingRow
+                key={phase.id}
+                phase={phase}
+                index={index}
+                previous={index > 0 ? rows[index - 1] : null}
+                open={openId === phase.id}
+                advisory={advisories.find((row) => row.cardId === `card-spending-${phase.id}`)}
+                onEdit={() => {
+                  holdOrder();
+                  setOpenId(phase.id);
+                }}
+                onSave={() => {
+                  setOpenId(null);
+                  releaseOrder();
+                }}
+                onRemove={() => setPendingRemove(phase.id)}
+              />
+            ))}
+          </ul>
         ) : null}
-        {rows.map((phase, index) => (
-          <SpendingRow
-            key={phase.id}
-            phase={phase}
-            index={index}
-            previous={index > 0 ? rows[index - 1] : null}
-            open={openId === phase.id}
-            advisory={advisories.find((row) => row.cardId === `card-spending-${phase.id}`)}
-            onEdit={() => {
-              holdOrder();
-              setOpenId(phase.id);
-            }}
-            onSave={() => {
-              setOpenId(null);
-              releaseOrder();
-            }}
-            onRemove={() => setPendingRemove(phase.id)}
-          />
-        ))}
-      </ul>
-      <GhostButton
-        onClick={() => {
-          const id = newId("sp");
-          const base = frozen ?? sortedSpending(plan, plan.spending).map((phase) => phase.id);
-          setFrozen([...base, id]);
-          addSpending({
-            id,
-            label: "",
-            monthlyAmount: 0,
-            startDate: plan.assumptions.asOfDate,
-            endDate: null,
-          });
-          setOpenId(id);
-        }}
-      >
-        <Plus className="size-4" />
-        Add spending phase
-      </GhostButton>
+        <button
+          type="button"
+          className="min-h-12 rounded-xl bg-[#f3f0e8] px-3 text-base text-[#1a2330] hover:bg-[#e7e2d8]"
+          onClick={() => {
+            const id = newId("sp");
+            const base = frozen ?? sortedSpending(plan, plan.spending).map((phase) => phase.id);
+            setFrozen([...base, id]);
+            addSpending({
+              id,
+              label: "",
+              monthlyAmount: 0,
+              startDate: plan.assumptions.asOfDate,
+              endDate: null,
+            });
+            setOpenId(id);
+          }}
+        >
+          Add spending phase
+        </button>
+      </div>
+
       {pendingRemove ? (
         <ConfirmRemove
           title="Remove spending"
@@ -230,33 +236,24 @@ function SpendingRow({
   }, [s.startDayAfterPrevious, s.startDate, s.id, monthAfterPrevious, updateSpending]);
 
   return (
-    <li
-      id={`card-spending-${s.id}`}
-      className="col-span-full rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)] @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid @min-[46rem]:items-center @min-[46rem]:px-0"
-    >
-      <div
-        className="col-span-full grid px-0 transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:px-3"
-        style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
-        inert={!open}
-      >
-        <div className="min-h-0 overflow-hidden">
-          {s.liabilityId ? (
-            <div className="flex flex-col gap-2 pb-1">
-              <p className="text-sm leading-relaxed text-fg">
-                {name} is a liability payment of {usd(s.monthlyAmount)}/mo, {whenLabel(plan, s)}. It
-                does not rise with inflation, and it stops at the payoff date.
-              </p>
-              <p className="text-xs leading-relaxed text-muted">
-                Change the amount or the dates on the liability. Remove this line to turn off
-                automatic inclusion.
-              </p>
-              <PrimaryButton className="h-10 w-auto self-start px-4" onClick={onSave}>
-                Close
-              </PrimaryButton>
-            </div>
-          ) : (
-          <div className="card-fields flex flex-wrap items-end gap-x-3 gap-y-3 pb-1">
-            <Field label="Name" className="w-44 shrink-0">
+    <li id={`card-spending-${s.id}`} className="rounded-xl bg-[#f3f0e8] px-3 py-2">
+      {open ? (
+        s.liabilityId ? (
+          <div className="flex flex-col gap-3 py-2 text-center">
+            <p className="text-sm leading-relaxed text-[#1a2330]">
+              {name} is a liability payment of {usd(s.monthlyAmount)}/mo, {whenLabel(plan, s)}. It does not rise with inflation, and it stops at the payoff date.
+            </p>
+            <p className="text-sm leading-relaxed text-[#3d4a54]">
+              Change the amount or the dates on the liability. Remove this line to turn off automatic inclusion.
+            </p>
+            <button type="button" className="min-h-12 rounded-xl bg-[#3a8a58] px-3 text-base font-medium text-white" onClick={onSave}>
+              Close
+            </button>
+            {advisory ? <AdvisoryNote advisory={advisory} /> : null}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4 py-2">
+            <Field label="Name" className={ask}>
               <TextInput
                 value={s.label}
                 replaceSeed="New spending phase"
@@ -267,29 +264,32 @@ function SpendingRow({
             </Field>
             <MonthYearMoney
               compact
+              fieldClassName={ask}
               monthLabel="$ / month (today)"
               yearLabel="$ / year (today)"
               monthly={s.monthlyAmount}
               onMonthly={(n) => updateSpending(s.id, { monthlyAmount: n })}
             />
-            <Field label="Start" className="shrink-0">
+            <Field label="Start" className={ask}>
               <DateInput
+                className="justify-center"
                 value={s.startDate}
                 onValue={(v) => updateSpending(s.id, { startDate: v, startDayAfterPrevious: false })}
               />
             </Field>
             <Field
               label={blankEndLabel(plan.primary.birthDate, plan.assumptions.projectionEndAge)}
-              className="shrink-0"
+              className={ask}
             >
               <DateInput
+                className="justify-center"
                 value={s.endDate}
                 clearable
                 onValue={(v) => updateSpending(s.id, { endDate: v === "" ? null : v })}
               />
             </Field>
             {monthAfterPrevious ? (
-              <label className="flex h-10 max-w-xs items-center gap-2 self-end text-sm text-fg">
+              <label className="flex items-center justify-center gap-2 text-center text-sm text-[#1a2330]">
                 <input
                   type="checkbox"
                   className="size-4 shrink-0"
@@ -305,75 +305,39 @@ function SpendingRow({
                 Start the month after {previousLabel} ends
               </label>
             ) : null}
-            <PrimaryButton className="h-10 self-end" onClick={onSave}>
+            <button type="button" className="min-h-12 rounded-xl bg-[#3a8a58] px-3 text-base font-medium text-white" onClick={onSave}>
               Save spending
-            </PrimaryButton>
-            <div className="flex items-end justify-end">
-              <DangerButton
-                aria-label={`Remove ${s.label || "spending"}`}
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  onRemove();
-                }}
-              >
-                <Trash2 className="size-4" />
-              </DangerButton>
-            </div>
-            {open && advisory ? (
-              <div className="basis-full">
-                <AdvisoryNote advisory={advisory} />
-              </div>
-            ) : null}
-          </div>
-          )}
-        </div>
-      </div>
-      <div
-        className="col-span-full grid transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:grid-cols-subgrid"
-        style={{ gridTemplateRows: open ? "0fr" : "1fr" }}
-        inert={open}
-      >
-        <div className="col-span-full min-h-0 overflow-hidden @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid">
-          <div className="col-span-full flex items-center gap-3 @min-[46rem]:hidden">
-            <p className="min-w-0 flex-1 truncate text-sm text-fg">
-              <span className="font-medium">{name}</span>
-              {s.liabilityId ? <span className="text-muted"> · liability</span> : null}
-              <span className="text-muted"> · {usd(s.monthlyAmount)}/mo</span>
-              <span className="text-muted"> · {whenLabel(plan, s)}</span>
-            </p>
-            <button type="button" className="shrink-0 text-xs text-muted hover:text-negative" onClick={onRemove}>
+            </button>
+            <button type="button" className="text-sm text-muted hover:text-negative" onClick={onRemove}>
               Remove
             </button>
-            <button type="button" className="shrink-0 text-sm font-medium text-fg" onClick={onEdit}>
-              Edit
-            </button>
+            {advisory ? <AdvisoryNote advisory={advisory} /> : null}
           </div>
-          <div className="col-span-full hidden grid-cols-subgrid items-center text-sm @min-[46rem]:grid">
-            <span className="min-w-0 truncate pl-3 font-medium text-fg">
-              {name}
-              {s.liabilityId ? <span className="font-normal text-muted"> · liability</span> : null}
+        )
+      ) : (
+        <div>
+          <div className="flex items-center justify-between gap-3">
+            <span className="min-w-0 text-left">
+              <span className="block truncate text-sm font-medium text-fg">{name}</span>
+              <span className="block text-xs text-muted">{usd(s.monthlyAmount)}/mo</span>
             </span>
-            <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-fg">
-              {usd(s.monthlyAmount)}/mo
-            </span>
-            <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-muted">{whenLabel(plan, s)}</span>
-            <span className="flex min-w-0 items-center justify-end gap-3 pr-3">
+            <span className="flex shrink-0 items-center gap-3">
               <button type="button" className="text-xs text-muted hover:text-negative" onClick={onRemove}>
                 Remove
               </button>
-              <button type="button" className="font-medium text-fg" onClick={onEdit}>
+              <button type="button" className="text-sm font-medium text-fg" onClick={onEdit}>
                 Edit
               </button>
             </span>
           </div>
-          {!open && advisory ? (
-            <div className="col-span-full mt-2 px-3">
+          {advisory ? (
+            <div className="mt-2">
               <AdvisoryNote advisory={advisory} />
             </div>
           ) : null}
         </div>
-      </div>
+      )}
     </li>
   );
 }
+

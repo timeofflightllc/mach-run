@@ -1,21 +1,17 @@
-import { Plus, Trash2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { ConfirmRemove } from "@/components/meridian/confirm-remove";
 import {
-  DangerButton,
   Field,
-  GhostButton,
   MonthInput,
   NumberInput,
   MonthYearMoney,
   MoneyInput,
-  PrimaryButton,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
 import type { AccountKind, Mortgage, Plan, Portfolio, TaxBucket } from "@/lib/plan/types";
 import { newId, usePlanStore } from "@/lib/plan/store";
-import { usd, pct } from "@/lib/plan/format";
+import { usd } from "@/lib/plan/format";
 import { startingNetWorth, startingSpendable } from "@/lib/plan/engine";
 import {
   emptyMortgage,
@@ -25,10 +21,7 @@ import {
   remainingMortgage,
 } from "@/lib/plan/mortgage";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
-import {
-  InstitutionInput,
-  InstitutionMark,
-} from "@/components/meridian/institution-field";
+import { InstitutionInput } from "@/components/meridian/institution-field";
 import { atAccountCap, useEntitlement } from "@/lib/billing/use-entitlement";
 import { hasBalanceSheet } from "@/lib/billing/limits";
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
@@ -70,24 +63,15 @@ const BUCKETS: { value: TaxBucket; label: string }[] = [
   { value: "none", label: "None" },
 ];
 
-const slot = "w-[12.5rem] max-w-full shrink-0";
-const slotName = "w-[10rem] max-w-full shrink-0";
-const slotType = "w-[11.5rem] max-w-full shrink-0";
-const slotTax = "w-[7.75rem] max-w-full shrink-0";
-const slotReturn = "w-[6.5rem] max-w-full shrink-0";
-const slotValue = "w-[8rem] max-w-full shrink-0";
-const slotOwner = "w-[8rem] max-w-full shrink-0";
-const control = "h-10 max-w-full";
-const summaryCols =
-  "flex w-full min-w-0 flex-col gap-2 @min-[46rem]:grid @min-[46rem]:min-w-[64rem] @min-[46rem]:grid-cols-[minmax(10rem,1.25fr)_minmax(8rem,0.9fr)_minmax(7.5rem,0.8fr)_minmax(6.5rem,0.7fr)_minmax(5.5rem,0.55fr)_minmax(8rem,0.85fr)_minmax(7rem,0.7fr)_6.5rem] @min-[46rem]:items-center @min-[46rem]:gap-x-3";
-
-function asOfLabel(iso: string): string {
-  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  const month = Number(iso.slice(5, 7));
-  const year = iso.slice(0, 4);
-  if (!year || month < 1 || month > 12) return "today";
-  return `${months[month - 1]} ${year}`;
-}
+const ask = "w-full items-center text-center [&>span]:w-full";
+const slot = ask;
+const slotName = ask;
+const slotType = ask;
+const slotTax = ask;
+const slotReturn = ask;
+const slotValue = ask;
+const slotOwner = ask;
+const control = "max-w-none text-center text-base";
 
 export function PortfolioForm() {
   const plan = usePlanStore((s) => s.plan);
@@ -103,77 +87,84 @@ export function PortfolioForm() {
   const net = startingNetWorth(plan);
   const copy = usePlannerCopy();
 
+  const named = plan.portfolios.some((p) => p.name.trim().length > 0);
+  const balanced = plan.portfolios.some((p) => p.currentValue > 0);
+  const ownersReady =
+    plan.portfolios.length > 0 &&
+    plan.portfolios.every((p) => !needsTaxOwner(p.kind) || Boolean(explicitTaxOwner(p.owner)));
+  const bar = (on: boolean) => (on ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]");
+  const assetsLine = copy.assetsBody.trim()
+    ? fillPlanner(copy.assetsBody, {
+        spendable: usd(spendable),
+        net: usd(net),
+        return: String(plan.assumptions.defaultReturnPct),
+      })
+    : "";
+
   return (
-    <div className="@container mx-auto flex w-full max-w-6xl flex-col gap-4 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
-      {copy.assetsBody.trim() ? (
-        <p className="whitespace-pre-wrap text-sm text-muted">
-          {fillPlanner(copy.assetsBody, {
-            spendable: usd(spendable),
-            net: usd(net),
-            return: String(plan.assumptions.defaultReturnPct),
-          })}
-        </p>
-      ) : null}
-      <div className="min-w-0 w-full overflow-x-auto">
-      <ul className={summaryCols}>
-        {plan.portfolios.length > 0 ? (
-          <li className="col-span-full hidden grid-cols-subgrid items-end pb-1 text-[0.68rem] font-medium uppercase leading-tight tracking-[0.08em] text-subtle @min-[46rem]:grid">
-            <span className="min-w-0 pl-3">Account name</span>
-            <span className="min-w-0">Account type</span>
-            <span className="min-w-0">Balance as-of {asOfLabel(plan.assumptions.asOfDate)}</span>
-            <span className="min-w-0">Tax category</span>
-            <span className="min-w-0">Rate of return</span>
-            <span className="min-w-0">Include in</span>
-            <span className="min-w-0">Account owner</span>
-            <span className="pr-3" />
-          </li>
-        ) : null}
-        {plan.portfolios.map((p) => (
-          <AccountTile
-            key={p.id}
-            plan={plan}
-            portfolio={p}
-            showNetWorth={hasBalanceSheet(ent.plan)}
-            open={openId === p.id}
-            onEdit={() => setOpenId(p.id)}
-            onSave={() => setOpenId(null)}
-            onChange={(patch) => updatePortfolio(p.id, patch)}
-            onRemove={() => setPendingRemove(p.id)}
-          />
-        ))}
-      </ul>
+    <div className="flex w-full flex-col">
+      <div className="mb-4 flex gap-1.5" aria-hidden="true">
+        <span className={bar(named)} />
+        <span className={bar(balanced)} />
+        <span className={bar(ownersReady)} />
       </div>
-      {plan.portfolios.some((p) => p.quizPile) ? (
-        <p className="text-center text-sm leading-snug text-muted">
-          This is the combined balance you entered. Split it with Add account.
-        </p>
+      <h2 className="text-center font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
+        What accounts do you have?
+      </h2>
+      {assetsLine ? (
+        <p className="mt-2 whitespace-pre-wrap text-center text-sm text-[#3d4a54]">{assetsLine}</p>
       ) : null}
-      {capped ? (
-        <UpgradeNudge kind="accounts" />
-      ) : (
-        <GhostButton
-          onClick={() => {
-            const id = newId("port");
-            addPortfolio({
-              id,
-              name: "",
-              kind: "taxable",
-              owner: "primary",
-              currentValue: 0,
-              returnPct: null,
-              taxBucket: "taxable",
-              spendable: true,
-              includeInNetWorth: true,
-              institutionId: null,
-              institutionName: "",
-            });
-            setOpenId(id);
-          }}
-        >
-          <Plus className="size-4" />
-          Add account
-        </GhostButton>
-      )}
+      <div className="mt-6 flex flex-col gap-4">
+        {plan.portfolios.length ? (
+          <ul className="flex flex-col gap-2">
+            {plan.portfolios.map((p) => (
+              <AccountTile
+                key={p.id}
+                plan={plan}
+                portfolio={p}
+                showNetWorth={hasBalanceSheet(ent.plan)}
+                open={openId === p.id}
+                onEdit={() => setOpenId(p.id)}
+                onSave={() => setOpenId(null)}
+                onChange={(patch) => updatePortfolio(p.id, patch)}
+                onRemove={() => setPendingRemove(p.id)}
+              />
+            ))}
+          </ul>
+        ) : null}
+        {plan.portfolios.some((p) => p.quizPile) ? (
+          <p className="text-center text-sm leading-snug text-[#3d4a54]">
+            This is the combined balance you entered. Split it with Add account.
+          </p>
+        ) : null}
+        {capped ? (
+          <UpgradeNudge kind="accounts" />
+        ) : (
+          <button
+            type="button"
+            className="min-h-12 rounded-xl bg-[#f3f0e8] px-3 text-base text-[#1a2330] hover:bg-[#e7e2d8]"
+            onClick={() => {
+              const id = newId("port");
+              addPortfolio({
+                id,
+                name: "",
+                kind: "taxable",
+                owner: "primary",
+                currentValue: 0,
+                returnPct: null,
+                taxBucket: "taxable",
+                spendable: true,
+                includeInNetWorth: true,
+                institutionId: null,
+                institutionName: "",
+              });
+              setOpenId(id);
+            }}
+          >
+            Add account
+          </button>
+        )}
+      </div>
       {pendingRemove ? (
         <ConfirmRemove
           title="Remove account"
@@ -289,8 +280,8 @@ function AccountTile({
     </Field>
   );
   const include = (
-    <Field label="Include in" className="w-full min-w-0 max-w-sm">
-      <div className="flex h-10 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-fg">
+    <Field label="Include in" className={ask}>
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-fg">
         <label className="flex items-center gap-1.5">
           <input
             type="checkbox"
@@ -344,8 +335,8 @@ function AccountTile({
       </p>
     ) : null;
   const ownerAndFlags = (
-    <div className="flex flex-wrap items-start gap-x-4 gap-y-2 self-start">
-      <div className="flex max-w-sm flex-col gap-1">
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-1">
         {owner}
         {ownerPrompt}
       </div>
@@ -353,23 +344,14 @@ function AccountTile({
     </div>
   );
   const save = (
-    <PrimaryButton className="h-10 self-end" onClick={onSave}>
+    <button type="button" className="min-h-12 rounded-xl bg-[#3a8a58] px-3 text-base font-medium text-white" onClick={onSave}>
       Save account
-    </PrimaryButton>
+    </button>
   );
   const remove = (
-    <div className="flex items-end justify-end">
-      <DangerButton
-        aria-label={`Remove ${p.name || "account"}`}
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          onRemove();
-        }}
-      >
-        <Trash2 className="size-4" />
-      </DangerButton>
-    </div>
+    <button type="button" className="text-sm text-muted hover:text-negative" onClick={onRemove}>
+      Remove
+    </button>
   );
   const warn =
     rate === 0 && p.currentValue > 0 ? (
@@ -393,59 +375,32 @@ function AccountTile({
     ) : null;
 
   const line = (cells: (ReactNode | null)[]) => (
-    <div className="card-fields flex w-full min-w-0 flex-wrap items-end justify-start gap-x-2 gap-y-2">{cells}</div>
+    <div className="flex w-full flex-col gap-4">{cells}</div>
   );
 
   return (
-    <li className="col-span-full min-w-0 rounded-lg bg-section-lift px-3 py-2 shadow-[0_0_0_1px_var(--color-section-lift-border)] @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid @min-[46rem]:items-center @min-[46rem]:px-0">
-      <div
-        className="col-span-full grid min-w-0 px-0 transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:px-3"
-        style={{ gridTemplateRows: open ? "1fr" : "0fr" }}
-        inert={!open}
-      >
-        <div className="min-h-0 overflow-hidden">
-          <div className="flex flex-col gap-3 pb-1">
-            {line([
-              institution,
-              name,
-              accountType(),
-              tax,
-              returns,
-              value,
-              ownerAndFlags,
-              save,
-              remove,
-            ])}
-            {invested}
-            {warn}
-            {p.kind === "real_estate" ? (
-              <RealEstateMortgage
-                portfolioId={p.id}
-                asOf={plan.assumptions.asOfDate}
-                propertyValue={p.currentValue}
-                mortgage={p.mortgage ?? emptyMortgage()}
-                onChange={(mortgage) => onChange({ mortgage })}
-              />
-            ) : null}
-            {p.kind === "529" ? <College529Stop plan={plan} portfolio={p} onChange={onChange} /> : null}
-          </div>
+    <li className="rounded-xl bg-[#f3f0e8] px-3 py-2">
+      {open ? (
+        <div className="flex flex-col gap-4 py-2">
+          {line([institution, name, accountType(), tax, returns, value, ownerAndFlags])}
+          {invested}
+          {warn ? <div className="text-center">{warn}</div> : null}
+          {p.kind === "real_estate" ? (
+            <RealEstateMortgage
+              portfolioId={p.id}
+              asOf={plan.assumptions.asOfDate}
+              propertyValue={p.currentValue}
+              mortgage={p.mortgage ?? emptyMortgage()}
+              onChange={(mortgage) => onChange({ mortgage })}
+            />
+          ) : null}
+          {p.kind === "529" ? <College529Stop plan={plan} portfolio={p} onChange={onChange} /> : null}
+          {save}
+          <div className="text-center">{remove}</div>
         </div>
-      </div>
-      <div
-        className="col-span-full min-w-0 transition-[grid-template-rows] duration-300 ease-out @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid"
-        style={{ gridTemplateRows: open ? "0fr" : "1fr" }}
-        inert={open}
-      >
-        <div className="col-span-full min-h-0 min-w-0 overflow-hidden @min-[46rem]:grid @min-[46rem]:grid-cols-subgrid">
-          <AccountSummary
-            plan={plan}
-            portfolio={p}
-            showNetWorth={showNetWorth}
-            onEdit={onEdit}
-            onRemove={onRemove}
-          />
-        </div>
-      </div>
+      ) : (
+        <AccountSummary portfolio={p} onEdit={onEdit} onRemove={onRemove} />
+      )}
     </li>
   );
 }
@@ -478,13 +433,14 @@ function College529Stop({
     note = `In ${formatMonthYear(stopDate)}, when ${name} turns ${age}, this money is treated as spent. After that month it is left out of net worth, spendable cash, contributions, and every later calculation.`;
   }
   return (
-    <div className="flex max-w-xl flex-col gap-1">
-      <Field label="Sunset age" className="w-[6.5rem]">
+    <div className="flex max-w-none flex-col items-center gap-1 text-center">
+      <Field label="Sunset age" className="w-full items-center text-center [&>span]:w-full">
         <NumberInput
           min={1}
           max={99}
           step={1}
           value={age ?? 0}
+          className="max-w-none text-center text-base"
           onValue={(n) =>
             onChange({
               sunsetAge: n > 0 ? Math.min(99, Math.round(n)) : undefined,
@@ -492,79 +448,36 @@ function College529Stop({
           }
         />
       </Field>
-      <p className="text-xs leading-relaxed text-subtle">{note}</p>
+      <p className="text-center text-sm leading-relaxed text-[#3d4a54]">{note}</p>
     </div>
   );
 }
 
 function AccountSummary({
-  plan,
   portfolio: p,
-  showNetWorth,
   onEdit,
   onRemove,
 }: {
-  plan: Plan;
   portfolio: Portfolio;
-  showNetWorth: boolean;
   onEdit: () => void;
   onRemove: () => void;
 }) {
   const kind = KIND_LABELS.find((k) => k.value === p.kind)?.label ?? p.kind;
-  const tax = BUCKETS.find((k) => k.value === p.taxBucket)?.label ?? p.taxBucket;
-  const ownerValue = accountOwnerValue(plan, p.kind, p.owner);
-  const owner =
-    accountOwnerOptions(plan, p.kind).find((o) => o.value === ownerValue)?.label ??
-    "Select owner";
-  const rate = p.returnPct ?? plan.assumptions.defaultReturnPct;
-  const flags = [
-    p.spendable ? "Spendable" : null,
-    showNetWorth && p.includeInNetWorth ? "Net worth" : null,
-    p.kind === "real_estate" && mortgageAssociated(p.mortgage) ? "Mortgage" : null,
-    p.kind === "529" && sunsetAgeOf(p) ? `Sunset ${sunsetAgeOf(p)}` : null,
-  ].filter(Boolean);
   return (
-    <>
-      <div className="col-span-full flex min-w-0 items-center gap-3 @min-[46rem]:hidden">
-        <p className="min-w-0 flex-1 truncate text-sm text-fg">
-          <span className="font-medium">{p.name.trim() || "Account"}</span>
-          <span className="text-muted"> · {kind}</span>
-          <span className="text-muted"> · {usd(p.currentValue)}</span>
-        </p>
-        <button type="button" className="shrink-0 text-xs text-muted hover:text-negative" onClick={onRemove}>
-          Remove
-        </button>
-        <button type="button" className="shrink-0 text-sm font-medium text-fg" onClick={onEdit}>
-          Edit
-        </button>
-      </div>
-      <div className="col-span-full hidden grid-cols-subgrid items-center text-sm @min-[46rem]:grid">
-      <span className="flex min-w-0 items-center gap-1.5 pl-3 font-medium text-fg">
-        {p.kind === "real_estate" ? null : (
-          <InstitutionMark
-            institutionId={p.institutionId ?? null}
-            institutionName={p.institutionName ?? ""}
-            size={18}
-          />
-        )}
-        <span className="min-w-0 truncate">{p.name.trim() || "Account"}</span>
+    <div className="flex items-center justify-between gap-3">
+      <span className="min-w-0 text-left">
+        <span className="block truncate text-sm font-medium text-fg">{p.name.trim() || "Account"}</span>
+        <span className="block text-xs text-muted">{kind} · {usd(p.currentValue)}</span>
       </span>
-      <span className="min-w-0 truncate text-muted">{kind}</span>
-      <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-fg">{usd(p.currentValue)}</span>
-      <span className="min-w-0 truncate text-muted">{tax}</span>
-      <span className="min-w-0 truncate whitespace-nowrap tabular-nums text-muted">{pct(rate)}</span>
-      <span className="min-w-0 truncate text-muted">{flags.length ? flags.join(", ") : "—"}</span>
-      <span className="min-w-0 truncate text-muted">{owner}</span>
-      <span className="flex min-w-0 items-center justify-end gap-3 pr-3">
+      <span className="flex shrink-0 items-center gap-3">
         <button type="button" className="text-xs text-muted hover:text-negative" onClick={onRemove}>
           Remove
         </button>
-        <button type="button" className="font-medium text-fg" onClick={onEdit}>
+        <button type="button" className="text-sm font-medium text-fg" onClick={onEdit}>
           Edit
         </button>
       </span>
     </div>
-    </>
   );
 }
 
@@ -589,107 +502,81 @@ function RealEstateMortgage({
   const hasLoan = associated && mortgage.monthlyPi > 0 && mortgage.termYears > 0;
 
   return (
-    <div
-      className="mx-[50px] mt-3 rounded-lg px-3 py-3"
-      style={{
-        background: "color-mix(in oklab, #e8c547 12%, transparent)",
-        boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 45%, transparent)",
-      }}
-    >
-      <label className="flex items-start gap-2 text-xs leading-relaxed text-[#5c4a18]">
+    <div className="flex flex-col gap-4 text-center">
+      <label className="flex items-start justify-center gap-2 text-sm leading-relaxed text-[#3d4a54]">
         <input
           type="checkbox"
-          className="mt-0.5 shrink-0"
+          className="mt-1 shrink-0"
           checked={associated}
           onChange={(e) => patch({ associated: e.target.checked })}
         />
-        <span>
-          Check if there is a mortgage or loan/liability associated with this
-          real estate account.
-        </span>
+        <span>Check if there is a mortgage or loan associated with this real estate account.</span>
       </label>
       {associated ? (
-        <div
-          className="mt-3 rounded-md px-3 py-3"
-          style={{
-            background: "color-mix(in oklab, #e8c547 8%, transparent)",
-            boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 35%, transparent)",
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <InstitutionMark
+        <div className="flex flex-col gap-4">
+          <p className="text-sm leading-relaxed text-[#3d4a54]">
+            Remaining principal is subtracted from net worth. Property value still grows at the return above. Do not include this P&I in Spending.
+          </p>
+          <Field label="Institution" className={ask}>
+            <InstitutionInput
               institutionId={mortgage.institutionId ?? null}
               institutionName={mortgage.institutionName ?? ""}
+              onChange={(next) => patch(next)}
             />
-            <p className="text-xs font-medium tracking-wide text-[#5c4a18]">
-              Associated loan / mortgage
-            </p>
-          </div>
-          <p className="mt-1 text-xs leading-relaxed text-[#5c4a18]">
-            Remaining principal is subtracted from net worth. Property value still
-            grows at the return above. Do not include the P&I amount inputted below in Spending.
-          </p>
-          <div className="card-fields mt-3 flex flex-wrap items-end gap-x-3 gap-y-2">
-            <Field label="Institution" className={slot}>
-              <InstitutionInput
-                institutionId={mortgage.institutionId ?? null}
-                institutionName={mortgage.institutionName ?? ""}
-                onChange={(next) => patch(next)}
-              />
-            </Field>
-            <Field label="Origination (month/year)" className="w-auto shrink-0">
-              <MonthInput
-                value={mortgage.originationDate}
-                onValue={(v) => patch({ originationDate: v })}
-              />
-            </Field>
-            <Field label="APR (%)" className="w-[5rem] shrink-0">
-              <NumberInput
-                min={0}
-                max={25}
-                step={0.125}
-                value={mortgage.aprPct}
-                onValue={(n) => patch({ aprPct: n })}
-              />
-            </Field>
-            <MonthYearMoney
-              compact
-              fieldClassName="w-[6.75rem] shrink-0"
-              monthLabel="P&I / month"
-              yearLabel="P&I / year"
-              monthly={mortgage.monthlyPi || 0}
-              onMonthly={(n) => patch({ monthlyPi: n })}
+          </Field>
+          <Field label="Origination (month/year)" className={ask}>
+            <MonthInput
+              value={mortgage.originationDate}
+              onValue={(v) => patch({ originationDate: v })}
+              className="justify-center"
             />
-            <Field label="Length (years)" className="w-[6.25rem] shrink-0">
-              <NumberInput
-                min={1}
-                max={50}
-                step={1}
-                value={mortgage.termYears}
-                onValue={(n) => patch({ termYears: n })}
+          </Field>
+          <Field label="APR (%)" className={ask}>
+            <NumberInput
+              min={0}
+              max={25}
+              step={0.125}
+              value={mortgage.aprPct}
+              className={control}
+              onValue={(n) => patch({ aprPct: n })}
+            />
+          </Field>
+          <MonthYearMoney
+            compact
+            fieldClassName={ask}
+            monthLabel="P&I / month"
+            yearLabel="P&I / year"
+            monthly={mortgage.monthlyPi || 0}
+            onMonthly={(n) => patch({ monthlyPi: n })}
+          />
+          <Field label="Length (years)" className={ask}>
+            <NumberInput
+              min={1}
+              max={50}
+              step={1}
+              value={mortgage.termYears}
+              className={control}
+              onValue={(n) => patch({ termYears: n })}
+            />
+          </Field>
+          <Field label="In spending" className={ask}>
+            <label className="flex items-center justify-center gap-2 text-sm text-[#1a2330]">
+              <input
+                type="checkbox"
+                checked={Boolean(mortgage.includeInSpending)}
+                onChange={(e) => patch({ includeInSpending: e.target.checked })}
               />
-            </Field>
-            <Field label="In spending" className="w-auto shrink-0">
-              <label className="flex h-10 items-center gap-2 text-xs text-[#5c4a18]">
-                <input
-                  type="checkbox"
-                  checked={Boolean(mortgage.includeInSpending)}
-                  onChange={(e) => patch({ includeInSpending: e.target.checked })}
-                />
-                Yes
-              </label>
-            </Field>
-          </div>
+              Yes
+            </label>
+          </Field>
           {hasLoan ? (
-            <p className="mt-3 text-xs leading-relaxed text-[#5c4a18]">
-              Original principal about {usd(original)}. Remaining now {usd(remaining)}.
-              Equity in this property {usd(equity)}
+            <p className="text-center text-sm leading-relaxed text-[#3d4a54]">
+              Original principal about {usd(original)}. Remaining now {usd(remaining)}. Equity in this property {usd(equity)}
               {payoff ? ` · paid off ${payoff.slice(0, 7)}` : ""}.
             </p>
           ) : (
-            <p className="mt-3 text-xs leading-relaxed text-[#5c4a18]">
-              Enter P&I, APR, origination, and term to model the loan. Leave
-              P&I at blank if this property is free and clear.
+            <p className="text-center text-sm leading-relaxed text-[#3d4a54]">
+              Enter P&I, APR, origination, and term to model the loan. Leave P&I blank if this property is free and clear.
             </p>
           )}
         </div>
