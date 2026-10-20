@@ -643,13 +643,13 @@ export function KpiStrip({
 
   return (
     <dl className="@container/kpi rounded-xl bg-white px-5 py-5 shadow-[0_0_0_1px_#d5d0c6] sm:px-6">
-      <div className="grid grid-cols-1 gap-x-6 gap-y-5 @min-[40rem]/kpi:grid-cols-2">
+      <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:gap-x-6 sm:gap-y-4">
         <div>
           <HoverLabel
             label="Current spendable"
             tip="Balances marked spendable, as of today. Not grown. A house or other account left unmarked is not included."
           />
-          <dd className="mt-1 font-sans text-[1.65rem] font-medium tabular-nums leading-tight text-[#1a2330]">
+          <dd className="mt-1 font-sans text-xl font-medium tabular-nums leading-tight text-[#1a2330] sm:text-2xl">
             {usd(startingSpendable(plan))}
           </dd>
         </div>
@@ -658,7 +658,7 @@ export function KpiStrip({
             label="Current net worth"
             tip="Accounts counted in net worth, minus remaining loans."
           />
-          <dd className="mt-1 font-sans text-[1.65rem] font-medium tabular-nums leading-tight text-[#1a2330]">
+          <dd className="mt-1 font-sans text-xl font-medium tabular-nums leading-tight text-[#1a2330] sm:text-2xl">
             {usd(startingNetWorth(plan))}
           </dd>
         </div>
@@ -667,7 +667,7 @@ export function KpiStrip({
             label={retLabel}
             tip="Spendable balance the month before the goal date, in this run’s dollars."
           />
-          <dd className="mt-1 font-sans text-[1.65rem] font-medium tabular-nums leading-tight text-[#1a2330]">
+          <dd className="mt-1 font-sans text-xl font-medium tabular-nums leading-tight text-[#1a2330] sm:text-2xl">
             {spendableAtRet != null ? usd(spendableAtRet) : "Set date in Goals"}
           </dd>
           {goalNote ? (
@@ -678,7 +678,7 @@ export function KpiStrip({
         </div>
         <div>
           <HoverLabel label={payLabel} tip={payTip} />
-          <dd className="mt-1 font-sans text-[1.65rem] font-medium tabular-nums leading-tight text-[#1a2330]">
+          <dd className="mt-1 font-sans text-xl font-medium tabular-nums leading-tight text-[#1a2330] sm:text-2xl">
             {annual != null ? (
               <span className="block">
                 <span className="flex flex-wrap items-baseline gap-x-1.5">
