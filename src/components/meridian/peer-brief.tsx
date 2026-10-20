@@ -404,10 +404,7 @@ export function PeerBriefCard({
   if (!ran) {
     return (
       <div className="rounded-xl bg-white px-5 py-5 shadow-[0_0_0_1px_#d5d0c6]">
-        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#3d4a54]">
-          MACH OODA Financial Analysis*
-        </p>
-        <p className="mt-2 font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
+        <p className="font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
           Waiting on Calculate.
         </p>
         <p className="mt-2 text-sm text-[#3d4a54]">
@@ -436,8 +433,8 @@ export function PeerBriefCard({
   return (
     <div className="rounded-xl bg-white px-5 py-5 shadow-[0_0_0_1px_#d5d0c6]">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#3d4a54]">
-          MACH OODA Financial Analysis*
+        <p className="font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
+          {egg ? <NestEggHeadline egg={egg} /> : brief.headline}
         </p>
         {plan && sim && open ? (
           <PrimaryButton
@@ -456,9 +453,6 @@ export function PeerBriefCard({
           </PrimaryButton>
         ) : null}
       </div>
-      <p className="mt-3 font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
-        {egg ? <NestEggHeadline egg={egg} /> : brief.headline}
-      </p>
       {sim && plan ? (
         <div className="mt-3">
           <CashShortNotice sim={sim} plan={plan} />
