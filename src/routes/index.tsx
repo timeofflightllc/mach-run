@@ -1760,12 +1760,42 @@ function Home() {
         className="canopy-bar sticky top-0 z-30 border-b border-border"
       >
         {headerCollapsed ? (
-        <div className="page-gutter mx-auto flex max-w-none items-center gap-2 py-1.5">
-          <Link to="/" className="shrink-0 [&_img]:!h-7 sm:[&_img]:!h-8" aria-label="MACH RUN">
-            <BrandLockup showTagline={false} />
-          </Link>
-          <nav aria-label="OODA loop" className="flex min-w-0 flex-1 justify-center">
-            <div className="flex w-full max-w-sm rounded-md bg-surface p-0.5 shadow-[0_0_0_1px_var(--color-border)] sm:max-w-md">
+        <div className="page-gutter mx-auto flex max-w-none flex-col gap-1.5 py-1.5 sm:flex-row sm:items-center sm:gap-2">
+          <div className="flex min-w-0 items-center gap-1 sm:contents">
+            <Link to="/" className="shrink-0 [&_img]:!h-7 sm:[&_img]:!h-8" aria-label="MACH RUN">
+              <BrandLockup showTagline={false} />
+            </Link>
+            <div className="ml-auto flex min-w-0 items-center gap-0.5 sm:order-3 sm:ml-0">
+              <SiteMenu align="right" />
+              {signedIn ? (
+                <AuthSlot saved={saveStatus} />
+              ) : (
+                <>
+                  <a href="/pricing" className="px-1 text-[11px] font-medium text-muted hover:text-fg">
+                    Pricing
+                  </a>
+                  <a href="/login" className="px-1 text-[11px] font-medium text-muted hover:text-fg">
+                    Sign In
+                  </a>
+                  <a href="/login?mode=up" className="px-1 text-[11px] font-medium text-muted hover:text-fg">
+                    Create Account
+                  </a>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={toggleHeader}
+                aria-pressed
+                aria-label="Show header"
+                title="Show header"
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg hover:bg-surface"
+              >
+                <span aria-hidden="true" className="text-sm leading-none">▾</span>
+              </button>
+            </div>
+          </div>
+          <nav aria-label="OODA loop" className="min-w-0 sm:order-2 sm:flex sm:flex-1 sm:justify-center">
+            <div className="flex w-full rounded-md bg-surface p-0.5 shadow-[0_0_0_1px_var(--color-border)] sm:max-w-md">
               <OodaPhaseBar
                 compact
                 shown={shown}
@@ -1777,34 +1807,6 @@ function Home() {
               />
             </div>
           </nav>
-          <div className="flex shrink-0 items-center gap-0.5">
-            <SiteMenu align="right" />
-            {signedIn ? (
-              <AuthSlot saved={saveStatus} />
-            ) : (
-              <>
-                <a href="/pricing" className="px-1.5 text-[11px] font-medium text-muted hover:text-fg">
-                  Pricing
-                </a>
-                <a href="/login" className="px-1 text-[11px] font-medium text-muted hover:text-fg">
-                  Sign In
-                </a>
-                <a href="/login?mode=up" className="px-1 text-[11px] font-medium text-muted hover:text-fg">
-                  Create Account
-                </a>
-              </>
-            )}
-            <button
-              type="button"
-              onClick={toggleHeader}
-              aria-pressed
-              aria-label="Show header"
-              title="Show header"
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg hover:bg-surface"
-            >
-              <span aria-hidden="true" className="text-sm leading-none">▾</span>
-            </button>
-          </div>
         </div>
         ) : (
         <>
