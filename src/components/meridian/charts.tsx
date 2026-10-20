@@ -170,9 +170,9 @@ function NetWorthTip({
   );
 }
 
-function spanOptions(endAge: number): { id: ChartSpan; label: string }[] {
+function spanOptions(endAge: number, goalLabel = "To goal"): { id: ChartSpan; label: string }[] {
   return [
-    { id: "goal", label: "To goal" },
+    { id: "goal", label: goalLabel },
     { id: 5, label: "5-Year" },
     { id: 10, label: "10-Year" },
     { id: 20, label: "20-Year" },
@@ -318,6 +318,19 @@ function axisFor(span: ChartSpan, plan: Plan, sim: SimResult): ChartSpan {
   return "horizon";
 }
 
+function goalAlreadyReached(plan: Plan): boolean {
+  const goal = plan.assumptions.retirementGoalDate;
+  const asOf = plan.assumptions.asOfDate;
+  if (!goal || goal.length < 7 || !asOf || asOf.length < 7) return false;
+  return goal.slice(0, 7) <= asOf.slice(0, 7);
+}
+
+/** A goal date already here has no window left. Draw the rest of the plan instead of a blank note. */
+function chartSpan(plan: Plan, span: ChartSpan): ChartSpan {
+  if (span === "goal" && goalAlreadyReached(plan)) return "horizon";
+  return span;
+}
+
 function goalMissing(plan: Plan, sim: SimResult, span: ChartSpan): boolean {
   if (span !== "goal") return false;
   return (
@@ -346,6 +359,7 @@ function monthsInGoal(
 function ChartSpanBar({
   span,
   endAge,
+  goalLabel,
   onChange,
   pinned,
   onPin,
@@ -357,6 +371,7 @@ function ChartSpanBar({
 }: {
   span: ChartSpan;
   endAge: number;
+  goalLabel?: string;
   onChange: (next: ChartSpan) => void;
   pinned?: boolean;
   onPin?: () => void;
@@ -396,7 +411,7 @@ function ChartSpanBar({
         </div>
       ) : null}
       <div className="inline-flex rounded-md bg-slate-100 p-0.5 shadow-[0_0_0_1px_#c8d2de]">
-        {spanOptions(endAge).map((o) => (
+        {spanOptions(endAge, goalLabel).map((o) => (
           <button
             key={String(o.id)}
             type="button"
@@ -1025,7 +1040,7 @@ export function WealthChart({
   const [showLiabilities, setShowLiabilities] = useState(false);
   const [showNetWorth, setShowNetWorth] = useState(true);
   const { expanded, toggle, close } = useChartExpanded();
-  const drawn = viewSpan ?? span;
+  const drawn = chartSpan(plan, viewSpan ?? span);
   const missingGoal = goalMissing(plan, sim, drawn);
   const ticks = axisFor(drawn, plan, sim);
   const data = wealthPoints(plan, sim, drawn);
@@ -1051,6 +1066,7 @@ export function WealthChart({
       <ChartSpanBar
         span={span}
         endAge={plan.assumptions.projectionEndAge}
+        goalLabel={goalAlreadyReached(plan) ? "In retirement" : undefined}
         onChange={setSpan}
         pinned={pinned}
         onPin={onPin}
@@ -1230,7 +1246,7 @@ export function CashChart({
     guaranteed: true,
   });
   const { expanded, toggle, close } = useChartExpanded();
-  const drawn = viewSpan ?? span;
+  const drawn = chartSpan(plan, viewSpan ?? span);
   const missingGoal = goalMissing(plan, sim, drawn);
   const ticks = axisFor(drawn, plan, sim);
   const data = cashPoints(plan, sim, drawn);
@@ -1260,6 +1276,7 @@ export function CashChart({
       <ChartSpanBar
         span={span}
         endAge={plan.assumptions.projectionEndAge}
+        goalLabel={goalAlreadyReached(plan) ? "In retirement" : undefined}
         onChange={setSpan}
         pinned={pinned}
         onPin={onPin}
@@ -1446,7 +1463,7 @@ export function NetWorthChart({
   const { expanded, toggle, close } = useChartExpanded();
   const [minimized, setMinimized] = useState(readNetWorthMin);
   const [hidden, setHidden] = useState<ReadonlySet<string>>(() => new Set());
-  const drawn = viewSpan ?? span;
+  const drawn = chartSpan(plan, viewSpan ?? span);
   const missingGoal = goalMissing(plan, sim, drawn);
   const ticks = axisFor(drawn, plan, sim);
   const accounts = netWorthAccountSeries(plan, locked ? false : hasHeldCash(sim));
@@ -1531,6 +1548,7 @@ export function NetWorthChart({
         <ChartSpanBar
           span={span}
           endAge={plan.assumptions.projectionEndAge}
+          goalLabel={goalAlreadyReached(plan) ? "In retirement" : undefined}
           onChange={setSpan}
           pinned={pinned}
           onPin={onPin}

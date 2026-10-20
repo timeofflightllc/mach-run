@@ -400,8 +400,8 @@ export function PlanSurvival({
       <RunMonteCarloButton running={checking} progress={view.progress} onClick={onRun} />
       <div className="mt-3 flex items-end justify-between gap-3 border-t border-slate-200 pt-2">
         <p className="max-w-sm text-[11px] leading-snug text-slate-500">
-          Plan Survival is a Monte Carlo rating. It runs 1,000 random market futures. The number
-          is how many of each 100 still have money at the end of the plan.
+          Plan Survival is a Monte Carlo rating. It runs 1,000 random market futures based upon calm, typical, or rough markets (selected above). The number
+          is how many of each 100 still have money at the end of the plan and longevity date.
         </p>
         <button
           type="button"
