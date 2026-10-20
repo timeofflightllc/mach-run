@@ -734,6 +734,78 @@ function PhaseHead({
   );
 }
 
+const HEADER_COLLAPSE_KEY = "mach-header-collapsed";
+
+function OodaPhaseBar({
+  compact,
+  shown,
+  shownPhase,
+  shownIndex,
+  onPick,
+  plan,
+  hasRun,
+}: {
+  compact?: boolean;
+  shown: StepId;
+  shownPhase: string;
+  shownIndex: number;
+  onPick: (page: StepId) => void;
+  plan: Plan;
+  hasRun: boolean;
+}) {
+  return (
+    <>
+      {PHASES.map((item) => {
+        const pages = PAGES.filter((page) => page.phase === item.id);
+        const here = pages.findIndex((page) => page.id === shown);
+        return (
+          <button
+            key={item.id}
+            type="button"
+            aria-current={shownPhase === item.id ? "step" : undefined}
+            aria-label={here >= 0 ? `${item.label}, ${here + 1} of ${pages.length}` : item.label}
+            onClick={() => onPick(item.page)}
+            className={cn(
+              "flex flex-1 flex-col items-center justify-center whitespace-nowrap rounded-md font-medium uppercase",
+              compact
+                ? "gap-0.5 px-0.5 py-1 text-[9px] tracking-[0.02em] sm:text-[10px]"
+                : "gap-1 px-0.5 py-1.5 text-[10px] tracking-[0.04em] sm:px-1 sm:text-xs sm:tracking-[0.08em] md:text-sm md:tracking-[0.14em]",
+              shownPhase === item.id ? "bg-accent text-accent-fg" : "text-muted",
+            )}
+          >
+            <span>{item.label}</span>
+            <span className="flex items-center gap-1 [--color-accent:#3a8a58]" aria-hidden="true">
+              {pages.map((page) => {
+                const index = PAGES.findIndex((entry) => entry.id === page.id);
+                const on = index === shownIndex;
+                const done = pageStarted(plan, page.id, hasRun);
+                return (
+                  <span
+                    key={page.id}
+                    className={cn(
+                      "inline-block shrink-0 rounded-full",
+                      done ? "bg-accent" : "bg-[#e8c547]",
+                      compact ? (on ? "h-1.5 w-1.5" : "h-1 w-1") : on ? "h-2 w-2" : "h-1.5 w-1.5",
+                    )}
+                  />
+                );
+              })}
+            </span>
+          </button>
+        );
+      })}
+    </>
+  );
+}
+
+function readHeaderCollapsed() {
+  try {
+    return window.localStorage.getItem(HEADER_COLLAPSE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 function Home() {
   const { actPlace } = Route.useLoaderData();
   const plan = usePlanStore((s) => s.plan);
@@ -742,6 +814,22 @@ function Home() {
   const { status: saveStatus, saveNow } = useCloudPlan();
   const { user, isPending } = useCurrentUserState();
   const signedIn = Boolean(user?.id);
+  const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  useEffect(() => {
+    setHeaderCollapsed(readHeaderCollapsed());
+  }, []);
+  function toggleHeader() {
+    setHeaderCollapsed((on) => {
+      const next = !on;
+      try {
+        if (next) window.localStorage.setItem(HEADER_COLLAPSE_KEY, "1");
+        else window.localStorage.removeItem(HEADER_COLLAPSE_KEY);
+      } catch {
+        /* private mode */
+      }
+      return next;
+    });
+  }
   const ent = useEntitlement();
   const [step, setStep] = useState<StepId>(actPlace ? "act" : "family");
   const sheet = hasBalanceSheet(ent.plan);
@@ -1671,6 +1759,55 @@ function Home() {
         id="mach-header"
         className="canopy-bar sticky top-0 z-30 border-b border-border"
       >
+        {headerCollapsed ? (
+        <div className="page-gutter mx-auto flex max-w-none items-center gap-2 py-1.5">
+          <Link to="/" className="shrink-0 [&_img]:!h-7 sm:[&_img]:!h-8" aria-label="MACH RUN">
+            <BrandLockup showTagline={false} />
+          </Link>
+          <nav aria-label="OODA loop" className="flex min-w-0 flex-1 justify-center">
+            <div className="flex w-full max-w-sm rounded-md bg-surface p-0.5 shadow-[0_0_0_1px_var(--color-border)] sm:max-w-md">
+              <OodaPhaseBar
+                compact
+                shown={shown}
+                shownPhase={shownPhase}
+                shownIndex={shownIndex}
+                onPick={goStep}
+                plan={plan}
+                hasRun={Boolean(run)}
+              />
+            </div>
+          </nav>
+          <div className="flex shrink-0 items-center gap-0.5">
+            <SiteMenu align="right" />
+            {signedIn ? (
+              <AuthSlot saved={saveStatus} />
+            ) : (
+              <>
+                <a href="/pricing" className="px-1.5 text-[11px] font-medium text-muted hover:text-fg">
+                  Pricing
+                </a>
+                <a href="/login" className="px-1 text-[11px] font-medium text-muted hover:text-fg">
+                  Sign In
+                </a>
+                <a href="/login?mode=up" className="px-1 text-[11px] font-medium text-muted hover:text-fg">
+                  Create Account
+                </a>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={toggleHeader}
+              aria-pressed
+              aria-label="Show header"
+              title="Show header"
+              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg hover:bg-surface"
+            >
+              <span aria-hidden="true" className="text-sm leading-none">▾</span>
+            </button>
+          </div>
+        </div>
+        ) : (
+        <>
         <div className="page-gutter relative z-50 mx-auto max-w-none py-2.5">
           <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
             <div className="flex min-w-0 items-center gap-0">
@@ -1737,53 +1874,30 @@ function Home() {
             </div>
           </div>
         </div>
-        <nav aria-label="OODA loop" className="page-gutter mx-auto max-w-none pb-3">
-          <div className="mx-auto flex max-w-3xl rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
-            {PHASES.map((item) => {
-              const pages = route.filter((page) => page.phase === item.id);
-              const here = pages.findIndex((page) => page.id === shown);
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  aria-current={shownPhase === item.id ? "step" : undefined}
-                  aria-label={
-                    here >= 0
-                      ? `${item.label}, ${here + 1} of ${pages.length}`
-                      : item.label
-                  }
-                  onClick={() => goStep(item.page)}
-                  className={cn(
-                    "flex flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap rounded-md px-0.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.04em] sm:px-1 sm:text-xs sm:tracking-[0.08em] md:text-sm md:tracking-[0.14em]",
-                    shownPhase === item.id ? "bg-accent text-accent-fg" : "text-muted",
-                  )}
-                >
-                  <span>{item.label}</span>
-                  <span
-                    className="flex items-center gap-1 [--color-accent:#3a8a58]"
-                    aria-hidden="true"
-                  >
-                    {pages.map((page) => {
-                      const index = route.findIndex((entry) => entry.id === page.id);
-                      const on = index === shownIndex;
-                      const done = pageStarted(plan, page.id, Boolean(run));
-                      return (
-                        <span
-                          key={page.id}
-                          className={cn(
-                            "inline-block shrink-0 rounded-full",
-                            done ? "bg-accent" : "bg-[#e8c547]",
-                            on ? "h-2 w-2" : "h-1.5 w-1.5",
-                          )}
-                        />
-                      );
-                    })}
-                  </span>
-                </button>
-              );
-            })}
+        <nav aria-label="OODA loop" className="page-gutter mx-auto flex max-w-none items-center gap-2 pb-3">
+          <div className="mx-auto flex min-w-0 max-w-3xl flex-1 rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+            <OodaPhaseBar
+              shown={shown}
+              shownPhase={shownPhase}
+              shownIndex={shownIndex}
+              onPick={goStep}
+              plan={plan}
+              hasRun={Boolean(run)}
+            />
           </div>
+          <button
+            type="button"
+            onClick={toggleHeader}
+            aria-pressed={false}
+            aria-label="Hide header"
+            title="Hide header"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+          >
+            <span aria-hidden="true" className="text-base leading-none">▴</span>
+          </button>
         </nav>
+        </>
+        )}
         <EmailVerifyBanner />
         <PasswordLaterBanner />
       </header>
