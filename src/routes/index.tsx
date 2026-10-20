@@ -1893,9 +1893,9 @@ function Home() {
             aria-pressed={false}
             aria-label="Hide header"
             title="Hide header"
-            className="inline-flex h-9 shrink-0 items-center justify-center gap-1 rounded-lg bg-surface px-2.5 text-[10px] font-medium uppercase tracking-[0.08em] text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1 rounded-lg bg-surface text-[10px] font-medium uppercase tracking-[0.08em] text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated sm:w-auto sm:px-2.5"
           >
-            <span>Collapse</span>
+            <span className="hidden sm:inline">Collapse</span>
             <span aria-hidden="true" className="text-base leading-none">▴</span>
           </button>
         </nav>
