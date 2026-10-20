@@ -8,14 +8,8 @@ export function CashShortNotice({ sim, plan }: { sim: SimResult; plan: Plan }) {
   if (!rows.length || !cashAdvisoryStillOpen(plan)) return null;
   const missed = rows.reduce((sum, row) => sum + row.missed, 0);
   return (
-    <div
-      className="rounded-lg px-4 py-3 text-sm leading-relaxed text-fg"
-      style={{
-        background: "color-mix(in oklab, #e8c547 12%, transparent)",
-        boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 45%, transparent)",
-      }}
-    >
-      <p className="font-semibold text-[#e8c547]">
+    <div className="rounded-xl bg-[#f3f0e8] px-4 py-3 text-sm leading-relaxed text-[#1a2330]">
+      <p className="font-semibold text-[#1a2330]">
         MACH RUN did not invest the full contribution.
       </p>
       <p className="mt-1">
@@ -27,7 +21,7 @@ export function CashShortNotice({ sim, plan }: { sim: SimResult; plan: Plan }) {
       <div className="mt-3 overflow-x-auto">
         <table className="w-full min-w-[36rem] text-left text-sm">
           <thead>
-            <tr className="text-xs uppercase tracking-wide text-[#e8c547]">
+            <tr className="text-xs uppercase tracking-wide text-[#3d4a54]">
               <th className="py-1 pr-3 font-medium">Year</th>
               <th className="py-1 pr-3 text-right font-medium">You asked to invest</th>
               <th className="py-1 pr-3 text-right font-medium">Leftover after tax and spending</th>
@@ -36,7 +30,7 @@ export function CashShortNotice({ sim, plan }: { sim: SimResult; plan: Plan }) {
           </thead>
           <tbody>
             {rows.map((row) => (
-              <tr key={row.year} className="border-t border-[#e8c547]/25">
+              <tr key={row.year} className="border-t border-[#d5d0c6]">
                 <td className="py-1 pr-3 tabular-nums">{row.year}</td>
                 <td className="py-1 pr-3 text-right tabular-nums">{usd(row.asked, true)}</td>
                 <td className="py-1 pr-3 text-right tabular-nums">{usd(row.left, true)}</td>

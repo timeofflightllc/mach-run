@@ -18,7 +18,7 @@ import { usePlanStore } from "@/lib/plan/store";
 import { InstitutionMark } from "@/components/meridian/institution-field";
 
 function Disclaimer() {
-  return <p className="text-xs italic leading-relaxed text-subtle">{OODA_DISCLAIMER}</p>;
+  return <p className="text-xs italic leading-relaxed text-[#3d4a54]">{OODA_DISCLAIMER}</p>;
 }
 
 function BriefBody({ text, className }: { text: string; className?: string }) {
@@ -62,7 +62,7 @@ function BriefTable({
       <div className="mt-2 overflow-x-auto">
         <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
           <thead>
-            <tr className="text-[11px] uppercase tracking-wide text-subtle">
+            <tr className="text-[11px] uppercase tracking-wide text-[#3d4a54]">
               {headers.map((h) => (
                 <th
                   key={h.label}
@@ -81,7 +81,7 @@ function BriefTable({
               <tr
                 key={row.join("|") + i}
                 className={
-                  "border-t border-border/70 " +
+                  "border-t border-[#d5d0c6] " +
                   (onRow ? "cursor-pointer hover:bg-elevated/70" : "")
                 }
                 onClick={onRow ? () => onRow(i) : undefined}
@@ -106,7 +106,7 @@ function BriefTable({
                       key={`${i}-${j}`}
                       className={
                         "py-1.5 pr-4 last:pr-0 " +
-                        (j === 0 ? "text-fg " : "text-muted ") +
+                        (j === 0 ? "text-[#1a2330] " : "text-[#3d4a54] ") +
                         (h?.align === "right" ? "text-right tabular-nums " : "") +
                         (h?.nowrap ? "whitespace-nowrap " : "")
                       }
@@ -129,14 +129,14 @@ function BriefTable({
               </tr>
             ))}
             {footer ? (
-              <tr className="border-t border-border">
+              <tr className="border-t border-[#d5d0c6]">
                 {footer.map((cell, j) => {
                   const h = headers[j];
                   return (
                     <td
                       key={`f-${j}`}
                       className={
-                        "py-1.5 pr-4 last:pr-0 font-medium text-fg " +
+                        "py-1.5 pr-4 last:pr-0 font-medium text-[#1a2330] " +
                         (h?.align === "right" ? "text-right tabular-nums " : "") +
                         (h?.nowrap ? "whitespace-nowrap " : "")
                       }
@@ -150,7 +150,7 @@ function BriefTable({
           </tbody>
         </table>
       </div>
-      {note ? <p className="mt-2 text-xs leading-relaxed text-subtle">{note}</p> : null}
+      {note ? <p className="mt-2 text-xs leading-relaxed text-[#3d4a54]">{note}</p> : null}
     </div>
   );
 }
@@ -321,7 +321,7 @@ function PaycheckTable({
             role="dialog"
             aria-modal="true"
             aria-labelledby="paycheck-edit-title"
-            className="w-full max-w-md rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]"
+            className="w-full max-w-md rounded-xl bg-white px-5 py-5 shadow-[0_0_0_1px_#d5d0c6]"
             onMouseDown={(e) => e.stopPropagation()}
           >
             <p id="paycheck-edit-title" className="font-semibold text-fg">
@@ -403,14 +403,14 @@ export function PeerBriefCard({
   const includeNetWorth = hasBalanceSheet(ent.plan);
   if (!ran) {
     return (
-      <div className="rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
+      <div className="rounded-xl bg-white px-5 py-5 shadow-[0_0_0_1px_#d5d0c6]">
+        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#3d4a54]">
           MACH OODA Financial Analysis*
         </p>
-        <p className="mt-2 font-display text-lg text-fg">
+        <p className="mt-2 font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
           Waiting on Calculate.
         </p>
-        <p className="mt-2 text-sm text-muted">
+        <p className="mt-2 text-sm text-[#3d4a54]">
           Finish Observe, Orient, or Decide and hit Calculate. MACH RUN will rank
           this household against U.S. peers by age, income, and net worth — then
           the charts will move.
@@ -434,9 +434,9 @@ export function PeerBriefCard({
     : null;
 
   return (
-    <div className="rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]">
+    <div className="rounded-xl bg-white px-5 py-5 shadow-[0_0_0_1px_#d5d0c6]">
       <div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
+        <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#3d4a54]">
           MACH OODA Financial Analysis*
         </p>
         {plan && sim && open ? (
@@ -456,7 +456,7 @@ export function PeerBriefCard({
           </PrimaryButton>
         ) : null}
       </div>
-      <p className="mt-3 font-display text-xl font-medium leading-snug text-fg">
+      <p className="mt-3 font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
         {egg ? <NestEggHeadline egg={egg} /> : brief.headline}
       </p>
       {sim && plan ? (
@@ -464,18 +464,18 @@ export function PeerBriefCard({
           <CashShortNotice sim={sim} plan={plan} />
         </div>
       ) : null}
-      <div className="mt-3 flex flex-col gap-4 text-sm leading-relaxed text-muted">
+      <div className="mt-3 flex flex-col gap-4 text-sm leading-relaxed text-[#3d4a54]">
         {visible.map((s, i) => (
           <div key={`${brief.runAt}-${i}`}>
             {s.variant === "annuity" && annuityCopy ? (
               <>
-                <p className="text-sm font-semibold text-fg">{s.title}</p>
+                <p className="text-sm font-semibold text-[#1a2330]">{s.title}</p>
                 <p className="mt-1">{s.body}</p>
-                <details className="mt-1 rounded-lg bg-bg px-4 py-3 shadow-[0_0_0_1px_var(--color-border)]">
-                  <summary className="cursor-pointer text-sm font-medium text-fg">
+                <details className="mt-1 rounded-xl bg-[#f3f0e8] px-4 py-3">
+                  <summary className="cursor-pointer text-sm font-medium text-[#1a2330]">
                     View guaranteed-paycheck equivalent (estimate)
                   </summary>
-                  <div className="mt-3 space-y-2 text-sm leading-relaxed text-muted">
+                  <div className="mt-3 space-y-2 text-sm leading-relaxed text-[#3d4a54]">
                     <BriefTable
                       intro={annuityCopy.intro}
                       note={annuityCopy.note}
@@ -497,7 +497,7 @@ export function PeerBriefCard({
               </>
             ) : (
               <>
-                {s.title ? <p className="font-semibold text-fg">{s.title}</p> : null}
+                {s.title ? <p className="font-semibold text-[#1a2330]">{s.title}</p> : null}
                 {s.table?.rows.length ? (
                   <BriefTable
                     intro={s.table.intro}
@@ -524,33 +524,33 @@ export function PeerBriefCard({
         ))}
       </div>
       {clipped ? (
-        <div className="mt-4 flex flex-col items-center gap-2 border-t border-border pt-4 text-center">
+        <div className="mt-4 flex flex-col items-center gap-2 border-t border-[#d5d0c6] pt-4 text-center">
           <GuestOnly>
-            <p className="text-sm text-muted">
+            <p className="text-sm text-[#3d4a54]">
               Sign in or create an account to view your MACH Analysis.
             </p>
             <Link
               to="/login"
-              className="inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-[#3a8a58] px-4 text-sm font-medium text-white"
             >
               Sign in to keep this MACH RUN
             </Link>
           </GuestOnly>
           <RealSignedIn>
-            <p className="text-sm text-muted">
+            <p className="text-sm text-[#3d4a54]">
               The rest of this OODA — RMDs, retirement landing, every stage —
               is on the paid MACH RUN.
             </p>
             <Link
               to="/pricing"
-              className="inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg"
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-[#3a8a58] px-4 text-sm font-medium text-white"
             >
               Unlock the full MACH OODA — ${MACH_MONTHLY_USD}/month
             </Link>
           </RealSignedIn>
         </div>
       ) : (
-        <p className="mt-4 text-xs leading-relaxed text-subtle">
+        <p className="mt-4 text-xs leading-relaxed text-[#3d4a54]">
           Net worth comparison uses Federal Reserve Survey of Consumer Finances
           (2022) percentiles by age, expressed in 2026 dollars. Income comparison
           uses U.S. Census household money-income percentiles, adjusted to 2026.
@@ -558,7 +558,7 @@ export function PeerBriefCard({
           credit score, or financial advice.
         </p>
       )}
-      <div className="mt-4 border-t border-border pt-4">
+      <div className="mt-4 border-t border-[#d5d0c6] pt-4">
         <Disclaimer />
       </div>
     </div>
