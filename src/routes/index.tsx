@@ -1817,20 +1817,10 @@ function Home() {
                   </a>
                 </>
               )}
-              <button
-                type="button"
-                onClick={toggleHeader}
-                aria-pressed
-                aria-label="Show header"
-                title="Show header"
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-fg hover:bg-surface"
-              >
-                <span aria-hidden="true" className="text-sm leading-none">▾</span>
-              </button>
             </div>
           </div>
           <nav aria-label="OODA loop" className="min-w-0 sm:order-2 sm:flex sm:flex-1 sm:justify-center">
-            <div className="flex w-full rounded-md bg-surface p-0.5 shadow-[0_0_0_1px_var(--color-border)] sm:max-w-md">
+            <div className="flex w-full items-center rounded-md bg-surface p-0.5 shadow-[0_0_0_1px_var(--color-border)] sm:max-w-md">
               <OodaPhaseBar
                 compact
                 shown={shown}
@@ -1840,6 +1830,16 @@ function Home() {
                 plan={plan}
                 hasRun={Boolean(run)}
               />
+              <button
+                type="button"
+                onClick={toggleHeader}
+                aria-pressed
+                aria-label="Show header"
+                title="Show header"
+                className="inline-flex h-8 w-7 shrink-0 items-center justify-center rounded-md text-fg hover:bg-elevated"
+              >
+                <span aria-hidden="true" className="text-sm leading-none">▾</span>
+              </button>
             </div>
           </nav>
         </div>

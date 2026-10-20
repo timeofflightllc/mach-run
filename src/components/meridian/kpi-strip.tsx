@@ -184,7 +184,7 @@ function GoalScore({
   const showForm = editing || !(view === "nest" ? egg : gap);
   return (
     <div className="mt-5 border-t border-border pt-5">
-      <div className="inline-flex max-w-full flex-wrap rounded-full bg-bg p-1">
+      <div className="inline-flex max-w-full flex-wrap gap-2">
         {(
           [
             ["nest", "Retirement Nest Egg Goal"],
@@ -200,8 +200,8 @@ function GoalScore({
               onClick={() => setView(id)}
               className={
                 on
-                  ? "h-8 whitespace-nowrap rounded-full bg-surface px-3 text-xs font-medium leading-none text-fg shadow-[0_1px_2px_rgba(26,35,48,0.08)]"
-                  : "h-8 whitespace-nowrap rounded-full px-3 text-xs font-medium leading-none text-muted hover:text-fg"
+                  ? "min-h-10 whitespace-nowrap rounded-xl bg-[#3a8a58] px-3 text-sm font-medium text-white"
+                  : "min-h-10 whitespace-nowrap rounded-xl bg-[#f3f0e8] px-3 text-sm text-[#1a2330]"
               }
             >
               {label}
@@ -212,7 +212,7 @@ function GoalScore({
       {view === "income" ? (
         <div className="mt-2 flex items-start gap-2">
           <div
-            className="inline-flex shrink-0 rounded-full bg-bg p-1"
+            className="inline-flex shrink-0 gap-1 rounded-xl bg-[#f3f0e8] p-1"
             role="group"
             aria-label="Include guaranteed retirement income starting on Retirement Goal Date"
           >
@@ -231,8 +231,8 @@ function GoalScore({
                   onClick={() => onIncludeGuaranteed(id === "yes")}
                   className={
                     on
-                      ? "h-7 rounded-full bg-surface px-2.5 text-[11px] font-medium leading-none text-fg shadow-[0_1px_2px_rgba(26,35,48,0.08)]"
-                      : "h-7 rounded-full px-2.5 text-[11px] font-medium leading-none text-muted hover:text-fg"
+                      ? "h-7 rounded-lg bg-[#3a8a58] px-2.5 text-[11px] font-medium leading-none text-white"
+                      : "h-7 rounded-lg px-2.5 text-[11px] font-medium leading-none text-[#1a2330]"
                   }
                 >
                   {label}
@@ -468,7 +468,7 @@ function EditGoalButton({ label, onClick }: { label: string; onClick: () => void
     <button
       type="button"
       onClick={onClick}
-      className="mt-4 h-9 w-fit rounded-full border border-border bg-surface px-3.5 text-sm font-medium text-fg hover:bg-bg"
+      className="mt-4 h-10 w-fit rounded-xl bg-[#f3f0e8] px-3.5 text-sm text-[#1a2330] hover:bg-[#e7e2d8]"
     >
       {label}
     </button>
@@ -498,7 +498,7 @@ function GoalReadout({
     <div className="mt-5 flex flex-col">
       <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted">{title}</p>
       <div className="mt-1.5 flex items-start justify-between gap-3">
-        <span className="min-w-0 font-display text-xl font-semibold leading-snug tracking-tight text-fg">{left}</span>
+        <span className="min-w-0 font-sans text-xl font-medium leading-snug text-[#1a2330]">{left}</span>
         <span className="shrink-0 pt-1 text-sm tabular-nums text-muted">{right}</span>
       </div>
       <div className="mt-3 h-5 overflow-hidden rounded-full bg-[#d7eadc]" role="img" aria-label={aria}>
@@ -642,14 +642,14 @@ export function KpiStrip({
   const payLabel = ret?.incomeYear ? `Retirement pay (${ret.incomeYear})` : "Retirement pay";
 
   return (
-    <dl className="@container/kpi rounded-2xl bg-surface px-5 py-5 shadow-[0_1px_2px_rgba(26,35,48,0.05),0_0_0_1px_var(--color-border)] sm:px-6">
+    <dl className="@container/kpi rounded-xl bg-white px-5 py-5 shadow-[0_0_0_1px_#d5d0c6] sm:px-6">
       <div className="grid grid-cols-1 gap-x-6 gap-y-5 @min-[40rem]/kpi:grid-cols-2">
         <div>
           <HoverLabel
             label="Current spendable"
             tip="Balances marked spendable, as of today. Not grown. A house or other account left unmarked is not included."
           />
-          <dd className="mt-1 font-display text-xl font-semibold tabular-nums tracking-tight text-fg sm:text-2xl">
+          <dd className="mt-1 font-sans text-[1.65rem] font-medium tabular-nums leading-tight text-[#1a2330]">
             {usd(startingSpendable(plan))}
           </dd>
         </div>
@@ -658,7 +658,7 @@ export function KpiStrip({
             label="Current net worth"
             tip="Accounts counted in net worth, minus remaining loans."
           />
-          <dd className="mt-1 font-display text-xl font-semibold tabular-nums tracking-tight text-fg sm:text-2xl">
+          <dd className="mt-1 font-sans text-[1.65rem] font-medium tabular-nums leading-tight text-[#1a2330]">
             {usd(startingNetWorth(plan))}
           </dd>
         </div>
@@ -667,7 +667,7 @@ export function KpiStrip({
             label={retLabel}
             tip="Spendable balance the month before the goal date, in this run’s dollars."
           />
-          <dd className="mt-1 font-display text-xl font-semibold tabular-nums tracking-tight text-fg sm:text-2xl">
+          <dd className="mt-1 font-sans text-[1.65rem] font-medium tabular-nums leading-tight text-[#1a2330]">
             {spendableAtRet != null ? usd(spendableAtRet) : "Set date in Goals"}
           </dd>
           {goalNote ? (
@@ -678,7 +678,7 @@ export function KpiStrip({
         </div>
         <div>
           <HoverLabel label={payLabel} tip={payTip} />
-          <dd className="mt-1 font-display text-xl font-semibold tabular-nums tracking-tight text-fg sm:text-2xl">
+          <dd className="mt-1 font-sans text-[1.65rem] font-medium tabular-nums leading-tight text-[#1a2330]">
             {annual != null ? (
               <span className="block">
                 <span className="flex flex-wrap items-baseline gap-x-1.5">
