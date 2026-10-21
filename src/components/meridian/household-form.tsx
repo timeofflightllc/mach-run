@@ -29,9 +29,9 @@ export function HouseholdForm() {
   return (
     <div className="flex w-full flex-col">
       <div className="mb-4 flex gap-1.5" aria-hidden="true">
-        <span className={plan.primary.name.trim() || plan.primary.birthDate ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]"} />
+        <span className={plan.primary.name.trim() ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]"} />
         <span className={householdPick ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]"} />
-        <span className={plan.children.length ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]"} />
+        <span className={plan.primary.birthDate ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]"} />
       </div>
       <h2 className="text-center font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
         Who is this plan for?
@@ -216,7 +216,7 @@ export function GoalsForm() {
   const incomeMode = plan.assumptions.goalMode === "income";
   const bar = (on: boolean) => (on ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]");
   const dated = Boolean(goal);
-  const longevity = Number.isFinite(plan.assumptions.projectionEndAge);
+  const longevity = Boolean(plan.assumptions.longevitySeen);
   const aimed = incomeMode
     ? (plan.assumptions.incomeGoalMonthly ?? 0) > 0
     : (plan.assumptions.nestEggGoal ?? 0) > 0;
@@ -268,6 +268,9 @@ export function GoalsForm() {
             step={1}
             value={plan.assumptions.projectionEndAge}
             onValue={(n) => patchAssumptions({ projectionEndAge: n })}
+            onBlur={() => {
+              if (!plan.assumptions.longevitySeen) patchAssumptions({ longevitySeen: true });
+            }}
             className={num}
           />
         </Field>
@@ -359,12 +362,9 @@ export function AssumptionsForm() {
   ).toFixed(2);
   const ask = "w-full items-center text-center [&>span]:w-full";
   const num = "max-w-none text-center text-base";
-  const returnsOn = Number.isFinite(plan.assumptions.defaultReturnPct);
-  const laterOn = Number.isFinite(plan.assumptions.retirementReturnPct);
-  const restOn =
-    Number.isFinite(plan.assumptions.defaultColaPct) &&
-    Number.isFinite(plan.assumptions.inflationPct) &&
-    Number.isFinite(plan.assumptions.ordinaryTaxRatePct);
+  const returnsOn = Boolean(plan.assumptions.workingReturnSeen);
+  const laterOn = Boolean(plan.assumptions.retirementReturnSeen);
+  const restOn = Boolean(plan.assumptions.sweepChosen) || Boolean(plan.assumptions.sweepPortfolioId);
   const bar = (on: boolean) => (on ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]");
 
   return (
@@ -388,6 +388,9 @@ export function AssumptionsForm() {
             step={0.1}
             value={plan.assumptions.defaultReturnPct}
             onValue={(n) => patchAssumptions({ defaultReturnPct: n })}
+            onBlur={() => {
+              if (!plan.assumptions.workingReturnSeen) patchAssumptions({ workingReturnSeen: true });
+            }}
             className={num}
           />
           <span className="text-center text-sm text-[#3d4a54]">Real, about {realNow}%</span>
@@ -399,6 +402,9 @@ export function AssumptionsForm() {
             step={0.1}
             value={plan.assumptions.retirementReturnPct ?? 5}
             onValue={(n) => patchAssumptions({ retirementReturnPct: n })}
+            onBlur={() => {
+              if (!plan.assumptions.retirementReturnSeen) patchAssumptions({ retirementReturnSeen: true });
+            }}
             className={num}
           />
           <span className="text-center text-sm text-[#3d4a54]">Real, about {realLater}%</span>

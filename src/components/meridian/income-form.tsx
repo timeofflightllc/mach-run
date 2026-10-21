@@ -193,7 +193,16 @@ export function IncomeForm() {
     if (stream.kind === "va") return vaPayTodayDollars(plan, stream, monthStart(plan.assumptions.asOfDate)) > 0;
     return false;
   });
-  const dated = plan.incomes.length > 0 && plan.incomes.every((stream) => Boolean(stream.startDate));
+  const dated = (() => {
+    const real = plan.incomes.filter((stream) => {
+      if (stream.name.trim()) return true;
+      if (stream.monthlyAmount > 0) return true;
+      if ((stream.ssPia ?? 0) > 0) return true;
+      if (stream.kind === "va" && (stream.vaRatingPct ?? 0) > 0) return true;
+      return false;
+    });
+    return real.length > 0 && real.every((stream) => Boolean(stream.startDate));
+  })();
 
   return (
     <div className="flex w-full flex-col">

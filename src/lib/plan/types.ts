@@ -221,11 +221,17 @@ export interface Assumptions {
   /** Default COLA on incomes unless a stream sets its own colaPct. */
   defaultColaPct: number;
   defaultReturnPct: number;
+  /** True after they leave the working-return field. Does not change the rate. */
+  workingReturnSeen?: boolean;
   /** Nominal return on investments from the retirement goal month forward. */
   retirementReturnPct: number;
+  /** True after they leave the retirement-return field. Does not change the rate. */
+  retirementReturnSeen?: boolean;
   ordinaryTaxRatePct: number;
   ssTaxablePct: number;
   projectionEndAge: number;
+  /** True after they leave the longevity field. Does not change the age. */
+  longevitySeen?: boolean;
   /** Synced from Income Stage 1 end when present. */
   careerEndDate: string;
   militaryRetireDate: string;

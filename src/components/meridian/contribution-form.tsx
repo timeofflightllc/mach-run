@@ -234,7 +234,15 @@ export function ContributionForm() {
   const bar = (on: boolean) => (on ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]");
   const named = plan.contributions.some((rule) => rule.label.trim().length > 0);
   const funded = plan.contributions.some((rule) => rule.monthlyAmount > 0 || ((rule.percentOfIncome ?? 0) > 0 && Boolean(rule.percentOfIncomeId)));
-  const dated = plan.contributions.length > 0 && plan.contributions.every((rule) => Boolean(rule.startDate));
+  const dated = (() => {
+    const real = plan.contributions.filter(
+      (rule) =>
+        rule.label.trim().length > 0 ||
+        rule.monthlyAmount > 0 ||
+        ((rule.percentOfIncome ?? 0) > 0 && Boolean(rule.percentOfIncomeId)),
+    );
+    return real.length > 0 && real.every((rule) => Boolean(rule.startDate));
+  })();
 
   return (
     <div className="flex w-full flex-col">

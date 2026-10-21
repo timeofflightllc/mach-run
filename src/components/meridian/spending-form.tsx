@@ -112,7 +112,12 @@ export function SpendingForm() {
   const bar = (on: boolean) => (on ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]");
   const named = plan.spending.some((phase) => phase.label.trim().length > 0 || Boolean(phase.liabilityId));
   const funded = plan.spending.some((phase) => phase.monthlyAmount > 0);
-  const dated = plan.spending.length > 0 && plan.spending.every((phase) => Boolean(phase.startDate));
+  const dated = (() => {
+    const real = plan.spending.filter(
+      (phase) => phase.label.trim().length > 0 || phase.monthlyAmount > 0 || Boolean(phase.liabilityId),
+    );
+    return real.length > 0 && real.every((phase) => Boolean(phase.startDate));
+  })();
 
   return (
     <div className="flex w-full flex-col">
