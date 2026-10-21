@@ -438,15 +438,26 @@ export function AssumptionsForm() {
         </Field>
         <Field label="Sweep surplus into" className={ask}>
           <SelectInput
-            value={plan.assumptions.sweepPortfolioId ?? ""}
-            onChange={(e) =>
-              patchAssumptions({
-                sweepPortfolioId: e.target.value === "" ? null : e.target.value,
-              })
+            value={
+              plan.assumptions.sweepChosen
+                ? (plan.assumptions.sweepPortfolioId ?? "cash")
+                : ""
             }
+            onChange={(e) => {
+              const value = e.target.value;
+              if (!value) return;
+              patchAssumptions(
+                value === "cash"
+                  ? { sweepPortfolioId: null, sweepChosen: true }
+                  : { sweepPortfolioId: value, sweepChosen: true },
+              );
+            }}
             className={num}
           >
-            <option value="">Do not sweep (hold as cash)</option>
+            <option value="" disabled>
+              {" "}
+            </option>
+            <option value="cash">Do not sweep (hold as cash)</option>
             {plan.portfolios.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name.trim() || "Untitled account"}

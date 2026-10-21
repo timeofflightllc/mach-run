@@ -596,7 +596,8 @@ function pageStarted(plan: Plan, id: StepId, calculated: boolean): boolean {
       );
     case "assumptions":
       return Boolean(
-        a.sweepPortfolioId ||
+        a.sweepChosen ||
+          a.sweepPortfolioId ||
           a.inflationPct !== blank.inflationPct ||
           a.defaultColaPct !== blank.defaultColaPct ||
           a.defaultReturnPct !== blank.defaultReturnPct ||
@@ -758,9 +759,9 @@ function WhiteStep({
   return (
     <>
       <PhaseHead id={id} label={phase} tabs={tabs} />
-      <section className="rounded-xl bg-white px-4 pb-6 pt-5 shadow-[0_0_0_1px_#d5d0c6] sm:px-8">
+      <section className="rounded-xl bg-white px-4 pb-6 pt-7 shadow-[0_0_0_1px_#d5d0c6] sm:px-8 sm:pt-5">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">{title}</h2>
+          <h2 className="min-w-0 font-sans text-[1.35rem] font-medium leading-tight text-[#1a2330] sm:text-[1.65rem]">{title}</h2>
           <div className="flex shrink-0 items-center gap-2">{nav}</div>
         </div>
         {narrow ? <div className="mx-auto w-full max-w-lg">{children}</div> : children}

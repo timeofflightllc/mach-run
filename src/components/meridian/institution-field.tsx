@@ -123,10 +123,20 @@ export function InstitutionInput({
   const [hi, setHi] = useState(0);
   const [place, setPlace] = useState<ListPlace | null>(null);
   const focused = useRef(false);
+  const picking = useRef(false);
+  const textRef = useRef(institutionName);
+  const closeTimer = useRef<number | null>(null);
   const results = searchInstitutions(text);
 
+  function remember(value: string) {
+    textRef.current = value;
+    setText(value);
+  }
+
   useEffect(() => {
-    if (!focused.current) setText(institutionName);
+    if (focused.current || picking.current) return;
+    textRef.current = institutionName;
+    setText(institutionName);
   }, [institutionName]);
 
   useEffect(() => {
@@ -150,14 +160,25 @@ export function InstitutionInput({
     };
   }, [open, text]);
 
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current != null) window.clearTimeout(closeTimer.current);
+    };
+  }, []);
+
   function commit(nextText: string) {
     const next = resolveInstitution(nextText);
-    setText(next.institutionName);
+    remember(next.institutionName);
     onChange(next);
   }
 
   function pick(row: Institution) {
-    setText(row.name);
+    if (closeTimer.current != null) {
+      window.clearTimeout(closeTimer.current);
+      closeTimer.current = null;
+    }
+    picking.current = true;
+    remember(row.name);
     setOpen(false);
     onChange({ institutionId: row.id, institutionName: row.name });
   }
@@ -178,18 +199,30 @@ export function InstitutionInput({
         placeholder="Name of financial institution..."
         className="max-w-none"
         onFocus={() => {
+          if (closeTimer.current != null) {
+            window.clearTimeout(closeTimer.current);
+            closeTimer.current = null;
+          }
           focused.current = true;
           setOpen(true);
           setHi(0);
         }}
         onBlur={() => {
           focused.current = false;
-          setOpen(false);
-          commit(text);
+          closeTimer.current = window.setTimeout(() => {
+            closeTimer.current = null;
+            if (picking.current) {
+              picking.current = false;
+              setOpen(false);
+              return;
+            }
+            setOpen(false);
+            commit(textRef.current);
+          }, 250);
         }}
         onChange={(e) => {
           const value = e.target.value;
-          setText(value);
+          remember(value);
           setOpen(true);
           setHi(0);
           onChange(resolveInstitution(value));
@@ -207,7 +240,7 @@ export function InstitutionInput({
             if (active && institutionMatches(active, text)) pick(active);
             else {
               setOpen(false);
-              commit(text);
+              commit(textRef.current);
             }
           } else if (e.key === "Escape") {
             e.preventDefault();
@@ -238,7 +271,10 @@ export function InstitutionInput({
                         ? "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg bg-surface"
                         : "flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg"
                     }
-                    onPointerDown={(e) => e.preventDefault()}
+                    onPointerDown={(e) => {
+                      e.preventDefault();
+                      pick(row);
+                    }}
                     onMouseEnter={() => setHi(index)}
                     onClick={() => pick(row)}
                   >

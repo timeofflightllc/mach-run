@@ -21,6 +21,7 @@ import {
   remainingMortgage,
 } from "@/lib/plan/mortgage";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
+import { snapMobileStepTop } from "@/components/meridian/snap-mobile-top";
 import { InstitutionInput } from "@/components/meridian/institution-field";
 import { atAccountCap, useEntitlement } from "@/lib/billing/use-entitlement";
 import { hasBalanceSheet } from "@/lib/billing/limits";
@@ -125,7 +126,10 @@ export function PortfolioForm() {
                 showNetWorth={hasBalanceSheet(ent.plan)}
                 open={openId === p.id}
                 onEdit={() => setOpenId(p.id)}
-                onSave={() => setOpenId(null)}
+                onSave={() => {
+                  setOpenId(null);
+                  snapMobileStepTop();
+                }}
                 onChange={(patch) => updatePortfolio(p.id, patch)}
                 onRemove={() => setPendingRemove(p.id)}
               />

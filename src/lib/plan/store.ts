@@ -111,6 +111,10 @@ export const usePlanStore = create<PlanState>()(
                 plan.assumptions.sweepPortfolioId === id
                   ? null
                   : plan.assumptions.sweepPortfolioId,
+              sweepChosen:
+                plan.assumptions.sweepPortfolioId === id
+                  ? false
+                  : plan.assumptions.sweepChosen,
             },
           })),
         updateLiability: (id, patch) =>

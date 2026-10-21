@@ -25,6 +25,7 @@ export function createDefaultPlan(): Plan {
       careerEndDate: "2036-09-01",
       militaryRetireDate: "2026-09-01",
       sweepPortfolioId: null,
+      sweepChosen: false,
       dollars: "real",
       retirementGoalDate: null,
       nestEggGoal: null,
@@ -127,7 +128,7 @@ export function ensurePlan(plan: Plan): Plan {
     : [];
   const ids = new Set(next.portfolios.map((p) => p.id));
   if (next.assumptions.sweepPortfolioId && !ids.has(next.assumptions.sweepPortfolioId)) {
-    next.assumptions = { ...next.assumptions, sweepPortfolioId: null };
+    next.assumptions = { ...next.assumptions, sweepPortfolioId: null, sweepChosen: false };
   }
   if (next.assumptions.retirementGoalDate === undefined) {
     next.assumptions = { ...next.assumptions, retirementGoalDate: null };

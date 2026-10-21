@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { AdvisoryNote, useOpenAdvisories } from "@/components/meridian/advisory-note";
 import { ConfirmRemove } from "@/components/meridian/confirm-remove";
+import { snapMobileStepTop } from "@/components/meridian/snap-mobile-top";
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import {
   DateInput,
@@ -144,6 +145,7 @@ export function SpendingForm() {
                 onSave={() => {
                   setOpenId(null);
                   releaseOrder();
+                  snapMobileStepTop();
                 }}
                 onRemove={() => setPendingRemove(phase.id)}
               />

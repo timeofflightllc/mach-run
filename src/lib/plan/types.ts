@@ -230,6 +230,8 @@ export interface Assumptions {
   careerEndDate: string;
   militaryRetireDate: string;
   sweepPortfolioId: string | null;
+  /** True after they pick a sweep account or "do not sweep". Blank is not a choice. */
+  sweepChosen?: boolean;
   dollars: "nominal" | "real";
   /** Household retirement target. Spendable strip keys off this date. */
   retirementGoalDate: string | null;

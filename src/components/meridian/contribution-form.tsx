@@ -15,6 +15,7 @@ import { paycheckFromMonthly } from "@/lib/plan/pay-cadence";
 import { newId, usePlanStore } from "@/lib/plan/store";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
 import { ConfirmRemove } from "@/components/meridian/confirm-remove";
+import { snapMobileStepTop } from "@/components/meridian/snap-mobile-top";
 import { AdvisoryNote, useOpenAdvisories } from "@/components/meridian/advisory-note";
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import { atContributionCap, useEntitlement } from "@/lib/billing/use-entitlement";
@@ -204,6 +205,7 @@ export function ContributionForm() {
 
   function saveOpen() {
     setOpenId(null);
+    snapMobileStepTop();
     cancelSort();
     sortTimer.current = window.setTimeout(() => {
       frozenOrder.current = null;

@@ -20,6 +20,7 @@ import { AdvisoryNote, useOpenAdvisories } from "@/components/meridian/advisory-
 import type { Advisory } from "@/lib/plan/advisories";
 import { ConfirmRemove, ConfirmChoice } from "@/components/meridian/confirm-remove";
 import { UpgradeNudge } from "@/components/meridian/upgrade-nudge";
+import { snapMobileStepTop } from "@/components/meridian/snap-mobile-top";
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import { atIncomeCap, useEntitlement } from "@/lib/billing/use-entitlement";
 
@@ -225,6 +226,7 @@ export function IncomeForm() {
                   setOpenId(null);
                   releaseOrder();
                   offerSocialSecurity(stream);
+                  snapMobileStepTop();
                 }}
                 onRemove={() => setPendingRemove(stream.id)}
               />

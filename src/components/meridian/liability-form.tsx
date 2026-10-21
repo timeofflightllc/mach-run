@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { ConfirmRemove } from "@/components/meridian/confirm-remove";
+import { snapMobileStepTop } from "@/components/meridian/snap-mobile-top";
 import { InstitutionInput } from "@/components/meridian/institution-field";
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import {
@@ -111,7 +112,10 @@ export function LiabilityForm({ onNone }: { onNone?: () => void }) {
                 liability={l}
                 open={openId === l.id}
                 onEdit={() => setOpenId(l.id)}
-                onSave={() => setOpenId(null)}
+                onSave={() => {
+                  setOpenId(null);
+                  snapMobileStepTop();
+                }}
                 onRemove={() => setPendingRemove(l.id)}
               />
             ))}
