@@ -1,6 +1,6 @@
 import { getSql } from "@/lib/db";
 import { pathsForSlug, pingIndexNow } from "@/lib/seo/sitemap";
-import { DEFAULT_PAGES, defaultAnnouncements, REFUND_FAQ_BLOCK, REFUND_LEGAL_BLOCK } from "./defaults";
+import { DEFAULT_PAGES, defaultAnnouncements, PINNED_ANNOUNCEMENTS, REFUND_FAQ_BLOCK, REFUND_LEGAL_BLOCK } from "./defaults";
 import {
   SITE_PAGE_SLUGS,
   type SiteAnnouncement,
@@ -82,6 +82,25 @@ async function seedIfEmpty(): Promise<void> {
     `insert into mach_copy_flags (key) values ('announcements_seeded')
      on conflict (key) do nothing`,
   );
+}
+
+/** A later ship note inserts once. An edit already in the desk is left alone. */
+async function ensurePinnedAnnouncements(): Promise<void> {
+  const sql = await getSql();
+  for (const item of [...PINNED_ANNOUNCEMENTS].reverse()) {
+    const found = await sql.query<{ id: string }>("select id from mach_announcements where id = $1", [item.id]);
+    if (found.length) continue;
+    const rows = await sql.query<{ n: number }>(
+      "select coalesce(max(sort_order), 0)::int as n from mach_announcements",
+    );
+    const sort = (rows[0]?.n ?? 0) + 1;
+    await sql.query(
+      `insert into mach_announcements (id, at, title, blurb, sort_order)
+       values ($1, $2, $3, $4, $5)
+       on conflict (id) do nothing`,
+      [item.id, item.at, item.title, item.blurb, sort],
+    );
+  }
 }
 
 function freshenStoredCopy(body: string): string {
@@ -258,6 +277,7 @@ export async function loadSiteCopy(): Promise<SiteCopy> {
   if (!ok) return fallback;
   try {
     await seedIfEmpty();
+    await ensurePinnedAnnouncements();
     const sql = await getSql();
     const pageRows = await sql.query<{
       slug: string;

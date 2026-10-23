@@ -10,6 +10,14 @@ import type { SiteAnnouncement, SitePage } from "./types";
 /** Tonight's ships. Stable ids so they insert once and stay editable in the desk. Newest first. */
 export const PINNED_ANNOUNCEMENTS: SiteAnnouncement[] = [
   {
+    id: "feat-2026-10-23-retired-pay",
+    at: "2026-10-23",
+    title: "Military retirement pay, as DFAS would start it",
+    blurb:
+      "A calculator for the pre-tax military retirement paycheck you can expect from DFAS. High-3, BRS, REDUX, and Final Pay.",
+    sortOrder: 0,
+  },
+  {
     id: "feat-2026-09-23-footer",
     at: "2026-09-23",
     title: "One short footer, except on Act",
