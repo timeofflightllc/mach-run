@@ -1,5 +1,5 @@
 import { getSql } from "@/lib/db";
-import { resolvePayTable } from "./catalog.ts";
+import { resolvePayTables } from "./catalog.ts";
 import type { PayTable } from "./formula.ts";
 import { OFFICIAL_SEED } from "./official-seed.ts";
 
@@ -36,10 +36,16 @@ export async function listUploadedTables(): Promise<PayTable[]> {
 
 /** Newest official table. Never calls DFAS. */
 export async function readQuizTable(): Promise<PayTable | null> {
+  const tables = await readQuizTables();
+  return tables.at(-1) ?? null;
+}
+
+/** Every official year on file. Never calls DFAS. */
+export async function readQuizTables(): Promise<PayTable[]> {
   try {
-    return resolvePayTable(OFFICIAL_SEED, await listUploadedTables());
+    return resolvePayTables(OFFICIAL_SEED, await listUploadedTables());
   } catch {
-    return resolvePayTable(OFFICIAL_SEED, []);
+    return resolvePayTables(OFFICIAL_SEED, []);
   }
 }
 

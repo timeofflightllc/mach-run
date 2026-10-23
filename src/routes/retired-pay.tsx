@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { loadOfficialBasicPay } from "@/lib/retired-pay/dfas-api";
+import { loadOfficialBasicPayTables } from "@/lib/retired-pay/dfas-api";
 import {
   entryIso,
   gradeRank,
@@ -9,6 +9,8 @@ import {
   pointsToYears,
   retirementSystem,
   retiredPay,
+  serviceCredit,
+  shiftMonth,
   systemLabel,
   systemQuestion,
   yearsBetween,
@@ -31,7 +33,7 @@ export const Route = createFileRoute("/retired-pay")({
 
 type ComponentChoice = "active" | "reserve" | "guard";
 type DutyChoice = "traditional" | "agr" | "technician";
-type StepId = "component" | "duty" | "entry" | "system" | "grade" | "promotion" | "when" | "name" | "result";
+type StepId = "component" | "duty" | "entry" | "system" | "when" | "grade" | "earlier" | "dor" | "name" | "result";
 
 const GRADES = [
   ...Array.from({ length: 9 }, (_, i) => `E-${i + 1}`),
@@ -60,15 +62,16 @@ function RetiredPayQuiz() {
   const [component, setComponent] = useState<ComponentChoice | null>(null);
   const [duty, setDuty] = useState<DutyChoice | null>(null);
   const [entryMonth, setEntryMonth] = useState<number | null>(null);
+  const [entryDay, setEntryDay] = useState<number | null>(null);
   const [entryYear, setEntryYear] = useState<number | null>(null);
   const [csb, setCsb] = useState<boolean | null>(null);
   const [brsOpt, setBrsOpt] = useState<boolean | null>(null);
-  const [gradeNow, setGradeNow] = useState("E-7");
   const [gradeRetire, setGradeRetire] = useState("E-7");
-  const [retireTouched, setRetireTouched] = useState(false);
+  const [gradeEarlier, setGradeEarlier] = useState("E-7");
+  const [earlierTouched, setEarlierTouched] = useState(false);
   const [priorEnlisted, setPriorEnlisted] = useState<boolean | null>(null);
-  const [tig, setTig] = useState<boolean | null>(null);
-  const [monthsAtGrade, setMonthsAtGrade] = useState(36);
+  const [dorMonth, setDorMonth] = useState<number | null>(null);
+  const [dorYear, setDorYear] = useState<number | null>(null);
   const [retireMonth, setRetireMonth] = useState<number | null>(null);
   const [retireYear, setRetireYear] = useState<number | null>(null);
   const [yearsText, setYearsText] = useState("");
@@ -85,20 +88,26 @@ function RetiredPayQuiz() {
   const [name, setName] = useState("");
   const [lump, setLump] = useState<LumpSum>("full");
   const [step, setStep] = useState<StepId>("component");
-  const [table, setTable] = useState<PayTable | null | undefined>(undefined);
+  const [table, setTable] = useState<PayTable[] | null | undefined>(undefined);
 
   const activePath = component === "active" || duty === "agr";
-  const entry = entryYear && entryMonth ? entryIso(entryYear, entryMonth) : "";
+  const entry = entryYear && entryMonth && entryDay ? entryIso(entryYear, entryMonth, entryDay) : "";
   const question = entry ? systemQuestion(entry) : null;
   const system = entry ? retirementSystem(entry, csb, brsOpt) : null;
-  const promoted = gradeRank(gradeRetire) > gradeRank(gradeNow);
-  const askPrior = /^O-[123]$/.test(gradeNow) || /^O-[123]$/.test(gradeRetire);
-  const askTig = promoted && needsThreeYearsInGrade(gradeRetire);
-  const downgraded = askTig && tig === false;
-  const computedActive =
-    entryYear && entryMonth && retireYear && retireMonth
-      ? yearsBetween(entryYear, entryMonth, retireYear, retireMonth)
+  const earlierWhen =
+    retireYear && retireMonth ? shiftMonth(retireYear, retireMonth, -36) : null;
+  const sameGrade = gradeEarlier === gradeRetire;
+  const askPrior = /^O-[123]$/.test(gradeEarlier) || /^O-[123]$/.test(gradeRetire);
+  const monthsInGrade =
+    !sameGrade && dorYear && dorMonth && retireYear && retireMonth
+      ? (retireYear - dorYear) * 12 + (retireMonth - dorMonth)
+      : 36;
+  const tigShort = needsThreeYearsInGrade(gradeRetire) && !sameGrade && monthsInGrade < 36;
+  const credit =
+    entryYear && entryMonth && entryDay && retireYear && retireMonth
+      ? serviceCredit(entryYear, entryMonth, entryDay, retireYear, retireMonth, 1)
       : null;
+  const computedActive = credit?.creditedYears ?? null;
   const ageNow = parseNum(ageNowText);
   const drawAge = parseNum(drawAgeText);
   const computedReserve =
@@ -110,9 +119,12 @@ function RetiredPayQuiz() {
   if (component === "reserve" || component === "guard") steps.push("duty");
   steps.push("entry");
   if (question) steps.push("system");
-  steps.push("grade");
-  if (promoted) steps.push("promotion");
-  steps.push("when", "name");
+  steps.push("when", "grade");
+  if (activePath) {
+    steps.push("earlier");
+    if (!sameGrade) steps.push("dor");
+  }
+  steps.push("name");
 
   const stepKey = steps.join(",");
   const stepIndex = Math.max(0, steps.indexOf(step));
@@ -129,7 +141,7 @@ function RetiredPayQuiz() {
   useEffect(() => {
     if (step !== "result" || activeUnder || reserveNo || table !== undefined) return;
     let cancel = false;
-    loadOfficialBasicPay()
+    loadOfficialBasicPayTables()
       .then((next) => {
         if (!cancel) setTable(next);
       })
@@ -171,11 +183,11 @@ function RetiredPayQuiz() {
     if (step === "duty") return duty != null;
     if (step === "entry") return Boolean(entry);
     if (step === "system") return system != null;
-    if (step === "grade") return !askPrior || priorEnlisted != null;
-    if (step === "promotion") {
-      if (askTig && tig == null) return false;
-      if (downgraded) return true;
-      return monthsAtGrade >= 0 && monthsAtGrade <= 36;
+    if (step === "grade") return true;
+    if (step === "earlier") return !askPrior || priorEnlisted != null;
+    if (step === "dor") {
+      if (dorMonth == null || dorYear == null || !retireYear || !retireMonth) return false;
+      return dorYear * 12 + dorMonth <= retireYear * 12 + retireMonth;
     }
     if (step === "when") return activePath ? activeReady() : reserveReady();
     return true;
@@ -217,11 +229,13 @@ function RetiredPayQuiz() {
   function buildResult(): RetiredPayResult | null {
     if (!system || !table) return null;
     const enlisted = askPrior && priorEnlisted === true;
-    const retireKey = payGradeKey(downgraded ? gradeNow : gradeRetire, enlisted);
-    const priorKey = payGradeKey(gradeNow, enlisted);
+    const retireKey = payGradeKey(gradeRetire, enlisted);
+    const earlierKey = payGradeKey(gradeEarlier, enlisted);
+    const newest = table?.at(-1) ?? null;
+    if (!newest) return null;
     if (activePath) {
       const years = activeYears();
-      if (years.pay == null || years.multiplier == null) return null;
+      if (years.pay == null || years.multiplier == null || !retireYear || !retireMonth) return null;
       return retiredPay(
         {
           system,
@@ -229,11 +243,21 @@ function RetiredPayQuiz() {
           payYears: years.pay,
           multiplierYears: years.multiplier,
           grade: retireKey,
-          priorGrade: promoted && !downgraded ? priorKey : retireKey,
-          monthsAtGrade: promoted && !downgraded ? monthsAtGrade : 36,
+          priorGrade: earlierKey,
+          monthsAtGrade: 36,
           lump,
+          history: {
+            tables: table ?? [],
+            retireYear,
+            retireMonth,
+            dorYear: sameGrade ? null : dorYear,
+            dorMonth: sameGrade ? null : dorMonth,
+            entryYear: split ? null : entryYear,
+            entryMonth: split ? null : entryMonth,
+            entryDay: split ? null : entryDay,
+          },
         },
-        table,
+        newest,
       );
     }
     const points = parseNum(pointsText);
@@ -246,11 +270,11 @@ function RetiredPayQuiz() {
         payYears: pay,
         multiplierYears: pointsToYears(points),
         grade: retireKey,
-        priorGrade: promoted && !downgraded ? priorKey : retireKey,
-        monthsAtGrade: promoted && !downgraded ? monthsAtGrade : 36,
+        priorGrade: retireKey,
+        monthsAtGrade: 36,
         lump,
       },
-      table,
+      newest,
     );
   }
 
@@ -311,7 +335,16 @@ function RetiredPayQuiz() {
           ) : null}
           {step === "entry" ? (
             <Question title="When did you first enter the service?">
-              <MonthYear month={entryMonth} year={entryYear} from={1950} to={now.getFullYear()} onMonth={setEntryMonth} onYear={setEntryYear} />
+              <MonthYear
+                month={entryMonth}
+                day={entryDay}
+                year={entryYear}
+                from={1950}
+                to={now.getFullYear()}
+                onMonth={setEntryMonth}
+                onDay={setEntryDay}
+                onYear={setEntryYear}
+              />
               <p className="mt-3 text-center text-sm text-[#3d4a54]">
                 The date on your LES. Not the day you joined this unit, and not the day you commissioned if you were enlisted or at an academy first.
               </p>
@@ -326,37 +359,43 @@ function RetiredPayQuiz() {
             </Question>
           ) : null}
           {step === "grade" ? (
-            <Question title="What grade are you, and what grade will you retire at?">
-              <div className="grid grid-cols-2 gap-3">
-                <label className="text-center text-sm text-[#3d4a54]">
-                  Now
-                  <select className={`${fieldClass} mt-1`} value={gradeNow} onChange={(event) => {
-                    setGradeNow(event.target.value);
-                    if (!retireTouched) setGradeRetire(event.target.value);
-                  }}>
-                    {GRADES.map((grade) => (
-                      <option key={grade}>{grade}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="text-center text-sm text-[#3d4a54]">
-                  At retirement
-                  <select
-                    className={`${fieldClass} mt-1`}
-                    value={gradeRetire}
-                    onChange={(event) => {
-                      setRetireTouched(true);
-                      setGradeRetire(event.target.value);
-                      setTig(null);
-                      setPriorEnlisted(null);
-                    }}
-                  >
-                    {GRADES.map((grade) => (
-                      <option key={grade}>{grade}</option>
-                    ))}
-                  </select>
-                </label>
-              </div>
+            <Question title="What grade will you retire at?">
+              <select
+                className={fieldClass}
+                value={gradeRetire}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  setGradeRetire(next);
+                  if (!earlierTouched) setGradeEarlier(next);
+                  setPriorEnlisted(null);
+                }}
+              >
+                {GRADES.map((grade) => (
+                  <option key={grade}>{grade}</option>
+                ))}
+              </select>
+            </Question>
+          ) : null}
+          {step === "earlier" && earlierWhen ? (
+            <Question title={`In ${MONTHS[earlierWhen.month - 1]} ${earlierWhen.year}, what grade were you?`}>
+              <select
+                className={fieldClass}
+                value={gradeEarlier}
+                onChange={(event) => {
+                  setEarlierTouched(true);
+                  setGradeEarlier(event.target.value);
+                  setDorMonth(null);
+                  setDorYear(null);
+                  setPriorEnlisted(null);
+                }}
+              >
+                {GRADES.map((grade) => (
+                  <option key={grade}>{grade}</option>
+                ))}
+              </select>
+              <p className="mt-4 text-center text-sm text-[#3d4a54]">
+                That is the first of the 36 months. Leave it if you already held {gradeRetire}.
+              </p>
               {askPrior ? (
                 <div className="mt-4">
                   <p className="text-center text-sm text-[#3d4a54]">At least four years and a day of enlisted or warrant service?</p>
@@ -367,29 +406,19 @@ function RetiredPayQuiz() {
               ) : null}
             </Question>
           ) : null}
-          {step === "promotion" ? (
-            <Question title={`Retiring as ${gradeRetire}`}>
-              {askTig ? (
-                <div>
-                  <p className="text-center text-sm text-[#3d4a54]">Will you have three years in {gradeRetire}?</p>
-                  <div className="mt-2">
-                    <YesNo value={tig} onChange={setTig} />
-                  </div>
-                </div>
-              ) : null}
-              {!askTig || tig === true ? (
-                <label className="mt-4 block text-center text-sm text-[#3d4a54]">
-                  How many of the last 36 months will be in {gradeRetire}?
-                  <input
-                    className={`${fieldClass} mt-1`}
-                    inputMode="numeric"
-                    value={monthsAtGrade}
-                    onChange={(event) => setMonthsAtGrade(clamp(Number(event.target.value), 0, 36))}
-                  />
-                </label>
-              ) : downgraded ? (
-                <p className="mt-4 text-center text-sm text-[#3d4a54]">The check will use {gradeNow}.</p>
-              ) : null}
+          {step === "dor" ? (
+            <Question title={gradeRank(gradeEarlier) > gradeRank(gradeRetire) ? `When did you move to ${gradeRetire}?` : `When did you pin on ${gradeRetire}?`}>
+              <MonthYear
+                month={dorMonth}
+                year={dorYear}
+                from={entryYear ?? 1970}
+                to={retireYear ?? now.getFullYear()}
+                onMonth={setDorMonth}
+                onYear={setDorYear}
+              />
+              <p className="mt-4 text-center text-sm text-[#3d4a54]">
+                Date of rank. Months before this are {gradeEarlier}.
+              </p>
             </Question>
           ) : null}
           {step === "when" && activePath ? (
@@ -410,6 +439,11 @@ function RetiredPayQuiz() {
                       setYearsText(value);
                     }}
                   />
+                  {credit && credit.days > 0 ? (
+                    <p className="mt-3 text-center text-sm text-[#3d4a54]">
+                      DFAS drops the extra {credit.days} {credit.days === 1 ? "day" : "days"}. This is {credit.years} years and {credit.months} {credit.months === 1 ? "month" : "months"}.
+                    </p>
+                  ) : null}
                   <button type="button" className="mt-3 text-center text-sm text-[#3d4a54] underline-offset-4 hover:underline" onClick={openSplit}>
                     Pay years and retirement years are different
                   </button>
@@ -465,8 +499,8 @@ function RetiredPayQuiz() {
               first={first}
               lump={lump}
               onLump={setLump}
-              downgraded={downgraded}
-              gradeNow={gradeNow}
+              downgraded={tigShort}
+              gradeNow={gradeEarlier}
               gradeRetire={gradeRetire}
               reserve={!activePath}
               technician={duty === "technician"}
@@ -542,22 +576,28 @@ function YesNo({ value, onChange }: { value: boolean | null; onChange: (value: b
 function MonthYear({
   month,
   year,
+  day,
   from,
   to,
   onMonth,
   onYear,
+  onDay,
 }: {
   month: number | null;
   year: number | null;
+  day?: number | null;
   from: number;
   to: number;
   onMonth: (month: number) => void;
   onYear: (year: number) => void;
+  onDay?: (day: number) => void;
 }) {
   const years: number[] = [];
   for (let value = from; value <= to; value++) years.push(value);
+  const days: number[] = [];
+  for (let value = 1; value <= 31; value++) days.push(value);
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className={`grid ${onDay ? "grid-cols-3" : "grid-cols-2"} gap-2`}>
       <select className={fieldClass} value={month ?? ""} onChange={(event) => onMonth(Number(event.target.value))}>
         <option value="" disabled>
           Month
@@ -568,6 +608,18 @@ function MonthYear({
           </option>
         ))}
       </select>
+      {onDay ? (
+        <select className={fieldClass} value={day ?? ""} onChange={(event) => onDay(Number(event.target.value))}>
+          <option value="" disabled>
+            Day
+          </option>
+          {days.map((value) => (
+            <option key={value} value={value}>
+              {value}
+            </option>
+          ))}
+        </select>
+      ) : null}
       <select className={fieldClass} value={year ?? ""} onChange={(event) => onYear(Number(event.target.value))}>
         <option value="" disabled>
           Year
@@ -605,7 +657,7 @@ function Result({
   reserveNo,
 }: {
   system: RetirementSystem | null;
-  table: PayTable | null | undefined;
+  table: PayTable[] | null | undefined;
   result: RetiredPayResult | null;
   first: string;
   lump: LumpSum;
@@ -624,7 +676,7 @@ function Result({
       <h1 className="font-sans text-[1.65rem] font-medium leading-tight">{who} retired pay</h1>
       {table === undefined && !activeUnder && !reserveNo ? <p className="mt-6 text-sm text-[#3d4a54]">Reading the current DFAS basic-pay table.</p> : null}
       {!activeUnder && !reserveNo && (table === null || (table && !result)) ? (
-        <p className="mt-6 text-sm text-[#3d4a54]">The official basic-pay table could not be read. No dollar amount is shown.</p>
+        <p className="mt-6 text-sm text-[#3d4a54]">One of the 36 months has no basic-pay table on file. No dollar amount is shown.</p>
       ) : null}
       {!result && (activeUnder || reserveNo) ? (
         <p className="mt-6 text-base text-[#1a2330]">
@@ -639,14 +691,23 @@ function Result({
         <div className="mt-6">
           <p className="font-sans text-4xl font-medium tabular-nums">{money(result.monthly)}</p>
           <p className="mt-1 text-sm text-[#3d4a54]">a month · {money(result.yearly)} a year</p>
-          <p className="mt-4 text-base">{systemLabel(system)}. DFAS basic pay effective January 1, {table.effectiveYear}.</p>
+          <p className="mt-4 text-base">{systemLabel(system)}. Each of the 36 months uses the grade worn that month and that year’s basic-pay scale.</p>
+          {result.bands?.length ? (
+            <div className="mt-3 text-sm leading-relaxed text-[#3d4a54]">
+              {result.bands.map((band) => (
+                <p key={`${band.year}-${band.grade}-${band.rate}`}>
+                  {band.count} {band.count === 1 ? "month" : "months"} on the {band.year} scale, {band.grade}, {money(band.rate)}
+                </p>
+              ))}
+            </div>
+          ) : null}
           <p className="mt-3 text-sm leading-relaxed text-[#3d4a54]">
-            Pre-tax gross retired pay as DFAS would start it. Today's official basic-pay table. Before the Survivor Benefit Plan premium. VA disability can change the deposit. Not BAH, BAS, TSP, a future raise, or the first COLA.
+            Pre-tax gross retired pay as DFAS would start it, rounded down to the dollar. Before the Survivor Benefit Plan premium. VA disability can change the deposit. Not BAH, BAS, TSP, a future raise, or the first COLA.
           </p>
           {reserve ? <p className="mt-2 text-sm text-[#3d4a54]">Active-duty basic pay, not drill pay.</p> : null}
           {technician ? <p className="mt-2 text-sm text-[#3d4a54]">This is not the FERS pension.</p> : null}
           {downgraded ? (
-            <p className="mt-2 text-sm text-[#3d4a54]">Computed at {gradeNow}. Three years in {gradeRetire} was not met.</p>
+            <p className="mt-2 text-sm text-[#3d4a54]">Three years in {gradeRetire} was not met. The months still use the grade worn. DFAS may retire this grade at {gradeNow}.</p>
           ) : null}
           {system === "brs" ? (
             <div className="mt-4">
@@ -683,9 +744,4 @@ function Result({
 
 function round2(value: number): number {
   return Math.round(value * 100) / 100;
-}
-
-function clamp(value: number, min: number, max: number): number {
-  if (!Number.isFinite(value)) return min;
-  return Math.min(max, Math.max(min, value));
 }

@@ -8,6 +8,7 @@ import {
   rateAt,
   retirementSystem,
   retiredPay,
+  serviceCredit,
   systemQuestion,
   type PayTable,
 } from "./formula.ts";
@@ -222,4 +223,133 @@ test("under 20 active years and a reserve without good years refuse a check", ()
     null,
   );
   assert.equal(rateAt(table, "E-7", 20), 3000);
+});
+
+test("the high-36 uses the grade and the table in effect each month", () => {
+  const early: PayTable = { effectiveYear: 1990, rates: { "E-7": { 0: 100 }, "E-6": { 0: 40 } } };
+  const mid: PayTable = { effectiveYear: 1991, rates: { "E-7": { 0: 110 }, "E-6": { 0: 50 } } };
+  const late: PayTable = { effectiveYear: 1992, rates: { "E-7": { 0: 120 }, "E-6": { 0: 60 } } };
+  const history = {
+    tables: [early, mid, late],
+    retireYear: 1993,
+    retireMonth: 1,
+    dorYear: 1992,
+    dorMonth: 7,
+  };
+  const split = retiredPay(
+    {
+      system: "high3",
+      eligible: true,
+      payYears: 20,
+      multiplierYears: 20,
+      grade: "E-7",
+      priorGrade: "E-6",
+      monthsAtGrade: 36,
+      lump: "full",
+      history,
+    },
+    late,
+  );
+  // Jul–Dec 1992 at E-7, Jan–Jun 1992 and all of 1990–1991 at E-6.
+  const average = (6 * 120 + 6 * 60 + 12 * 50 + 12 * 40) / 36;
+  assert.equal(split?.high36, average);
+  assert.equal(split?.monthly, Math.floor(average * 0.5));
+  assert.deepEqual(
+    split?.bands?.map((band) => [band.year, band.grade, band.rate, band.count]),
+    [
+      [1990, "E-6", 40, 12],
+      [1991, "E-6", 50, 12],
+      [1992, "E-6", 60, 6],
+      [1992, "E-7", 120, 6],
+    ],
+  );
+  const same = retiredPay(
+    {
+      system: "high3",
+      eligible: true,
+      payYears: 20,
+      multiplierYears: 20,
+      grade: "E-7",
+      priorGrade: "E-7",
+      monthsAtGrade: 36,
+      lump: "full",
+      history: { ...history, dorYear: null, dorMonth: null },
+    },
+    late,
+  );
+  assert.equal(same?.high36, (12 * 120 + 12 * 110 + 12 * 100) / 36);
+  const missing = retiredPay(
+    {
+      system: "high3",
+      eligible: true,
+      payYears: 20,
+      multiplierYears: 20,
+      grade: "E-7",
+      priorGrade: "E-6",
+      monthsAtGrade: 36,
+      lump: "full",
+      history: { ...history, tables: [mid, late] },
+    },
+    late,
+  );
+  assert.equal(missing, null);
+});
+
+test("an entry day drops leftover days and splits the longevity month", () => {
+  const credit = serviceCredit(1990, 1, 16, 2010, 2, 1);
+  assert.equal(credit.years, 20);
+  assert.equal(credit.months, 0);
+  assert.equal(credit.days, 15);
+  assert.equal(credit.creditedYears, 20);
+  const rates = { "E-7": { 0: 1000, 20: 2000 } };
+  const tables: PayTable[] = [2007, 2008, 2009, 2010].map((effectiveYear) => ({ effectiveYear, rates }));
+  const split = retiredPay(
+    {
+      system: "high3",
+      eligible: true,
+      payYears: 20,
+      multiplierYears: 20,
+      grade: "E-7",
+      priorGrade: "E-7",
+      monthsAtGrade: 36,
+      lump: "full",
+      history: {
+        tables,
+        retireYear: 2010,
+        retireMonth: 2,
+        dorYear: null,
+        dorMonth: null,
+        entryYear: 1990,
+        entryMonth: 1,
+        entryDay: 16,
+      },
+    },
+    tables[3]!,
+  );
+  assert.equal(split?.bands?.find((band) => band.year === 2010)?.rate, 1500);
+  assert.equal(split?.bands?.find((band) => band.year === 2010)?.count, 1);
+  const whole = retiredPay(
+    {
+      system: "high3",
+      eligible: true,
+      payYears: 20,
+      multiplierYears: credit.creditedYears,
+      grade: "E-7",
+      priorGrade: "E-7",
+      monthsAtGrade: 36,
+      lump: "full",
+      history: {
+        tables,
+        retireYear: 2010,
+        retireMonth: 2,
+        dorYear: null,
+        dorMonth: null,
+        entryYear: 1990,
+        entryMonth: 1,
+        entryDay: 1,
+      },
+    },
+    tables[3]!,
+  );
+  assert.equal(whole?.bands?.find((band) => band.year === 2010)?.rate, 2000);
 });
