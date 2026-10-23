@@ -345,13 +345,25 @@ function RetiredPayQuiz() {
           </p>
         ) : null}
         <div className="flex flex-col sm:rounded-2xl sm:bg-white sm:px-8 sm:py-6 sm:shadow-[0_0_0_1px_#d5d0c6]">
-          {step !== "result" ? (
-            <div className="mb-4 flex gap-1.5" aria-hidden="true">
-              {steps.map((id, index) => (
-                <span key={id} className={index <= stepIndex ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]"} />
-              ))}
-            </div>
-          ) : null}
+          <div className="mb-4 flex gap-1.5" role="group" aria-label="Questions">
+            {steps.map((id, index) => {
+              const filled = step === "result" || index <= stepIndex;
+              const canJump = filled && (step === "result" || index < stepIndex);
+              const bar = filled ? "h-1.5 w-full rounded-full bg-[#3a8a58]" : "h-1.5 w-full rounded-full bg-[#d5d0c6]";
+              if (!canJump) return <span key={id} className="flex h-6 flex-1 items-center"><span className={bar} /></span>;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  aria-label={`Question ${index + 1}`}
+                  className="flex h-6 flex-1 items-center"
+                  onClick={() => setStep(id)}
+                >
+                  <span className={bar} />
+                </button>
+              );
+            })}
+          </div>
           {step === "component" ? (
             <Question title="Active duty, Reserve, or National Guard?">
               <Choices
@@ -557,15 +569,7 @@ function RetiredPayQuiz() {
             />
           ) : null}
           <div className="mt-6 flex items-center gap-2">
-            {step === "result" ? (
-              <button
-                type="button"
-                className="ml-auto h-14 min-w-40 flex-1 rounded-xl bg-[#3a8a58] px-6 text-lg font-medium text-white sm:flex-none"
-                onClick={startOver}
-              >
-                Start over
-              </button>
-            ) : step !== "component" ? (
+            {step !== "component" && step !== "result" ? (
               <button type="button" className="h-14 shrink-0 px-2 text-base text-[#3d4a54]" onClick={back}>
                 Back
               </button>
@@ -581,6 +585,9 @@ function RetiredPayQuiz() {
               </button>
             ) : null}
           </div>
+          <button type="button" className="mt-4 self-center text-sm text-[#3d4a54]" onClick={startOver}>
+            Start over
+          </button>
         </div>
       </div>
     </main>
