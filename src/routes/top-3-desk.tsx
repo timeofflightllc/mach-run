@@ -6,6 +6,7 @@ import { OpsDeleteAccount } from "@/components/ops/ops-delete-account";
 import { PromoCodesDesk } from "@/components/ops/promo-codes-desk";
 import { DeskMail } from "@/components/ops/desk-mail";
 import { EmailCopyDesk } from "@/components/ops/email-copy-desk";
+import { PayTablesDesk } from "@/components/ops/pay-tables-desk";
 import { SavedAt } from "@/components/ops/saved-at";
 import { useEffect, useMemo, useState } from "react";
 import { Field, SelectInput, TextInput } from "@/components/ui/field";
@@ -67,7 +68,7 @@ function intervalLabel(value: OpsRosterRow["interval"]): string {
 
 function Top3DeskDoor() {
   const [gate, setGate] = useState<"wait" | "no" | "yes">("wait");
-  const [tab, setTab] = useState<"roster" | "users" | "copy" | "codes" | "mail" | "emails">("roster");
+  const [tab, setTab] = useState<"roster" | "users" | "copy" | "codes" | "mail" | "emails" | "pay">("roster");
   const [q, setQ] = useState("");
   const [plan, setPlan] = useState<OpsPlanFilter>("all");
   const [paid, setPaid] = useState<OpsPaidFilter>("all");
@@ -163,7 +164,9 @@ function Top3DeskDoor() {
       <div className="desk-gutter mx-auto w-full max-w-[90rem] space-y-6 py-8">
         <header>
           <p className="text-sm text-muted">
-            {tab === "users"
+            {tab === "pay"
+              ? "Basic pay. Upload the four official DFAS pages when a new year is published."
+              : tab === "users"
               ? "Users. Click a person for site use, then delete with your desk password."
               : tab === "copy"
                 ? "Site copy. Pages and announcements."
@@ -190,6 +193,7 @@ function Top3DeskDoor() {
               ["codes", "Codes"],
               ["mail", "Mail"],
               ["emails", "Emails"],
+              ["pay", "Pay"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -210,6 +214,7 @@ function Top3DeskDoor() {
         {tab === "copy" ? <SiteCopyDesk /> : null}
         {tab === "codes" ? <PromoCodesDesk /> : null}
         {tab === "emails" ? <EmailCopyDesk /> : null}
+        {tab === "pay" ? <PayTablesDesk /> : null}
         {tab === "mail" ? (
           <DeskMail
             q={q}

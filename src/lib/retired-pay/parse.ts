@@ -43,7 +43,7 @@ function rowsOf(tableHtml: string): string[][] {
 /** Read one DFAS basic-pay page. Returns null when the heading or the grid is missing. */
 export function parseBasicPayPage(html: string): PayTable | null {
   const source = html.replace(/&nbsp;|&#160;/gi, " ");
-  const heading = /Effective\s+January\s+1,\s*(\d{4})/i.exec(source);
+  const heading = /Effective\s+(?:January|April)\s+1,\s*(\d{4})/i.exec(source);
   if (!heading) return null;
   const effectiveYear = Number(heading[1]);
   const rates: PayTable["rates"] = {};

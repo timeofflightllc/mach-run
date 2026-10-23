@@ -40,6 +40,11 @@ test("a page without the January heading is refused", () => {
   assert.equal(parseBasicPayPage("<table><tr><td>E-7</td><td>100</td></tr></table>"), null);
 });
 
+test("the April 1 enlisted heading is the same year", () => {
+  const html = FAKE_PAGE.replace("January 1, 1999", "April 1, 1999");
+  assert.equal(parseBasicPayPage(html)?.effectiveYear, 1999);
+});
+
 test("two pages combine only when the year matches", () => {
   const other = FAKE_PAGE.replace("E-7", "O-3E").replaceAll("E-7", "O-3E");
   const combined = combineBasicPayPages([FAKE_PAGE, other]);
