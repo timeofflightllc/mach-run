@@ -22,6 +22,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as MethodRouteImport } from './routes/method'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RetiredPayRouteImport } from './routes/retired-pay'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StartRouteImport } from './routes/start'
 import { Route as Top3DeskRouteImport } from './routes/top-3-desk'
@@ -95,6 +96,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RetiredPayRoute = RetiredPayRouteImport.update({
+  id: '/retired-pay',
+  path: '/retired-pay',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -145,6 +151,7 @@ export interface FileRoutesByFullPath {
   '/method': typeof MethodRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/retired-pay': typeof RetiredPayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/start': typeof StartRoute
   '/top-3-desk': typeof Top3DeskRoute
@@ -167,6 +174,7 @@ export interface FileRoutesByTo {
   '/method': typeof MethodRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/retired-pay': typeof RetiredPayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/start': typeof StartRoute
   '/top-3-desk': typeof Top3DeskRoute
@@ -190,6 +198,7 @@ export interface FileRoutesById {
   '/method': typeof MethodRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/retired-pay': typeof RetiredPayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/start': typeof StartRoute
   '/top-3-desk': typeof Top3DeskRoute
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/method'
     | '/pricing'
     | '/privacy'
+    | '/retired-pay'
     | '/sitemap.xml'
     | '/start'
     | '/top-3-desk'
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/method'
     | '/pricing'
     | '/privacy'
+    | '/retired-pay'
     | '/sitemap.xml'
     | '/start'
     | '/top-3-desk'
@@ -258,6 +269,7 @@ export interface FileRouteTypes {
     | '/method'
     | '/pricing'
     | '/privacy'
+    | '/retired-pay'
     | '/sitemap.xml'
     | '/start'
     | '/top-3-desk'
@@ -281,6 +293,7 @@ export interface RootRouteChildren {
   MethodRoute: typeof MethodRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  RetiredPayRoute: typeof RetiredPayRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StartRoute: typeof StartRoute
   Top3DeskRoute: typeof Top3DeskRoute
@@ -383,6 +396,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/retired-pay': {
+      id: '/retired-pay'
+      path: '/retired-pay'
+      fullPath: '/retired-pay'
+      preLoaderRoute: typeof RetiredPayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -449,6 +469,7 @@ const rootRouteChildren: RootRouteChildren = {
   MethodRoute: MethodRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  RetiredPayRoute: RetiredPayRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StartRoute: StartRoute,
   Top3DeskRoute: Top3DeskRoute,
