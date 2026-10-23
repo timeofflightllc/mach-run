@@ -192,11 +192,14 @@ export function MachFooter({
   variant = "short",
   disclaimer = false,
   staticInset = false,
+  retiredPayLink = false,
 }: {
   variant?: "full" | "short";
   disclaimer?: boolean;
   /** Match the 10% gutter on static pages. The calculator leaves this off. */
   staticInset?: boolean;
+  /** Homepage only. The military calculator sits on the bottom line. */
+  retiredPayLink?: boolean;
 }) {
   const [copy, setCopy] = useState<FooterCopy>(DEFAULT_FOOTER_COPY);
   useEffect(() => {
@@ -237,6 +240,14 @@ export function MachFooter({
               </div>
             ) : null}
             <p className="w-full text-center text-[12.5px] leading-snug text-muted">
+              {retiredPayLink ? (
+                <>
+                  <Link to="/retired-pay" className="font-medium text-fg underline underline-offset-4 hover:text-accent">
+                    Military Retirement Pay Calculator
+                  </Link>
+                  <span className="px-4">|</span>
+                </>
+              ) : null}
               <Link to="/privacy" className="font-medium text-fg underline underline-offset-4 hover:text-accent">Privacy</Link>
               <span className="px-4">|</span>
               <Link to="/legal" className="font-medium text-fg underline underline-offset-4 hover:text-accent">Terms of Service</Link>

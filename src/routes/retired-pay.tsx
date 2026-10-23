@@ -24,9 +24,24 @@ import { pageHead } from "@/lib/seo";
 export const Route = createFileRoute("/retired-pay")({
   head: () =>
     pageHead({
-      title: "Military retired pay | MACH RUN",
-      description: "What your military retirement check would start at, before tax, from today's official basic-pay table.",
+      title: "Military Retirement Pay Calculator | MACH RUN",
+      description:
+        "Free military retirement pay calculator for High-3, BRS, REDUX, and Final Pay. The pre-tax retired paycheck DFAS would start, from official basic-pay tables.",
       path: "/retired-pay",
+      jsonLd: [
+        {
+          "@context": "https://schema.org",
+          "@type": "WebApplication",
+          name: "Military Retirement Pay Calculator",
+          applicationCategory: "FinanceApplication",
+          operatingSystem: "Web",
+          url: "https://machrun.com/retired-pay",
+          description:
+            "Free military retirement pay calculator for High-3, BRS, REDUX, and Final Pay. The pre-tax retired paycheck DFAS would start, from official basic-pay tables.",
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+          provider: { "@type": "Organization", name: "MACH RUN", url: "https://machrun.com" },
+        },
+      ],
     }),
   component: RetiredPayQuiz,
 });
@@ -167,6 +182,39 @@ function RetiredPayQuiz() {
     go(steps[index + 1] ?? "result");
   }
 
+  function startOver() {
+    setComponent(null);
+    setDuty(null);
+    setEntryMonth(null);
+    setEntryDay(null);
+    setEntryYear(null);
+    setCsb(null);
+    setBrsOpt(null);
+    setGradeRetire("E-7");
+    setGradeEarlier("E-7");
+    setEarlierTouched(false);
+    setPriorEnlisted(null);
+    setDorMonth(null);
+    setDorYear(null);
+    setRetireMonth(null);
+    setRetireYear(null);
+    setYearsText("");
+    setYearsTouched(false);
+    setSplit(false);
+    setPayYearsText("");
+    setMultYearsText("");
+    setPointsText("");
+    setGoodYears(null);
+    setDrawAgeText("60");
+    setAgeNowText("");
+    setReservePayText("");
+    setReservePayTouched(false);
+    setName("");
+    setLump("full");
+    setTable(undefined);
+    setStep("component");
+  }
+
   function back() {
     if (step === "result") {
       setStep("name");
@@ -286,9 +334,9 @@ function RetiredPayQuiz() {
         <div className="flex w-full justify-center bg-white px-4 pt-3">
           <img src="/brand/mach-run-logo-quiz.png" alt="MACH RUN" className="h-16 w-auto sm:h-[4.5rem]" />
         </div>
-        <p className="mt-2 text-center text-sm font-bold leading-snug tracking-[0.12em] text-white">
+        <h1 className="mt-2 text-center text-sm font-bold leading-snug tracking-[0.12em] text-white">
           Military Retirement Pay Calculator
-        </p>
+        </h1>
       </header>
       <div className="mx-auto flex w-full max-w-lg flex-col px-4 pb-10 pt-3 sm:px-6">
         {step !== "result" ? (
@@ -509,7 +557,15 @@ function RetiredPayQuiz() {
             />
           ) : null}
           <div className="mt-6 flex items-center gap-2">
-            {step !== "component" ? (
+            {step === "result" ? (
+              <button
+                type="button"
+                className="ml-auto h-14 min-w-40 flex-1 rounded-xl bg-[#3a8a58] px-6 text-lg font-medium text-white sm:flex-none"
+                onClick={startOver}
+              >
+                Start over
+              </button>
+            ) : step !== "component" ? (
               <button type="button" className="h-14 shrink-0 px-2 text-base text-[#3d4a54]" onClick={back}>
                 Back
               </button>
@@ -534,7 +590,7 @@ function RetiredPayQuiz() {
 function Question({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <h1 className="text-center font-sans text-[1.65rem] font-medium leading-tight">{title}</h1>
+      <h2 className="text-center font-sans text-[1.65rem] font-medium leading-tight">{title}</h2>
       <div className="mt-6 flex flex-col">{children}</div>
     </div>
   );
@@ -702,7 +758,7 @@ function Result({
             </div>
           ) : null}
           <p className="mt-3 text-sm leading-relaxed text-[#3d4a54]">
-            Pre-tax gross retired pay as DFAS would start it, rounded down to the dollar. Before the Survivor Benefit Plan premium. VA disability can change the deposit. Not BAH, BAS, TSP, a future raise, or the first COLA.
+            Pre-tax gross retired pay as DFAS would start it, rounded down to the dollar.
           </p>
           {reserve ? <p className="mt-2 text-sm text-[#3d4a54]">Active-duty basic pay, not drill pay.</p> : null}
           {technician ? <p className="mt-2 text-sm text-[#3d4a54]">This is not the FERS pension.</p> : null}

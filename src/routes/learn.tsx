@@ -20,7 +20,7 @@ export const Route = createFileRoute("/learn")({
     pageHead({
       title: "Learn | MACH RUN Retirement Calculator",
       description:
-        "Learn is where the Method, the FAQ, Compare, and Updates sit. How a MACH RUN uses the household numbers you type.",
+        "Learn is where the military retirement pay calculator, the Method, the FAQ, Compare, and Updates sit.",
       path: "/learn",
     }),
   loader: () => loadPublicSiteCopy(),
@@ -40,6 +40,17 @@ function Learn() {
           {page.kicker ? <p className="mt-2 text-lg text-muted">{page.kicker}</p> : null}
         </header>
         <ul className="space-y-5">
+          <li>
+            <Link
+              to="/retired-pay"
+              className="font-display text-2xl text-fg underline underline-offset-4 hover:text-accent"
+            >
+              Military Retirement Pay Calculator
+            </Link>
+            <p className="mt-1 text-muted">
+              High-3, BRS, REDUX, and Final Pay. The pre-tax retired paycheck DFAS would start, from the official basic-pay tables.
+            </p>
+          </li>
           {LEARN_LINKS.map((to, i) => (
             <li key={to}>
               <Link
