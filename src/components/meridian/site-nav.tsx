@@ -17,12 +17,6 @@ const LINKS = [
   { to: "/legal" as const, label: "Terms of Service", menu: "Terms" },
 ];
 
-const MENU_LINKS = [
-  LINKS[0]!,
-  { to: "/retired-pay" as const, label: "Military Retirement Pay Calculator" },
-  ...LINKS.slice(1),
-];
-
 export function SiteNav({
   className,
   tone = "strong",
@@ -106,7 +100,7 @@ export function SiteMenu({
             align === "right" ? "right-0" : "left-0",
           )}
         >
-          {MENU_LINKS.map((link) => (
+          {LINKS.map((link) => (
             <Link
               key={link.to}
               to={link.to}
