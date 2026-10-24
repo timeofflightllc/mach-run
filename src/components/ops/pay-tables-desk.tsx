@@ -24,6 +24,7 @@ export function PayTablesDesk() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<"read" | "save" | null>(null);
   const [formKey, setFormKey] = useState(0);
+  const [locked, setLocked] = useState(false);
 
   async function reload() {
     const result = await listPayTablesFn();
