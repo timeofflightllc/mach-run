@@ -7,7 +7,7 @@ export const SITEMAP_PAGES: {
   slugs: readonly SitePageSlug[];
 }[] = [
   { path: "/retired-pay", sourceLastmod: "2026-10-23T13:15:00+00:00", slugs: [] },
-  { path: "/tools", sourceLastmod: "2026-10-24T06:21:00+00:00", slugs: [] },
+  { path: "/tools", sourceLastmod: "2026-10-24T07:33:00+00:00", slugs: ["tools", "footer"] },
   { path: "/", sourceLastmod: "2026-10-10T08:20:17+00:00", slugs: ["hero", "footer", "planner", "boyd"] },
   { path: "/pricing", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["pricing", "footer"] },
   { path: "/about", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["about", "footer"] },
