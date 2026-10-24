@@ -765,7 +765,7 @@ export function SiteCopyDesk() {
                   : slug === "learn"
                     ? "The three links — Method, FAQ, Updates"
                     : slug === "tools"
-                      ? "Tools page — five parts, blank line between each"
+                      ? "Body — this is what the Tools page shows"
                       : "Body"
               }
             >
@@ -788,7 +788,7 @@ export function SiteCopyDesk() {
             ) : null}
             {slug === "tools" ? (
               <p className="text-xs text-muted">
-                Blank line between each part. Order: calculator name, the note under it, the not-ready heading, the not-ready sentence, then one not-ready name per line. The calculator link stays. Names in the last part are not links.
+                What you type here is what shows under the title. A blank line starts a new paragraph. A line that starts with # is a heading. [Contact](/contact) makes a link. Lines you stack with a single return stay lines. Nothing is turned into a bullet list.
               </p>
             ) : null}
             <div className="flex flex-wrap items-center gap-3">

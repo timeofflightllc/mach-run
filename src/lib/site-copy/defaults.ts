@@ -210,12 +210,11 @@ What shipped recently on the MACH RUN retirement calculator.`,
     slug: "tools",
     title: "Tools",
     kicker: "Free calculators. One is live. The rest are still being built.",
-    body: `Free Military Retirement Pay Calculator
+    body: `[Free Military Retirement Pay Calculator](/retired-pay)
 
 Live. High-3, BRS, REDUX, and Final Pay. The pre-tax retired paycheck DFAS would start, from the official basic-pay tables.
 
-Still being built
-
+# Still being built
 These are not live. There is no page to open yet.
 
 BAH calculator
