@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { PieceCrumbs, RelatedPieces } from "@/components/meridian/piece-links";
 import { SiteCopyBody } from "@/components/meridian/site-copy-view";
@@ -56,17 +56,6 @@ function Tools() {
           {page.kicker ? <p className="mt-2 text-lg text-muted">{page.kicker}</p> : null}
         </header>
         <SiteCopyBody body={page.body} underlineLinks />
-        <p className="text-muted">
-          A calculator result is not a decision. The rule is in the{" "}
-          <Link
-            to="/legal"
-            hash="free-calculators"
-            className="text-fg underline underline-offset-4 hover:text-accent"
-          >
-            Terms of Service
-          </Link>
-          .
-        </p>
         <RelatedPieces path="/tools" />
       </div>
       <MachFooter staticInset />

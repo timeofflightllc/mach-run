@@ -84,6 +84,31 @@ async function seedIfEmpty(): Promise<void> {
   );
 }
 
+const TOOLS_DECISION_LINE =
+  "A calculator result is not a decision. The rule is in the [Terms of Service](/legal#free-calculators).";
+
+/** Once. Puts the closing Tools line into the desk body. A later edit can change or delete it. */
+async function ensureToolsDecisionLine(): Promise<void> {
+  const sql = await getSql();
+  const flagged = await sql.query<{ key: string }>(
+    "select key from mach_copy_flags where key = 'tools_decision_line'",
+  );
+  if (flagged.length) return;
+  const rows = await sql.query<{ body: string }>(
+    "select body from mach_site_pages where slug = 'tools'",
+  );
+  const body = rows[0]?.body ?? "";
+  if (body && !body.includes("not a decision")) {
+    await sql.query("update mach_site_pages set body = $1, updated_at = now() where slug = 'tools'", [
+      `${body.trimEnd()}\n\n${TOOLS_DECISION_LINE}\n`,
+    ]);
+  }
+  await sql.query(
+    `insert into mach_copy_flags (key) values ('tools_decision_line')
+     on conflict (key) do nothing`,
+  );
+}
+
 /** A later ship note inserts once. An edit already in the desk is left alone. */
 async function ensurePinnedAnnouncements(): Promise<void> {
   const sql = await getSql();
@@ -300,6 +325,7 @@ export async function loadSiteCopy(): Promise<SiteCopy> {
   if (!ok) return fallback;
   try {
     await seedIfEmpty();
+    await ensureToolsDecisionLine();
     await ensurePinnedAnnouncements();
     const sql = await getSql();
     const pageRows = await sql.query<{

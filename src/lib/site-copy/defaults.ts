@@ -219,7 +219,9 @@ These are not live. There is no page to open yet.
 
 BAH calculator
 OHA calculator
-Other military pay calculators`,
+Other military pay calculators
+
+A calculator result is not a decision. The rule is in the [Terms of Service](/legal#free-calculators).`,
   },
   {
     slug: "compare",
