@@ -2514,7 +2514,7 @@ function Home() {
         </div>
         </div>
       </main>
-      <MachFooter disclaimer retiredPayLink />
+      <MachFooter disclaimer />
       </div>
       </div>
       {stalePrompt ? (

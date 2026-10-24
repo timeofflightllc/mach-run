@@ -7,16 +7,17 @@ export const SITEMAP_PAGES: {
   slugs: readonly SitePageSlug[];
 }[] = [
   { path: "/retired-pay", sourceLastmod: "2026-10-23T13:15:00+00:00", slugs: [] },
+  { path: "/tools", sourceLastmod: "2026-10-24T06:21:00+00:00", slugs: [] },
   { path: "/", sourceLastmod: "2026-10-10T08:20:17+00:00", slugs: ["hero", "footer", "planner", "boyd"] },
   { path: "/pricing", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["pricing", "footer"] },
   { path: "/about", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["about", "footer"] },
-  { path: "/learn", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["learn", "footer"] },
+  { path: "/learn", sourceLastmod: "2026-10-24T06:21:00+00:00", slugs: ["learn", "footer"] },
   { path: "/method", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["method", "footer"] },
   { path: "/faq", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["faq", "footer"] },
   { path: "/compare", sourceLastmod: "2026-10-11T07:45:00+00:00", slugs: ["compare", "footer"] },
   { path: "/contact", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["contact", "footer"] },
   { path: "/announcements", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["announcements", "footer"] },
-  { path: "/legal", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["legal", "footer"] },
+  { path: "/legal", sourceLastmod: "2026-10-24T06:21:00+00:00", slugs: ["legal", "footer"] },
   { path: "/privacy", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["privacy", "footer"] },
 ];
 

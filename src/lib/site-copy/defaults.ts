@@ -67,6 +67,15 @@ The paid plan ends when the refund is sent. The household stays, on the free lim
 
 A refund is not an upgrade. Stepping up a tier is handled in Manage billing, with credit for time already paid. Deleting the account does not send a refund. Ask first. If a refund was sent, do not also dispute that charge with the bank.`;
 
+export const FREE_CALCULATORS_BLOCK = `# Free calculators {#free-calculators}
+The free calculators, including the [military retirement pay calculator](/retired-pay), are free tools. You can use them without a paid plan.
+
+Do not make a financial decision from a calculator result. The number is a sketch from what you type and the tables on file. It is not a DFAS statement, a VA award, a housing determination, or a retirement order.
+
+Check the source document before you act. For military pay and retired pay, that is the official basic-pay table and the retirement rule that applies to you. For a housing allowance, that is the official BAH or OHA rate. For any other figure, read the letter or table that sets the amount.
+
+Never make a financial decision without a professional fiduciary. A fiduciary has to put your interest first. While we do care about your financial success, MACH RUN is not a fiduciary, and these calculators are not advice.`;
+
 export const DEFAULT_PAGES: SitePage[] = [
   {
     slug: "about",
@@ -212,7 +221,7 @@ What shipped recently on the MACH RUN retirement calculator.`,
   {
     slug: "legal",
     title: "Terms of Service",
-    kicker: "Last updated: October 12, 2026.",
+    kicker: "Last updated: October 24, 2026.",
     body: `MACH RUN is a hypothetical household planning calculator. It is not a broker, bank, fiduciary, or advisor. MACH RUN is operated by Time of Flight LLC, and Florida law governs these terms.
 
 # Accounts
@@ -225,6 +234,8 @@ ${REFUND_LEGAL_BLOCK}
 
 # Not advice
 MACH RUN does not provide financial, tax, legal, or investment advice. Projections are illustrations from the numbers you enter. See the disclaimer below.
+
+${FREE_CALCULATORS_BLOCK}
 
 # Acceptable use
 Do not break the law, attack the service, scrape other people’s data, or overload the site. We may suspend or close accounts that abuse the service.

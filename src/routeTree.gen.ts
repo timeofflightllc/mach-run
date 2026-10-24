@@ -25,6 +25,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RetiredPayRouteImport } from './routes/retired-pay'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StartRouteImport } from './routes/start'
+import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as Top3DeskRouteImport } from './routes/top-3-desk'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as ApiContactRouteImport } from './routes/api/contact'
@@ -111,6 +112,11 @@ const StartRoute = StartRouteImport.update({
   path: '/start',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ToolsRoute = ToolsRouteImport.update({
+  id: '/tools',
+  path: '/tools',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const Top3DeskRoute = Top3DeskRouteImport.update({
   id: '/top-3-desk',
   path: '/top-3-desk',
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/retired-pay': typeof RetiredPayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/start': typeof StartRoute
+  '/tools': typeof ToolsRoute
   '/top-3-desk': typeof Top3DeskRoute
   '/verify-email': typeof VerifyEmailRoute
   '/api/contact': typeof ApiContactRoute
@@ -177,6 +184,7 @@ export interface FileRoutesByTo {
   '/retired-pay': typeof RetiredPayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/start': typeof StartRoute
+  '/tools': typeof ToolsRoute
   '/top-3-desk': typeof Top3DeskRoute
   '/verify-email': typeof VerifyEmailRoute
   '/api/contact': typeof ApiContactRoute
@@ -201,6 +209,7 @@ export interface FileRoutesById {
   '/retired-pay': typeof RetiredPayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/start': typeof StartRoute
+  '/tools': typeof ToolsRoute
   '/top-3-desk': typeof Top3DeskRoute
   '/verify-email': typeof VerifyEmailRoute
   '/api/contact': typeof ApiContactRoute
@@ -226,6 +235,7 @@ export interface FileRouteTypes {
     | '/retired-pay'
     | '/sitemap.xml'
     | '/start'
+    | '/tools'
     | '/top-3-desk'
     | '/verify-email'
     | '/api/contact'
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/retired-pay'
     | '/sitemap.xml'
     | '/start'
+    | '/tools'
     | '/top-3-desk'
     | '/verify-email'
     | '/api/contact'
@@ -272,6 +283,7 @@ export interface FileRouteTypes {
     | '/retired-pay'
     | '/sitemap.xml'
     | '/start'
+    | '/tools'
     | '/top-3-desk'
     | '/verify-email'
     | '/api/contact'
@@ -296,6 +308,7 @@ export interface RootRouteChildren {
   RetiredPayRoute: typeof RetiredPayRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StartRoute: typeof StartRoute
+  ToolsRoute: typeof ToolsRoute
   Top3DeskRoute: typeof Top3DeskRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   ApiContactRoute: typeof ApiContactRoute
@@ -417,6 +430,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tools': {
+      id: '/tools'
+      path: '/tools'
+      fullPath: '/tools'
+      preLoaderRoute: typeof ToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/top-3-desk': {
       id: '/top-3-desk'
       path: '/top-3-desk'
@@ -472,6 +492,7 @@ const rootRouteChildren: RootRouteChildren = {
   RetiredPayRoute: RetiredPayRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StartRoute: StartRoute,
+  ToolsRoute: ToolsRoute,
   Top3DeskRoute: Top3DeskRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   ApiContactRoute: ApiContactRoute,

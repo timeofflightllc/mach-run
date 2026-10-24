@@ -10,8 +10,9 @@ const CONTENT_DATES: Record<string, { published: string; modified: string }> = {
   "/compare": { published: "2026-10-11", modified: "2026-10-11" },
   "/contact": { published: "2026-09-07", modified: "2026-10-10" },
   "/announcements": { published: "2026-09-07", modified: "2026-10-10" },
-  "/learn": { published: "2026-10-10", modified: "2026-10-10" },
-  "/legal": { published: "2026-08-27", modified: "2026-10-10" },
+  "/learn": { published: "2026-10-10", modified: "2026-10-24" },
+  "/tools": { published: "2026-10-24", modified: "2026-10-24" },
+  "/legal": { published: "2026-08-27", modified: "2026-10-24" },
   "/privacy": { published: "2026-08-27", modified: "2026-10-10" },
 };
 

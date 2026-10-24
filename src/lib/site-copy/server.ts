@@ -1,6 +1,6 @@
 import { getSql } from "@/lib/db";
 import { pathsForSlug, pingIndexNow } from "@/lib/seo/sitemap";
-import { DEFAULT_PAGES, defaultAnnouncements, PINNED_ANNOUNCEMENTS, REFUND_FAQ_BLOCK, REFUND_LEGAL_BLOCK } from "./defaults";
+import { DEFAULT_PAGES, defaultAnnouncements, PINNED_ANNOUNCEMENTS, REFUND_FAQ_BLOCK, REFUND_LEGAL_BLOCK, FREE_CALCULATORS_BLOCK } from "./defaults";
 import {
   SITE_PAGE_SLUGS,
   type SiteAnnouncement,
@@ -104,7 +104,7 @@ async function ensurePinnedAnnouncements(): Promise<void> {
 }
 
 function freshenStoredCopy(body: string): string {
-  return body
+  const next = body
     .replace(
       /^This is the briefing on the engine\s*[—–-]\s*not a second legal page\.\s*\[Legal\]\(\/legal\) holds the disclaimer\.\s*Here is what Calculate does with the numbers in Observe, Orient, and Decide\.\s*/m,
       "",
@@ -182,8 +182,8 @@ function freshenStoredCopy(body: string): string {
     .replaceAll(
       '"advisorUnlimitedTagYear": "Fly yearly and we throw in two months."',
       '"advisorUnlimitedTagYear": "14-day trial, we throw in two months."',
-    );;
-  return ensureRefundCopy(body);
+    );
+  return ensureFreeCalculators(ensureRefundCopy(next));
 }
 
 const OLD_NOT_REFUNDED = "The current period is not refunded except where the law requires it.";
@@ -193,10 +193,15 @@ const NEW_ACCESS =
   "Access lasts through the paid period unless a refund is sent or the account is closed for abuse.";
 
 function ensureRefundCopy(body: string): string {
-  let next = body.replaceAll(
-    "Last updated: October 3, 2026. MACH RUN is a hypothetical",
-    "Last updated: October 12, 2026. MACH RUN is a hypothetical",
-  );
+  let next = body
+    .replaceAll(
+      "Last updated: October 3, 2026. MACH RUN is a hypothetical",
+      "Last updated: October 24, 2026. MACH RUN is a hypothetical",
+    )
+    .replaceAll(
+      "Last updated: October 12, 2026. MACH RUN is a hypothetical",
+      "Last updated: October 24, 2026. MACH RUN is a hypothetical",
+    );
   if (next.includes(OLD_NOT_REFUNDED)) {
     next = next.replaceAll(
       OLD_NOT_REFUNDED,
@@ -215,6 +220,24 @@ function ensureRefundCopy(body: string): string {
   return next;
 }
 
+function ensureFreeCalculators(body: string): string {
+  let next = body.replaceAll(
+    " You can use them without a paid plan. Other pay calculators, such as BAH and OHA, may be added later.",
+    " You can use them without a paid plan.",
+  );
+  const oldClose = "MACH RUN is not a fiduciary, and these calculators are not advice.";
+  const newClose =
+    "While we do care about your financial success, MACH RUN is not a fiduciary, and these calculators are not advice.";
+  if (next.includes(oldClose) && !next.includes("While we do care about your financial success")) {
+    next = next.replaceAll(oldClose, newClose);
+  }
+  if (!next.includes("Florida law governs") || next.includes("# Free calculators")) return next;
+  const marker = "# Acceptable use";
+  const at = next.indexOf(marker);
+  if (at === -1) return `${next.trimEnd()}\n\n${FREE_CALCULATORS_BLOCK}\n`;
+  return `${next.slice(0, at).trimEnd()}\n\n${FREE_CALCULATORS_BLOCK}\n\n${next.slice(at)}`;
+}
+
 function presentTerms(page: SitePage): SitePage {
   if (page.slug !== "legal") return page;
   const body = page.body
@@ -223,7 +246,7 @@ function presentTerms(page: SitePage): SitePage {
   return {
     ...page,
     title: "Terms of Service",
-    kicker: "Last updated: October 12, 2026.",
+    kicker: "Last updated: October 24, 2026.",
     body,
   };
 }

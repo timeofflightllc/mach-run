@@ -11,7 +11,7 @@ export const Route = createFileRoute("/legal")({
     pageHead({
       title: "Terms of Service | MACH RUN",
       description:
-        "Terms and the disclaimer. MACH RUN is a planning sketch, not financial, tax, or legal advice.",
+        "Terms and the disclaimer. MACH RUN is a planning sketch, not financial, tax, or legal advice. Free calculators are not a decision.",
       path: "/legal",
     }),
   loader: () => loadPublicSiteCopy(),

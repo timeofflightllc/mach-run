@@ -5,11 +5,14 @@
 ## Pages
 
 - [Home](https://machrun.com/): The calculator. Observe, Orient, Decide, Act.
+- [Military retirement pay calculator](https://machrun.com/retired-pay): Free. High-3, BRS, REDUX, and Final Pay from official basic-pay tables.
+- [Tools](https://machrun.com/tools): Free calculators. The military retirement pay calculator is live. BAH and OHA are not ready yet.
 - [Method](https://machrun.com/method): How a MACH RUN turns the household you type into a monthly projection.
 - [FAQ](https://machrun.com/faq): Answers on Social Security, VA, military retired pay, accounts, and what Calculate does.
 - [Compare](https://machrun.com/compare): How MACH RUN differs from FIRECalc, a spreadsheet, and Quicken.
 - [Pricing](https://machrun.com/pricing): Free, Individual at $4 a month, Individual Unlimited, and Advisor plans.
 - [About](https://machrun.com/about): Who built MACH RUN.
-- [Learn](https://machrun.com/learn): Links to the Method, the FAQ, and Updates.
+- [Learn](https://machrun.com/learn): Site index for the Method, the FAQ, Compare, Updates, and Tools.
+- [Terms of Service](https://machrun.com/legal): Terms, the disclaimer, and the rule for the free calculators.
 - [Updates](https://machrun.com/announcements): What shipped.
 - [Contact](https://machrun.com/contact): A note to a person at MACH RUN.

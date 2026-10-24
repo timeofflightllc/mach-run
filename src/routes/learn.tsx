@@ -20,7 +20,7 @@ export const Route = createFileRoute("/learn")({
     pageHead({
       title: "Learn | MACH RUN Retirement Calculator",
       description:
-        "Learn is where the Method, the FAQ, Compare, Updates, and the military retirement pay calculator sit.",
+        "Learn is the site index for the Method, the FAQ, Compare, Updates, and Tools, including the free military retirement pay calculator.",
       path: "/learn",
     }),
   loader: () => loadPublicSiteCopy(),
@@ -64,13 +64,13 @@ function Learn() {
           </li>
           <li>
             <Link
-              to="/retired-pay"
+              to="/tools"
               className="font-display text-2xl text-fg underline underline-offset-4 hover:text-accent"
             >
-              Military Retirement Pay Calculator
+              Tools
             </Link>
             <p className="mt-1 text-muted">
-              High-3, BRS, REDUX, and Final Pay. The pre-tax retired paycheck DFAS would start, from the official basic-pay tables.
+              Free calculators. The military retirement pay calculator is live. BAH, OHA, and others are still being built.
             </p>
           </li>
         </ul>

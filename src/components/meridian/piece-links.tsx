@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 /** Hand-kept clusters. Related links come from this map, never at random. */
 export const PIECES = [
   { to: "/learn", title: "Learn", cluster: "learn" },
+  { to: "/tools", title: "Tools", cluster: "learn" },
   { to: "/method", title: "The Method", cluster: "learn" },
   { to: "/faq", title: "FAQ", cluster: "learn" },
   { to: "/compare", title: "Compare", cluster: "learn" },
@@ -17,7 +18,8 @@ export const PIECES = [
 export type PiecePath = (typeof PIECES)[number]["to"];
 
 const RELATED: Record<PiecePath, PiecePath[]> = {
-  "/learn": ["/method", "/faq", "/compare", "/announcements", "/pricing"],
+  "/learn": ["/tools", "/method", "/faq", "/compare", "/announcements"],
+  "/tools": ["/learn", "/legal", "/faq", "/compare", "/pricing"],
   "/method": ["/learn", "/faq", "/compare", "/announcements", "/pricing"],
   "/faq": ["/learn", "/compare", "/method", "/announcements", "/pricing"],
   "/compare": ["/faq", "/method", "/learn", "/pricing"],
@@ -26,7 +28,7 @@ const RELATED: Record<PiecePath, PiecePath[]> = {
   "/pricing": ["/compare", "/learn", "/method", "/faq", "/about"],
   "/contact": ["/about", "/faq", "/pricing", "/learn"],
   "/privacy": ["/legal", "/contact", "/about"],
-  "/legal": ["/privacy", "/contact", "/about"],
+  "/legal": ["/privacy", "/tools", "/contact", "/about"],
 };
 
 function piece(path: PiecePath) {
