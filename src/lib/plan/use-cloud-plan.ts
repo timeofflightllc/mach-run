@@ -9,7 +9,7 @@ import {
 } from "@/lib/billing/limits";
 import { pickDisplayedPlan } from "./cloud-hydrate";
 import { clearLocalMachRunWorkspace } from "./clear-local";
-import { appendQuizAccount, consumeHeldQuizPlan, quizPlanHeld } from "./quiz-plan";
+import { appendMilitaryIncome, appendQuizAccount, consumeHeldQuizPlan, quizPlanHeld } from "./quiz-plan";
 import { loadMachPlan, saveMachPlan } from "./plan-api";
 import { usePlanStore } from "./store";
 import { useProfileStore } from "./profile-store";
@@ -93,7 +93,13 @@ export function useCloudPlan() {
           cloudPlan: cloudPlan ?? null,
           library,
         });
-        const next = held?.add ? appendQuizAccount(base, held.plan) : held ? held.plan : base;
+        const next = held?.add
+          ? appendQuizAccount(base, held.plan)
+          : held?.income
+            ? appendMilitaryIncome(base, held.plan)
+            : held
+              ? held.plan
+              : base;
         if (held) useProfileStore.getState().hydrateFromPlan(next);
         setPlan(next);
         setCloudReady(true);

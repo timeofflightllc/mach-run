@@ -1427,12 +1427,13 @@ function Home() {
         return;
       }
       if (!opened) {
-        if (!takeQuizOpen()) {
+        const place = takeQuizOpen();
+        if (!place) {
           window.clearInterval(timer);
           return;
         }
         opened = true;
-        setStep("family");
+        setStep(place);
       }
       const header = document.getElementById("mach-header");
       const headerH = header?.getBoundingClientRect().height ?? 0;

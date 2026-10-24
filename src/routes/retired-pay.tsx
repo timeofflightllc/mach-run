@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { loadOfficialBasicPayTables } from "@/lib/retired-pay/dfas-api";
 import {
@@ -20,6 +20,13 @@ import {
   type RetiredPayResult,
 } from "@/lib/retired-pay/formula";
 import { pageHead } from "@/lib/seo";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { isRealUser } from "@/lib/auth/gates";
+import { writeActPlace } from "@/lib/act-place";
+import { clearAllStoredRuns } from "@/lib/plan/last-run";
+import { armQuizOpen, holdQuizPlan, militaryIncomePlan } from "@/lib/plan/quiz-plan";
+import { usePlanStore } from "@/lib/plan/store";
+import { useProfileStore } from "@/lib/plan/profile-store";
 
 export const Route = createFileRoute("/retired-pay")({
   head: () =>
@@ -74,6 +81,9 @@ function parseNum(raw: string): number | null {
 
 function RetiredPayQuiz() {
   const now = new Date();
+  const navigate = useNavigate();
+  const { user } = useCurrentUserState();
+  const signedIn = isRealUser(user);
   const [component, setComponent] = useState<ComponentChoice | null>(null);
   const [duty, setDuty] = useState<DutyChoice | null>(null);
   const [entryMonth, setEntryMonth] = useState<number | null>(null);
@@ -328,6 +338,37 @@ function RetiredPayQuiz() {
 
   const first = name.trim().split(/\s+/)[0] ?? "";
 
+  function paycheckStart(): string | null {
+    if (activePath && retireYear && retireMonth) {
+      return `${retireYear}-${String(retireMonth).padStart(2, "0")}-01`;
+    }
+    const nowAge = parseNum(ageNowText);
+    const draw = parseNum(drawAgeText);
+    if (nowAge == null || draw == null) return null;
+    const when = new Date(now.getFullYear(), now.getMonth() + Math.max(0, Math.round(draw - nowAge)) * 12, 1);
+    return `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, "0")}-01`;
+  }
+
+  function openFull() {
+    const startDate = result?.monthly != null ? paycheckStart() : null;
+    if (!result || startDate == null) {
+      void navigate({ to: "/" });
+      return;
+    }
+    const plan = militaryIncomePlan({ monthly: result.monthly, startDate, firstName: first });
+    if (signedIn) {
+      holdQuizPlan(plan, "income");
+    } else {
+      holdQuizPlan(plan);
+      clearAllStoredRuns();
+      usePlanStore.getState().setPlan(plan);
+      useProfileStore.getState().hydrateFromPlan(plan);
+    }
+    armQuizOpen("income");
+    writeActPlace(null);
+    void navigate({ to: "/" });
+  }
+
   return (
     <main className="flex min-h-svh flex-col overflow-x-hidden bg-[#f3f0e8] text-[#1a2330]">
       <header className="canopy-bar flex flex-col items-center pb-3">
@@ -566,6 +607,7 @@ function RetiredPayQuiz() {
               technician={duty === "technician"}
               activeUnder={activeUnder}
               reserveNo={reserveNo}
+              onOpen={openFull}
             />
           ) : null}
           <div className="mt-6 flex items-center gap-2">
@@ -718,6 +760,7 @@ function Result({
   technician,
   activeUnder,
   reserveNo,
+  onOpen,
 }: {
   system: RetirementSystem | null;
   table: PayTable[] | null | undefined;
@@ -732,6 +775,7 @@ function Result({
   technician: boolean;
   activeUnder: boolean;
   reserveNo: boolean;
+  onOpen: () => void;
 }) {
   const who = first ? `${first}, your` : "Your";
   return (
@@ -797,9 +841,9 @@ function Result({
           ) : null}
         </div>
       ) : null}
-      <Link to="/" className="mt-6 inline-flex h-14 items-center justify-center rounded-xl bg-[#3a8a58] px-6 text-lg font-medium text-white">
+      <button type="button" onClick={onOpen} className="mt-6 inline-flex h-14 items-center justify-center rounded-xl bg-[#3a8a58] px-6 text-lg font-medium text-white">
         See the full MACH RUN
-      </Link>
+      </button>
       <p className="mt-3 text-xs text-[#3d4a54]">For information and education. Not a DFAS estimate.</p>
     </div>
   );

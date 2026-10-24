@@ -127,9 +127,10 @@ export function emptyPays(): QuizPays {
   return { military: 0, va: 0, pension: 0 };
 }
 
-export function holdQuizPlan(plan?: Plan, mode: "replace" | "add" = "replace") {
+export function holdQuizPlan(plan?: Plan, mode: "replace" | "add" | "income" = "replace") {
   try {
-    sessionStorage.setItem(HOLD_KEY, mode === "add" ? "add" : "1");
+    const flag = mode === "add" ? "add" : mode === "income" ? "income" : "1";
+    sessionStorage.setItem(HOLD_KEY, flag);
     if (plan) sessionStorage.setItem(HOLD_PLAN_KEY, JSON.stringify(plan));
   } catch {
     /* private mode */
@@ -141,15 +142,15 @@ export function quizPlanHeld(): boolean {
   if (typeof sessionStorage === "undefined") return false;
   try {
     const flag = sessionStorage.getItem(HOLD_KEY);
-    return flag === "1" || flag === "add";
+    return flag === "1" || flag === "add" || flag === "income";
   } catch {
     return false;
   }
 }
 
-export function armQuizOpen() {
+export function armQuizOpen(place: "family" | "income" = "family") {
   try {
-    sessionStorage.setItem(OPEN_KEY, "1");
+    sessionStorage.setItem(OPEN_KEY, place === "income" ? "income" : "1");
   } catch {
     /* private mode */
   }
@@ -158,33 +159,36 @@ export function armQuizOpen() {
 export function quizOpenPending(): boolean {
   if (typeof sessionStorage === "undefined") return false;
   try {
-    return sessionStorage.getItem(OPEN_KEY) === "1";
+    const flag = sessionStorage.getItem(OPEN_KEY);
+    return flag === "1" || flag === "family" || flag === "income";
   } catch {
     return false;
   }
 }
 
-/** One shot. The calculator opens on Family. Later visits keep the homepage. */
-export function takeQuizOpen(): boolean {
-  if (!quizOpenPending()) return false;
+/** One shot. Family for the six questions. Income for the military check. */
+export function takeQuizOpen(): "family" | "income" | null {
+  if (!quizOpenPending()) return null;
   try {
+    const flag = sessionStorage.getItem(OPEN_KEY);
     sessionStorage.removeItem(OPEN_KEY);
-    return true;
+    if (flag !== "1" && flag !== "family" && flag !== "income") return null;
+    return flag === "income" ? "income" : "family";
   } catch {
-    return false;
+    return null;
   }
 }
 
 /** Read the quiz plan once, on the way into the calculator. Later edits stay. */
-export function consumeHeldQuizPlan(): { plan: Plan; add: boolean } | null {
+export function consumeHeldQuizPlan(): { plan: Plan; add: boolean; income: boolean } | null {
   if (!quizPlanHeld()) return null;
   try {
-    const add = sessionStorage.getItem(HOLD_KEY) === "add";
+    const flag = sessionStorage.getItem(HOLD_KEY);
     const raw = sessionStorage.getItem(HOLD_PLAN_KEY);
     sessionStorage.removeItem(HOLD_KEY);
     sessionStorage.removeItem(HOLD_PLAN_KEY);
     if (!raw) return null;
-    return { plan: ensurePlan(JSON.parse(raw) as Plan), add };
+    return { plan: ensurePlan(JSON.parse(raw) as Plan), add: flag === "add", income: flag === "income" };
   } catch {
     return null;
   }
@@ -212,6 +216,44 @@ export function appendQuizAccount(existing: Plan, sketch: Plan): Plan {
   if (funding.length) {
     next.incomes = [...next.incomes, ...funding.map((row) => ({ ...row, id: newId("inc") }))];
   }
+  return next;
+}
+
+/** The military calculator's check, and nothing else. A new visitor opens this plan. */
+export function militaryIncomePlan(input: { monthly: number; startDate: string; firstName?: string }): Plan {
+  const plan = createDefaultPlan();
+  const first = input.firstName?.trim().split(/\s+/)[0] ?? "";
+  if (first) plan.primary = { name: first, birthDate: "" };
+  plan.assumptions = {
+    ...plan.assumptions,
+    militaryRetireDate: input.startDate,
+    retirementGoalDate: input.startDate,
+  };
+  plan.incomes = [
+    {
+      id: newId("inc"),
+      name: "Military retirement",
+      kind: "military",
+      monthlyAmount: Math.max(0, Math.round(input.monthly)),
+      startDate: input.startDate,
+      endDate: null,
+      colaPct: null,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  return plan;
+}
+
+/**
+ * Adds that one paycheck to a household that already exists.
+ * People, accounts, dates, spending, and the incomes already there stay.
+ */
+export function appendMilitaryIncome(existing: Plan, sketch: Plan): Plan {
+  const next = clonePlan(existing);
+  const added = sketch.incomes.filter((row) => row.kind === "military" && row.monthlyAmount > 0);
+  if (!added.length) return next;
+  next.incomes = [...next.incomes, ...added.map((row) => ({ ...row, id: newId("inc") }))];
   return next;
 }
 

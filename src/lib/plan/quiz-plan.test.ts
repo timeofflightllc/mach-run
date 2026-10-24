@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { accountCanPay, appendQuizAccount, nestEggForAskedMonth, quizPlan, retireCaption, retirementIso } from "./quiz-plan.ts";
+import { accountCanPay, appendMilitaryIncome, appendQuizAccount, militaryIncomePlan, nestEggForAskedMonth, quizPlan, retireCaption, retirementIso } from "./quiz-plan.ts";
 import { vaPayTodayDollars, vaSchedularPay } from "./va.ts";
 
 const today = new Date(2026, 9, 15);
@@ -300,4 +300,38 @@ test("a signed-in quiz adds the account and leaves the rest of the household", (
   assert.equal(merged.spending[0]?.monthlyAmount, 7000);
   assert.equal(merged.incomes.some((row) => row.kind === "military"), false);
   assert.equal(merged.incomes.filter((row) => row.name === "Put in each month").length, 0);
+});
+
+test("a military check adds one income and leaves the household", () => {
+  const existing = quizPlan(
+    {
+      monthlyNeed: 7000,
+      retireAge: 57,
+      birthYear: 1979,
+      accountName: "TSP",
+      kind: "tsp",
+      balance: 180000,
+      monthlySave: 1000,
+      pay: "va",
+      payMonthly: 2000,
+    },
+    today,
+  );
+  existing.primary.name = "Cain";
+  const sketch = militaryIncomePlan({ monthly: 5730.4, startDate: "2026-09-01", firstName: "Someone" });
+  const merged = appendMilitaryIncome(existing, sketch);
+  assert.equal(merged.primary.name, "Cain");
+  assert.equal(merged.portfolios.length, existing.portfolios.length);
+  assert.equal(merged.portfolios[0]?.currentValue, 180000);
+  assert.equal(merged.assumptions.retirementGoalDate, existing.assumptions.retirementGoalDate);
+  assert.equal(merged.spending[0]?.monthlyAmount, 7000);
+  const added = merged.incomes.filter((row) => row.kind === "military");
+  assert.equal(added.length, 1);
+  assert.equal(added[0]?.name, "Military retirement");
+  assert.equal(added[0]?.monthlyAmount, 5730);
+  assert.equal(added[0]?.startDate, "2026-09-01");
+  assert.equal(added[0]?.endDate, null);
+  assert.equal(sketch.incomes.length, 1);
+  assert.equal(sketch.portfolios.length, 0);
+  assert.equal(sketch.assumptions.retirementGoalDate, "2026-09-01");
 });
