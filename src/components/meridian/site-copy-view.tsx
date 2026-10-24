@@ -2,13 +2,21 @@ import type { ReactNode } from "react";
 
 function emphasis(text: string, keyPrefix: string): ReactNode[] {
   const parts: ReactNode[] = [];
-  const re = /\*([^*\n]+)\*/g;
+  const re = /\*\*([^*\n]+)\*\*|\*([^*\n]+)\*/g;
   let last = 0;
   let m: RegExpExecArray | null;
   let i = 0;
   while ((m = re.exec(text))) {
     if (m.index > last) parts.push(text.slice(last, m.index));
-    parts.push(<em key={`${keyPrefix}-e-${i++}`}>{m[1]}</em>);
+    if (m[1] != null) {
+      parts.push(
+        <strong key={`${keyPrefix}-b-${i++}`} className="font-semibold text-fg">
+          {m[1]}
+        </strong>,
+      );
+    } else {
+      parts.push(<em key={`${keyPrefix}-e-${i++}`}>{m[2]}</em>);
+    }
     last = m.index + m[0].length;
   }
   if (last < text.length) parts.push(text.slice(last));
@@ -32,7 +40,7 @@ function inline(text: string, underline: boolean): ReactNode[] {
         {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
         className="text-fg underline underline-offset-4 hover:text-accent"
       >
-        {m[1]}
+        {emphasis(m[1], `a-${i}`)}
       </a>,
     );
     last = m.index + m[0].length;
@@ -79,7 +87,7 @@ export function SiteCopyBody({
           return (
             <section key={i} className="space-y-2">
               <h2 id={headingId} className="scroll-mt-24 text-xl font-medium text-fg">
-                {heading}
+                {emphasis(heading, `h-${i}`)}
               </h2>
               {i === 0 && aside ? aside : null}
               {rest ? <p>{withBreaks(lines.slice(1).join("\n"), underlineLinks)}</p> : null}

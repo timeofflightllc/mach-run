@@ -788,7 +788,7 @@ export function SiteCopyDesk() {
             ) : null}
             {slug === "tools" ? (
               <p className="text-xs text-muted">
-                What you type here is what shows under the title. A blank line starts a new paragraph. A line that starts with # is a heading. [Contact](/contact) makes a link. Lines you stack with a single return stay lines. Nothing is turned into a bullet list.
+                What you type here is what shows under the title. A blank line starts a new paragraph. A line that starts with # is a heading. **words** makes bold. *words* makes italic. [Contact](/contact) makes a link. Lines you stack with a single return stay lines. Nothing is turned into a bullet list.
               </p>
             ) : null}
             <div className="flex flex-wrap items-center gap-3">
