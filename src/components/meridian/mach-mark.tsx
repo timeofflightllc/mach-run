@@ -127,7 +127,7 @@ function MachDiamonds() {
     <svg
       aria-hidden="true"
       viewBox="400 16 392 900"
-      className="pointer-events-none absolute top-[calc(100%+0.85rem)] -right-[10vw] w-[min(28rem,68vw)]"
+      className="mach-diamonds pointer-events-none absolute top-[calc(100%+0.85rem)] -right-16 w-[7.5rem] opacity-50 sm:-right-20 sm:w-[11rem] sm:opacity-70 md:-right-[10vw] md:w-[16rem] md:opacity-85 lg:w-[28rem] lg:opacity-100"
     >
       <defs>
         <linearGradient id="mach-diamonds-fade" gradientUnits="userSpaceOnUse" x1="790" y1="16" x2="470" y2="700">
