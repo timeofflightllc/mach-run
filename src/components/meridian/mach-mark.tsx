@@ -292,3 +292,12 @@ export function MachFooter({
     </footer>
   );
 }
+
+/** Site footer for a calculator page. Hidden on a phone. Future calculators use this too. */
+export function CalculatorDesktopFooter() {
+  return (
+    <div className="mt-auto hidden w-full lg:block">
+      <MachFooter />
+    </div>
+  );
+}

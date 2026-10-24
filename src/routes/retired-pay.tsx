@@ -20,6 +20,7 @@ import {
   type RetiredPayResult,
 } from "@/lib/retired-pay/formula";
 import { pageHead } from "@/lib/seo";
+import { CalculatorDesktopFooter } from "@/components/meridian/mach-mark";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { isRealUser } from "@/lib/auth/gates";
 import { writeActPlace } from "@/lib/act-place";
@@ -376,7 +377,7 @@ function RetiredPayQuiz() {
           <img src="/brand/mach-run-logo-quiz.png" alt="MACH RUN" className="h-16 w-auto sm:h-[4.5rem]" />
         </div>
         <h1 className="mt-2 text-center text-sm font-bold leading-snug tracking-[0.12em] text-white">
-          Military Retirement Pay Calculator
+          Free Military Retirement Pay Calculator
         </h1>
       </header>
       <div className="mx-auto flex w-full max-w-lg flex-col px-4 pb-10 pt-3 sm:px-6">
@@ -632,6 +633,7 @@ function RetiredPayQuiz() {
           </button>
         </div>
       </div>
+      <CalculatorDesktopFooter />
     </main>
   );
 }
