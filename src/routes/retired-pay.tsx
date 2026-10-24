@@ -803,7 +803,7 @@ function Result({
             <div className="mt-3 text-sm leading-relaxed text-[#3d4a54]">
               {result.bands.map((band) => (
                 <p key={`${band.year}-${band.grade}-${band.rate}`}>
-                  {band.count} {band.count === 1 ? "month" : "months"} on the {band.year} scale, {band.grade}, {money(band.rate)}
+                  {band.count} {band.count === 1 ? "month" : "months"} on the {band.month ? `${MONTHS[band.month - 1]} ` : ""}{band.year} scale, {band.grade}, {money(band.rate)}
                 </p>
               ))}
             </div>

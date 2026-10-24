@@ -65,12 +65,20 @@ export function resolvePayTable(seed: PayTable[], uploaded: PayTable[]): PayTabl
   return years.at(-1) ?? null;
 }
 
-/** Every stored year, oldest first. An uploaded year replaces the seed for that same year. */
+function tableStart(table: PayTable): number {
+  return table.effectiveYear * 12 + (table.effectiveMonth ?? 1);
+}
+
+/** Every stored scale, oldest first. An uploaded year replaces every seed scale in that year. */
 export function resolvePayTables(seed: PayTable[], uploaded: PayTable[]): PayTable[] {
-  const byYear = new Map<number, PayTable>();
-  for (const table of seed) byYear.set(table.effectiveYear, table);
-  for (const table of uploaded) byYear.set(table.effectiveYear, table);
-  return [...byYear.values()].sort((a, b) => a.effectiveYear - b.effectiveYear);
+  const byStart = new Map<number, PayTable>();
+  for (const table of seed) byStart.set(tableStart(table), table);
+  const replaced = new Set(uploaded.map((table) => table.effectiveYear));
+  for (const [start, table] of byStart) {
+    if (replaced.has(table.effectiveYear)) byStart.delete(start);
+  }
+  for (const table of uploaded) byStart.set(tableStart(table), table);
+  return [...byStart.values()].sort((a, b) => tableStart(a) - tableStart(b));
 }
 
 export type PayYearRow = {

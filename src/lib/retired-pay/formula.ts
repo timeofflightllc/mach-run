@@ -5,6 +5,8 @@ export type LumpSum = "full" | "25" | "50";
 
 export type PayTable = {
   effectiveYear: number;
+  /** Month the scale starts. Missing means January. */
+  effectiveMonth?: number;
   /** Monthly basic pay by grade and longevity step. Step 0 is "2 or less". */
   rates: Record<string, Partial<Record<number, number>>>;
 };
@@ -57,6 +59,8 @@ export type RetiredPayResult = {
 
 export type PayBand = {
   year: number;
+  /** Set when the scale did not start in January. */
+  month?: number;
   grade: string;
   rate: number;
   count: number;
@@ -169,11 +173,17 @@ export function shiftMonth(year: number, month: number, delta: number): { year: 
   return { year: Math.floor(index / 12), month: (index % 12) + 1 };
 }
 
-/** Latest table whose effective year is on or before this calendar year. */
-export function tableInEffect(tables: PayTable[], year: number): PayTable | null {
+/** Latest table whose effective date is on or before this month. */
+export function tableInEffect(tables: PayTable[], year: number, month = 1): PayTable | null {
   let best: PayTable | null = null;
+  let bestAt = -1;
+  const at = year * 12 + month;
   for (const table of tables) {
-    if (table.effectiveYear <= year && (!best || table.effectiveYear > best.effectiveYear)) best = table;
+    const start = table.effectiveYear * 12 + (table.effectiveMonth ?? 1);
+    if (start <= at && start > bestAt) {
+      best = table;
+      bestAt = start;
+    }
   }
   return best;
 }
@@ -213,7 +223,7 @@ function high36History(input: RetiredPayInput): { average: number; bands: PayBan
   let sum = 0;
   for (let back = 36; back >= 1; back--) {
     const when = shiftMonth(history.retireYear, history.retireMonth, -back);
-    const table = tableInEffect(history.tables, when.year);
+    const table = tableInEffect(history.tables, when.year, when.month);
     if (!table) return null;
     const grade = wornGrade(when.year, when.month, input);
     const rate = monthRate(table, grade, input, when.year, when.month, back);
@@ -221,8 +231,16 @@ function high36History(input: RetiredPayInput): { average: number; bands: PayBan
     sum += rate;
     const last = months.at(-1);
     const cents = Math.round(rate * 100);
-    if (last && last.year === table.effectiveYear && last.grade === grade && Math.round(last.rate * 100) === cents) last.count += 1;
-    else months.push({ year: table.effectiveYear, grade, rate, count: 1 });
+    const month = table.effectiveMonth && table.effectiveMonth !== 1 ? table.effectiveMonth : undefined;
+    if (
+      last &&
+      last.year === table.effectiveYear &&
+      last.month === month &&
+      last.grade === grade &&
+      Math.round(last.rate * 100) === cents
+    ) {
+      last.count += 1;
+    } else months.push({ year: table.effectiveYear, month, grade, rate, count: 1 });
   }
   return { average: sum / 36, bands: months };
 }
@@ -289,7 +307,7 @@ export function retiredPay(input: RetiredPayInput, table: PayTable): RetiredPayR
   let bands: PayBand[] | undefined;
   if (input.history && input.system === "final") {
     const last = shiftMonth(input.history.retireYear, input.history.retireMonth, -1);
-    const inEffect = tableInEffect(input.history.tables, last.year);
+    const inEffect = tableInEffect(input.history.tables, last.year, last.month);
     base = inEffect ? monthRate(inEffect, wornGrade(last.year, last.month, input), input, last.year, last.month, 1) : null;
   } else if (input.history) {
     const high = high36History(input);

@@ -10,6 +10,7 @@ import {
   retiredPay,
   serviceCredit,
   systemQuestion,
+  tableInEffect,
   type PayTable,
 } from "./formula.ts";
 
@@ -352,4 +353,68 @@ test("an entry day drops leftover days and splits the longevity month", () => {
     tables[3]!,
   );
   assert.equal(whole?.bands?.find((band) => band.year === 2010)?.rate, 2000);
+});
+
+test("a july scale does not apply in january of that year", () => {
+  const january: PayTable = { effectiveYear: 2000, effectiveMonth: 1, rates: { "E-7": { 0: 100 } } };
+  const july: PayTable = { effectiveYear: 2000, effectiveMonth: 7, rates: { "E-7": { 0: 140 } } };
+  const tables = [january, july];
+  assert.equal(tableInEffect(tables, 2000, 1)?.rates["E-7"]?.[0], 100);
+  assert.equal(tableInEffect(tables, 2000, 6)?.rates["E-7"]?.[0], 100);
+  assert.equal(tableInEffect(tables, 2000, 7)?.rates["E-7"]?.[0], 140);
+  assert.equal(tableInEffect(tables, 1999, 12), null);
+  const history = {
+    tables,
+    retireYear: 2001,
+    retireMonth: 1,
+    dorYear: null,
+    dorMonth: null,
+  };
+  const split = retiredPay(
+    {
+      system: "high3",
+      eligible: true,
+      payYears: 20,
+      multiplierYears: 20,
+      grade: "E-7",
+      priorGrade: "E-7",
+      monthsAtGrade: 36,
+      lump: "full",
+      history,
+    },
+    july,
+  );
+  // Jan–Jun 2000 at 100, Jul–Dec 2000 at 140. The 1999 months have no table.
+  assert.equal(split, null);
+  const covered = retiredPay(
+    {
+      system: "high3",
+      eligible: true,
+      payYears: 20,
+      multiplierYears: 20,
+      grade: "E-7",
+      priorGrade: "E-7",
+      monthsAtGrade: 36,
+      lump: "full",
+      history: { ...history, retireYear: 2000, retireMonth: 10 },
+    },
+    july,
+  );
+  // Oct 1999 would be required. Still no 1999 table, so no check.
+  assert.equal(covered, null);
+  const inYear = retiredPay(
+    {
+      system: "final",
+      eligible: true,
+      payYears: 20,
+      multiplierYears: 20,
+      grade: "E-7",
+      priorGrade: "E-7",
+      monthsAtGrade: 36,
+      lump: "full",
+      history: { ...history, retireYear: 2000, retireMonth: 8 },
+    },
+    july,
+  );
+  assert.equal(inYear?.high36, 140);
 });
