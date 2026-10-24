@@ -1,4 +1,5 @@
 import type { PayTable } from "./formula.ts";
+import y2019 from "./official/2019.json" with { type: "json" };
 import y2020 from "./official/2020.json" with { type: "json" };
 import y2023 from "./official/2023.json" with { type: "json" };
 import y2024 from "./official/2024.json" with { type: "json" };
@@ -11,6 +12,7 @@ function asTable(raw: { effectiveYear: number; rates: PayTable["rates"] }): PayT
 
 /** Official pages already pulled. A desk upload for the same year wins. */
 export const OFFICIAL_SEED: PayTable[] = [
+  asTable(y2019),
   asTable(y2020),
   asTable(y2023),
   asTable(y2024),
