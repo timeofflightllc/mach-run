@@ -365,7 +365,7 @@ function Account() {
   return (
     <main className="min-h-screen bg-bg py-10 text-fg">
       <div className="static-gutter mx-auto w-full space-y-8">
-        <PageMast />
+        <PageMast ornament={false} />
         <header>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">
             Account profile
