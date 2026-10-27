@@ -86,7 +86,7 @@ function BriefTable({
                 className={
                   "border-t border-[#d5d0c6] " +
                   (onRow
-                    ? "group cursor-pointer hover:bg-[#1a2330] focus-visible:bg-[#1a2330] focus-visible:outline-none"
+                    ? "cursor-pointer hover:bg-[color-mix(in_oklab,#3a8a58_28%,white)] focus-visible:bg-[color-mix(in_oklab,#3a8a58_28%,white)] focus-visible:outline-none"
                     : "")
                 }
                 onClick={onRow ? () => onRow(i) : undefined}
@@ -111,7 +111,6 @@ function BriefTable({
                       key={`${i}-${j}`}
                       className={
                         "py-1.5 pr-4 last:pr-0 " +
-                        (onRow ? "group-hover:text-white group-focus-visible:text-white " : "") +
                         (j === 0 ? "text-[#1a2330] " : "text-[#3d4a54] ") +
                         (h?.align === "right" ? "text-right tabular-nums " : "") +
                         (h?.nowrap ? "whitespace-nowrap " : "")
