@@ -9,6 +9,7 @@ import { CalculateButton } from "@/components/meridian/calculate-button";
 import { AdvisoryStrip } from "@/components/meridian/advisory-note";
 import { CashChart, MonteCarloBandChart, NetWorthChart, WealthChart } from "@/components/meridian/charts";
 import { BoydQuote, PlanSurvival, readPlanSurvivalMinimized, RunMonteCarloButton, type SurvivalView } from "@/components/meridian/plan-survival";
+import { HistoricalStretches } from "@/components/meridian/historical-stretches";
 import { useBoydQuotes } from "@/components/meridian/use-boyd-quotes";
 import { Pinnable, useChartPins } from "@/components/meridian/chart-pin";
 import { ContributionForm } from "@/components/meridian/contribution-form";
@@ -553,12 +554,15 @@ function MonteCarloTab({
         )}
       </div>
       {unlocked ? (
-        <RunMonteCarloButton
-          running={running}
-          progress={running ? progress : 0}
-          again={!running && Boolean(score)}
-          onClick={onRun}
-        />
+        <>
+          <RunMonteCarloButton
+            running={running}
+            progress={running ? progress : 0}
+            again={!running && Boolean(score)}
+            onClick={onRun}
+          />
+          <HistoricalStretches plan={plan} />
+        </>
       ) : null}
     </div>
   );

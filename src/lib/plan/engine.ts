@@ -175,12 +175,17 @@ export function streamNominalAt(
   cursor: Date,
   _monthsFromAsOf: number,
   infA: number,
+  inflationIndex?: number,
 ): number {
   const win = streamWindow(plan, stream);
   if (!inRange(cursor, win.start, win.end)) return 0;
   const colaAnnual = streamColaAnnual(plan, stream, infA);
   const years = calendarColaYears(monthStart(plan.assumptions.asOfDate), cursor);
-  const grow = (base: number) => base * (1 + colaAnnual) ** years;
+  const tracksInflation = stream.colaPct == null;
+  const grow = (base: number) =>
+    inflationIndex != null && tracksInflation
+      ? base * inflationIndex
+      : base * (1 + colaAnnual) ** years;
   if (isAnnualPaycheck(stream)) {
     const start = monthStart(win.start);
     if (cursor.getMonth() !== start.getMonth()) return 0;
@@ -195,6 +200,7 @@ function contributionDueThisMonth(
   cursor: Date,
   monthsFromAsOf: number,
   infA: number,
+  inflationIndex?: number,
 ): number {
   const win = contributionWindow(plan, rule);
   if (!inRange(cursor, win.start, win.end)) return 0;
@@ -203,7 +209,7 @@ function contributionDueThisMonth(
     if (!stream) return 0;
     const pct = rule.percentOfIncome ?? 0;
     if (pct <= 0) return 0;
-    return streamNominalAt(plan, stream, cursor, monthsFromAsOf, infA) * (pct / 100);
+    return streamNominalAt(plan, stream, cursor, monthsFromAsOf, infA, inflationIndex) * (pct / 100);
   }
   if (rule.payCadence === "year") {
     const amount = rule.payAmount;
@@ -381,14 +387,52 @@ export type ReturnShocks = {
   zForYear: (year: number) => number;
 };
 
+/** One plan year of market history. Rates are annual decimals. Plan-year 0 is the as-of year. */
+export type HistoryStep = {
+  stock: number;
+  bond: number;
+  inflation: number;
+};
+
+/**
+ * Optional replay of real market years. Absent means the plan's own return and inflation.
+ * `stockShare` is a fraction from 0 to 1. The rest of an investment account is bonds.
+ */
+export type PlanHistory = {
+  stockShare: number;
+  steps: HistoryStep[];
+};
+
+function keepsOwnReturn(kind: string): boolean {
+  return kind === "real_estate" || kind === "cash" || kind === "annuity";
+}
+
 function statedAnnualReturn(plan: Plan, portfolio: { kind: string; returnPct?: number | null }, monthKey: string): number {
   const goal = plan.assumptions.retirementGoalDate?.slice(0, 7) ?? "";
-  const keepsOwnRate = portfolio.kind === "real_estate" || portfolio.kind === "cash" || portfolio.kind === "annuity";
-  if (goal && monthKey >= goal && !keepsOwnRate) {
+  if (goal && monthKey >= goal && !keepsOwnReturn(portfolio.kind)) {
     const pct = plan.assumptions.retirementReturnPct;
     return (Number.isFinite(pct) ? pct : 5) / 100;
   }
   return (portfolio.returnPct ?? plan.assumptions.defaultReturnPct) / 100;
+}
+
+function historyBlend(history: PlanHistory, step: HistoryStep): number {
+  const share = Number.isFinite(history.stockShare)
+    ? Math.min(1, Math.max(0, history.stockShare))
+    : 0;
+  return share * step.stock + (1 - share) * step.bond;
+}
+
+/** Month 0 is 1. Each later month compounds that plan-year's inflation. */
+function historyInflationIndex(history: PlanHistory, months: number, fallbackAnnual: number): number[] {
+  const index = new Array<number>(months + 1);
+  index[0] = 1;
+  for (let t = 1; t <= months; t++) {
+    const step = history.steps[Math.floor((t - 1) / 12)];
+    const annual = step && Number.isFinite(step.inflation) ? step.inflation : fallbackAnnual;
+    index[t] = index[t - 1] * (1 + yearlyRateToMonthly(annual));
+  }
+  return index;
 }
 
 function liteYear(year: number, nominal: number, real: number): YearSnapshot {
@@ -425,7 +469,13 @@ function liteYear(year: number, nominal: number, real: number): YearSnapshot {
 
 export function simulate(
   raw: Plan,
-  opts?: { audit?: boolean; shocks?: ReturnShocks; lite?: boolean; normalized?: boolean },
+  opts?: {
+    audit?: boolean;
+    shocks?: ReturnShocks;
+    lite?: boolean;
+    normalized?: boolean;
+    history?: PlanHistory;
+  },
 ): SimResult {
   const plan = opts?.normalized ? raw : ensurePlan(raw);
   const lite = Boolean(opts?.lite);
@@ -439,6 +489,8 @@ export function simulate(
   const taxR = plan.assumptions.ordinaryTaxRatePct / 100;
   const ssTaxShare = plan.assumptions.ssTaxablePct / 100;
   const mInf = yearlyRateToMonthly(infA);
+  const history = opts?.history;
+  const historyIndex = history ? historyInflationIndex(history, 1200, infA) : null;
   const stage1End = firstIncomeEnd(plan);
 
   const values = new Map<string, number>();
@@ -492,7 +544,9 @@ export function simulate(
     guard += 1;
     const monthsFromAsOf = guard - 1;
     const monthKey = iso(cursor).slice(0, 7);
-    const inflationIndex = (1 + mInf) ** monthsFromAsOf;
+    const inflationIndex = historyIndex
+      ? historyIndex[Math.min(monthsFromAsOf, historyIndex.length - 1)]
+      : (1 + mInf) ** monthsFromAsOf;
     const auditStart = audit ? new Map(values) : null;
     const dropped529 = new Map<string, number>();
     for (const p of plan.portfolios) {
@@ -511,9 +565,13 @@ export function simulate(
         values.set(p.id, 0);
         continue;
       }
-      const stated = statedAnnualReturn(plan, p, monthKey);
+      const step = history?.steps[Math.floor(monthsFromAsOf / 12)];
+      const stated =
+        history && step && !keepsOwnReturn(p.kind)
+          ? historyBlend(history, step)
+          : statedAnnualReturn(plan, p, monthKey);
       let annual = stated;
-      if (shocks && p.kind !== "real_estate" && stated > 0) {
+      if (shocks && !history && p.kind !== "real_estate" && stated > 0) {
         const year = cursor.getFullYear();
         if (year !== shockYear) {
           shockYear = year;
@@ -555,7 +613,14 @@ export function simulate(
     let guaranteed = 0;
 
     for (const stream of plan.incomes) {
-      const nominal = streamNominalAt(plan, stream, cursor, monthsFromAsOf, infA);
+      const nominal = streamNominalAt(
+        plan,
+        stream,
+        cursor,
+        monthsFromAsOf,
+        infA,
+        historyIndex ? inflationIndex : undefined,
+      );
       if (nominal === 0) continue;
       income += nominal;
       incomeByKind[stream.kind] = (incomeByKind[stream.kind] ?? 0) + nominal;
@@ -581,7 +646,13 @@ export function simulate(
       if (!inRange(cursor, win.start, win.end)) continue;
       const amount = phase.liabilityId
         ? phase.monthlyAmount
-        : inflate(phase.spendKind === "lump" ? phase.lumpAmount || 0 : phase.monthlyAmount, mInf, monthsFromAsOf);
+        : historyIndex
+          ? (phase.spendKind === "lump" ? phase.lumpAmount || 0 : phase.monthlyAmount) * inflationIndex
+          : inflate(
+              phase.spendKind === "lump" ? phase.lumpAmount || 0 : phase.monthlyAmount,
+              mInf,
+              monthsFromAsOf,
+            );
       spending += amount;
       if (amount > 0.005) {
         spendingLines.push({
@@ -637,7 +708,14 @@ export function simulate(
     let planned = 0;
     let irsCut = 0;
     for (const rule of plan.contributions) {
-      const amount = contributionDueThisMonth(plan, rule, cursor, monthsFromAsOf, infA);
+      const amount = contributionDueThisMonth(
+        plan,
+        rule,
+        cursor,
+        monthsFromAsOf,
+        infA,
+        historyIndex ? inflationIndex : undefined,
+      );
       if (amount <= 0) continue;
       if (!values.has(rule.portfolioId)) continue;
       const dest = plan.portfolios.find((p) => p.id === rule.portfolioId);
@@ -683,7 +761,14 @@ export function simulate(
         if (rule.amountMode === "percent" && rule.percentOfIncomeId) {
           const stream = plan.incomes.find((s) => s.id === rule.percentOfIncomeId);
           incomeBase = stream
-            ? streamNominalAt(plan, stream, cursor, monthsFromAsOf, infA)
+            ? streamNominalAt(
+                plan,
+                stream,
+                cursor,
+                monthsFromAsOf,
+                infA,
+                historyIndex ? inflationIndex : undefined,
+              )
             : 0;
         }
         contribDrafts.push({
