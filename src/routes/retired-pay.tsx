@@ -448,7 +448,7 @@ function RetiredPayQuiz() {
                 onYear={setEntryYear}
               />
               <p className="mt-3 text-center text-sm text-[#3d4a54]">
-                The date on your LES. Not the day you joined this unit, and not the day you commissioned if you were enlisted or at an academy first.
+                Generally, the “Pay Date” on your LES. It’s listed as 2-digit year, 2-digit month, 2-digit day. Example: “080102” would be January 2, 2008.
               </p>
             </Question>
           ) : null}
