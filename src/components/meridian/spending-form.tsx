@@ -6,14 +6,17 @@ import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import {
   DateInput,
   Field,
+  MoneyInput,
   MonthYearMoney,
+  SelectInput,
   TextInput,
 } from "@/components/ui/field";
 import type { Advisory } from "@/lib/plan/advisories";
 import { blankEndLabel, dateAtAge, iso, monthAfter, projectionEndMonth, validIso } from "@/lib/plan/dates";
 import { usd } from "@/lib/plan/format";
 import { newId, usePlanStore } from "@/lib/plan/store";
-import type { Plan, SpendingPhase } from "@/lib/plan/types";
+import type { LumpPurchase, Plan, SpendingPhase } from "@/lib/plan/types";
+import { LUMP_PURCHASES } from "@/lib/plan/types";
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const ask = "w-full items-center text-center [&>span]:w-full";
@@ -111,10 +114,16 @@ export function SpendingForm() {
 
   const bar = (on: boolean) => (on ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]");
   const named = plan.spending.some((phase) => phase.label.trim().length > 0 || Boolean(phase.liabilityId));
-  const funded = plan.spending.some((phase) => phase.monthlyAmount > 0);
+  const funded = plan.spending.some((phase) =>
+    phase.spendKind === "lump" ? (phase.lumpAmount ?? 0) > 0 : phase.monthlyAmount > 0,
+  );
   const dated = (() => {
     const real = plan.spending.filter(
-      (phase) => phase.label.trim().length > 0 || phase.monthlyAmount > 0 || Boolean(phase.liabilityId),
+      (phase) =>
+        phase.label.trim().length > 0 ||
+        phase.monthlyAmount > 0 ||
+        (phase.lumpAmount ?? 0) > 0 ||
+        Boolean(phase.liabilityId),
     );
     return real.length > 0 && real.every((phase) => Boolean(phase.startDate));
   })();
@@ -168,6 +177,8 @@ export function SpendingForm() {
               id,
               label: "",
               monthlyAmount: 0,
+              lumpAmount: 0,
+              spendKind: "routine",
               startDate: plan.assumptions.asOfDate,
               endDate: null,
             });
@@ -231,6 +242,11 @@ function SpendingRow({
   const monthAfterPrevious = previous?.endDate ? monthAfter(previous.endDate) : "";
   const previousLabel = previous?.label.trim() || (previous ? `Spending ${i}` : "");
   const name = s.label.trim() || `Spending ${i + 1}`;
+  const lump = s.spendKind === "lump" && !s.liabilityId;
+  const purchase = LUMP_PURCHASES.find(([id]) => id === s.lumpPurchase)?.[1];
+  const amountLine = lump
+    ? `${usd(s.lumpAmount ?? 0)} lump${purchase ? ` · ${purchase}` : ""}`
+    : `${usd(s.monthlyAmount)}/mo`;
 
   useEffect(() => {
     if (!s.startDayAfterPrevious) return;
@@ -269,6 +285,51 @@ function SpendingRow({
                 className={control}
               />
             </Field>
+            <Field label="Type of spending" className={ask}>
+              <SelectInput
+                value={lump ? "lump" : "routine"}
+                className={control}
+                onChange={(e) => {
+                  const next = e.target.value === "lump" ? "lump" : "routine";
+                  updateSpending(s.id, {
+                    spendKind: next,
+                    ...(next === "lump" ? { endDate: null } : {}),
+                  });
+                }}
+              >
+                <option value="routine">Routine Spending</option>
+                <option value="lump">Future Large Purchase Goals (Lump Sum Spending)</option>
+              </SelectInput>
+            </Field>
+            {lump ? (
+              <Field label="Type" className={ask}>
+                <SelectInput
+                  value={s.lumpPurchase ?? ""}
+                  className={control}
+                  onChange={(e) =>
+                    updateSpending(s.id, {
+                      lumpPurchase: (e.target.value || undefined) as LumpPurchase | undefined,
+                    })
+                  }
+                >
+                  <option value="">Choose a type</option>
+                  {LUMP_PURCHASES.map(([id, label]) => (
+                    <option key={id} value={id}>
+                      {label}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+            ) : null}
+            {lump ? (
+              <Field label="Lump sum (today's dollars)" className={ask}>
+                <MoneyInput
+                  value={s.lumpAmount ?? 0}
+                  onValue={(n) => updateSpending(s.id, { lumpAmount: n })}
+                  className={control}
+                />
+              </Field>
+            ) : (
             <MonthYearMoney
               compact
               fieldClassName={ask}
@@ -277,6 +338,7 @@ function SpendingRow({
               monthly={s.monthlyAmount}
               onMonthly={(n) => updateSpending(s.id, { monthlyAmount: n })}
             />
+            )}
             <Field label="Start" className={ask}>
               <DateInput
                 className="justify-center"
@@ -284,17 +346,19 @@ function SpendingRow({
                 onValue={(v) => updateSpending(s.id, { startDate: v, startDayAfterPrevious: false })}
               />
             </Field>
-            <Field
-              label={blankEndLabel(plan.primary.birthDate, plan.assumptions.projectionEndAge)}
-              className={ask}
-            >
-              <DateInput
-                className="justify-center"
-                value={s.endDate}
-                clearable
-                onValue={(v) => updateSpending(s.id, { endDate: v === "" ? null : v })}
-              />
-            </Field>
+            {lump ? null : (
+              <Field
+                label={blankEndLabel(plan.primary.birthDate, plan.assumptions.projectionEndAge)}
+                className={ask}
+              >
+                <DateInput
+                  className="justify-center"
+                  value={s.endDate}
+                  clearable
+                  onValue={(v) => updateSpending(s.id, { endDate: v === "" ? null : v })}
+                />
+              </Field>
+            )}
             {monthAfterPrevious ? (
               <label className="flex items-center justify-center gap-2 text-center text-sm text-[#1a2330]">
                 <input
@@ -326,7 +390,7 @@ function SpendingRow({
           <div className="flex items-center justify-between gap-3">
             <span className="min-w-0 text-left">
               <span className="block truncate text-sm font-medium text-fg">{name}</span>
-              <span className="block text-xs text-muted">{usd(s.monthlyAmount)}/mo</span>
+              <span className="block text-xs text-muted">{amountLine}</span>
             </span>
             <span className="flex shrink-0 items-center gap-3">
               <button type="button" className="text-xs text-muted hover:text-negative" onClick={onRemove}>

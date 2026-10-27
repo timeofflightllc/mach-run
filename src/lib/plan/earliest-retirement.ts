@@ -42,6 +42,7 @@ function dropPhase(phase: SpendingPhase, opened: string): SpendingPhase {
     tiedToStageId: undefined,
     startDayAfterPrevious: false,
     monthlyAmount: 0,
+    lumpAmount: 0,
     startDate: opened,
     endDate: iso(addMonths(monthStart(opened), -1)),
   };

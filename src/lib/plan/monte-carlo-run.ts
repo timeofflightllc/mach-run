@@ -408,6 +408,9 @@ function spendingFields(phase: SpendingPhase) {
   return {
     id: phase.id,
     monthlyAmount: phase.monthlyAmount,
+    spendKind: phase.spendKind === "lump" ? "lump" : "routine",
+    lumpAmount: phase.lumpAmount ?? 0,
+    lumpPurchase: phase.lumpPurchase ?? null,
     startDate: phase.startDate,
     endDate: phase.endDate,
     tiedToStageId: phase.tiedToStageId ?? null,

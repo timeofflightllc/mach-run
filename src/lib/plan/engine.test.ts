@@ -1254,6 +1254,31 @@ test("blank sweep holds leftover cash and spends it before any account", () => {
   assert.equal(apr.spendableEnd, 48_000);
 });
 
+test("a lump purchase is spent once, in its start month", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.asOfDate = "2026-01-01";
+  plan.spending = [
+    {
+      id: "truck",
+      label: "Truck",
+      monthlyAmount: 9_999,
+      spendKind: "lump",
+      lumpAmount: 40_000,
+      lumpPurchase: "car",
+      startDate: "2027-06-01",
+      endDate: "2030-01-01",
+    },
+  ];
+  const sim = simulate(plan);
+  const may = sim.months.find((row) => row.date.startsWith("2027-05"));
+  const jun = sim.months.find((row) => row.date.startsWith("2027-06"));
+  const jul = sim.months.find((row) => row.date.startsWith("2027-07"));
+  assert.equal(may?.spending, 0);
+  assert.equal(jun?.spending, 40_000);
+  assert.equal(jul?.spending, 0);
+});
+
 
 
 

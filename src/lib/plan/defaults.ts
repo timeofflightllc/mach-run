@@ -1,4 +1,4 @@
-import type { Plan, Portfolio } from "./types";
+import { LUMP_PURCHASES, type Plan, type Portfolio } from "./types.ts";
 import { coerceIsoDate, todayIso, validIso } from "./dates.ts";
 import { institutionFields } from "./institutions.ts";
 import { isPayCadence } from "./pay-cadence.ts";
@@ -116,6 +116,9 @@ export function ensurePlan(plan: Plan): Plan {
     ...p,
     startDate: coerceIsoDate(p.startDate) || p.startDate,
     endDate: p.endDate ? coerceIsoDate(p.endDate) || p.endDate : null,
+    spendKind: p.spendKind === "lump" ? "lump" : "routine",
+    lumpAmount: Number.isFinite(p.lumpAmount) ? p.lumpAmount : 0,
+    lumpPurchase: LUMP_PURCHASES.find(([id]) => id === p.lumpPurchase)?.[0],
   }));
   next.confirmations = Array.isArray(plan.confirmations)
     ? plan.confirmations.filter(

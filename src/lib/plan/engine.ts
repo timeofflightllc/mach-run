@@ -117,6 +117,8 @@ export function spendingWindow(
   phase: Plan["spending"][number],
 ): { start: string; end: string | null } {
   const stage = findStage(plan, phase.tiedToStageId);
+  const start = stage ? stage.startDate : phase.startDate;
+  if (phase.spendKind === "lump") return { start, end: start };
   if (!stage) return { start: phase.startDate, end: phase.endDate };
   return { start: stage.startDate, end: stage.endDate };
 }
@@ -542,7 +544,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
       if (!inRange(cursor, win.start, win.end)) continue;
       const amount = phase.liabilityId
         ? phase.monthlyAmount
-        : inflate(phase.monthlyAmount, mInf, monthsFromAsOf);
+        : inflate(phase.spendKind === "lump" ? phase.lumpAmount || 0 : phase.monthlyAmount, mInf, monthsFromAsOf);
       spending += amount;
       if (amount > 0.005) {
         spendingLines.push({

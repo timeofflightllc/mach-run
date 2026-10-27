@@ -200,6 +200,23 @@ export interface IncomeStream {
   startDayAfterPrevious?: boolean;
 }
 
+export type SpendKind = "routine" | "lump";
+
+/** Large purchases planners schedule as a single future outlay. */
+export const LUMP_PURCHASES = [
+  ["home", "New Home"],
+  ["car", "New Car"],
+  ["wedding", "Wedding"],
+  ["vacation", "Vacation"],
+  ["education", "Education"],
+  ["improvement", "Home Improvement"],
+  ["medical", "Medical"],
+  ["business", "Business Start"],
+  ["care", "Long-Term Care"],
+] as const;
+
+export type LumpPurchase = (typeof LUMP_PURCHASES)[number][0];
+
 export interface SpendingPhase {
   id: string;
   label: string;
@@ -211,6 +228,11 @@ export interface SpendingPhase {
   startDayAfterPrevious?: boolean;
   /** Set when this line was created from a liability. The payment does not inflate. */
   liabilityId?: string;
+  /** Routine is every month in the window. Lump is one purchase on the start month. */
+  spendKind?: SpendKind;
+  /** Today's dollars, spent once, on startDate. */
+  lumpAmount?: number;
+  lumpPurchase?: LumpPurchase;
 }
 
 export interface Assumptions {
