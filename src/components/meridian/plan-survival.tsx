@@ -238,14 +238,15 @@ export function BoydQuote({
 export function RunMonteCarloButton({
   running,
   progress,
+  again = false,
   onClick,
 }: {
   running: boolean;
   progress: number;
+  again?: boolean;
   onClick?: () => void;
 }) {
-  const label = "Run Monte Carlo Simulation";
-  const width = `${Math.max(0, Math.min(1, progress)) * 100}%`;
+  const label = again ? "Re-run Monte Carlo Simulation" : "Run Monte Carlo Simulation";
   if (!running) {
     return (
       <button
@@ -257,15 +258,19 @@ export function RunMonteCarloButton({
       </button>
     );
   }
+  const count = Math.max(0, Math.min(1000, Math.round(Math.max(0, Math.min(1, progress)) * 1000)));
+  const width = `${Math.max(0, Math.min(1, progress)) * 100}%`;
+  const figure = "flex h-full w-[100cqw] items-center justify-center text-2xl font-semibold tabular-nums leading-none";
   return (
     <button
       type="button"
       onClick={onClick}
-      className="@container relative mt-3 h-10 w-full overflow-hidden rounded-lg border border-slate-900 bg-white text-sm font-medium text-slate-900"
+      aria-label={`${count} of 1,000 futures`}
+      className="@container relative mt-3 h-10 w-full overflow-hidden rounded-lg border border-slate-900 bg-white text-slate-900"
     >
-      <span className="flex h-full items-center justify-center">{label}</span>
+      <span className={figure}>{count}</span>
       <span className="absolute inset-y-0 left-0 overflow-hidden bg-slate-900 text-white" style={{ width }}>
-        <span className="flex h-full w-[100cqw] items-center justify-center">{label}</span>
+        <span className={figure}>{count}</span>
       </span>
     </button>
   );
@@ -445,7 +450,12 @@ export function PlanSurvival({
         Calm is quieter markets. Typical is the usual swing. Rough is wider markets.
         Choose one, then run it.
       </p>
-      <RunMonteCarloButton running={checking} progress={view.progress} onClick={onRun} />
+      <RunMonteCarloButton
+        running={checking}
+        progress={view.progress}
+        again={!checking && Boolean(view.score)}
+        onClick={onRun}
+      />
       <div className="mt-3 flex items-end justify-between gap-3 border-t border-slate-200 pt-2">
         <p className="max-w-sm text-[11px] leading-snug text-slate-500">
           Plan Survival is a Monte Carlo rating. It runs 1,000 random market futures based upon calm, typical, or rough markets (selected above). The number

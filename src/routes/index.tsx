@@ -553,7 +553,12 @@ function MonteCarloTab({
         )}
       </div>
       {unlocked ? (
-        <RunMonteCarloButton running={running} progress={running ? progress : 0} onClick={onRun} />
+        <RunMonteCarloButton
+          running={running}
+          progress={running ? progress : 0}
+          again={!running && Boolean(score)}
+          onClick={onRun}
+        />
       ) : null}
     </div>
   );

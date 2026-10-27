@@ -20,7 +20,7 @@ import type {
 
 /** One thousand paths. The screen still says "of 100." */
 const PATHS = 1000;
-const YIELD_EVERY = 25;
+const YIELD_EVERY = 1;
 
 export type SurvivalBand = {
   year: number;
