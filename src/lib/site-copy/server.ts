@@ -1,6 +1,6 @@
 import { getSql } from "@/lib/db";
 import { pathsForSlug, pingIndexNow } from "@/lib/seo/sitemap";
-import { DEFAULT_PAGES, defaultAnnouncements, PINNED_ANNOUNCEMENTS, REFUND_FAQ_BLOCK, REFUND_LEGAL_BLOCK, FREE_CALCULATORS_BLOCK } from "./defaults";
+import { DEFAULT_PAGES, defaultAnnouncements, byAnnouncementDateDesc, PINNED_ANNOUNCEMENTS, REFUND_FAQ_BLOCK, REFUND_LEGAL_BLOCK, FREE_CALCULATORS_BLOCK } from "./defaults";
 import {
   SITE_PAGE_SLUGS,
   type SiteAnnouncement,
@@ -354,18 +354,20 @@ export async function loadSiteCopy(): Promise<SiteCopy> {
       title: string;
       blurb: string;
       sort_order: number;
-    }>("select id, at, title, blurb, sort_order from mach_announcements order by sort_order desc, created_at desc");
+    }>("select id, at, title, blurb, sort_order from mach_announcements order by at desc, created_at desc");
     const pages = SITE_PAGE_SLUGS.map((slug) => {
       const found = pageRows.map(mapPage).find((p) => p?.slug === slug);
       return found ?? DEFAULT_PAGES.find((p) => p.slug === slug)!;
     });
-    const announcements: SiteAnnouncement[] = noteRows.map((row) => ({
-      id: row.id,
-      at: row.at,
-      title: row.title,
-      blurb: row.blurb,
-      sortOrder: Number(row.sort_order) || 0,
-    }));
+    const announcements: SiteAnnouncement[] = noteRows
+      .map((row) => ({
+        id: row.id,
+        at: row.at,
+        title: row.title,
+        blurb: row.blurb,
+        sortOrder: Number(row.sort_order) || 0,
+      }))
+      .sort(byAnnouncementDateDesc);
     return {
       pages,
       announcements,

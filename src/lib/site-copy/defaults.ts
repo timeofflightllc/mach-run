@@ -384,5 +384,18 @@ export function defaultAnnouncements(): SiteAnnouncement[] {
     ...item,
     sortOrder: floor + PINNED_ANNOUNCEMENTS.length - i,
   }));
-  return [...pinned, ...seeded];
+  return [...pinned, ...seeded].sort(byAnnouncementDateDesc);
+}
+
+export function byAnnouncementDateDesc(a: SiteAnnouncement, b: SiteAnnouncement): number {
+  const byDate = announcementDateKey(b.at).localeCompare(announcementDateKey(a.at));
+  if (byDate !== 0) return byDate;
+  return b.sortOrder - a.sortOrder;
+}
+
+/** YYYY-MM-DD, then a clock time if one was typed. Newer keys sort first. */
+function announcementDateKey(at: string): string {
+  const match = at.trim().match(/^(\d{4}-\d{2}-\d{2})(?:[ T](\d{2}:\d{2}))?/);
+  if (!match) return at.trim();
+  return match[2] ? `${match[1]}T${match[2]}` : match[1];
 }

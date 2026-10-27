@@ -804,7 +804,7 @@ export function SiteCopyDesk() {
       <section className="rounded-xl bg-surface p-4 text-sm shadow-[0_0_0_1px_var(--color-border)]">
         <h2 className="font-display text-xl font-bold text-fg">Feature announcements</h2>
         <p className="mt-1 text-muted">
-          Add, edit, or delete. Newest sort order sits at the top of Updates.
+          Add, edit, or delete. The date decides the order. Newest date sits at the top of Updates.
         </p>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           <Field label="Date">
