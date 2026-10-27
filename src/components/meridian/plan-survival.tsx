@@ -76,23 +76,71 @@ function nextBoydLine(quotes: string[], current: string) {
   return line;
 }
 
+const GAUGE = { cx: 100, cy: 104, r: 74, stroke: 20 };
+const TEAL = "#1498a6";
+const BLUE = "#3b7ec4";
+const GREEN = "#3caf62";
+
+function gaugePoint(percent: number, radius: number) {
+  const angle = Math.PI * (1 - percent / 100);
+  return [GAUGE.cx + radius * Math.cos(angle), GAUGE.cy - radius * Math.sin(angle)] as const;
+}
+
+function gaugeArc(from: number, to: number) {
+  const [x1, y1] = gaugePoint(from, GAUGE.r);
+  const [x2, y2] = gaugePoint(to, GAUGE.r);
+  return `M ${x1} ${y1} A ${GAUGE.r} ${GAUGE.r} 0 0 1 ${x2} ${y2}`;
+}
+
 function SurvivalChance({ percent }: { percent: number | null }) {
-  const value = percent == null ? 0 : Math.max(0, Math.min(100, percent));
-  const color = percent == null ? "#c8d2de" : value >= 80 ? "#3a8a58" : value >= 50 ? "#c4922a" : "#a34b45";
+  const value = percent == null ? null : Math.max(0, Math.min(100, percent));
+  const cap = GAUGE.stroke / 2;
+  const [x0, y0] = gaugePoint(0, GAUGE.r);
+  const [x1, y1] = gaugePoint(100, GAUGE.r);
+  const needle =
+    value == null
+      ? null
+      : (() => {
+          const angle = Math.PI * (1 - value / 100);
+          const tipR = GAUGE.r - cap - 1;
+          const baseR = tipR - 11;
+          const spread = 0.09;
+          const tip = gaugePoint(value, tipR);
+          const left = [
+            GAUGE.cx + baseR * Math.cos(angle + spread),
+            GAUGE.cy - baseR * Math.sin(angle + spread),
+          ];
+          const right = [
+            GAUGE.cx + baseR * Math.cos(angle - spread),
+            GAUGE.cy - baseR * Math.sin(angle - spread),
+          ];
+          return `${tip[0]} ${tip[1]} ${left[0]} ${left[1]} ${right[0]} ${right[1]}`;
+        })();
   return (
-    <div className="mt-4 flex flex-col items-center" aria-label={percent == null ? "Chance of success, not run yet" : `${percent} percent chance of success`}>
-      <div
-        className="grid h-32 w-32 place-items-center rounded-full"
-        style={{ background: `conic-gradient(${color} ${value * 3.6}deg, #e6ebf0 0deg)` }}
-        aria-hidden="true"
-      >
-        <div className="grid h-[6.35rem] w-[6.35rem] place-items-center rounded-full bg-white">
-          <span className="font-display text-4xl font-semibold tabular-nums leading-none text-slate-900">
-            {percent == null ? "—" : `${percent}%`}
-          </span>
-        </div>
-      </div>
-      <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">Chance of success</p>
+    <div
+      className="mt-3 flex flex-col items-center"
+      aria-label={value == null ? "Chance of success, not run yet" : `${value} percent chance of success`}
+    >
+      <svg viewBox="0 0 200 150" className="h-36 w-48" aria-hidden="true">
+        <path d={gaugeArc(0, 70)} fill="none" stroke={TEAL} strokeWidth={GAUGE.stroke} strokeLinecap="butt" />
+        <path d={gaugeArc(70, 90)} fill="none" stroke={BLUE} strokeWidth={GAUGE.stroke} strokeLinecap="butt" />
+        <path d={gaugeArc(90, 100)} fill="none" stroke={GREEN} strokeWidth={GAUGE.stroke} strokeLinecap="butt" />
+        <circle cx={x0} cy={y0} r={cap} fill={TEAL} />
+        <circle cx={x1} cy={y1} r={cap} fill={GREEN} />
+        {needle ? <polygon points={needle} fill="#1a1a1a" /> : null}
+        <circle cx={GAUGE.cx} cy={GAUGE.cy} r="38" fill="#fff" style={{ filter: "drop-shadow(0 1px 2px rgb(15 23 42 / 0.12))" }} />
+        <text
+          x={GAUGE.cx}
+          y={GAUGE.cy + 2}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          fill="#0f172a"
+          style={{ fontFamily: "Barlow Condensed, Arial Narrow, sans-serif", fontSize: 36, fontWeight: 650 }}
+        >
+          {value == null ? "—" : `${Math.round(value)}%`}
+        </text>
+      </svg>
+      <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">Chance of success</p>
     </div>
   );
 }
