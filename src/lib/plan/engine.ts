@@ -391,8 +391,44 @@ function statedAnnualReturn(plan: Plan, portfolio: { kind: string; returnPct?: n
   return (portfolio.returnPct ?? plan.assumptions.defaultReturnPct) / 100;
 }
 
-export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnShocks }): SimResult {
-  const plan = ensurePlan(raw);
+function liteYear(year: number, nominal: number, real: number): YearSnapshot {
+  return {
+    year,
+    primaryAge: 0,
+    spouseAge: 0,
+    endPortfolio: nominal,
+    endPortfolioReal: real,
+    endSpendable: nominal,
+    endSpendableReal: real,
+    endNetWorth: 0,
+    endNetWorthReal: 0,
+    endAssets: 0,
+    endAssetsReal: 0,
+    endLiabilities: 0,
+    endLiabilitiesReal: 0,
+    contributions: 0,
+    plannedContributions: 0,
+    irsCut: 0,
+    employerMatch: 0,
+    withdrawals: 0,
+    income: 0,
+    tax: 0,
+    spending: 0,
+    surplus: 0,
+    guaranteed: 0,
+    air: null,
+    airWithdrawals: 0,
+    airByKind: {},
+    incomeByKind: {},
+  };
+}
+
+export function simulate(
+  raw: Plan,
+  opts?: { audit?: boolean; shocks?: ReturnShocks; lite?: boolean; normalized?: boolean },
+): SimResult {
+  const plan = opts?.normalized ? raw : ensurePlan(raw);
+  const lite = Boolean(opts?.lite);
   const wantAudit = Boolean(opts?.audit);
   const audit: PlanAudit | null = wantAudit ? emptyAudit() : null;
   const asOf = monthStart(plan.assumptions.asOfDate);
@@ -432,6 +468,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
   }
 
   const months: MonthSnapshot[] = [];
+  const liteYears: YearSnapshot[] = [];
   let depletedAge: number | null = null;
   let depletedYear: number | null = null;
   let markedDepleted = false;
@@ -946,19 +983,23 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
         assetsEnd += v;
         liabilitiesEnd += debt;
         netWorthEnd += v - debt;
-        netWorthLines.push({
-          id: p.id,
-          label: p.name.trim() || "Account",
-          amount: v,
-        });
+        if (!lite) {
+          netWorthLines.push({
+            id: p.id,
+            label: p.name.trim() || "Account",
+            amount: v,
+          });
+        }
       }
       if (!ended && p.spendable) {
         spendableEnd += v;
-        spendableLines.push({
-          id: p.id,
-          label: p.name.trim() || "Account",
-          amount: v,
-        });
+        if (!lite) {
+          spendableLines.push({
+            id: p.id,
+            label: p.name.trim() || "Account",
+            amount: v,
+          });
+        }
       }
     }
     for (const l of plan.liabilities ?? []) {
@@ -1052,7 +1093,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
       }
     }
 
-    if (goalKey && goalKey > asOfKey && iso(cursor).slice(0, 7) < goalKey) {
+    if (!lite && goalKey && goalKey > asOfKey && iso(cursor).slice(0, 7) < goalKey) {
       atRetirement = new Map(values);
       const index = (1 + mInf) ** (monthsFromAsOf + 1);
       atRetirementReal = new Map(
@@ -1060,6 +1101,18 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
       );
     }
 
+    if (lite) {
+      const y = cursor.getFullYear();
+      const realEnd = spendableEnd / inflationIndex;
+      const lastLite = liteYears[liteYears.length - 1];
+      if (!lastLite || lastLite.year !== y) liteYears.push(liteYear(y, spendableEnd, realEnd));
+      else {
+        lastLite.endPortfolio = spendableEnd;
+        lastLite.endPortfolioReal = realEnd;
+        lastLite.endSpendable = spendableEnd;
+        lastLite.endSpendableReal = realEnd;
+      }
+    } else {
     months.push({
       date: iso(cursor),
       year: cursor.getFullYear(),
@@ -1108,6 +1161,7 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
         netWorthLines,
       },
     });
+    }
 
     if (cursor.getMonth() === 11) {
       for (const p of plan.portfolios) {
@@ -1116,6 +1170,39 @@ export function simulate(raw: Plan, opts?: { audit?: boolean; shocks?: ReturnSho
     }
 
     cursor = addMonths(cursor, 1);
+  }
+
+  if (lite) {
+    const lastLite = liteYears[liteYears.length - 1];
+    return {
+      months: [],
+      years: liteYears,
+      stageMarks: [],
+      fundingGaps: [],
+      yearCaps: [],
+      depletedAge,
+      depletedYear,
+      retirement: null,
+      spendableAtCareerEnd: 0,
+      spendableAtCareerEndReal: 0,
+      guaranteedAtCareerEnd: 0,
+      spendingAtCareerEnd: 0,
+      coverageAtCareerEnd: 0,
+      spendableAtEnd: lastLite?.endSpendable ?? 0,
+      spendableAtEndReal: lastLite?.endSpendableReal ?? 0,
+      totalContributed,
+      totalWithdrawn,
+      balancesAtRetirement: [],
+      rmd: {
+        startAge: null,
+        lifetimeRothExempt: [],
+        stillWorkingDeferred: [],
+        forced: [],
+        firstYearAnnual: 0,
+        total: 0,
+        accounts: [],
+      },
+    };
   }
 
   const years: YearSnapshot[] = [];

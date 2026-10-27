@@ -1,5 +1,6 @@
 import { addYears } from "date-fns";
 import { dateAtAge, monthStart, validIso } from "./dates.ts";
+import { ensurePlan } from "./defaults.ts";
 import { simulate, type ReturnShocks } from "./engine.ts";
 import {
   DEFAULT_SWING,
@@ -20,7 +21,8 @@ import type {
 
 /** One thousand paths. The screen still says "of 100." */
 const PATHS = 1000;
-const YIELD_EVERY = 1;
+/** Paint the counter about 30 times a second, not after every future. */
+const PAINT_MS = 32;
 
 export type SurvivalBand = {
   year: number;
@@ -130,13 +132,15 @@ async function execute(
   hash: string,
   opts: SurvivalOptions | undefined,
 ): Promise<SurvivalScore | null> {
+  const ready = ensurePlan(plan);
   if (opts?.signal?.aborted) return null;
   const runOne = opts?.runOne ?? defaultRun;
-  const years = calendarYears(plan);
+  const years = calendarYears(ready);
   const stdev = SWING_PRESETS[swing];
   let survived = 0;
   const runOutAges: number[] = [];
   const columns = new Map<number, { nominal: number[]; real: number[] }>();
+  let paintedAt = performance.now();
   for (let path = 0; path < PATHS; path++) {
     if (opts?.signal?.aborted) return null;
     const draw = createStandardNormal(mixSeed(hash, path));
@@ -148,7 +152,7 @@ async function execute(
     };
     let result: PathResult;
     try {
-      result = runOne(plan, shocks);
+      result = runOne(ready, shocks);
     } catch {
       return null;
     }
@@ -166,10 +170,11 @@ async function execute(
       }
     }
     const done = path + 1;
-    if (done % YIELD_EVERY === 0) {
+    if (done === PATHS || performance.now() - paintedAt >= PAINT_MS) {
       opts?.onProgress?.(done, PATHS);
       await paint();
       if (opts?.signal?.aborted) return null;
+      paintedAt = performance.now();
     }
   }
   return {
@@ -185,7 +190,7 @@ async function execute(
 }
 
 function defaultRun(plan: Plan, shocks: ReturnShocks): PathResult {
-  const sim = simulate(plan, { shocks });
+  const sim = simulate(plan, { shocks, lite: true, normalized: true });
   return {
     depletedAge: sim.depletedAge,
     yearEnds: sim.years.map((year) => ({
