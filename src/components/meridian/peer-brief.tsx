@@ -12,7 +12,7 @@ import { NestEggHeadline } from "@/components/meridian/verdict";
 import { CashShortNotice } from "@/components/meridian/cash-short-notice";
 import { nestEggTrack } from "@/lib/plan/peers";
 import { annuityEquivalentCopy } from "@/lib/plan/annuity-equivalent";
-import { Field, MoneyInput, MonthInput, PrimaryButton, TextInput } from "@/components/ui/field";
+import { Field, MoneyInput, MonthInput, NumberInput, PrimaryButton, TextInput } from "@/components/ui/field";
 import { paycheckFromMonthly, monthlyFromPay } from "@/lib/plan/pay-cadence";
 import { usePlanStore } from "@/lib/plan/store";
 import { InstitutionMark } from "@/components/meridian/institution-field";
@@ -47,6 +47,7 @@ function BriefTable({
   logos,
   footer,
   onRow,
+  clickHint,
 }: {
   intro: string;
   note?: string;
@@ -55,10 +56,12 @@ function BriefTable({
   logos?: { institutionId: string | null; institutionName: string }[];
   footer?: string[];
   onRow?: (index: number) => void;
+  clickHint?: string;
 }) {
   return (
     <div className="mt-1">
       {intro ? <p>{intro}</p> : null}
+      {clickHint ? <p className="mt-1 text-[#1a2330]">{clickHint}</p> : null}
       <div className="mt-2 overflow-x-auto">
         <table className="w-full min-w-[32rem] border-collapse text-left text-sm">
           <thead>
@@ -82,7 +85,9 @@ function BriefTable({
                 key={row.join("|") + i}
                 className={
                   "border-t border-[#d5d0c6] " +
-                  (onRow ? "cursor-pointer hover:bg-elevated/70" : "")
+                  (onRow
+                    ? "group cursor-pointer hover:bg-[#1a2330] focus-visible:bg-[#1a2330] focus-visible:outline-none"
+                    : "")
                 }
                 onClick={onRow ? () => onRow(i) : undefined}
                 onKeyDown={
@@ -106,6 +111,7 @@ function BriefTable({
                       key={`${i}-${j}`}
                       className={
                         "py-1.5 pr-4 last:pr-0 " +
+                        (onRow ? "group-hover:text-white group-focus-visible:text-white " : "") +
                         (j === 0 ? "text-[#1a2330] " : "text-[#3d4a54] ") +
                         (h?.align === "right" ? "text-right tabular-nums " : "") +
                         (h?.nowrap ? "whitespace-nowrap " : "")
@@ -154,6 +160,8 @@ function BriefTable({
     </div>
   );
 }
+
+const CLICK_TO_EDIT = "Click a row to edit it.";
 
 type PaycheckDraft = {
   name: string;
@@ -282,6 +290,7 @@ function PaycheckTable({
         ]}
         rows={rows.map((r) => [r.name, r.amount, r.window])}
         onRow={open}
+        clickHint={CLICK_TO_EDIT}
       />
       {ask ? (
         <div className="mt-3 flex flex-col gap-2">
@@ -360,6 +369,176 @@ function PaycheckTable({
                   clearable
                   value={draft.end}
                   onValue={(v) => patchDraft({ end: v || null })}
+                />
+              </Field>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <PrimaryButton className="h-9 w-auto px-3 text-sm" onClick={save}>
+                Save
+              </PrimaryButton>
+              <button
+                type="button"
+                className="inline-flex h-9 items-center rounded-lg px-3 text-sm text-muted hover:text-fg"
+                onClick={close}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+type AccountDraft = {
+  name: string;
+  balance: number;
+  rate: number;
+  rateWasDefault: boolean;
+};
+
+function AccountTable({
+  note,
+  headers,
+  rows,
+  logos,
+  onExecute,
+  onStale,
+}: {
+  note?: string;
+  headers: { label: string; align?: "left" | "right"; nowrap?: boolean }[];
+  rows: string[][];
+  logos?: { institutionId: string | null; institutionName: string }[];
+  onExecute?: () => void;
+  onStale?: () => void;
+}) {
+  const updatePortfolio = usePlanStore((s) => s.updatePortfolio);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraftState] = useState<AccountDraft | null>(null);
+  const draftRef = useRef<AccountDraft | null>(null);
+  const [ask, setAsk] = useState(false);
+
+  function setDraft(next: AccountDraft | null) {
+    draftRef.current = next;
+    setDraftState(next);
+  }
+
+  function patchDraft(patch: Partial<AccountDraft>) {
+    const base = draftRef.current;
+    if (!base) return;
+    setDraft({ ...base, ...patch });
+  }
+
+  const account = usePlanStore((s) =>
+    editingId ? s.plan.portfolios.find((row) => row.id === editingId) ?? null : null,
+  );
+
+  function open(index: number) {
+    const live = usePlanStore.getState().plan.portfolios[index];
+    if (!live) return;
+    const fallback = usePlanStore.getState().plan.assumptions.defaultReturnPct;
+    setEditingId(live.id);
+    setDraft({
+      name: live.name,
+      balance: live.currentValue,
+      rate: live.returnPct ?? fallback,
+      rateWasDefault: live.returnPct == null,
+    });
+  }
+
+  function close() {
+    setEditingId(null);
+    setDraft(null);
+  }
+
+  function save() {
+    const current = draftRef.current;
+    if (!account || !current) return;
+    const fallback = usePlanStore.getState().plan.assumptions.defaultReturnPct;
+    const name = current.name.trim();
+    updatePortfolio(account.id, {
+      name: name || account.name,
+      currentValue: current.balance,
+      returnPct: current.rateWasDefault && current.rate === fallback ? null : current.rate,
+    });
+    close();
+    setAsk(true);
+  }
+
+  return (
+    <div>
+      <BriefTable
+        intro=""
+        note={note}
+        headers={headers}
+        rows={rows}
+        logos={logos}
+        onRow={open}
+        clickHint={CLICK_TO_EDIT}
+      />
+      {ask ? (
+        <div className="mt-3 flex flex-col gap-2">
+          <p className="text-sm leading-relaxed text-fg">
+            This edit is saved. Re-execute the MACH RUN to score it.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <PrimaryButton
+              className="h-9 w-auto px-3 text-sm"
+              onClick={() => {
+                setAsk(false);
+                onExecute?.();
+              }}
+            >
+              Execute the MACH RUN
+            </PrimaryButton>
+            <button
+              type="button"
+              className="inline-flex h-9 items-center rounded-lg px-3 text-sm text-muted hover:text-fg"
+              onClick={() => {
+                setAsk(false);
+                onStale?.();
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {account && draft ? (
+        <div
+          className="fixed inset-0 z-[140] grid place-items-center bg-black/60 px-4"
+          role="presentation"
+          onMouseDown={close}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="account-edit-title"
+            className="w-full max-w-md rounded-xl bg-white px-5 py-5 shadow-[0_0_0_1px_#d5d0c6]"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <p id="account-edit-title" className="font-semibold text-fg">
+              Edit {account.name.trim() || "account"}
+            </p>
+            <div className="mt-4 flex flex-col gap-3">
+              <Field label="Name">
+                <TextInput
+                  value={draft.name}
+                  onChange={(e) => patchDraft({ name: e.target.value })}
+                />
+              </Field>
+              <Field label="Starting balance">
+                <MoneyInput
+                  value={draft.balance}
+                  onValue={(n) => patchDraft({ balance: n })}
+                />
+              </Field>
+              <Field label="Return (% / year)">
+                <NumberInput
+                  step={0.1}
+                  value={draft.rate}
+                  onValue={(n) => patchDraft({ rate: n, rateWasDefault: false })}
                 />
               </Field>
             </div>
@@ -492,7 +671,16 @@ export function PeerBriefCard({
             ) : (
               <>
                 {s.title ? <p className="font-semibold text-[#1a2330]">{s.title}</p> : null}
-                {s.table?.rows.length ? (
+                {s.title === "Accounts on this run" && s.table?.rows.length ? (
+                  <AccountTable
+                    note={s.table.note}
+                    headers={s.table.headers}
+                    rows={s.table.rows}
+                    logos={s.table.logos}
+                    onExecute={onExecute}
+                    onStale={onStale}
+                  />
+                ) : s.table?.rows.length ? (
                   <BriefTable
                     intro={s.table.intro}
                     note={s.table.note}
