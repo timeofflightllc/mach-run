@@ -448,7 +448,7 @@ function RetiredPayQuiz() {
                 onYear={setEntryYear}
               />
               <p className="mt-3 text-center text-sm text-[#3d4a54]">
-                Generally, the “Pay Date” on your LES. It’s listed as 2-digit year, 2-digit month, 2-digit day. Example: “080102” would be January 2, 2008.
+                Generally, the “PAY DATE” at the middle of your LES’s top line. It’s listed as a 6-digit year-month-day. Example: “080102” would be January 2, 2008.
               </p>
             </Question>
           ) : null}
