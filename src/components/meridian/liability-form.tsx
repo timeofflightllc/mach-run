@@ -58,7 +58,7 @@ function kindLabel(kind: LiabilityKind): string {
   return KINDS.find((row) => row.value === kind)?.label ?? "Loan";
 }
 
-export function LiabilityForm({ onNone }: { onNone?: () => void }) {
+export function LiabilityForm() {
   const plan = usePlanStore((s) => s.plan);
   const addLiability = usePlanStore((s) => s.addLiability);
   const removeLiability = usePlanStore((s) => s.removeLiability);
@@ -76,25 +76,13 @@ export function LiabilityForm({ onNone }: { onNone?: () => void }) {
   }, [plan.liabilities]);
 
   const none = plan.noLiabilities === true && rows.length === 0;
-  const named = none || rows.some((l) => l.name.trim().length > 0);
-  const terms =
-    none ||
-    rows.some(
-      (l) =>
-        Boolean(l.originationDate) &&
-        Number.isFinite(l.aprPct) &&
-        l.monthlyPi > 0 &&
-        l.termYears > 0,
-    );
-  const ownersReady = none || (rows.length > 0 && rows.every((l) => Boolean(normalizeOwner(l.owner))));
-  const bar = (on: boolean) => (on ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]");
+  const answered = none || rows.length > 0;
+  const bar = answered ? "h-1.5 flex-1 rounded-full bg-[#3a8a58]" : "h-1.5 flex-1 rounded-full bg-[#d5d0c6]";
 
   return (
     <div className="flex w-full flex-col">
       <div className="mb-4 flex gap-1.5" aria-hidden="true">
-        <span className={bar(named)} />
-        <span className={bar(terms)} />
-        <span className={bar(ownersReady)} />
+        <span className={bar} />
       </div>
       <h2 className="text-center font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
         What do you owe?
@@ -140,10 +128,13 @@ export function LiabilityForm({ onNone }: { onNone?: () => void }) {
         {rows.length === 0 ? (
           <button
             type="button"
-            className="min-h-12 rounded-xl bg-[#f3f0e8] px-3 text-base text-[#1a2330] hover:bg-[#e7e2d8]"
+            className={
+              none
+                ? "min-h-12 rounded-xl bg-[#3a8a58] px-3 text-base font-medium text-white"
+                : "min-h-12 rounded-xl bg-[#f3f0e8] px-3 text-base text-[#1a2330] hover:bg-[#e7e2d8]"
+            }
             onClick={() => {
               declareNoLiabilities();
-              onNone?.();
             }}
           >
             I have no liabilities

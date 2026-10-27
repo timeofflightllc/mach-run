@@ -72,7 +72,7 @@ export function Verdict({
   } else if (sim.depletedAge != null) {
     body = `Spendable accounts run out at age ${sim.depletedAge} (${sim.depletedYear}). Raise income, extend a stage, or cut spending before that date.`;
   } else {
-    body = `The plan funds spending through age ${plan.assumptions.projectionEndAge} with ${usd(atTerm)} remaining (${unit}).`;
+    body = `Your current plan funds spending through age ${plan.assumptions.projectionEndAge} with ${usd(atTerm)} remaining (${unit}).`;
   }
 
   const ret = sim.retirement;

@@ -2111,7 +2111,7 @@ function Home() {
               nav={<SweepNav showBack={showBack} showNext={showNext} onBack={onBack} onNext={onNext} />}
               narrow
             >
-              <LiabilityForm onNone={() => goStep("income")} />
+              <LiabilityForm />
             </WhiteStep>
             </div>
             </div>

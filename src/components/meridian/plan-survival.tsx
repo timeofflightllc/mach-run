@@ -77,8 +77,8 @@ function nextBoydLine(quotes: string[], current: string) {
 }
 
 const GAUGE = { cx: 100, cy: 104, r: 74, stroke: 20 };
-const TEAL = "#1498a6";
-const BLUE = "#3b7ec4";
+const BLUE = "#7eb6ea";
+const TEAL = "#6ecfc4";
 const GREEN = "#3caf62";
 
 function gaugePoint(percent: number, radius: number) {
@@ -122,10 +122,10 @@ function SurvivalChance({ percent }: { percent: number | null }) {
       aria-label={value == null ? "Chance of success, not run yet" : `${value} percent chance of success`}
     >
       <svg viewBox="0 0 200 150" className="h-36 w-48" aria-hidden="true">
-        <path d={gaugeArc(0, 70)} fill="none" stroke={TEAL} strokeWidth={GAUGE.stroke} strokeLinecap="butt" />
-        <path d={gaugeArc(70, 90)} fill="none" stroke={BLUE} strokeWidth={GAUGE.stroke} strokeLinecap="butt" />
+        <path d={gaugeArc(0, 70)} fill="none" stroke={BLUE} strokeWidth={GAUGE.stroke} strokeLinecap="butt" />
+        <path d={gaugeArc(70, 90)} fill="none" stroke={TEAL} strokeWidth={GAUGE.stroke} strokeLinecap="butt" />
         <path d={gaugeArc(90, 100)} fill="none" stroke={GREEN} strokeWidth={GAUGE.stroke} strokeLinecap="butt" />
-        <circle cx={x0} cy={y0} r={cap} fill={TEAL} />
+        <circle cx={x0} cy={y0} r={cap} fill={BLUE} />
         <circle cx={x1} cy={y1} r={cap} fill={GREEN} />
         {needle ? <polygon points={needle} fill="#1a1a1a" /> : null}
         <circle cx={GAUGE.cx} cy={GAUGE.cy} r="38" fill="#fff" style={{ filter: "drop-shadow(0 1px 2px rgb(15 23 42 / 0.12))" }} />
