@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createDefaultPlan } from "./defaults.ts";
+import { simulate } from "./engine.ts";
+import { createStandardNormal, SWING_PRESETS } from "./monte-carlo.ts";
 import { economicHash, runOutSentence, runSurvival, survivalPercent, survivalSentence } from "./monte-carlo-run.ts";
 import type { Plan } from "./types.ts";
 
@@ -32,6 +34,37 @@ function shortPlan(): Plan {
   ];
   return plan;
 }
+
+test("lite Monte Carlo depletes in the same month as the full engine", () => {
+  const plan = shortPlan();
+  plan.assumptions.projectionEndAge = 80;
+  plan.assumptions.inflationPct = 3;
+  plan.spending = [
+    {
+      id: "spend-life",
+      label: "Life",
+      monthlyAmount: 2500,
+      startDate: "2026-01-01",
+      endDate: null,
+    },
+  ];
+  const draw = createStandardNormal(42);
+  const z = new Map<number, number>();
+  for (let year = 2026; year <= 2060; year++) z.set(year, draw());
+  const shocks = { stdev: SWING_PRESETS.typical, zForYear: (year: number) => z.get(year) ?? 0 };
+  const full = simulate(plan, { shocks });
+  const lite = simulate(plan, { shocks, lite: true, normalized: true });
+  assert.ok(full.depletedAge != null);
+  assert.equal(lite.depletedAge, full.depletedAge);
+  assert.equal(lite.depletedYear, full.depletedYear);
+  assert.equal(lite.years.length, full.years.length);
+  for (let i = 0; i < full.years.length; i++) {
+    assert.ok(
+      Math.abs(lite.years[i].endSpendable - full.years[i].endSpendable) < 0.02,
+      `year ${full.years[i].year} spendable diverged`,
+    );
+  }
+});
 
 test("survivalPercent rounds half up to a whole number of 100", () => {
   assert.equal(survivalPercent(847, 1000), 85);

@@ -490,7 +490,7 @@ export function simulate(
   );
   while (!isBefore(endDate, cursor) && guard < 1200) {
     guard += 1;
-    const monthsFromAsOf = months.length;
+    const monthsFromAsOf = guard - 1;
     const monthKey = iso(cursor).slice(0, 7);
     const inflationIndex = (1 + mInf) ** monthsFromAsOf;
     const auditStart = audit ? new Map(values) : null;
