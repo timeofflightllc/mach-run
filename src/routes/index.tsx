@@ -9,7 +9,7 @@ import { CalculateButton } from "@/components/meridian/calculate-button";
 import { AdvisoryStrip } from "@/components/meridian/advisory-note";
 import { CashChart, MonteCarloBandChart, NetWorthChart, WealthChart } from "@/components/meridian/charts";
 import { BoydQuote, PlanSurvival, readPlanSurvivalMinimized, RunMonteCarloButton, type SurvivalView } from "@/components/meridian/plan-survival";
-import { HistoricalStretches } from "@/components/meridian/historical-stretches";
+import { FuturesCard, HistoricalStretches } from "@/components/meridian/historical-stretches";
 import { useBoydQuotes } from "@/components/meridian/use-boyd-quotes";
 import { Pinnable, useChartPins } from "@/components/meridian/chart-pin";
 import { ContributionForm } from "@/components/meridian/contribution-form";
@@ -34,7 +34,7 @@ import { readActPlaceCookie } from "@/lib/act-place-api";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useGuestChrome } from "@/lib/auth/guest-chrome";
 import { simulate } from "@/lib/plan/engine";
-import { economicHash, runOutSentence, runSurvival, survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
+import { economicHash, runSurvival, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { DEFAULT_SWING, type SwingName } from "@/lib/plan/monte-carlo";
 import { refreshEstimatedSocialSecurity } from "@/lib/plan/social-security";
 import { planInputSignature } from "@/lib/plan/input-signature";
@@ -489,7 +489,6 @@ function MonteCarloTab({
   plan: Plan;
   sim: SimResult;
 }) {
-  const ranOut = score ? runOutSentence(score, longevityAge) : null;
   const quotes = useBoydQuotes();
   return (
     <div className="flex min-w-0 flex-col gap-3">
@@ -504,20 +503,15 @@ function MonteCarloTab({
             sim={sim}
             survival={score}
             note={
-              <div
-                className="rounded-md px-4 py-3"
-                style={{
-                  background: "color-mix(in oklab, #e8c547 22%, white)",
-                  boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 45%, white)",
-                }}
-              >
-                <p className="text-base font-bold leading-snug text-slate-900 sm:text-xl">
-                  {survivalSentence(score.score, longevityAge)}
-                </p>
-                {ranOut ? (
-                  <p className="mt-1.5 text-sm font-semibold leading-snug text-slate-900 sm:text-base">{ranOut}</p>
-                ) : null}
-              </div>
+              <>
+                <FuturesCard
+                  score={score.score}
+                  longevityAge={longevityAge}
+                  runOutAge={score.runOutAge}
+                  failed={score.paths - score.survived}
+                />
+                <HistoricalStretches plan={plan} />
+              </>
             }
           />
         ) : (
@@ -554,15 +548,12 @@ function MonteCarloTab({
         )}
       </div>
       {unlocked ? (
-        <>
-          <RunMonteCarloButton
-            running={running}
-            progress={running ? progress : 0}
-            again={!running && Boolean(score)}
-            onClick={onRun}
-          />
-          <HistoricalStretches plan={plan} />
-        </>
+        <RunMonteCarloButton
+          running={running}
+          progress={running ? progress : 0}
+          again={!running && Boolean(score)}
+          onClick={onRun}
+        />
       ) : null}
     </div>
   );

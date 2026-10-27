@@ -1855,7 +1855,7 @@ export function MonteCarloBandChart({
       )}
       <div className={plotOnly ? "relative h-full w-full" : "relative h-[32rem] sm:h-[40rem]"}>
         {note ? (
-          <div className="pointer-events-none absolute left-[6.25rem] top-3 z-10 max-w-[min(28rem,calc(100%-7.5rem))]">
+          <div className="pointer-events-none absolute left-[4.25rem] right-2 top-3 z-10 flex flex-wrap items-start gap-2 sm:left-[6.25rem]">
             {note}
           </div>
         ) : null}

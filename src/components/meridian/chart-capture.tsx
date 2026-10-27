@@ -9,9 +9,10 @@ import {
   type ChartPicture,
   type ChartSpan,
 } from "@/lib/plan/chart-pdf";
-import { runOutSentence, survivalSentence, type SurvivalScore, type SurvivalTraces } from "@/lib/plan/monte-carlo-run";
+import { type SurvivalScore, type SurvivalTraces } from "@/lib/plan/monte-carlo-run";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { CashChart, MonteCarloBandChart, NetWorthChart, WealthChart } from "@/components/meridian/charts";
+import { FuturesCard } from "@/components/meridian/historical-stretches";
 
 function swatchColor(icon: Element): string {
   const view = getComputedStyle(icon);
@@ -238,7 +239,6 @@ export async function captureChartPictures(input: {
       if (bands.length < 2) continue;
       const traces = sliceTraces(input.survival.traces, bands.map((band) => band.year));
       const age = input.plan.assumptions.projectionEndAge;
-      const ranOut = runOutSentence(input.survival, age);
       node = (
         <MonteCarloBandChart
           bands={bands}
@@ -246,17 +246,12 @@ export async function captureChartPictures(input: {
           real={input.plan.assumptions.dollars === "real"}
           plotOnly
           note={
-            <div
-              data-mach-note=""
-              className="rounded-md px-4 py-3"
-              style={{
-                background: "color-mix(in oklab, #e8c547 22%, white)",
-                boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 45%, white)",
-              }}
-            >
-              <p className="text-base font-bold leading-snug text-slate-900">{survivalSentence(input.survival.score, age)}</p>
-              {ranOut ? <p className="mt-1.5 text-sm font-semibold leading-snug text-slate-900">{ranOut}</p> : null}
-            </div>
+            <FuturesCard
+              score={input.survival.score}
+              longevityAge={age}
+              runOutAge={input.survival.runOutAge}
+              failed={input.survival.paths - input.survival.survived}
+            />
           }
         />
       );

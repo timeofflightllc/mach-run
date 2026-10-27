@@ -1,54 +1,125 @@
 import { useEffect, useRef, useState } from "react";
-import { Field, NumberInput, PrimaryButton } from "@/components/ui/field";
-import { historicalSentence, runHistorical } from "@/lib/plan/historical-run";
+import { runHistorical, type HistoricalCount } from "@/lib/plan/historical-run";
 import { planInputSignature } from "@/lib/plan/input-signature";
 import type { Plan } from "@/lib/plan/types";
+
+const card =
+  "pointer-events-auto w-[10.5rem] rounded-2xl bg-white/95 px-3.5 py-3 shadow-[0_10px_28px_rgba(26,35,48,0.14),0_0_0_1px_#d5d0c6] backdrop-blur-sm sm:w-[11.5rem]";
+
+export function FuturesCard({
+  score,
+  longevityAge,
+  runOutAge,
+  failed,
+}: {
+  score: number;
+  longevityAge: number;
+  runOutAge: number | null;
+  failed: number;
+}) {
+  return (
+    <div className={card} data-mach-note="">
+      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#6b7280]">Futures</p>
+      <p className="mt-1 font-display text-[2.6rem] font-semibold tabular-nums leading-none tracking-tight text-[#1a2330]">
+        {score}
+      </p>
+      <p className="mt-1 text-xs leading-snug text-[#3d4a54]">of 100 last to {longevityAge}</p>
+      {runOutAge != null && failed > 0 ? (
+        <p className="mt-2 text-[11px] leading-snug text-[#6b7280]">
+          {failed.toLocaleString("en-US")} run out. Middle age {runOutAge}.
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 export function HistoricalStretches({ plan }: { plan: Plan }) {
   const [percent, setPercent] = useState(60);
   const [busy, setBusy] = useState(false);
-  const [line, setLine] = useState<string | null>(null);
+  const [count, setCount] = useState<HistoricalCount | null>(null);
+  const [used, setUsed] = useState(60);
   const signature = planInputSignature(plan);
   const signatureRef = useRef(signature);
   signatureRef.current = signature;
 
   useEffect(() => {
-    setLine(null);
+    setCount(null);
   }, [signature]);
 
   function run() {
-    const used = Math.min(100, Math.max(0, percent));
+    const next = Math.min(100, Math.max(0, percent));
     const ranFor = signatureRef.current;
     setBusy(true);
     window.setTimeout(() => {
-      const count = runHistorical(plan, used);
+      const result = runHistorical(plan, next);
       setBusy(false);
       if (signatureRef.current !== ranFor) return;
-      setLine(historicalSentence(count, used));
+      setUsed(next);
+      setCount(result);
     }, 0);
   }
 
+  const all = count != null && count.total > 0 && count.failedStartYears.length === 0;
+  const failedLine = count && count.failedStartYears.length > 0 ? shortFailed(count.failedStartYears) : null;
+
   return (
-    <div className="rounded-xl bg-white px-5 py-4 shadow-[0_0_0_1px_#d5d0c6]">
-      <p className="text-sm font-semibold text-[#1a2330]">Historical stretches</p>
-      <p className="mt-1 text-sm leading-relaxed text-[#3d4a54]">
-        The rest is bonds. Cash, a house, and an annuity keep your rates.
-      </p>
-      <div className="mt-3 flex flex-wrap items-end gap-3">
-        <Field label="Percent in stocks" className="w-36">
-          <NumberInput
-            min={0}
-            max={100}
-            step={1}
-            value={percent}
-            onValue={(n) => setPercent(Math.min(100, Math.max(0, n)))}
-          />
-        </Field>
-        <PrimaryButton className="h-11 w-auto px-4" disabled={busy} onClick={run}>
-          {busy ? "Running…" : "Run historical stretches"}
-        </PrimaryButton>
+    <div className={card}>
+      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#6b7280]">Past</p>
+      {count && count.total > 0 ? (
+        <>
+          <p
+            className={
+              "mt-1 font-display text-[2.6rem] font-semibold tabular-nums leading-none tracking-tight " +
+              (all ? "text-[#3a8a58]" : "text-[#1a2330]")
+            }
+          >
+            {count.survived}
+          </p>
+          <p className="mt-1 text-xs leading-snug text-[#3d4a54]">
+            of {count.total} at {used}% stocks
+          </p>
+          {failedLine ? <p className="mt-2 text-[11px] leading-snug text-[#6b7280]">{failedLine}</p> : null}
+        </>
+      ) : (
+        <p className="mt-1 text-xs leading-snug text-[#3d4a54]">
+          {count?.total === 0 ? "No stretch fits this plan." : "Real years, today to longevity."}
+        </p>
+      )}
+      <div className="mt-3 flex items-center gap-1.5">
+        <input
+          type="number"
+          min={0}
+          max={100}
+          aria-label="Percent in stocks"
+          value={percent}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            if (Number.isFinite(next)) setPercent(Math.min(100, Math.max(0, next)));
+          }}
+          className="h-8 w-14 rounded-lg bg-white text-center text-sm tabular-nums text-[#1a2330] shadow-[0_0_0_1px_#d5d0c6] outline-none"
+        />
+        <button
+          type="button"
+          disabled={busy}
+          onClick={run}
+          className="h-8 flex-1 rounded-lg bg-[#3a8a58] text-xs font-medium text-white disabled:opacity-50"
+        >
+          {busy ? "…" : "Run"}
+        </button>
       </div>
-      {line ? <p className="mt-3 text-sm font-medium leading-relaxed text-[#1a2330]">{line}</p> : null}
     </div>
   );
+}
+
+function shortFailed(years: number[]): string {
+  const shown = years.slice(0, 3);
+  const rest = years.length - shown.length;
+  const list = historicalList(shown);
+  return rest > 0 ? `Failed ${list}, and ${rest} more.` : `Failed ${list}.`;
+}
+
+function historicalList(years: number[]): string {
+  if (years.length <= 1) return String(years[0] ?? "");
+  if (years.length === 2) return `${years[0]} and ${years[1]}`;
+  return `${years.slice(0, -1).join(", ")}, and ${years[years.length - 1]}`;
 }
