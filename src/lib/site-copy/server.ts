@@ -109,21 +109,35 @@ async function ensureToolsDecisionLine(): Promise<void> {
   );
 }
 
-/** A later ship note inserts once. An edit already in the desk is left alone. */
+/** A later ship note inserts once. A desk delete stays deleted. */
 async function ensurePinnedAnnouncements(): Promise<void> {
   const sql = await getSql();
   for (const item of [...PINNED_ANNOUNCEMENTS].reverse()) {
-    const found = await sql.query<{ id: string }>("select id from mach_announcements where id = $1", [item.id]);
-    if (found.length) continue;
-    const rows = await sql.query<{ n: number }>(
-      "select coalesce(max(sort_order), 0)::int as n from mach_announcements",
+    const flag = `announcement_seeded:${item.id}`;
+    const flagged = await sql.query<{ key: string }>(
+      "select key from mach_copy_flags where key = $1",
+      [flag],
     );
-    const sort = (rows[0]?.n ?? 0) + 1;
+    if (flagged.length) continue;
+    const found = await sql.query<{ id: string }>(
+      "select id from mach_announcements where id = $1",
+      [item.id],
+    );
+    if (!found.length) {
+      const rows = await sql.query<{ n: number }>(
+        "select coalesce(max(sort_order), 0)::int as n from mach_announcements",
+      );
+      const sort = (rows[0]?.n ?? 0) + 1;
+      await sql.query(
+        `insert into mach_announcements (id, at, title, blurb, sort_order)
+         values ($1, $2, $3, $4, $5)
+         on conflict (id) do nothing`,
+        [item.id, item.at, item.title, item.blurb, sort],
+      );
+    }
     await sql.query(
-      `insert into mach_announcements (id, at, title, blurb, sort_order)
-       values ($1, $2, $3, $4, $5)
-       on conflict (id) do nothing`,
-      [item.id, item.at, item.title, item.blurb, sort],
+      `insert into mach_copy_flags (key) values ($1) on conflict (key) do nothing`,
+      [flag],
     );
   }
 }
@@ -420,6 +434,10 @@ export async function deleteAnnouncement(id: string): Promise<string | null> {
   try {
     const sql = await getSql();
     await sql.query("delete from mach_announcements where id = $1", [id]);
+    await sql.query(
+      `insert into mach_copy_flags (key) values ($1) on conflict (key) do nothing`,
+      [`announcement_seeded:${id.trim()}`],
+    );
     await sql.query(
       "update mach_site_pages set updated_at = now() where slug = 'announcements'",
     );
