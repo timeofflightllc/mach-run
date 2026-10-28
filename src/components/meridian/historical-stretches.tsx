@@ -141,7 +141,7 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
             {count.survived}
           </p>
           <p className="mt-1 text-sm leading-snug text-[#1a2330]">
-            of {count.total} real stretches lasted, at {used}% stocks. The rest is bonds.
+            of {count.total} real stretches lasted, at {used}% stocks, {100 - used}% bonds.
           </p>
           <p className="mt-2 text-xs leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden">
             The same plan, laid on every real stretch of U.S. market history long enough to reach longevity. Investable
