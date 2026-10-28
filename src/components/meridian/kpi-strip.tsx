@@ -184,7 +184,12 @@ function GoalScore({
   const showForm = editing || !(view === "nest" ? egg : gap);
   return (
     <div className="mt-5 border-t border-border pt-5">
-      <div className="inline-flex max-w-full flex-wrap gap-2">
+      <div className="flex justify-center">
+        <div
+          className="inline-flex max-w-full gap-1 rounded-xl bg-[#f3f0e8] p-1"
+          role="group"
+          aria-label="Retirement goal"
+        >
         {(
           [
             ["nest", "Retirement Nest Egg Goal"],
@@ -200,14 +205,15 @@ function GoalScore({
               onClick={() => setView(id)}
               className={
                 on
-                  ? "min-h-10 whitespace-nowrap rounded-xl bg-[#3a8a58] px-3 text-sm font-medium text-white"
-                  : "min-h-10 whitespace-nowrap rounded-xl bg-[#f3f0e8] px-3 text-sm text-[#1a2330]"
+                  ? "min-h-10 rounded-lg bg-[#3a8a58] px-3 text-center text-sm font-medium leading-snug text-white"
+                  : "min-h-10 rounded-lg px-3 text-center text-sm font-medium leading-snug text-[#1a2330]"
               }
             >
               {label}
             </button>
           );
         })}
+        </div>
       </div>
       {view === "income" ? (
         <div className="mt-2 flex items-start gap-2">
@@ -218,8 +224,8 @@ function GoalScore({
           >
             {(
               [
-                ["yes", "YES"],
                 ["no", "NO"],
+                ["yes", "YES"],
               ] as const
             ).map(([id, label]) => {
               const on = includeGuaranteed === (id === "yes");
@@ -393,6 +399,7 @@ function MonthlyPayBar({
   const from = includeGuaranteed
     ? "from all sources (investments withdrawals and guaranteed income)"
     : "from only investment withdrawals";
+  const toward = Math.round(payFill);
   const status = `A withdrawal of ${usd(take)} a month lasts through age ${longevityAge}.`;
   const note = meets
     ? spare > 1
@@ -406,11 +413,11 @@ function MonthlyPayBar({
       title="Monthly pay at retirement"
       left={
         <>
-          <span className="tabular-nums">{usd(take)}</span> a month {from}
+          <span className="tabular-nums">{usd(take)}</span> a month ({toward}% towards your goal) {from}
         </>
       }
       right={`${usd(gap.wanted)} goal`}
-      aria={`${usd(take)} a month ${from}, through age ${longevityAge}, of the ${usd(gap.wanted)} goal`}
+      aria={`${usd(take)} a month, ${toward}% towards the ${usd(gap.wanted)} goal, ${from}, through age ${longevityAge}`}
       fill={payFill}
       dial
       status={status}
