@@ -414,7 +414,7 @@ function OodaRail({ open, onToggle }: { open: boolean; onToggle: () => void }) {
       onFocus={(e) => place(e.currentTarget)}
       onBlur={() => setTip(null)}
       className={cn(
-        "fixed z-[24] inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl right-2 top-[calc(var(--mach-header-h,7rem)+0.75rem)] min-[72rem]:relative min-[72rem]:right-auto min-[72rem]:top-auto min-[72rem]:h-14 min-[72rem]:w-14",
+        "fixed z-[24] mt-5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl right-2 top-[calc(var(--mach-header-h,7rem)+0.75rem)] min-[72rem]:relative min-[72rem]:right-auto min-[72rem]:top-auto min-[72rem]:h-14 min-[72rem]:w-14",
         open ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
       )}
     >
