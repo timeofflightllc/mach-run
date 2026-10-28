@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import type { Plan } from "@/lib/plan/types";
 
 const card =
-  "pointer-events-auto rounded-2xl bg-white/95 px-4 py-3.5 shadow-[0_10px_28px_rgba(26,35,48,0.14),0_0_0_1px_#d5d0c6] backdrop-blur-sm";
+  "pointer-events-auto flex flex-col rounded-2xl bg-white/95 px-4 py-3.5 shadow-[0_10px_28px_rgba(26,35,48,0.14),0_0_0_1px_#d5d0c6] backdrop-blur-sm";
 
 export function FuturesCard({
   score,
@@ -30,14 +30,10 @@ export function FuturesCard({
         {score}
       </p>
       <p className="mt-1 text-sm leading-snug text-[#1a2330]">of 100 still have money at age {longevityAge}</p>
-      <p className="mt-2 text-xs leading-relaxed text-[#3d4a54]">
+      <p className="mt-2 min-h-0 flex-1 overflow-hidden text-xs leading-relaxed text-[#3d4a54]">
         One thousand random markets, centered on the return you typed in Observe. This is not a look at the past.
+        {runOutAge != null && failed > 0 ? ` In the futures that run out, the middle one is age ${runOutAge}.` : ""}
       </p>
-      {runOutAge != null && failed > 0 ? (
-        <p className="mt-2 text-xs leading-snug text-[#6b7280]">
-          In the futures that run out, the middle one is age {runOutAge}.
-        </p>
-      ) : null}
     </div>
   );
 }
@@ -87,20 +83,20 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
           <p className="mt-1 text-sm leading-snug text-[#1a2330]">
             of {count.total} real stretches lasted, at {used}% stocks
           </p>
-          <p className="mt-2 text-xs leading-relaxed text-[#3d4a54]">
+          <p className="mt-2 min-h-0 flex-1 overflow-hidden text-xs leading-relaxed text-[#3d4a54]">
             The same plan, laid on every real stretch of U.S. market history long enough to reach longevity. Investable
             accounts use that stock percent. The rest is bonds. Cash, a house, and an annuity keep your rates.
+            {failedLine ? ` ${failedLine}` : ""}
           </p>
-          {failedLine ? <p className="mt-2 text-xs leading-snug text-[#6b7280]">{failedLine}</p> : null}
         </>
       ) : (
-        <p className="mt-2 text-xs leading-relaxed text-[#3d4a54]">
+        <p className="mt-2 min-h-0 flex-1 overflow-hidden text-xs leading-relaxed text-[#3d4a54]">
           {count?.total === 0
             ? "No stretch in the table is long enough for this plan."
             : "The same plan, laid on every real stretch of U.S. market history long enough to reach longevity. Investable accounts use the stock percent. The rest is bonds. Cash, a house, and an annuity keep your rates."}
         </p>
       )}
-      <div className="mt-3 flex items-center gap-1.5">
+      <div className="mt-3 flex shrink-0 items-center gap-1.5">
         <span className="text-xs text-[#3d4a54]">Stocks</span>
         <input
           type="number"

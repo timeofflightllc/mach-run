@@ -52,11 +52,13 @@ const CHOICES: { id: SwingName; label: string }[] = [
   { id: "rough", label: "Rough" },
 ];
 
+const countCard = "h-[19.5rem] min-w-0 flex-1 overflow-hidden";
+
 function CountPlaceholder({ label, className }: { label: string; className?: string }) {
   return (
     <div
       className={cn(
-        "flex min-h-36 flex-col rounded-2xl bg-[#fbfaf7] px-4 py-3.5 shadow-[0_0_0_1px_#e6e1d6]",
+        "flex h-[19.5rem] flex-col overflow-hidden rounded-2xl bg-[#fbfaf7] px-4 py-3.5 shadow-[0_0_0_1px_#e6e1d6]",
         className,
       )}
     >
@@ -451,18 +453,18 @@ export function PlanSurvival({
             {view.score ? (
               <>
                 <FuturesCard
-                  className="h-full min-w-0 flex-1"
+                  className={countCard}
                   score={view.score.score}
                   longevityAge={longevityAge}
                   runOutAge={view.score.runOutAge}
                   failed={view.score.paths - view.score.survived}
                 />
-                <HistoricalStretches className="h-full min-w-0 flex-1" plan={plan} />
+                <HistoricalStretches className={countCard} plan={plan} />
               </>
             ) : (
               <>
-                <CountPlaceholder label="Futures" className="min-w-0 flex-1" />
-                <CountPlaceholder label="Past" className="min-w-0 flex-1" />
+                <CountPlaceholder label="Futures" className={countCard} />
+                <CountPlaceholder label="Past" className={countCard} />
               </>
             )}
           </div>
