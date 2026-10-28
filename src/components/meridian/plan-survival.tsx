@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { RefreshCw } from "lucide-react";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { SwingName } from "@/lib/plan/monte-carlo";
 import { type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { cn } from "@/lib/utils";
@@ -51,6 +51,20 @@ const CHOICES: { id: SwingName; label: string }[] = [
   { id: "typical", label: "Typical" },
   { id: "rough", label: "Rough" },
 ];
+
+function CountPlaceholder({ label, className }: { label: string; className?: string }) {
+  return (
+    <div
+      className={cn(
+        "flex min-h-36 flex-col rounded-2xl bg-[#fbfaf7] px-4 py-3.5 shadow-[0_0_0_1px_#e6e1d6]",
+        className,
+      )}
+    >
+      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#b7b1a6]">{label}</p>
+      <p className="mt-1 font-display text-[2.6rem] font-semibold leading-none tracking-tight text-[#e4dfd4]">—</p>
+    </div>
+  );
+}
 
 function SurvivalTitle() {
   return (
@@ -150,10 +164,12 @@ export function BoydQuote({
   quotes,
   pulse,
   large = false,
+  progress = 0,
 }: {
   quotes: string[];
   pulse: boolean;
   large?: boolean;
+  progress?: number;
 }) {
   const floor = large ? 22 : 18;
   const min = large ? 14 : 11;
@@ -162,6 +178,19 @@ export function BoydQuote({
   const slipRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const picked = useRef<{ spin: number; line: string } | null>(null);
+  const seenMilestone = useRef(0);
+  const count = Math.max(0, Math.min(1000, Math.round(Math.max(0, Math.min(1, progress)) * 1000)));
+  const milestone = pulse ? Math.floor(count / 250) : 0;
+  useEffect(() => {
+    if (!pulse) {
+      seenMilestone.current = 0;
+      return;
+    }
+    if (milestone > seenMilestone.current) {
+      seenMilestone.current = milestone;
+      setSpin((n) => n + 1);
+    }
+  }, [pulse, milestone]);
   if (
     quotes.length > 0 &&
     (picked.current == null ||
@@ -417,20 +446,29 @@ export function PlanSurvival({
       <SurvivalTitle />
       <div className="mt-3 flex flex-col items-center gap-3 @min-[32rem]:flex-row @min-[32rem]:items-start">
         <SurvivalChance percent={view.score ? view.score.score : null} />
-        {plan && view.score ? (
+        {plan ? (
           <div className="flex w-full min-w-0 flex-1 flex-row items-stretch gap-2">
-            <FuturesCard
-              className="h-full min-w-0 flex-1"
-              score={view.score.score}
-              longevityAge={longevityAge}
-              runOutAge={view.score.runOutAge}
-              failed={view.score.paths - view.score.survived}
-            />
-            <HistoricalStretches className="h-full min-w-0 flex-1" plan={plan} />
+            {view.score ? (
+              <>
+                <FuturesCard
+                  className="h-full min-w-0 flex-1"
+                  score={view.score.score}
+                  longevityAge={longevityAge}
+                  runOutAge={view.score.runOutAge}
+                  failed={view.score.paths - view.score.survived}
+                />
+                <HistoricalStretches className="h-full min-w-0 flex-1" plan={plan} />
+              </>
+            ) : (
+              <>
+                <CountPlaceholder label="Futures" className="min-w-0 flex-1" />
+                <CountPlaceholder label="Past" className="min-w-0 flex-1" />
+              </>
+            )}
           </div>
         ) : null}
       </div>
-      <BoydQuote quotes={quotes} pulse={checking} />
+      <BoydQuote quotes={quotes} pulse={checking} progress={checking ? view.progress : 0} />
       <div className="mt-3 flex justify-center">
         <div className="inline-flex rounded-lg bg-slate-100 p-1">
         {CHOICES.map((choice) => {

@@ -519,7 +519,7 @@ function MonteCarloTab({
             {running && unlocked ? <MatrixRain /> : null}
             <div className="relative z-10 flex w-full flex-col items-center gap-6">
             {unlocked && quotes.length > 0 ? (
-              <BoydQuote quotes={quotes} pulse={running} large />
+              <BoydQuote quotes={quotes} pulse={running} large progress={running ? progress : 0} />
             ) : running ? (
               <p className="max-w-sm text-sm leading-relaxed text-slate-600">Checking 1,000 futures…</p>
             ) : null}
