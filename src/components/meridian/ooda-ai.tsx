@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Link } from "@tanstack/react-router";
 import { askMachOoda } from "@/lib/ooda-ai/api";
-import { buildOodaAskContext } from "@/lib/ooda-ai/context";
+import { buildOodaAskContext, type OodaSurvivalFact } from "@/lib/ooda-ai/context";
+import { readMachBackFact, subscribeMachBackFact } from "@/lib/ooda-ai/page-facts";
+import { spendingWhatIf, spendingWhatIfContext } from "@/lib/ooda-ai/spending-what-if";
+import { usd } from "@/lib/plan/format";
 import { MACH_MONTHLY_USD, MACH_YEARLY_USD } from "@/lib/billing/limits";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -11,6 +14,82 @@ import type { Plan, SimResult } from "@/lib/plan/types";
 
 type Turn = { q: string; a: string | null };
 
+function SpendingWhatIf({
+  plan,
+  busy,
+  onAsk,
+}: {
+  plan: Plan;
+  busy: boolean;
+  onAsk: (question: string, context: string) => void;
+}) {
+  function run(delta: number) {
+    const result = spendingWhatIf(plan, delta);
+    const amount = usd(Math.abs(delta));
+    const question = delta < 0 ? `What if I spend ${amount} less a month?` : `What if I spend ${amount} more a month?`;
+    onAsk(question, spendingWhatIfContext(result));
+  }
+  return (
+    <div className="mt-3">
+      <p className="text-xs font-medium text-subtle">Monthly spending</p>
+      <div className="mt-1.5 inline-flex gap-1 rounded-xl bg-[#f3f0e8] p-1" role="group" aria-label="Monthly spending">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => run(-500)}
+          className="h-8 rounded-lg px-2.5 text-xs font-medium text-[#1a2330] hover:bg-white disabled:opacity-50"
+        >
+          $500 less
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => run(500)}
+          className="h-8 rounded-lg px-2.5 text-xs font-medium text-[#1a2330] hover:bg-white disabled:opacity-50"
+        >
+          $500 more
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function StarterQuestions({
+  busy,
+  onAsk,
+  showSurvival,
+  showAccounts,
+  showMachBack,
+}: {
+  busy: boolean;
+  onAsk: (question: string) => void;
+  showSurvival: boolean;
+  showAccounts: boolean;
+  showMachBack: boolean;
+}) {
+  const questions = [
+    showSurvival ? "What is the chance of success on this run?" : null,
+    showAccounts ? "Which account is the largest?" : null,
+    showMachBack ? "What did Mach Back say?" : null,
+  ].filter((question): question is string => question != null);
+  if (!questions.length) return null;
+  return (
+    <div className="mt-3 flex flex-col gap-1.5">
+      {questions.map((question) => (
+        <button
+          key={question}
+          type="button"
+          disabled={busy}
+          onClick={() => onAsk(question)}
+          className="rounded-lg bg-elevated px-3 py-2 text-left text-sm leading-snug text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-white disabled:opacity-50"
+        >
+          {question}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function Disclaimer() {
   return <p className="text-xs italic leading-relaxed text-subtle">{OODA_DISCLAIMER}</p>;
 }
@@ -19,22 +98,25 @@ export function OodaAiCard({
   plan,
   sim,
   brief,
+  survival = null,
 }: {
   plan: Plan;
   sim: SimResult;
   brief: PeerBrief | null;
+  survival?: OodaSurvivalFact | null;
 }) {
   const ent = useEntitlement();
   const { user } = useCurrentUserState();
   const signedIn = Boolean(user && !user.isDevFallback);
   const paid = Boolean(ent.paid);
+  const machBack = useSyncExternalStore(subscribeMachBackFact, readMachBackFact, () => null);
   const [question, setQuestion] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function ask() {
-    const q = question.trim();
+  async function ask(text?: string, contextOverride?: string) {
+    const q = (text ?? question).trim();
     if (!q || busy || !paid) return;
     const prior = turns;
     setBusy(true);
@@ -47,12 +129,16 @@ export function OodaAiCard({
         .filter((t) => t.a)
         .map((t) => `Q: ${t.q}\nA: ${t.a}`)
         .join("\n\n");
+      const context =
+        contextOverride ??
+        `${buildOodaAskContext(plan, sim, brief, {
+          survival,
+          machBack: readMachBackFact(),
+        })}${history ? `\n\nEarlier OODA AI turns:\n${history}` : ""}`;
       const result = await askMachOoda({
         data: {
           question: q,
-          context: `${buildOodaAskContext(plan, sim, brief)}${
-            history ? `\n\nEarlier OODA AI turns:\n${history}` : ""
-          }`,
+          context,
         },
       });
       if (result.ok) {
@@ -154,6 +240,14 @@ export function OodaAiCard({
             placeholder="e.g. If I delay SS two years, does the runway actually move?"
             className="mt-4 w-full resize-y rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm text-fg outline-none placeholder:text-subtle focus:border-accent/40"
           />
+          <StarterQuestions
+            busy={busy}
+            onAsk={(q) => void ask(q)}
+            showSurvival={survival != null && Number.isFinite(survival.score)}
+            showAccounts={plan.portfolios.length > 0}
+            showMachBack={machBack != null}
+          />
+          <SpendingWhatIf busy={busy} onAsk={(q, context) => void ask(q, context)} plan={plan} />
           <div className="mt-3 flex items-center gap-3">
             <button
               type="button"

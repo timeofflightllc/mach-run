@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { runHistorical, type HistoricalCount } from "@/lib/plan/historical-run";
+import { claimMachBackSlot } from "@/lib/ooda-ai/page-facts";
 import { planInputSignature } from "@/lib/plan/input-signature";
 import { cn } from "@/lib/utils";
 import type { Plan } from "@/lib/plan/types";
@@ -147,10 +148,18 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
   const signature = planInputSignature(plan);
   const signatureRef = useRef(signature);
   signatureRef.current = signature;
+  const machBackSlot = useRef<ReturnType<typeof claimMachBackSlot> | null>(null);
+  if (!machBackSlot.current) machBackSlot.current = claimMachBackSlot();
 
   useEffect(() => {
     setCount(null);
+    machBackSlot.current?.set(null);
   }, [signature]);
+
+  useEffect(() => {
+    const slot = machBackSlot.current;
+    return () => slot?.release();
+  }, []);
 
   function run() {
     const next = Math.min(100, Math.max(0, percent));
@@ -162,6 +171,7 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
       if (signatureRef.current !== ranFor) return;
       setUsed(next);
       setCount(result);
+      machBackSlot.current?.set({ survived: result.survived, total: result.total, stocks: next });
     }, 0);
   }
 

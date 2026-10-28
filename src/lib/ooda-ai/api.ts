@@ -2,13 +2,9 @@ import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
 import { paidFromStatus } from "@/lib/billing/limits";
 
-const SYSTEM = `You are OODA AI inside MACH RUN. You are not Grok, not ChatGPT, and not a fiduciary. Never name those products.
+const SYSTEM = `You are OODA AI inside MACH RUN. You are not a fiduciary. Never name Grok or ChatGPT.
 
-You are in a conversation. Answer the question they just asked. Use a number from the MACH RUN snapshot only when the question needs it. If a number is not in the snapshot, say you do not have it. Do not invent balances, Social Security amounts, or tax law.
-
-Do not recap the analysis. Earlier answers in this thread may have done that. Do not copy them. Do not mention peer rank, save rate, runway, paychecks, RMDs, or retirement landing unless they asked about that. Do not compliment their discipline unless they asked how they are doing. Do not restate the question. Short, plain sentences, like a text message. No sign-off.
-
-The screen already shows the entertainment disclaimer. Do not add it, and do not tell them to confirm with SSA, DFAS, VA, or an advisor.`;
+Answer the question they just asked, using only the snapshot of this MACH RUN. If the number is in the snapshot, use it. If it is not, say you do not have it. Do not recap the whole analysis. Do not add a disclaimer. Short, plain sentences.`;
 
 function apiKey(): string | null {
   try {
@@ -22,7 +18,7 @@ export const askMachOoda = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((input: { question: string; context: string }) => ({
     question: String(input?.question ?? "").trim().slice(0, 600),
-    context: String(input?.context ?? "").trim().slice(0, 4000),
+    context: String(input?.context ?? "").trim().slice(0, 18000),
   }))
   .handler(async ({ context, data }): Promise<{ ok: true; answer: string } | { ok: false; error: string }> => {
     try {

@@ -20,6 +20,7 @@ import { PortfolioForm } from "@/components/meridian/portfolio-form";
 import { LiabilityForm } from "@/components/meridian/liability-form";
 import { PeerBriefCard } from "@/components/meridian/peer-brief";
 import { OodaAiCard } from "@/components/meridian/ooda-ai";
+import type { OodaSurvivalFact } from "@/lib/ooda-ai/context";
 import { Section, collapseAllOodSections } from "@/components/meridian/section";
 import { SiteMenu } from "@/components/meridian/site-nav";
 import { SpendingForm } from "@/components/meridian/spending-form";
@@ -437,12 +438,14 @@ function OodaDrawer({
   plan,
   sim,
   brief,
+  survival,
 }: {
   open: boolean;
   onClose: () => void;
   plan: Plan;
   sim: SimResult;
   brief: PeerBrief;
+  survival: OodaSurvivalFact | null;
 }) {
   return (
     <div
@@ -455,7 +458,7 @@ function OodaDrawer({
         open ? "" : "hidden",
       )}
     >
-      <OodaAiCard plan={plan} sim={sim} brief={brief} />
+      <OodaAiCard plan={plan} sim={sim} brief={brief} survival={survival} />
       <button
         type="button"
         onClick={onClose}
@@ -2367,6 +2370,16 @@ function Home() {
                       plan={displayPlan}
                       sim={run.sim}
                       brief={run.brief}
+                      survival={
+                        survivalScore
+                          ? {
+                              score: survivalScore.score,
+                              swing: survivalScore.swing,
+                              runOutAge: survivalScore.runOutAge,
+                              stale: survivalStale,
+                            }
+                          : null
+                      }
                     />
                   </div>
                 </div>
