@@ -97,7 +97,7 @@ export function SiteMenu({
         <div
           role="menu"
           className={cn(
-            "absolute z-[80] mt-1 w-max min-w-[10.5rem] rounded-lg bg-elevated py-1 shadow-[0_0_0_1px_var(--color-border)]",
+            "absolute z-[80] mt-1 w-max min-w-[9rem] rounded-lg bg-elevated py-1 shadow-[0_0_0_1px_var(--color-border)] md:min-w-[15rem]",
             align === "right" ? "right-0" : "left-0",
           )}
         >
@@ -107,7 +107,7 @@ export function SiteMenu({
               to={link.to}
               role="menuitem"
               onClick={() => setOpen(false)}
-              className="block whitespace-nowrap px-4 py-2.5 text-sm text-fg hover:bg-surface"
+              className="block whitespace-nowrap px-3 py-2.5 text-sm text-fg hover:bg-surface md:px-5"
             >
               {"menu" in link ? link.menu : link.label}
             </Link>
