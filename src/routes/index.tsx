@@ -2362,6 +2362,7 @@ function Home() {
                             onOpen={() => setSurvivalOpen(true)}
                             onLockedMinChange={setSurvivalMinimized}
                             longevityAge={displayPlan.assumptions.projectionEndAge}
+                            plan={survivalOn ? displayPlan : null}
                           />
                         </div>
                       </div>

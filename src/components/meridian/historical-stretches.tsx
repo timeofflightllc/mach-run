@@ -1,24 +1,27 @@
 import { useEffect, useRef, useState } from "react";
 import { runHistorical, type HistoricalCount } from "@/lib/plan/historical-run";
 import { planInputSignature } from "@/lib/plan/input-signature";
+import { cn } from "@/lib/utils";
 import type { Plan } from "@/lib/plan/types";
 
 const card =
-  "pointer-events-auto w-[min(100%,18rem)] rounded-2xl bg-white/95 px-4 py-3.5 shadow-[0_10px_28px_rgba(26,35,48,0.14),0_0_0_1px_#d5d0c6] backdrop-blur-sm";
+  "pointer-events-auto rounded-2xl bg-white/95 px-4 py-3.5 shadow-[0_10px_28px_rgba(26,35,48,0.14),0_0_0_1px_#d5d0c6] backdrop-blur-sm";
 
 export function FuturesCard({
   score,
   longevityAge,
   runOutAge,
   failed,
+  className,
 }: {
   score: number;
   longevityAge: number;
   runOutAge: number | null;
   failed: number;
+  className?: string;
 }) {
   return (
-    <div className={card}>
+    <div className={cn(card, className ?? "w-[min(100%,18rem)]")}>
       <span className="sr-only" data-mach-note="">
         In {score} of 100 futures, the money lasts to age {longevityAge}.
       </span>
@@ -39,7 +42,7 @@ export function FuturesCard({
   );
 }
 
-export function HistoricalStretches({ plan }: { plan: Plan }) {
+export function HistoricalStretches({ plan, className }: { plan: Plan; className?: string }) {
   const [percent, setPercent] = useState(60);
   const [busy, setBusy] = useState(false);
   const [count, setCount] = useState<HistoricalCount | null>(null);
@@ -69,7 +72,7 @@ export function HistoricalStretches({ plan }: { plan: Plan }) {
   const failedLine = count && count.failedStartYears.length > 0 ? shortFailed(count.failedStartYears) : null;
 
   return (
-    <div className={card}>
+    <div className={cn(card, className ?? "w-[min(100%,18rem)]")}>
       <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#6b7280]">Past</p>
       {count && count.total > 0 ? (
         <>

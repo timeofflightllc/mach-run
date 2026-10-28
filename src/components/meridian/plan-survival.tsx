@@ -2,10 +2,11 @@ import { Link } from "@tanstack/react-router";
 import { RefreshCw } from "lucide-react";
 import { useLayoutEffect, useRef, useState } from "react";
 import type { SwingName } from "@/lib/plan/monte-carlo";
-import { runOutSentence, survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
+import { type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { cn } from "@/lib/utils";
-import { MachOrbit } from "@/components/meridian/mach-orbit";
+import { FuturesCard, HistoricalStretches } from "@/components/meridian/historical-stretches";
 import { useBoydQuotes } from "@/components/meridian/use-boyd-quotes";
+import type { Plan } from "@/lib/plan/types";
 
 export type SurvivalView = {
   runId: number;
@@ -118,7 +119,7 @@ function SurvivalChance({ percent }: { percent: number | null }) {
         })();
   return (
     <div
-      className="mt-3 flex flex-col items-center"
+      className="flex shrink-0 flex-col items-center"
       aria-label={value == null ? "Chance of success, not run yet" : `${value} percent chance of success`}
     >
       <svg viewBox="0 0 200 150" className="h-36 w-48" aria-hidden="true">
@@ -179,17 +180,31 @@ export function BoydQuote({
     const quote = body.querySelector("p");
     const mark = body.querySelector("span");
     const fit = () => {
+      const width = slip.clientWidth;
+      let cap = floor;
+      let least = min;
+      if (width >= 760) {
+        slip.style.height = large ? "13.5rem" : "12rem";
+        cap = large ? 40 : 34;
+        least = large ? 16 : 13;
+      } else if (width >= 560) {
+        slip.style.height = large ? "12rem" : "10.5rem";
+        cap = large ? 32 : 28;
+        least = large ? 15 : 12;
+      } else {
+        slip.style.height = "";
+      }
       const style = getComputedStyle(slip);
       const pad = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
       const limit = slip.clientHeight - pad;
-      let size = floor;
-      while (size > min) {
+      let size = cap;
+      while (size > least) {
         if (quote) quote.style.fontSize = `${size}px`;
         if (mark) {
           mark.style.fontSize = `${Math.round(size * 2.4)}px`;
-          mark.style.marginBottom = `${size > 15 ? -20 : -10}px`;
+          mark.style.marginBottom = `${size > 22 ? -28 : size > 15 ? -20 : -10}px`;
         }
-        if (body.scrollHeight <= limit) break;
+        if (body.scrollHeight <= limit + 1) break;
         size -= 1;
       }
       setPx((prev) => (prev === size ? prev : size));
@@ -198,7 +213,7 @@ export function BoydQuote({
     const watch = new ResizeObserver(fit);
     watch.observe(slip);
     return () => watch.disconnect();
-  }, [line, floor, min]);
+  }, [line, floor, min, large]);
 
   const markPx = Math.round(px * 2.4);
 
@@ -209,7 +224,7 @@ export function BoydQuote({
           <span
             aria-hidden="true"
             className="font-serif leading-none text-[#d05838]"
-            style={{ fontSize: markPx, marginBottom: px > 15 ? -20 : -10 }}
+            style={{ fontSize: markPx, marginBottom: px > 22 ? -28 : px > 15 ? -20 : -10 }}
           >
             “
           </span>
@@ -285,6 +300,7 @@ export function PlanSurvival({
   onOpen,
   onLockedMinChange,
   longevityAge,
+  plan = null,
 }: {
   locked: boolean;
   view: SurvivalView | null;
@@ -294,6 +310,7 @@ export function PlanSurvival({
   onOpen?: () => void;
   onLockedMinChange?: (minimized: boolean) => void;
   longevityAge: number;
+  plan?: Plan | null;
 }) {
   const quotes = useBoydQuotes();
   const [lockedMin, setLockedMin] = useState(readLockedMin);
@@ -395,36 +412,25 @@ export function PlanSurvival({
     );
   }
   const checking = view.status === "running";
-  const ranOut = view.score ? runOutSentence(view.score, longevityAge) : null;
   return (
     <div className={cn(card, "@min-[36rem]:flex @min-[36rem]:min-h-0 @min-[36rem]:flex-1 @min-[36rem]:flex-col")}>
       <SurvivalTitle />
-      <SurvivalChance percent={view.score ? view.score.score : null} />
-      <BoydQuote quotes={quotes} pulse={checking} />
-      <div
-        className="mt-4 flex h-[9rem] shrink-0 flex-col items-center justify-center overflow-hidden rounded-md px-3 text-center"
-        style={{
-          background: "color-mix(in oklab, #e8c547 22%, white)",
-          boxShadow: "0 0 0 1px color-mix(in oklab, #e8c547 45%, white)",
-        }}
-      >
-        {checking ? (
-          <MachOrbit compact />
-        ) : view.score ? (
-          <>
-            <p className="text-[13px] font-bold leading-tight text-slate-900 sm:text-lg sm:leading-snug">
-              {survivalSentence(view.score.score, longevityAge)}
-            </p>
-            {ranOut ? (
-              <p className="mt-1 text-[12px] font-semibold leading-tight text-slate-900 sm:text-base sm:leading-snug">{ranOut}</p>
-            ) : null}
-          </>
-        ) : (
-          <p className="text-sm leading-relaxed text-slate-800">
-            Press Run Monte Carlo Simulation to check 1,000 futures.
-          </p>
-        )}
+      <div className="mt-3 flex flex-col items-center gap-3 @min-[32rem]:flex-row @min-[32rem]:items-start">
+        <SurvivalChance percent={view.score ? view.score.score : null} />
+        {plan && view.score ? (
+          <div className="flex w-full min-w-0 flex-1 flex-col gap-2">
+            <FuturesCard
+              className="w-full"
+              score={view.score.score}
+              longevityAge={longevityAge}
+              runOutAge={view.score.runOutAge}
+              failed={view.score.paths - view.score.survived}
+            />
+            <HistoricalStretches className="w-full" plan={plan} />
+          </div>
+        ) : null}
       </div>
+      <BoydQuote quotes={quotes} pulse={checking} />
       <div className="mt-3 flex justify-center">
         <div className="inline-flex rounded-lg bg-slate-100 p-1">
         {CHOICES.map((choice) => {
