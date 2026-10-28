@@ -81,7 +81,7 @@ function StarterQuestions({
           type="button"
           disabled={busy}
           onClick={() => onAsk(question)}
-          className="max-w-[85%] rounded-2xl rounded-br-md bg-[#7eb6ea] px-3.5 py-2 text-left text-sm leading-snug text-[#1a2330] disabled:opacity-50"
+          className="max-w-[85%] rounded-2xl rounded-br-md bg-[#7eb6ea] px-3.5 py-2 text-left text-sm leading-snug text-white disabled:opacity-50"
         >
           {question}
         </button>
@@ -213,7 +213,7 @@ export function OodaAiCard({
               turns.map((t, i) => (
                 <div key={`${i}-${t.q.slice(0, 24)}`} className="flex flex-col gap-2">
                   <div className="flex justify-end">
-                    <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-[#7eb6ea] px-3.5 py-2 text-sm leading-relaxed text-[#1a2330]">
+                    <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-[#7eb6ea] px-3.5 py-2 text-sm leading-relaxed text-white">
                       {t.q}
                     </p>
                   </div>

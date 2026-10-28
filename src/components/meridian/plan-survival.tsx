@@ -79,10 +79,10 @@ function SurvivalTitle() {
 }
 
 const quoteSlip =
-  "relative mt-3 flex h-[calc(7.5rem+24px)] shrink-0 flex-col items-center justify-center overflow-hidden rounded-lg border border-[#e4d5c4] bg-[#f7f1e6] px-4 py-[12px] text-center sm:h-[7.5rem] sm:py-0";
+  "relative mt-3 flex h-[calc(7.5rem+24px)] shrink-0 flex-col items-center justify-center overflow-hidden rounded-lg border border-[#e4d5c4] bg-[#f7f1e6] px-4 py-[12px] text-center sm:h-[7.5rem] sm:pb-4 sm:pt-1";
 
 const quoteSlipLarge =
-  "relative flex h-[calc(10rem+24px)] w-full shrink-0 flex-col items-center justify-center overflow-hidden rounded-lg border border-[#e4d5c4] bg-[#f7f1e6] px-6 py-4 text-center sm:h-[10rem] sm:py-0";
+  "relative flex h-[calc(10rem+24px)] w-full shrink-0 flex-col items-center justify-center overflow-hidden rounded-lg border border-[#e4d5c4] bg-[#f7f1e6] px-6 py-4 text-center sm:h-[10rem] sm:pb-5 sm:pt-2";
 
 function nextBoydLine(quotes: string[], current: string) {
   if (quotes.length === 0) return "";
@@ -109,6 +109,30 @@ function gaugeArc(from: number, to: number) {
   const [x2, y2] = gaugePoint(to, GAUGE.r);
   return `M ${x1} ${y1} A ${GAUGE.r} ${GAUGE.r} 0 0 1 ${x2} ${y2}`;
 }
+
+function letterGrade(percent: number): string {
+  const n = Math.round(percent);
+  if (n >= 97) return "A+";
+  if (n >= 93) return "A";
+  if (n >= 90) return "A-";
+  if (n >= 87) return "B+";
+  if (n >= 83) return "B";
+  if (n >= 80) return "B-";
+  if (n >= 77) return "C+";
+  if (n >= 73) return "C";
+  if (n >= 70) return "C-";
+  if (n >= 67) return "D+";
+  if (n >= 63) return "D";
+  if (n >= 60) return "D-";
+  return "F";
+}
+
+const BAND_NOTES = {
+  blue: "0-69% probability of success with this plan. We'd like to see some changes to this plan to boost your probability rating.",
+  teal: "70-89% probability of success with this plan. You are in the sweet spot for success with the plan you are on. Any positive changes will only make this plan more successful.",
+  green:
+    "90-100% probability of success with this plan. You are doing very well with your retirement planning — success is never guaranteed, but you are certainly on the right path.",
+} as const;
 
 function SurvivalChance({ percent }: { percent: number | null }) {
   const value = percent == null ? null : Math.max(0, Math.min(100, percent));
@@ -143,17 +167,69 @@ function SurvivalChance({ percent }: { percent: number | null }) {
             arrow: `${tip[0]} ${tip[1]} ${left[0]} ${left[1]} ${right[0]} ${right[1]}`,
           };
         })();
+  const [bandTip, setBandTip] = useState<{ tone: keyof typeof BAND_NOTES; x: number; y: number } | null>(null);
+  function trackBand(tone: keyof typeof BAND_NOTES, event: { clientX: number; clientY: number }) {
+    const width = 256;
+    const x = Math.min(Math.max(event.clientX, width / 2 + 8), window.innerWidth - width / 2 - 8);
+    const y = event.clientY + 18 + 96 > window.innerHeight ? event.clientY - 88 : event.clientY + 18;
+    setBandTip({ tone, x, y });
+  }
   return (
     <div
       className="flex shrink-0 flex-col items-center"
-      aria-label={value == null ? "Chance of success, not run yet" : `${value} percent chance of success`}
+      aria-label={
+        value == null
+          ? "Chance of success, not run yet"
+          : `${value} percent chance of success, grade ${letterGrade(value)}`
+      }
     >
       <svg viewBox="-18 0 240 150" className="h-36 w-[14.4rem]" aria-hidden="true">
-        <path d={gaugeArc(0, 70)} fill="none" stroke={BLUE} strokeWidth={GAUGE.stroke} strokeLinecap="butt" />
-        <path d={gaugeArc(70, 90)} fill="none" stroke={TEAL} strokeWidth={GAUGE.stroke} strokeLinecap="butt" />
-        <path d={gaugeArc(90, 100)} fill="none" stroke={GREEN} strokeWidth={GAUGE.stroke} strokeLinecap="butt" />
-        <circle cx={x0} cy={y0} r={cap} fill={BLUE} />
-        <circle cx={x1} cy={y1} r={cap} fill={GREEN} />
+        <path
+          d={gaugeArc(0, 70)}
+          fill="none"
+          stroke={BLUE}
+          strokeWidth={GAUGE.stroke}
+          strokeLinecap="butt"
+          style={{ pointerEvents: "stroke" }}
+          onMouseMove={(event) => trackBand("blue", event)}
+          onMouseLeave={() => setBandTip(null)}
+        />
+        <path
+          d={gaugeArc(70, 90)}
+          fill="none"
+          stroke={TEAL}
+          strokeWidth={GAUGE.stroke}
+          strokeLinecap="butt"
+          style={{ pointerEvents: "stroke" }}
+          onMouseMove={(event) => trackBand("teal", event)}
+          onMouseLeave={() => setBandTip(null)}
+        />
+        <path
+          d={gaugeArc(90, 100)}
+          fill="none"
+          stroke={GREEN}
+          strokeWidth={GAUGE.stroke}
+          strokeLinecap="butt"
+          style={{ pointerEvents: "stroke" }}
+          onMouseMove={(event) => trackBand("green", event)}
+          onMouseLeave={() => setBandTip(null)}
+        />
+        <circle
+          cx={x0}
+          cy={y0}
+          r={cap}
+          fill={BLUE}
+          onMouseMove={(event) => trackBand("blue", event)}
+          onMouseLeave={() => setBandTip(null)}
+        />
+        <circle
+          cx={x1}
+          cy={y1}
+          r={cap}
+          fill={GREEN}
+          onMouseMove={(event) => trackBand("green", event)}
+          onMouseLeave={() => setBandTip(null)}
+        />
         {marker ? (
           <line
             x1={marker.x1}
@@ -163,9 +239,10 @@ function SurvivalChance({ percent }: { percent: number | null }) {
             stroke="#1a1a1a"
             strokeWidth="3"
             strokeLinecap="butt"
+            pointerEvents="none"
           />
         ) : null}
-        {marker ? <polygon points={marker.arrow} fill="#1a1a1a" /> : null}
+        {marker ? <polygon points={marker.arrow} fill="#1a1a1a" pointerEvents="none" /> : null}
         <circle cx={GAUGE.cx} cy={GAUGE.cy} r="38" fill="#fff" style={{ filter: "drop-shadow(0 1px 2px rgb(15 23 42 / 0.12))" }} />
         <text
           x={GAUGE.cx}
@@ -195,7 +272,19 @@ function SurvivalChance({ percent }: { percent: number | null }) {
           );
         })}
       </svg>
-      <p className="-mt-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-900">Chance of success</p>
+      {bandTip ? (
+        <span
+          role="tooltip"
+          className="pointer-events-none fixed z-[80] w-64 -translate-x-1/2 rounded-md bg-slate-900 px-2.5 py-1.5 text-left text-xs leading-snug text-white shadow-lg"
+          style={{ left: bandTip.x, top: bandTip.y }}
+        >
+          {BAND_NOTES[bandTip.tone]}
+        </span>
+      ) : null}
+      {value != null ? (
+        <p className="font-display text-[9rem] font-black leading-none tracking-tight text-black">{letterGrade(value)}</p>
+      ) : null}
+      <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-900">Chance of success</p>
     </div>
   );
 }

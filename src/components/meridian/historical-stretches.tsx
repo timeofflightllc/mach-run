@@ -31,7 +31,10 @@ const HISTORY_STRETCHES: { years: string; title: string }[] = [
 
 export const BACK_NOTE = (
   <>
-    <p>Every full plan that fits in U.S. market history, each started in a different year. The number is how many lasted.</p>
+    <p>
+      Each start year is its own full run, through longevity, using that stretch's real returns in order. Nothing is averaged.
+      The number is how many of those runs still had money at longevity.
+    </p>
     <ul className="mt-2 list-disc space-y-0.5 pl-4">
       {HISTORY_STRETCHES.map((row) => (
         <li key={row.years}>
@@ -197,19 +200,17 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
           <p className="mt-1 text-sm leading-snug text-[#1a2330]">
             of {count.total} real stretches lasted, at {used}% stocks, {100 - used}% bonds.
           </p>
-          <p className="mt-2 text-xs leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden">
-            The same plan, laid on every real stretch of U.S. market history long enough to reach longevity. Investable
-            accounts use that stock percent. The rest is bonds. Cash, a house, and an annuity keep your rates.
-            {failedLine ? ` ${failedLine}` : ""}
-          </p>
+          {failedLine ? (
+            <p className="mt-2 text-xs leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden">
+              {failedLine}
+            </p>
+          ) : null}
         </>
-      ) : (
+      ) : count?.total === 0 ? (
         <p className="mt-2 text-xs leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden">
-          {count?.total === 0
-            ? "No stretch in the table is long enough for this plan."
-            : "The same plan, laid on every real stretch of U.S. market history long enough to reach longevity. Investable accounts use the stock percent. The rest is bonds. Cash, a house, and an annuity keep your rates."}
+          No stretch in the table is long enough for this plan.
         </p>
-      )}
+      ) : null}
       <div className="mt-3 flex shrink-0 flex-col gap-2">
         <MixSlider label="Stocks" value={percent} onChange={setPercent} />
         <MixSlider label="Bonds" value={100 - percent} onChange={(next) => setPercent(100 - next)} />
