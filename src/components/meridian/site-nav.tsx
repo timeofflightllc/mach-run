@@ -97,7 +97,7 @@ export function SiteMenu({
         <div
           role="menu"
           className={cn(
-            "absolute z-[80] mt-1 w-max min-w-[9rem] rounded-lg bg-elevated py-1 shadow-[0_0_0_1px_var(--color-border)] md:min-w-[15rem]",
+            "absolute z-[80] mt-1 w-max min-w-[9rem] rounded-lg bg-elevated py-1 shadow-[0_0_0_1px_var(--color-border)] md:w-[185px]",
             align === "right" ? "right-0" : "left-0",
           )}
         >
