@@ -231,7 +231,7 @@ function VerifyEmail() {
   return (
     <main className="flex min-h-screen flex-col bg-bg py-10 text-fg">
       <div className="static-gutter mx-auto w-full">
-        <PageMast ornament={false} />
+        <PageMast />
       </div>
       <div className="flex flex-1 items-center justify-center">
       <div className="w-full max-w-lg space-y-8">

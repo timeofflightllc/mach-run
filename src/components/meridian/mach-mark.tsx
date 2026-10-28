@@ -83,73 +83,10 @@ export function BrandLockup({
   );
 }
 
-/** Shock diamonds. Sides bow a little, like a real plume, still clearly cones. */
-const MACH_CELLS = [
-  {
-    outer:
-      "M 771.8 -22 Q 710 19.1 650.8 92.2 Q 645.9 186.1 664.2 258 Q 726 216.9 785.2 143.8 Q 790.1 49.9 771.8 -22 Z",
-    lit: "M 771.8 -22 Q 710 19.1 650.8 92.2 Q 645.9 186.1 664.2 258",
-    disk: "M 650.8 92.2 Q 723.6 120.2 785.2 143.8",
-  },
-  {
-    outer:
-      "M 652.1 257.4 Q 605.9 288.1 561.6 342.6 Q 558 412.8 571.9 466.6 Q 618.1 435.9 662.4 381.4 Q 666 311.2 652.1 257.4 Z",
-    lit: "M 652.1 257.4 Q 605.9 288.1 561.6 342.6 Q 558 412.8 571.9 466.6",
-    disk: "M 561.6 342.6 Q 617.6 364.2 662.4 381.4",
-  },
-  {
-    outer:
-      "M 562 475.2 Q 529.5 496.8 498.5 534.4 Q 496.4 583.1 506 620.8 Q 538.5 599.2 569.5 561.6 Q 571.6 512.9 562 475.2 Z",
-    lit: "M 562 475.2 Q 529.5 496.8 498.5 534.4 Q 496.4 583.1 506 620.8",
-    disk: "M 498.5 534.4 Q 539.6 550.2 569.5 561.6",
-  },
-] as const;
-
-function MachDiamonds() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="400 16 392 900"
-      className="mach-diamonds pointer-events-none absolute top-[calc(100%+0.85rem)] -right-16 w-[7.5rem] opacity-50 sm:-right-20 sm:w-[11rem] sm:opacity-70 md:-right-[10vw] md:w-[16rem] md:opacity-85 lg:w-[28rem] lg:opacity-100"
-    >
-      <defs>
-        <linearGradient id="mach-diamonds-fade" gradientUnits="userSpaceOnUse" x1="790" y1="16" x2="470" y2="700">
-          <stop offset="0" stopColor="#fff" stopOpacity="1" />
-          <stop offset="0.55" stopColor="#fff" stopOpacity="0.75" />
-          <stop offset="1" stopColor="#fff" stopOpacity="0" />
-        </linearGradient>
-        <mask id="mach-diamonds-mask">
-          <rect x="400" y="16" width="392" height="900" fill="url(#mach-diamonds-fade)" />
-        </mask>
-        <linearGradient id="mach-cell-blue" gradientUnits="userSpaceOnUse" x1="640" y1="70" x2="800" y2="190">
-          <stop offset="0%" stopColor="#e8f6ff" stopOpacity="0.55" />
-          <stop offset="46%" stopColor="#7eb4d4" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#1e5678" stopOpacity="0.16" />
-        </linearGradient>
-        <filter id="mach-rim-glow" x="-20%" y="-20%" width="140%" height="140%">
-          <feGaussianBlur stdDeviation="1.6" />
-        </filter>
-      </defs>
-      <g mask="url(#mach-diamonds-mask)" strokeLinejoin="round" strokeLinecap="round">
-        <path d="M 790 0 L 500 640" fill="none" stroke="#7eb6d4" strokeWidth="1.25" strokeOpacity="0.35" />
-        {MACH_CELLS.map((cell) => (
-          <g key={cell.outer}>
-            <path d={cell.outer} fill="none" stroke="#5aa4c8" strokeWidth="5" strokeOpacity="0.22" filter="url(#mach-rim-glow)" />
-            <path d={cell.outer} fill="url(#mach-cell-blue)" stroke="#24688c" strokeWidth="1.7" strokeOpacity="0.72" />
-            <path d={cell.lit} fill="none" stroke="#e7f6ff" strokeWidth="1.35" strokeOpacity="0.9" />
-            <path d={cell.disk} fill="none" stroke="#d7f1fb" strokeWidth="2.1" strokeOpacity="0.8" />
-          </g>
-        ))}
-      </g>
-    </svg>
-  );
-}
-
 /** Top bar on every page except the calculator. */
-export function PageMast({ ornament = true }: { ornament?: boolean }) {
+export function PageMast() {
   return (
-    <div className="relative flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-3">
-      {ornament ? <MachDiamonds /> : null}
+    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-3">
       <div className="flex items-center justify-between gap-3">
         <Link to="/" className="inline-block shrink-0 opacity-90 hover:opacity-100">
           <BrandLockup framed />
