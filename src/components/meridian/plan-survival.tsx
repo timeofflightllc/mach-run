@@ -115,15 +115,18 @@ function SurvivalChance({ percent }: { percent: number | null }) {
   const cap = GAUGE.stroke / 2;
   const [x0, y0] = gaugePoint(0, GAUGE.r);
   const [x1, y1] = gaugePoint(100, GAUGE.r);
-  const needle =
+  const marker =
     value == null
       ? null
       : (() => {
           const angle = Math.PI * (1 - value / 100);
-          const tipR = GAUGE.r - cap - 1;
-          const baseR = tipR - 11;
-          const spread = 0.09;
-          const tip = gaugePoint(value, tipR);
+          const inner = GAUGE.r - cap - 2;
+          const outer = GAUGE.r + cap + 2;
+          const [x1, y1] = gaugePoint(value, inner);
+          const [x2, y2] = gaugePoint(value, outer);
+          const tip = gaugePoint(value, inner);
+          const baseR = inner - 12;
+          const spread = 0.085;
           const left = [
             GAUGE.cx + baseR * Math.cos(angle + spread),
             GAUGE.cy - baseR * Math.sin(angle + spread),
@@ -132,7 +135,13 @@ function SurvivalChance({ percent }: { percent: number | null }) {
             GAUGE.cx + baseR * Math.cos(angle - spread),
             GAUGE.cy - baseR * Math.sin(angle - spread),
           ];
-          return `${tip[0]} ${tip[1]} ${left[0]} ${left[1]} ${right[0]} ${right[1]}`;
+          return {
+            x1,
+            y1,
+            x2,
+            y2,
+            arrow: `${tip[0]} ${tip[1]} ${left[0]} ${left[1]} ${right[0]} ${right[1]}`,
+          };
         })();
   return (
     <div
@@ -145,7 +154,18 @@ function SurvivalChance({ percent }: { percent: number | null }) {
         <path d={gaugeArc(90, 100)} fill="none" stroke={GREEN} strokeWidth={GAUGE.stroke} strokeLinecap="butt" />
         <circle cx={x0} cy={y0} r={cap} fill={BLUE} />
         <circle cx={x1} cy={y1} r={cap} fill={GREEN} />
-        {needle ? <polygon points={needle} fill="#1a1a1a" /> : null}
+        {marker ? (
+          <line
+            x1={marker.x1}
+            y1={marker.y1}
+            x2={marker.x2}
+            y2={marker.y2}
+            stroke="#1a1a1a"
+            strokeWidth="3"
+            strokeLinecap="butt"
+          />
+        ) : null}
+        {marker ? <polygon points={marker.arrow} fill="#1a1a1a" /> : null}
         <circle cx={GAUGE.cx} cy={GAUGE.cy} r="38" fill="#fff" style={{ filter: "drop-shadow(0 1px 2px rgb(15 23 42 / 0.12))" }} />
         <text
           x={GAUGE.cx}
