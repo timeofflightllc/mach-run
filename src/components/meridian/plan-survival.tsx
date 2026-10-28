@@ -179,11 +179,12 @@ function SurvivalChance({ percent }: { percent: number | null }) {
         </text>
         {[0, 70, 90, 100].map((mark) => {
           const [x, y] = gaugePoint(mark, GAUGE.r + cap + 16);
+          const nudge = mark === 100 ? 4 : mark === 90 ? 3 : 0;
           return (
             <text
               key={mark}
-              x={x}
-              y={y}
+              x={x + nudge}
+              y={mark === 70 ? y + 6 : y}
               textAnchor="middle"
               dominantBaseline="middle"
               fill="#64748b"

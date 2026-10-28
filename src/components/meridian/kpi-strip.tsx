@@ -533,7 +533,7 @@ function DialGoalBar({ pct, aria }: { pct: number; aria: string }) {
     { width: "11%", light: dialMix(DIAL_GREEN, 42), ink: DIAL_GREEN },
   ];
   return (
-    <div className="relative mt-3 pt-2" role="img" aria-label={aria}>
+    <div className="relative mt-3 pt-5" role="img" aria-label={aria}>
       <div className="relative h-5 overflow-hidden rounded-full">
         <div className="absolute inset-0 flex">
           {zones.map((zone) => (
@@ -554,6 +554,9 @@ function DialGoalBar({ pct, aria }: { pct: number; aria: string }) {
         className="pointer-events-none absolute top-0 flex -translate-x-1/2 flex-col items-center"
         style={{ left: `${pct}%` }}
       >
+        <span className="text-[11px] font-semibold tabular-nums leading-none text-[#1a2330]">
+          {Math.round(pct)}%
+        </span>
         <svg width="12" height="8" viewBox="0 0 12 8" aria-hidden="true">
           <polygon points="6,8 0.5,0 11.5,0" fill="#1a1a1a" />
         </svg>
