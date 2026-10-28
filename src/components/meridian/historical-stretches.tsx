@@ -210,7 +210,11 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
         <p className="mt-2 text-xs leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden">
           No stretch in the table is long enough for this plan.
         </p>
-      ) : null}
+      ) : (
+        <p className="mt-2 text-xs leading-relaxed text-[#3d4a54]">
+          Set stocks and bonds percentage estimates for your backtrack, then click Run.
+        </p>
+      )}
       <div className="mt-auto flex shrink-0 flex-col gap-2 pt-3">
         <MixSlider label="Stocks" value={percent} onChange={setPercent} />
         <MixSlider label="Bonds" value={100 - percent} onChange={(next) => setPercent(100 - next)} />
