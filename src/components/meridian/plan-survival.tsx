@@ -120,8 +120,8 @@ function SurvivalChance({ percent }: { percent: number | null }) {
       ? null
       : (() => {
           const angle = Math.PI * (1 - value / 100);
-          const inner = GAUGE.r - cap - 2;
-          const outer = GAUGE.r + cap + 2;
+          const inner = GAUGE.r - cap;
+          const outer = GAUGE.r + cap;
           const [x1, y1] = gaugePoint(value, inner);
           const [x2, y2] = gaugePoint(value, outer);
           const tip = gaugePoint(value, inner);

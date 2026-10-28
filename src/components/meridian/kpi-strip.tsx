@@ -533,7 +533,7 @@ function DialGoalBar({ pct, aria }: { pct: number; aria: string }) {
     { width: "11%", light: dialMix(DIAL_GREEN, 42), ink: DIAL_GREEN },
   ];
   return (
-    <div className="relative mt-3 pt-5" role="img" aria-label={aria}>
+    <div className="relative mt-3 pt-6" role="img" aria-label={aria}>
       <div className="relative h-5 overflow-hidden rounded-full">
         <div className="absolute inset-0 flex">
           {zones.map((zone) => (
@@ -549,18 +549,18 @@ function DialGoalBar({ pct, aria }: { pct: number; aria: string }) {
             </div>
           </div>
         ) : null}
+        <div className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-[#1a1a1a]" style={{ left: `${pct}%` }} />
       </div>
       <div
         className="pointer-events-none absolute top-0 flex -translate-x-1/2 flex-col items-center"
         style={{ left: `${pct}%` }}
       >
-        <span className="relative -top-[5px] text-[11px] font-semibold tabular-nums leading-none text-[#1a2330]">
+        <span className="text-[11px] font-semibold tabular-nums leading-none text-[#1a2330]">
           {Math.round(pct)}%
         </span>
-        <svg width="12" height="8" viewBox="0 0 12 8" aria-hidden="true">
+        <svg width="12" height="8" viewBox="0 0 12 8" aria-hidden="true" className="mt-[5px]">
           <polygon points="6,8 0.5,0 11.5,0" fill="#1a1a1a" />
         </svg>
-        <div className="h-5 w-0.5 bg-[#1a1a1a]" />
       </div>
       <div className="relative mt-1 h-4 text-[10px] tabular-nums leading-none text-slate-500">
         <span className="absolute left-0 top-0">0%</span>
