@@ -10,6 +10,22 @@ import type { SiteAnnouncement, SitePage } from "./types";
 /** Tonight's ships. Stable ids so they insert once and stay editable in the desk. Newest first. */
 export const PINNED_ANNOUNCEMENTS: SiteAnnouncement[] = [
   {
+    id: "feat-2026-10-28-ooda-ai",
+    at: "2026-10-28",
+    title: "OODA AI reads this MACH RUN",
+    blurb:
+      "Ask about the analysis on the page. Invest $500 more or less and the engine runs the plan both ways. The answer uses only those two results.",
+    sortOrder: 0,
+  },
+  {
+    id: "feat-2026-10-27-mach-back",
+    at: "2026-10-27",
+    title: "Mach Back",
+    blurb:
+      "The plan runs through longevity for every start year in U.S. market history. Each year keeps its own returns. The number is how many still had money.",
+    sortOrder: 0,
+  },
+  {
     id: "feat-2026-10-23-retired-pay",
     at: "2026-10-23",
     title: "Military retirement pay, as DFAS would start it",
