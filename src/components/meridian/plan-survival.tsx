@@ -52,13 +52,13 @@ const CHOICES: { id: SwingName; label: string }[] = [
   { id: "rough", label: "Rough" },
 ];
 
-const countCard = "h-[19.5rem] w-full min-w-0 overflow-hidden sm:flex-1";
+const countCard = "w-full min-w-0 sm:h-[19.5rem] sm:flex-1 sm:overflow-hidden";
 
 function CountPlaceholder({ label, className }: { label: string; className?: string }) {
   return (
     <div
       className={cn(
-        "flex h-[19.5rem] flex-col overflow-hidden rounded-2xl bg-[#fbfaf7] px-4 py-3.5 shadow-[0_0_0_1px_#e6e1d6]",
+        "flex flex-col rounded-2xl bg-[#fbfaf7] px-4 py-3.5 shadow-[0_0_0_1px_#e6e1d6] sm:h-[19.5rem] sm:overflow-hidden",
         className,
       )}
     >
