@@ -418,15 +418,15 @@ export function PlanSurvival({
       <div className="mt-3 flex flex-col items-center gap-3 @min-[32rem]:flex-row @min-[32rem]:items-start">
         <SurvivalChance percent={view.score ? view.score.score : null} />
         {plan && view.score ? (
-          <div className="flex w-full min-w-0 flex-1 flex-col gap-2">
+          <div className="flex w-full min-w-0 flex-1 flex-row items-stretch gap-2">
             <FuturesCard
-              className="w-full"
+              className="h-full min-w-0 flex-1"
               score={view.score.score}
               longevityAge={longevityAge}
               runOutAge={view.score.runOutAge}
               failed={view.score.paths - view.score.survived}
             />
-            <HistoricalStretches className="w-full" plan={plan} />
+            <HistoricalStretches className="h-full min-w-0 flex-1" plan={plan} />
           </div>
         ) : null}
       </div>
