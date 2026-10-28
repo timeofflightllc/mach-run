@@ -148,7 +148,7 @@ function SurvivalChance({ percent }: { percent: number | null }) {
       className="flex shrink-0 flex-col items-center"
       aria-label={value == null ? "Chance of success, not run yet" : `${value} percent chance of success`}
     >
-      <svg viewBox="0 0 200 150" className="h-36 w-48" aria-hidden="true">
+      <svg viewBox="-36 0 280 150" className="h-36 w-[16.8rem]" aria-hidden="true">
         <path d={gaugeArc(0, 70)} fill="none" stroke={BLUE} strokeWidth={GAUGE.stroke} strokeLinecap="butt" />
         <path d={gaugeArc(70, 90)} fill="none" stroke={TEAL} strokeWidth={GAUGE.stroke} strokeLinecap="butt" />
         <path d={gaugeArc(90, 100)} fill="none" stroke={GREEN} strokeWidth={GAUGE.stroke} strokeLinecap="butt" />
@@ -177,6 +177,27 @@ function SurvivalChance({ percent }: { percent: number | null }) {
         >
           {value == null ? "—" : `${Math.round(value)}%`}
         </text>
+        {[
+          [0, GAUGE.r + cap + 16],
+          [70, GAUGE.r + cap + 18],
+          [90, GAUGE.r + cap + 28],
+          [100, GAUGE.r + cap + 36],
+        ].map(([mark, radius]) => {
+          const [x, y] = gaugePoint(mark, radius);
+          return (
+            <text
+              key={mark}
+              x={x}
+              y={y}
+              textAnchor="middle"
+              dominantBaseline="middle"
+              fill="#64748b"
+              style={{ fontSize: 10, fontWeight: 600 }}
+            >
+              {mark}%
+            </text>
+          );
+        })}
       </svg>
       <p className="-mt-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-900">Chance of success</p>
     </div>

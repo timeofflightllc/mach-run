@@ -559,6 +559,16 @@ function DialGoalBar({ pct, aria }: { pct: number; aria: string }) {
         </svg>
         <div className="h-5 w-0.5 bg-[#1a1a1a]" />
       </div>
+      <div className="relative mt-1 h-4 text-[10px] tabular-nums leading-none text-slate-500">
+        <span className="absolute left-0 top-0">0%</span>
+        <span className="absolute top-0 -translate-x-1/2" style={{ left: "70%" }}>
+          70%
+        </span>
+        <span className="absolute top-0 -translate-x-1/2" style={{ left: "90%" }}>
+          90%
+        </span>
+        <span className="absolute right-0 top-0">100%</span>
+      </div>
     </div>
   );
 }
