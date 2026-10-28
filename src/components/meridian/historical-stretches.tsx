@@ -23,7 +23,7 @@ export function CardHelp({ note }: { note: string }) {
       >
         ?
       </button>
-      <p className="pointer-events-none invisible absolute inset-x-3 top-9 z-30 rounded-lg bg-[#1a2330] px-3 py-2 text-left text-[11px] font-normal normal-case leading-snug tracking-normal text-white opacity-0 shadow-lg peer-hover:visible peer-hover:opacity-100 peer-focus:visible peer-focus:opacity-100">
+      <p className="pointer-events-none invisible absolute inset-x-3 top-9 z-30 rounded-lg bg-[#1a2330] px-3.5 py-2.5 text-left text-sm font-normal normal-case leading-relaxed tracking-normal text-white opacity-0 shadow-lg peer-hover:visible peer-hover:opacity-100 peer-focus:visible peer-focus:opacity-100">
         {note}
       </p>
     </>
