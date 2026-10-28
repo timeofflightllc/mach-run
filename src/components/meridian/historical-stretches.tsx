@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { runHistorical, type HistoricalCount } from "@/lib/plan/historical-run";
 import { planInputSignature } from "@/lib/plan/input-signature";
 import { cn } from "@/lib/utils";
@@ -7,26 +7,57 @@ import type { Plan } from "@/lib/plan/types";
 const card =
   "pointer-events-auto relative flex flex-col rounded-2xl bg-white/95 px-4 py-3.5 shadow-[0_10px_28px_rgba(26,35,48,0.14),0_0_0_1px_#d5d0c6] backdrop-blur-sm";
 
-export const FORWARD_NOTE =
-  "1,000 random markets, centered on the return you typed in Observe. The number is how many of 100 still have money you can spend at longevity. This is not the past.";
+export const FORWARD_NOTE = (
+  <>
+    <p>1,000 random future markets, centered on the rate of return you typed in Observe.</p>
+    <p className="mt-2">The number is how many out of 100 possible futures still have money at longevity.</p>
+  </>
+);
 
-export const BACK_NOTE =
-  "The same plan, laid on every real stretch of U.S. market history long enough to reach longevity. The number is how many of those stretches lasted. Cash, a house, and an annuity keep their rates.";
+const HISTORY_STRETCHES: { years: string; title: string }[] = [
+  { years: "1929–1932", title: "The Great Crash" },
+  { years: "1933–1945", title: "Depression and World War II" },
+  { years: "1946–1965", title: "The Postwar Boom" },
+  { years: "1966–1981", title: "The Great Inflation" },
+  { years: "1973–1974", title: "The Oil Shock" },
+  { years: "1982–1999", title: "The Great Bull Market" },
+  { years: "2000–2009", title: "The Lost Decade" },
+  { years: "2007–2009", title: "The Global Financial Crisis" },
+  { years: "2020", title: "The COVID Crash" },
+  { years: "2022", title: "The Inflation Selloff" },
+];
 
-export function CardHelp({ note }: { note: string }) {
+export const BACK_NOTE = (
+  <>
+    <p>
+      Your plan, laid out on every real stretch of U.S. market history long enough to reach longevity. The number is
+      how many of those stretches lasted. A stretch is one full plan, started in a different year. The history those
+      stretches are drawn from includes:
+    </p>
+    <ul className="mt-2 list-disc space-y-1 pl-4">
+      {HISTORY_STRETCHES.map((row) => (
+        <li key={row.years}>
+          {row.years} ({row.title})
+        </li>
+      ))}
+    </ul>
+  </>
+);
+
+export function CardHelp({ note }: { note: ReactNode }) {
   return (
-    <>
+    <div className="group/help pointer-events-none absolute inset-0 z-20">
       <button
         type="button"
         aria-label="What this card means"
-        className="peer absolute right-2.5 top-2.5 z-20 flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold text-[#6b7280] hover:bg-[#f4f1ea] hover:text-[#1a2330] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a2330]"
+        className="pointer-events-auto absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold text-[#6b7280] hover:bg-[#f4f1ea] hover:text-[#1a2330] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a2330]"
       >
         ?
       </button>
-      <p className="pointer-events-none invisible absolute inset-x-3 top-9 z-30 rounded-lg bg-[#1a2330] px-3.5 py-2.5 text-left text-sm font-normal normal-case leading-relaxed tracking-normal text-white opacity-0 shadow-lg peer-hover:visible peer-hover:opacity-100 peer-focus:visible peer-focus:opacity-100">
+      <div className="invisible absolute inset-x-3 top-9 z-30 max-h-[calc(100%-3.25rem)] overflow-y-auto rounded-lg bg-[#1a2330] px-3.5 py-2.5 text-left text-sm font-normal normal-case leading-relaxed tracking-normal text-white opacity-0 shadow-lg group-hover/help:pointer-events-auto group-hover/help:visible group-hover/help:opacity-100 group-focus-within/help:pointer-events-auto group-focus-within/help:visible group-focus-within/help:opacity-100">
         {note}
-      </p>
-    </>
+      </div>
+    </div>
   );
 }
 
