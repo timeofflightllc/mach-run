@@ -184,7 +184,7 @@ function SurvivalChance({ percent }: { percent: number | null }) {
             <text
               key={mark}
               x={x + nudge}
-              y={mark === 70 ? y + 6 : y}
+              y={(mark === 70 ? y + 6 : y) + (mark === 0 || mark === 100 ? 5 : 0)}
               textAnchor="middle"
               dominantBaseline="middle"
               fill="#64748b"
