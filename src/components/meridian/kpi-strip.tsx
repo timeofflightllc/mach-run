@@ -554,7 +554,7 @@ function DialGoalBar({ pct, aria }: { pct: number; aria: string }) {
         className="pointer-events-none absolute top-0 flex -translate-x-1/2 flex-col items-center"
         style={{ left: `${pct}%` }}
       >
-        <span className="text-[11px] font-semibold tabular-nums leading-none text-[#1a2330]">
+        <span className="relative -top-[5px] text-[11px] font-semibold tabular-nums leading-none text-[#1a2330]">
           {Math.round(pct)}%
         </span>
         <svg width="12" height="8" viewBox="0 0 12 8" aria-hidden="true">
