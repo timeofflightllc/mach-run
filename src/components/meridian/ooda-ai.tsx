@@ -74,14 +74,14 @@ function StarterQuestions({
   ].filter((question): question is string => question != null);
   if (!questions.length) return null;
   return (
-    <div className="mt-3 flex flex-col gap-1.5">
+    <div className="mt-3 flex flex-col items-end gap-1.5">
       {questions.map((question) => (
         <button
           key={question}
           type="button"
           disabled={busy}
           onClick={() => onAsk(question)}
-          className="rounded-lg bg-elevated px-3 py-2 text-left text-sm leading-snug text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-white disabled:opacity-50"
+          className="max-w-[85%] rounded-2xl rounded-br-md bg-[#7eb6ea] px-3.5 py-2 text-left text-sm leading-snug text-[#1a2330] disabled:opacity-50"
         >
           {question}
         </button>
@@ -171,7 +171,7 @@ export function OodaAiCard({
   }
 
   return (
-    <div className="rounded-xl bg-surface px-5 py-5 shadow-[0_0_0_1px_var(--color-border)]">
+    <div className="rounded-xl border border-[#c5ccd6] bg-surface px-5 py-5 shadow-[0_14px_32px_rgba(26,35,48,0.18)]">
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
         OODA AI*
       </p>
@@ -236,20 +236,40 @@ export function OodaAiCard({
               <p className="text-sm text-subtle">Ask about this MACH RUN.</p>
             )}
           </div>
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                void ask();
-              }
-            }}
-            rows={2}
-            maxLength={600}
-            placeholder="e.g. If I delay SS two years, does the runway actually move?"
-            className="mt-3 w-full resize-none rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm text-fg outline-none placeholder:text-subtle focus:border-accent/40"
-          />
+          <div className="mt-3 flex items-end gap-2">
+            <textarea
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void ask();
+                }
+              }}
+              rows={2}
+              maxLength={600}
+              placeholder="e.g. If I delay SS two years, does the runway actually move?"
+              className="min-w-0 flex-1 resize-none rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm text-fg outline-none placeholder:text-subtle focus:border-accent/40"
+            />
+            <button
+              type="button"
+              aria-label="Send"
+              disabled={busy || !question.trim()}
+              onClick={() => void ask()}
+              className="mb-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#7eb6ea] text-[#1a2330] disabled:bg-[#d5d0c6] disabled:text-[#6b7280]"
+            >
+              <svg viewBox="0 0 24 24" className="size-4" aria-hidden="true">
+                <path
+                  d="M12 19V5M6 11l6-6 6 6"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
           <StarterQuestions
             busy={busy}
             onAsk={(q) => void ask(q)}
@@ -258,17 +278,6 @@ export function OodaAiCard({
             showMachBack={machBack != null}
           />
           <SpendingWhatIf busy={busy} onAsk={(q, context) => void ask(q, context)} plan={plan} />
-          <div className="mt-3 flex items-center gap-3">
-            <button
-              type="button"
-              disabled={busy || !question.trim()}
-              onClick={() => void ask()}
-              className="inline-flex h-11 items-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg disabled:opacity-50"
-            >
-              {busy ? "Briefing…" : "Ask OODA AI"}
-            </button>
-            <span className="text-xs text-subtle">Enter to send</span>
-          </div>
           {error ? <p className="mt-4 text-sm text-negative">{error}</p> : null}
         </>
       )}
