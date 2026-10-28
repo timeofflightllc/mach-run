@@ -412,6 +412,7 @@ function MonthlyPayBar({
       right={`${usd(gap.wanted)} goal`}
       aria={`${usd(take)} a month ${from}, through age ${longevityAge}, of the ${usd(gap.wanted)} goal`}
       fill={payFill}
+      dial
       status={status}
       note={note}
       action={onEdit ? <EditGoalButton label="Edit Monthly Retirement Income Goal" onClick={onEdit} /> : null}
@@ -481,6 +482,7 @@ function GoalReadout({
   right,
   aria,
   fill,
+  dial = false,
   status,
   note,
   action,
@@ -490,10 +492,12 @@ function GoalReadout({
   right: string;
   aria: string;
   fill: number;
+  dial?: boolean;
   status: string;
   note: string | null;
   action?: ReactNode;
 }) {
+  const pct = Math.min(100, Math.max(0, fill));
   return (
     <div className="mt-5 flex flex-col">
       <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted">{title}</p>
@@ -501,12 +505,49 @@ function GoalReadout({
         <span className="min-w-0 font-sans text-xl font-medium leading-snug text-[#1a2330]">{left}</span>
         <span className="shrink-0 pt-1 text-sm tabular-nums text-muted">{right}</span>
       </div>
-      <div className="mt-3 h-5 overflow-hidden rounded-full bg-[#d7eadc]" role="img" aria-label={aria}>
-        <div className="h-full rounded-full bg-[#3a8a58]" style={{ width: `${Math.min(100, Math.max(0, fill))}%` }} />
-      </div>
+      {dial ? <DialGoalBar pct={pct} aria={aria} /> : (
+        <div className="mt-3 h-5 overflow-hidden rounded-full bg-[#d7eadc]" role="img" aria-label={aria}>
+          <div className="h-full rounded-full bg-[#3a8a58]" style={{ width: `${pct}%` }} />
+        </div>
+      )}
       <p className="mt-3 text-sm leading-5 text-fg">{status}</p>
       {note ? <p className="mt-1 text-sm leading-5 text-muted">{note}</p> : null}
       {action}
+    </div>
+  );
+}
+
+const DIAL_BLUE = "#7eb6ea";
+const DIAL_TEAL = "#6ecfc4";
+const DIAL_GREEN = "#3caf62";
+
+function dialMix(color: string, amount: number) {
+  return `color-mix(in srgb, ${color} ${amount}%, white)`;
+}
+
+/** Same cuts as the Plan Survival dial: blue through 69, teal through 89, green after. */
+function DialGoalBar({ pct, aria }: { pct: number; aria: string }) {
+  const zones = [
+    { width: "69%", light: dialMix(DIAL_BLUE, 42), ink: DIAL_BLUE },
+    { width: "20%", light: dialMix(DIAL_TEAL, 42), ink: DIAL_TEAL },
+    { width: "11%", light: dialMix(DIAL_GREEN, 42), ink: DIAL_GREEN },
+  ];
+  return (
+    <div className="relative mt-3 h-5 overflow-hidden rounded-full" role="img" aria-label={aria}>
+      <div className="absolute inset-0 flex">
+        {zones.map((zone) => (
+          <div key={zone.light} style={{ width: zone.width, background: zone.light }} />
+        ))}
+      </div>
+      {pct > 0 ? (
+        <div className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: `${pct}%` }}>
+          <div className="flex h-full" style={{ width: `${10000 / pct}%` }}>
+            {zones.map((zone) => (
+              <div key={zone.ink} style={{ width: zone.width, background: zone.ink }} />
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
