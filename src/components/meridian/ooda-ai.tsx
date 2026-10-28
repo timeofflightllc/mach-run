@@ -213,7 +213,7 @@ export function OodaAiCard({
               turns.map((t, i) => (
                 <div key={`${i}-${t.q.slice(0, 24)}`} className="flex flex-col gap-2">
                   <div className="flex justify-end">
-                    <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-canopy px-3.5 py-2 text-sm leading-relaxed text-white">
+                    <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-[#7eb6ea] px-3.5 py-2 text-sm leading-relaxed text-[#1a2330]">
                       {t.q}
                     </p>
                   </div>
