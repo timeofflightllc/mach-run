@@ -454,7 +454,7 @@ function OodaDrawer({
       aria-hidden={!open}
       inert={!open}
       className={cn(
-        "fixed z-20 h-max max-h-[calc(100dvh-var(--mach-header-h,7rem)-1.5rem)] overflow-y-auto rounded-xl top-[calc(var(--mach-header-h,7rem)+0.75rem)] max-[71.99rem]:inset-x-3 max-[71.99rem]:w-auto min-[72rem]:absolute min-[72rem]:inset-x-auto min-[72rem]:top-0 min-[72rem]:right-[calc(100%+0.5rem)] min-[72rem]:w-[min(24rem,calc(100vw-6rem))]",
+        "fixed z-20 h-max max-h-[calc(100dvh-var(--mach-header-h,7rem)-1.5rem)] overflow-y-auto rounded-xl border border-[#c5ccd6] bg-surface shadow-[0_18px_40px_rgba(26,35,48,0.28),0_4px_10px_rgba(26,35,48,0.12)] top-[calc(var(--mach-header-h,7rem)+0.75rem)] max-[71.99rem]:inset-x-3 max-[71.99rem]:w-auto min-[72rem]:absolute min-[72rem]:inset-x-auto min-[72rem]:top-0 min-[72rem]:right-[calc(100%+0.5rem)] min-[72rem]:w-[min(24rem,calc(100vw-6rem))]",
         open ? "" : "hidden",
       )}
     >

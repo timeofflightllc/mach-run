@@ -171,7 +171,7 @@ export function OodaAiCard({
   }
 
   return (
-    <div className="rounded-xl border border-[#c5ccd6] bg-surface px-5 py-5 shadow-[0_14px_32px_rgba(26,35,48,0.18)]">
+    <div className="rounded-xl bg-surface px-5 py-5">
       <p className="text-xs font-medium uppercase tracking-[0.2em] text-subtle">
         OODA AI*
       </p>
