@@ -1,4 +1,4 @@
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Link } from "@tanstack/react-router";
 import { askMachOoda } from "@/lib/ooda-ai/api";
 import { buildOodaAskContext, type OodaSurvivalFact } from "@/lib/ooda-ai/context";
@@ -26,20 +26,20 @@ function SpendingWhatIf({
   function run(delta: number) {
     const result = spendingWhatIf(plan, delta);
     const amount = usd(Math.abs(delta));
-    const question = delta < 0 ? `What if I spend ${amount} less a month?` : `What if I spend ${amount} more a month?`;
+    const question = delta < 0 ? `What if I invest ${amount} less a month?` : `What if I invest ${amount} more a month?`;
     onAsk(question, spendingWhatIfContext(result));
   }
   return (
     <div className="mt-3">
-      <p className="text-xs font-medium text-subtle">Monthly spending</p>
-      <div className="mt-1.5 inline-flex gap-1 rounded-xl bg-[#f3f0e8] p-1" role="group" aria-label="Monthly spending">
+      <p className="text-xs font-medium text-subtle">Invest</p>
+      <div className="mt-1.5 inline-flex gap-1 rounded-xl bg-[#f3f0e8] p-1" role="group" aria-label="Invest">
         <button
           type="button"
           disabled={busy}
           onClick={() => run(-500)}
           className="h-8 rounded-lg px-2.5 text-xs font-medium text-[#1a2330] hover:bg-white disabled:opacity-50"
         >
-          $500 less
+          Invest $500 less
         </button>
         <button
           type="button"
@@ -47,7 +47,7 @@ function SpendingWhatIf({
           onClick={() => run(500)}
           className="h-8 rounded-lg px-2.5 text-xs font-medium text-[#1a2330] hover:bg-white disabled:opacity-50"
         >
-          $500 more
+          Invest $500 more
         </button>
       </div>
     </div>
@@ -91,7 +91,7 @@ function StarterQuestions({
 }
 
 function Disclaimer() {
-  return <p className="text-xs italic leading-relaxed text-subtle">{OODA_DISCLAIMER}</p>;
+  return <p className="text-[10px] italic leading-snug text-subtle">{OODA_DISCLAIMER}</p>;
 }
 
 export function OodaAiCard({
@@ -114,6 +114,13 @@ export function OodaAiCard({
   const [turns, setTurns] = useState<Turn[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const threadRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const thread = threadRef.current;
+    if (!thread) return;
+    thread.scrollTop = thread.scrollHeight;
+  }, [turns]);
 
   async function ask(text?: string, contextOverride?: string) {
     const q = (text ?? question).trim();
@@ -171,9 +178,6 @@ export function OodaAiCard({
       <p className="mt-2 font-display text-xl font-bold text-fg">
         Ask OODA AI about this MACH RUN:
       </p>
-      <div className="mt-3">
-        <Disclaimer />
-      </div>
       {!paid ? (
         <div className="mt-4 flex flex-col items-start gap-2 border-t border-border pt-4">
           {!signedIn ? (
@@ -200,9 +204,13 @@ export function OodaAiCard({
         </div>
       ) : (
         <>
-          {turns.length ? (
-            <div className="mt-4 flex max-h-[min(24rem,50vh)] flex-col gap-2 overflow-y-auto pr-1">
-              {turns.map((t, i) => (
+          <div
+            ref={threadRef}
+            className="mt-3 flex h-80 flex-col gap-2 overflow-y-auto rounded-2xl bg-[#f4f1ea] px-3 py-3"
+            aria-live="polite"
+          >
+            {turns.length ? (
+              turns.map((t, i) => (
                 <div key={`${i}-${t.q.slice(0, 24)}`} className="flex flex-col gap-2">
                   <div className="flex justify-end">
                     <p className="max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-canopy px-3.5 py-2 text-sm leading-relaxed text-white">
@@ -223,9 +231,11 @@ export function OodaAiCard({
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
-          ) : null}
+              ))
+            ) : (
+              <p className="text-sm text-subtle">Ask about this MACH RUN.</p>
+            )}
+          </div>
           <textarea
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -235,10 +245,10 @@ export function OodaAiCard({
                 void ask();
               }
             }}
-            rows={3}
+            rows={2}
             maxLength={600}
             placeholder="e.g. If I delay SS two years, does the runway actually move?"
-            className="mt-4 w-full resize-y rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm text-fg outline-none placeholder:text-subtle focus:border-accent/40"
+            className="mt-3 w-full resize-none rounded-lg border border-border bg-elevated px-3 py-2.5 text-sm text-fg outline-none placeholder:text-subtle focus:border-accent/40"
           />
           <StarterQuestions
             busy={busy}
@@ -262,6 +272,9 @@ export function OodaAiCard({
           {error ? <p className="mt-4 text-sm text-negative">{error}</p> : null}
         </>
       )}
+      <div className="mt-4 border-t border-border pt-2">
+        <Disclaimer />
+      </div>
     </div>
   );
 }

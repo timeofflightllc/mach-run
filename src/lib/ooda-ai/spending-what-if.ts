@@ -17,7 +17,7 @@ export type SpendingWhatIf = {
 /** The same simulate the MACH RUN uses. Two runs, no shocks, no history. */
 export function spendingWhatIf(plan: Plan, deltaMonthly: number): SpendingWhatIf {
   const asked = Number.isFinite(deltaMonthly) ? Math.round(deltaMonthly) : 0;
-  const shifted = withMonthlySpending(plan, asked);
+  const shifted = withMonthlyInvest(plan, asked);
   return {
     asked,
     applied: shifted.applied,
@@ -30,15 +30,15 @@ export function spendingWhatIfContext(result: SpendingWhatIf): string {
   const moved = result.applied === 0 ? result.asked : result.applied;
   const way = moved < 0 ? "less" : "more";
   const lines = [
-    `Second run: monthly spending ${usd(Math.abs(moved))} ${way} than this plan.`,
+    `Second run: invest ${usd(Math.abs(moved))} ${way} a month than this plan.`,
     `As it is: ${spendableLine(result.base)} ${lastsLine(result.base)}`,
-    `With that spending: ${spendableLine(result.changed)} ${lastsLine(result.changed)}`,
+    `With that investment: ${spendableLine(result.changed)} ${lastsLine(result.changed)}`,
     "Explain only the difference between these two. Do not invent a third number.",
   ];
   if (result.applied === 0 && result.asked !== 0) {
-    lines.splice(1, 0, "This plan has no routine monthly spending to change, so both runs are the same plan.");
+    lines.splice(1, 0, "This plan has no monthly investment to change, so both runs are the same plan.");
   } else if (result.applied !== result.asked) {
-    lines.splice(1, 0, "The spending line could not move by the full amount, so the second run uses the smaller change.");
+    lines.splice(1, 0, "The investment could not move by the full amount, so the second run uses the smaller change.");
   }
   return lines.join("\n");
 }
@@ -59,29 +59,35 @@ function lastsLine(row: SpendingPair): string {
   return row.lasts ? "The money lasts to longevity." : "The money does not last to longevity.";
 }
 
-function withMonthlySpending(plan: Plan, delta: number): { plan: Plan; applied: number } {
+function withMonthlyInvest(plan: Plan, delta: number): { plan: Plan; applied: number } {
   if (delta === 0) return { plan, applied: 0 };
-  const routine = plan.spending.filter((row) => row.spendKind !== "lump");
+  const fixed = plan.contributions.filter((row) => (row.amountMode ?? "fixed") === "fixed");
   const asOf = plan.assumptions.asOfDate;
-  const active = routine.find(
+  const active = fixed.find(
     (row) => row.startDate <= asOf && (row.endDate == null || row.endDate >= asOf),
   );
-  const target = active ?? routine[0];
+  const target = active ?? fixed[0];
   if (!target) {
     if (delta < 0) return { plan, applied: 0 };
+    const dest =
+      plan.portfolios.find((row) => row.kind !== "real_estate" && row.spendable) ??
+      plan.portfolios.find((row) => row.kind !== "real_estate") ??
+      plan.portfolios[0];
+    if (!dest) return { plan, applied: 0 };
     return {
       applied: delta,
       plan: {
         ...plan,
-        spending: [
-          ...plan.spending,
+        contributions: [
+          ...plan.contributions,
           {
-            id: "ooda-spend-what-if",
-            label: "What-if spending",
+            id: "ooda-invest-what-if",
+            label: "What-if invest",
+            portfolioId: dest.id,
             monthlyAmount: delta,
             startDate: asOf,
-            endDate: null,
-            spendKind: "routine",
+            endDate: plan.assumptions.retirementGoalDate,
+            amountMode: "fixed",
           },
         ],
       },
@@ -93,7 +99,7 @@ function withMonthlySpending(plan: Plan, delta: number): { plan: Plan; applied: 
     applied,
     plan: {
       ...plan,
-      spending: plan.spending.map((row) =>
+      contributions: plan.contributions.map((row) =>
         row.id === target.id ? { ...row, monthlyAmount: nextAmount } : row,
       ),
     },
