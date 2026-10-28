@@ -513,8 +513,8 @@ export function PlanSurvival({
               </>
             ) : (
               <>
-                <CountPlaceholder label="Mach Forward (Future Performance)" note={FORWARD_NOTE} className={countCard} />
-                <CountPlaceholder label="Mach Back (Past Performance)" note={BACK_NOTE} className={countCard} />
+                <CountPlaceholder label="Mach Forward (Future Potential)" note={FORWARD_NOTE} className={countCard} />
+                <CountPlaceholder label="Mach Back (Past Estimations)" note={BACK_NOTE} className={countCard} />
               </>
             )}
           </div>

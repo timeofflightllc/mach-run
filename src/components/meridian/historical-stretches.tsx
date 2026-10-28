@@ -125,7 +125,7 @@ export function FuturesCard({
       </span>
       <CardHelp note={FORWARD_NOTE} />
       <p className="pr-6 text-[10px] font-medium uppercase tracking-[0.14em] text-[#6b7280]">
-        Mach Forward (Future Performance)
+        Mach Forward (Future Potential)
       </p>
       <p className="mt-1 font-display text-[2.6rem] font-semibold tabular-nums leading-none tracking-tight text-[#1a2330]">
         {score}
@@ -172,7 +172,7 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
     <div className={cn(card, className ?? "w-[min(100%,18rem)]")}>
       <CardHelp note={BACK_NOTE} />
       <p className="pr-6 text-[10px] font-medium uppercase tracking-[0.14em] text-[#6b7280]">
-        Mach Back (Past Performance)
+        Mach Back (Past Estimations)
       </p>
       {count && count.total > 0 ? (
         <>

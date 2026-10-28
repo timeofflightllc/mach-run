@@ -397,7 +397,7 @@ function MonthlyPayBar({
   const meets = payShort == null || payShort <= 1;
   const spare = payShort != null && payShort < -1 ? -payShort : 0;
   const from = includeGuaranteed
-    ? "from all sources (investments withdrawals and guaranteed income)"
+    ? "from all sources"
     : "from only investment withdrawals";
   const toward = Math.round(payFill);
   const status = `A withdrawal of ${usd(take)} a month lasts through age ${longevityAge}.`;
