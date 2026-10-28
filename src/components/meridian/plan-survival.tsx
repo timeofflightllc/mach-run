@@ -52,7 +52,7 @@ const CHOICES: { id: SwingName; label: string }[] = [
   { id: "rough", label: "Rough" },
 ];
 
-const countCard = "h-[19.5rem] min-w-0 flex-1 overflow-hidden";
+const countCard = "h-[19.5rem] w-full min-w-0 overflow-hidden sm:flex-1";
 
 function CountPlaceholder({ label, className }: { label: string; className?: string }) {
   return (
@@ -449,7 +449,7 @@ export function PlanSurvival({
       <div className="mt-3 flex flex-col items-center gap-3 @min-[32rem]:flex-row @min-[32rem]:items-start">
         <SurvivalChance percent={view.score ? view.score.score : null} />
         {plan ? (
-          <div className="flex w-full min-w-0 flex-1 flex-row items-stretch gap-2">
+          <div className="flex w-full min-w-0 flex-1 flex-col items-stretch gap-2 sm:flex-row">
             {view.score ? (
               <>
                 <FuturesCard
