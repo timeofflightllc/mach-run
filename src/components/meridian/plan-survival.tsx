@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { SwingName } from "@/lib/plan/monte-carlo";
 import { type SurvivalScore } from "@/lib/plan/monte-carlo-run";
 import { cn } from "@/lib/utils";
-import { FuturesCard, HistoricalStretches } from "@/components/meridian/historical-stretches";
+import { BACK_NOTE, CardHelp, FORWARD_NOTE, FuturesCard, HistoricalStretches } from "@/components/meridian/historical-stretches";
 import { useBoydQuotes } from "@/components/meridian/use-boyd-quotes";
 import type { Plan } from "@/lib/plan/types";
 
@@ -54,15 +54,16 @@ const CHOICES: { id: SwingName; label: string }[] = [
 
 const countCard = "w-full min-w-0 sm:h-[19.5rem] sm:flex-1 sm:overflow-hidden";
 
-function CountPlaceholder({ label, className }: { label: string; className?: string }) {
+function CountPlaceholder({ label, note, className }: { label: string; note: string; className?: string }) {
   return (
     <div
       className={cn(
-        "flex flex-col rounded-2xl bg-[#fbfaf7] px-4 py-3.5 shadow-[0_0_0_1px_#e6e1d6] sm:h-[19.5rem] sm:overflow-hidden",
+        "relative flex flex-col rounded-2xl bg-[#fbfaf7] px-4 py-3.5 shadow-[0_0_0_1px_#e6e1d6] sm:h-[19.5rem] sm:overflow-hidden",
         className,
       )}
     >
-      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#b7b1a6]">{label}</p>
+      <CardHelp note={note} />
+      <p className="pr-6 text-[10px] font-medium uppercase tracking-[0.14em] text-[#b7b1a6]">{label}</p>
       <p className="mt-1 font-display text-[2.6rem] font-semibold leading-none tracking-tight text-[#e4dfd4]">—</p>
     </div>
   );
@@ -157,7 +158,7 @@ function SurvivalChance({ percent }: { percent: number | null }) {
           {value == null ? "—" : `${Math.round(value)}%`}
         </text>
       </svg>
-      <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">Chance of success</p>
+      <p className="-mt-2 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-900">Chance of success</p>
     </div>
   );
 }
@@ -322,6 +323,14 @@ export function RunMonteCarloButton({
   );
 }
 
+export function MonteCarloStaleNotice() {
+  return (
+    <p className="rounded-lg bg-[#e8c547] px-4 py-3 text-sm font-medium leading-relaxed text-[#1a1408]">
+      This Monte Carlo is not current. The plan changed. Run it again.
+    </p>
+  );
+}
+
 export function PlanSurvival({
   locked,
   view,
@@ -332,6 +341,7 @@ export function PlanSurvival({
   onLockedMinChange,
   longevityAge,
   plan = null,
+  stale = false,
 }: {
   locked: boolean;
   view: SurvivalView | null;
@@ -342,6 +352,7 @@ export function PlanSurvival({
   onLockedMinChange?: (minimized: boolean) => void;
   longevityAge: number;
   plan?: Plan | null;
+  stale?: boolean;
 }) {
   const quotes = useBoydQuotes();
   const [lockedMin, setLockedMin] = useState(readLockedMin);
@@ -447,6 +458,7 @@ export function PlanSurvival({
   return (
     <div className={cn(card, "@min-[36rem]:flex @min-[36rem]:min-h-0 @min-[36rem]:flex-1 @min-[36rem]:flex-col")}>
       <SurvivalTitle />
+      {stale && view.score ? <div className="mt-3"><MonteCarloStaleNotice /></div> : null}
       <div className="mt-3 flex flex-col items-center gap-3 @min-[32rem]:flex-row @min-[32rem]:items-start">
         <SurvivalChance percent={view.score ? view.score.score : null} />
         {plan ? (
@@ -464,8 +476,8 @@ export function PlanSurvival({
               </>
             ) : (
               <>
-                <CountPlaceholder label="Futures" className={countCard} />
-                <CountPlaceholder label="Past" className={countCard} />
+                <CountPlaceholder label="Mach Forward (Future Performance)" note={FORWARD_NOTE} className={countCard} />
+                <CountPlaceholder label="Mach Back (Past Performance)" note={BACK_NOTE} className={countCard} />
               </>
             )}
           </div>

@@ -5,7 +5,30 @@ import { cn } from "@/lib/utils";
 import type { Plan } from "@/lib/plan/types";
 
 const card =
-  "pointer-events-auto flex flex-col rounded-2xl bg-white/95 px-4 py-3.5 shadow-[0_10px_28px_rgba(26,35,48,0.14),0_0_0_1px_#d5d0c6] backdrop-blur-sm";
+  "pointer-events-auto relative flex flex-col rounded-2xl bg-white/95 px-4 py-3.5 shadow-[0_10px_28px_rgba(26,35,48,0.14),0_0_0_1px_#d5d0c6] backdrop-blur-sm";
+
+export const FORWARD_NOTE =
+  "1,000 random markets, centered on the return you typed in Observe. The number is how many of 100 still have money you can spend at longevity. This is not the past.";
+
+export const BACK_NOTE =
+  "The same plan, laid on every real stretch of U.S. market history long enough to reach longevity. The number is how many of those stretches lasted. Cash, a house, and an annuity keep their rates.";
+
+export function CardHelp({ note }: { note: string }) {
+  return (
+    <>
+      <button
+        type="button"
+        aria-label="What this card means"
+        className="peer absolute right-2.5 top-2.5 z-20 flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold text-[#6b7280] hover:bg-[#f4f1ea] hover:text-[#1a2330] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a2330]"
+      >
+        ?
+      </button>
+      <p className="pointer-events-none invisible absolute inset-x-3 top-9 z-30 rounded-lg bg-[#1a2330] px-3 py-2 text-left text-[11px] font-normal normal-case leading-snug tracking-normal text-white opacity-0 shadow-lg peer-hover:visible peer-hover:opacity-100 peer-focus:visible peer-focus:opacity-100">
+        {note}
+      </p>
+    </>
+  );
+}
 
 export function FuturesCard({
   score,
@@ -25,7 +48,10 @@ export function FuturesCard({
       <span className="sr-only" data-mach-note="">
         In {score} of 100 futures, the money lasts to age {longevityAge}.
       </span>
-      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#6b7280]">Futures</p>
+      <CardHelp note={FORWARD_NOTE} />
+      <p className="pr-6 text-[10px] font-medium uppercase tracking-[0.14em] text-[#6b7280]">
+        Mach Forward (Future Performance)
+      </p>
       <p className="mt-1 font-display text-[2.6rem] font-semibold tabular-nums leading-none tracking-tight text-[#1a2330]">
         {score}
       </p>
@@ -69,7 +95,10 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
 
   return (
     <div className={cn(card, className ?? "w-[min(100%,18rem)]")}>
-      <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-[#6b7280]">Past</p>
+      <CardHelp note={BACK_NOTE} />
+      <p className="pr-6 text-[10px] font-medium uppercase tracking-[0.14em] text-[#6b7280]">
+        Mach Back (Past Performance)
+      </p>
       {count && count.total > 0 ? (
         <>
           <p
@@ -81,7 +110,7 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
             {count.survived}
           </p>
           <p className="mt-1 text-sm leading-snug text-[#1a2330]">
-            of {count.total} real stretches lasted, at {used}% stocks
+            of {count.total} real stretches lasted, at {used}% stocks. The rest is bonds.
           </p>
           <p className="mt-2 text-xs leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden">
             The same plan, laid on every real stretch of U.S. market history long enough to reach longevity. Investable
@@ -96,30 +125,49 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
             : "The same plan, laid on every real stretch of U.S. market history long enough to reach longevity. Investable accounts use the stock percent. The rest is bonds. Cash, a house, and an annuity keep your rates."}
         </p>
       )}
-      <div className="mt-3 flex shrink-0 items-center gap-1.5">
-        <span className="text-xs text-[#3d4a54]">Stocks</span>
-        <input
-          type="number"
-          min={0}
-          max={100}
-          aria-label="Percent in stocks"
-          value={percent}
-          onChange={(event) => {
-            const next = Number(event.target.value);
-            if (Number.isFinite(next)) setPercent(Math.min(100, Math.max(0, next)));
-          }}
-          className="h-8 w-14 rounded-lg bg-white text-center text-sm tabular-nums text-[#1a2330] shadow-[0_0_0_1px_#d5d0c6] outline-none"
-        />
+      <div className="mt-3 flex shrink-0 flex-col gap-2">
+        <MixSlider label="Stocks" value={percent} onChange={setPercent} />
+        <MixSlider label="Bonds" value={100 - percent} onChange={(next) => setPercent(100 - next)} />
         <button
           type="button"
           disabled={busy}
           onClick={run}
-          className="h-8 flex-1 rounded-lg bg-[#3a8a58] text-xs font-medium text-white disabled:opacity-50"
+          className="h-8 rounded-lg bg-[#3a8a58] text-xs font-medium text-white disabled:opacity-50"
         >
           {busy ? "…" : "Run"}
         </button>
       </div>
     </div>
+  );
+}
+
+function MixSlider({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (next: number) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2">
+      <span className="w-12 shrink-0 text-xs text-[#3d4a54]">{label}</span>
+      <input
+        type="range"
+        min={0}
+        max={100}
+        step={1}
+        aria-label={`${label} percent`}
+        value={value}
+        onChange={(event) => {
+          const next = Number(event.target.value);
+          if (Number.isFinite(next)) onChange(Math.min(100, Math.max(0, Math.round(next))));
+        }}
+        className="h-1.5 min-w-0 flex-1 accent-[#3a8a58]"
+      />
+      <span className="w-9 shrink-0 text-right text-xs tabular-nums text-[#1a2330]">{value}%</span>
+    </label>
   );
 }
 
