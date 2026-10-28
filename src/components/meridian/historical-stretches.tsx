@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { runHistorical, type HistoricalCount } from "@/lib/plan/historical-run";
 import { planInputSignature } from "@/lib/plan/input-signature";
 import { cn } from "@/lib/utils";
@@ -16,7 +17,7 @@ export const FORWARD_NOTE = (
 
 const HISTORY_STRETCHES: { years: string; title: string }[] = [
   { years: "1929–1932", title: "The Great Crash" },
-  { years: "1933–1945", title: "Depression and World War II" },
+  { years: "1933–1945", title: "Depression and WWII" },
   { years: "1946–1965", title: "The Postwar Boom" },
   { years: "1966–1981", title: "The Great Inflation" },
   { years: "1973–1974", title: "The Oil Shock" },
@@ -29,12 +30,8 @@ const HISTORY_STRETCHES: { years: string; title: string }[] = [
 
 export const BACK_NOTE = (
   <>
-    <p>
-      Your plan, laid out on every real stretch of U.S. market history long enough to reach longevity. The number is
-      how many of those stretches lasted. A stretch is one full plan, started in a different year. The history those
-      stretches are drawn from includes:
-    </p>
-    <ul className="mt-2 list-disc space-y-1 pl-4">
+    <p>Every full plan that fits in U.S. market history, each started in a different year. The number is how many lasted.</p>
+    <ul className="mt-2 list-disc space-y-0.5 pl-4">
       {HISTORY_STRETCHES.map((row) => (
         <li key={row.years}>
           {row.years} ({row.title})
@@ -45,19 +42,66 @@ export const BACK_NOTE = (
 );
 
 export function CardHelp({ note }: { note: ReactNode }) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const closeTimer = useRef<number | null>(null);
+  const [open, setOpen] = useState(false);
+  const [box, setBox] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  function place() {
+    const el = buttonRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const width = Math.min(360, window.innerWidth - 24);
+    const left = Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12));
+    const top = rect.bottom + 8;
+    setBox({ top, left, width });
+  }
+
+  function show() {
+    if (closeTimer.current != null) window.clearTimeout(closeTimer.current);
+    place();
+    setOpen(true);
+  }
+
+  function hide() {
+    if (closeTimer.current != null) window.clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => setOpen(false), 120);
+  }
+
+  useEffect(() => {
+    return () => {
+      if (closeTimer.current != null) window.clearTimeout(closeTimer.current);
+    };
+  }, []);
+
   return (
-    <div className="group/help pointer-events-none absolute inset-0 z-20">
+    <>
       <button
+        ref={buttonRef}
         type="button"
         aria-label="What this card means"
-        className="pointer-events-auto absolute right-2.5 top-2.5 flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold text-[#6b7280] hover:bg-[#f4f1ea] hover:text-[#1a2330] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a2330]"
+        onMouseEnter={show}
+        onMouseLeave={hide}
+        onFocus={show}
+        onBlur={hide}
+        className="absolute right-2.5 top-2.5 z-20 flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold text-[#6b7280] hover:bg-[#f4f1ea] hover:text-[#1a2330] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a2330]"
       >
         ?
       </button>
-      <div className="invisible absolute inset-x-3 top-9 z-30 max-h-[calc(100%-3.25rem)] overflow-y-auto rounded-lg bg-[#1a2330] px-3.5 py-2.5 text-left text-sm font-normal normal-case leading-relaxed tracking-normal text-white opacity-0 shadow-lg group-hover/help:pointer-events-auto group-hover/help:visible group-hover/help:opacity-100 group-focus-within/help:pointer-events-auto group-focus-within/help:visible group-focus-within/help:opacity-100">
-        {note}
-      </div>
-    </div>
+      {open && box
+        ? createPortal(
+            <div
+              onMouseEnter={show}
+              onMouseLeave={hide}
+              style={{ top: box.top, left: box.left, width: box.width }}
+              className="fixed z-[80] max-h-[min(32rem,70vh)] overflow-y-auto rounded-lg bg-[#1a2330] px-4 py-3 text-left text-sm font-normal normal-case leading-relaxed tracking-normal text-white shadow-lg"
+            >
+              {note}
+            </div>,
+            document.body,
+          )
+        : null}
+    </>
   );
 }
 
@@ -88,7 +132,7 @@ export function FuturesCard({
       </p>
       <p className="mt-1 text-sm leading-snug text-[#1a2330]">of 100 still have money at age {longevityAge}</p>
       <p className="mt-2 text-xs leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden">
-        One thousand random markets, centered on the return you typed in Observe. This is not a look at the past.
+        One thousand random markets, centered on the return you typed in Observe.
         {runOutAge != null && failed > 0 ? ` In the futures that run out, the middle one is age ${runOutAge}.` : ""}
       </p>
     </div>
