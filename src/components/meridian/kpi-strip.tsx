@@ -533,21 +533,32 @@ function DialGoalBar({ pct, aria }: { pct: number; aria: string }) {
     { width: "11%", light: dialMix(DIAL_GREEN, 42), ink: DIAL_GREEN },
   ];
   return (
-    <div className="relative mt-3 h-5 overflow-hidden rounded-full" role="img" aria-label={aria}>
-      <div className="absolute inset-0 flex">
-        {zones.map((zone) => (
-          <div key={zone.light} style={{ width: zone.width, background: zone.light }} />
-        ))}
-      </div>
-      {pct > 0 ? (
-        <div className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: `${pct}%` }}>
-          <div className="flex h-full" style={{ width: `${10000 / pct}%` }}>
-            {zones.map((zone) => (
-              <div key={zone.ink} style={{ width: zone.width, background: zone.ink }} />
-            ))}
-          </div>
+    <div className="relative mt-3 pt-2" role="img" aria-label={aria}>
+      <div className="relative h-5 overflow-hidden rounded-full">
+        <div className="absolute inset-0 flex">
+          {zones.map((zone) => (
+            <div key={zone.light} style={{ width: zone.width, background: zone.light }} />
+          ))}
         </div>
-      ) : null}
+        {pct > 0 ? (
+          <div className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: `${pct}%` }}>
+            <div className="flex h-full" style={{ width: `${10000 / pct}%` }}>
+              {zones.map((zone) => (
+                <div key={zone.ink} style={{ width: zone.width, background: zone.ink }} />
+              ))}
+            </div>
+          </div>
+        ) : null}
+      </div>
+      <div
+        className="pointer-events-none absolute top-0 flex -translate-x-1/2 flex-col items-center"
+        style={{ left: `${pct}%` }}
+      >
+        <svg width="12" height="8" viewBox="0 0 12 8" aria-hidden="true">
+          <polygon points="6,8 0.5,0 11.5,0" fill="#1a1a1a" />
+        </svg>
+        <div className="h-5 w-0.5 bg-[#1a1a1a]" />
+      </div>
     </div>
   );
 }
