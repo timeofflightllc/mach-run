@@ -377,7 +377,8 @@ export function PlanSurvival({
               Press Run Monte Carlo Simulation to check 1,000 futures.
             </p>
           </div>
-          <div className="mt-3 flex justify-center">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+            <p className="text-sm text-slate-600">Simulated Market Conditions:</p>
             <div className="inline-flex rounded-lg bg-slate-100 p-1">
               {CHOICES.map((choice) => (
                 <span
@@ -471,7 +472,8 @@ export function PlanSurvival({
         ) : null}
       </div>
       <BoydQuote quotes={quotes} pulse={checking} progress={checking ? view.progress : 0} />
-      <div className="mt-3 flex justify-center">
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+        <p className="text-sm text-slate-600">Simulated Market Conditions:</p>
         <div className="inline-flex rounded-lg bg-slate-100 p-1">
         {CHOICES.map((choice) => {
           const on = view.swing === choice.id;
