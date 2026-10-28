@@ -8,7 +8,7 @@ import { StaleRunPrompt } from "@/components/meridian/confirm-remove";
 import { CalculateButton } from "@/components/meridian/calculate-button";
 import { AdvisoryStrip } from "@/components/meridian/advisory-note";
 import { CashChart, MonteCarloBandChart, NetWorthChart, WealthChart } from "@/components/meridian/charts";
-import { BoydQuote, PlanSurvival, readPlanSurvivalMinimized, RunMonteCarloButton, type SurvivalView } from "@/components/meridian/plan-survival";
+import { BoydQuote, MonteCarloStaleNotice, PlanSurvival, readPlanSurvivalMinimized, RunMonteCarloButton, type SurvivalView } from "@/components/meridian/plan-survival";
 import { FuturesCard, HistoricalStretches } from "@/components/meridian/historical-stretches";
 import { useBoydQuotes } from "@/components/meridian/use-boyd-quotes";
 import { Pinnable, useChartPins } from "@/components/meridian/chart-pin";
@@ -54,7 +54,9 @@ import {
   clearAllStoredRuns,
   clearStoredRun,
   loadStoredRuns,
+  loadStoredSurvivals,
   saveStoredRun,
+  saveStoredSurvival,
 } from "@/lib/plan/last-run";
 import { cn } from "@/lib/utils";
 import { WelcomeEmailPreviewOverlay } from "@/components/meridian/welcome-email-preview";
@@ -478,6 +480,7 @@ function MonteCarloTab({
   onRun,
   plan,
   sim,
+  stale,
 }: {
   unlocked: boolean;
   real: boolean;
@@ -488,13 +491,15 @@ function MonteCarloTab({
   onRun: () => void;
   plan: Plan;
   sim: SimResult;
+  stale: boolean;
 }) {
   const quotes = useBoydQuotes();
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <PhaseLabel id="ooda-monte" label="Monte Carlo" />
+      {stale && score ? <MonteCarloStaleNotice /> : null}
       <div className="relative">
-        {unlocked && !running && score && score.bands.length > 0 ? (
+        {unlocked && score && score.bands.length > 0 ? (
           <MonteCarloBandChart
             bands={score.bands}
             traces={score.traces}
@@ -958,6 +963,14 @@ function Home() {
     timer: number | null;
   } | null>(null);
   const survivalView = survival[runKey] ?? null;
+  const survivalScore =
+    sheet && survivalView && survivalView.status !== "idle" && survivalView.status !== "empty"
+      ? survivalView.score
+      : null;
+  const survivalRunning = Boolean(sheet && survivalView?.status === "running");
+  const survivalStale = Boolean(
+    survivalView?.score && economicHash(plan, survivalView.swing) !== survivalView.score.hash,
+  );
   const [survivalMinimized, setSurvivalMinimized] = useState(readPlanSurvivalMinimized);
   const [actTab, setActTab] = useState<ActTab>(actPlace ?? "brief");
   const [actBoot, setActBoot] = useState<"wait" | "ready">("wait");
@@ -1077,6 +1090,24 @@ function Home() {
       for (const [key, row] of Object.entries(prev)) {
         const fromDisk = next[key];
         if (!fromDisk || row.id >= fromDisk.id) next[key] = row;
+      }
+      return next;
+    });
+    const storedSurvival = loadStoredSurvivals();
+    setSurvival((prev) => {
+      const next = { ...prev };
+      for (const [key, score] of Object.entries(storedSurvival)) {
+        const cur = next[key];
+        if (cur?.score || cur?.status === "running") continue;
+        next[key] = {
+          runId: loaded[key]?.id ?? 0,
+          status: "ready",
+          score,
+          swing: score.swing,
+          open: cur?.open ?? true,
+          pass: 0,
+          progress: 0,
+        };
       }
       return next;
     });
@@ -1544,7 +1575,7 @@ function Home() {
         [key]: {
           runId,
           status: "running",
-          score: null,
+          score: prev[key]?.score ?? null,
           swing,
           open,
           pass: (prev[key]?.pass ?? 0) + 1,
@@ -1569,10 +1600,14 @@ function Home() {
         (score) => {
           if (survivalTask.current?.controller !== controller) return;
           const drop = signal.aborted || !score || score.hash !== economicHash(snapshot, swing);
+          if (!drop && score) saveStoredSurvival(key, score);
           setSurvival((prev) => {
             const cur = prev[key];
             if (cur && cur.runId !== runId) return prev;
             if (drop || !score) {
+              if (cur?.score) {
+                return { ...prev, [key]: { ...cur, status: "ready", progress: 0 } };
+              }
               const next: SurvivalView = {
                 runId,
                 status: "empty",
@@ -1588,7 +1623,7 @@ function Home() {
               runId,
               status: "ready",
               score,
-              swing: cur?.swing ?? swing,
+              swing: score.swing,
               open: cur?.open ?? open,
               pass: cur?.pass ?? 0,
               progress: 0,
@@ -1601,6 +1636,9 @@ function Home() {
           setSurvival((prev) => {
             const cur = prev[key];
             if (cur && cur.runId !== runId) return prev;
+            if (cur?.score) {
+              return { ...prev, [key]: { ...cur, status: "ready", progress: 0 } };
+            }
             const next: SurvivalView = {
               runId,
               status: "empty",
@@ -1632,17 +1670,11 @@ function Home() {
   function runMonteCarlo() {
     if (!hasBalanceSheet(ent.plan)) return;
     const view = survival[runKey];
-    if (!view || view.status === "empty") return;
+    if (!view || view.status === "empty" || view.status === "running") return;
     const current = runs[runKey];
-    const task = survivalTask.current;
-    const snapshot =
-      current && current.id === view.runId
-        ? current.plan
-        : task && task.key === runKey && task.runId === view.runId
-          ? task.snapshot
-          : null;
-    if (!snapshot) return;
-    startPlanSurvival(runKey, view.runId, snapshot, view.swing, true);
+    if (!current) return;
+    const snapshot = structuredClone(usePlanStore.getState().plan) as Plan;
+    startPlanSurvival(runKey, current.id, snapshot, view.swing, true);
   }
 
   function setSurvivalOpen(open: boolean) {
@@ -1654,27 +1686,47 @@ function Home() {
   }
 
   const savedRunId = run?.id;
+  const runsRef = useRef(runs);
+  runsRef.current = runs;
   useEffect(() => {
     if (!sheet || savedRunId == null) return;
     const key = runKey;
     const view = survivalRef.current[key];
-    if (view && view.runId === savedRunId) return;
-    if (survivalTask.current?.key === key) {
-      survivalTask.current.controller.abort();
-      survivalTask.current = null;
+    if (view?.score) {
+      if (view.runId === savedRunId) return;
+      const executed = runsRef.current[key];
+      if (
+        executed &&
+        view.swing === view.score.swing &&
+        view.score.hash === economicHash(executed.plan, view.score.swing)
+      ) {
+        setSurvival((prev) => {
+          const cur = prev[key];
+          if (!cur?.score || cur.runId === savedRunId) return prev;
+          return { ...prev, [key]: { ...cur, runId: savedRunId, status: cur.status === "running" ? "running" : "ready" } };
+        });
+      }
+      return;
     }
-    setSurvival((prev) => ({
-      ...prev,
-      [key]: {
-        runId: savedRunId,
-        status: "idle",
-        score: null,
-        swing: prev[key]?.swing ?? DEFAULT_SWING,
-        open: prev[key]?.open ?? true,
-        pass: 0,
-        progress: 0,
-      },
-    }));
+    if (view && view.runId === savedRunId) return;
+    if (survivalTask.current?.key === key) return;
+    setSurvival((prev) => {
+      const cur = prev[key];
+      if (cur?.score || cur?.status === "running") return prev;
+      if (cur && cur.runId === savedRunId) return prev;
+      return {
+        ...prev,
+        [key]: {
+          runId: savedRunId,
+          status: "idle",
+          score: null,
+          swing: cur?.swing ?? DEFAULT_SWING,
+          open: cur?.open ?? true,
+          pass: 0,
+          progress: 0,
+        },
+      };
+    });
   }, [sheet, runKey, savedRunId]);
 
   async function calculate(opts?: { stay?: boolean }) {
@@ -2334,14 +2386,7 @@ function Home() {
                               brief={run.brief}
                               className={simulatorFull ? "@min-[56rem]/act:flex-1" : undefined}
                               survivalUnlocked={survivalOn}
-                              survival={
-                                sheet &&
-                                survivalView?.status === "ready" &&
-                                survivalView.runId === run.id &&
-                                survivalView.score
-                                  ? survivalView.score
-                                  : null
-                              }
+                              survival={survivalScore}
                             />
                             <KpiStrip
                               plan={displayPlan}
@@ -2363,6 +2408,7 @@ function Home() {
                             onLockedMinChange={setSurvivalMinimized}
                             longevityAge={displayPlan.assumptions.projectionEndAge}
                             plan={survivalOn ? displayPlan : null}
+                            stale={survivalStale}
                           />
                         </div>
                       </div>
@@ -2392,14 +2438,7 @@ function Home() {
                           plan={displayPlan}
                           sim={run.sim}
                           only={briefChart}
-                          survival={
-                            sheet &&
-                            survivalView?.status === "ready" &&
-                            survivalView.runId === run.id &&
-                            survivalView.score
-                              ? survivalView.score
-                              : null
-                          }
+                          survival={survivalScore}
                         />
                       </div>
                     </div>
@@ -2411,14 +2450,7 @@ function Home() {
                         plan={displayPlan}
                         sim={run.sim}
                         tall
-                        survival={
-                          sheet &&
-                          survivalView?.status === "ready" &&
-                          survivalView.runId === run.id &&
-                          survivalView.score
-                            ? survivalView.score
-                            : null
-                        }
+                        survival={survivalScore}
                       />
                     </div>
                   ) : null}
@@ -2432,14 +2464,7 @@ function Home() {
                         ran
                         plan={displayPlan}
                         sim={run.sim}
-                        survival={
-                          sheet &&
-                          survivalView?.status === "ready" &&
-                          survivalView.runId === run.id &&
-                          survivalView.score
-                            ? survivalView.score
-                            : null
-                        }
+                        survival={survivalScore}
                         onExecute={() => {
                           void calculate({ stay: true });
                         }}
@@ -2459,27 +2484,13 @@ function Home() {
                       unlocked={survivalOn}
                       real={real}
                       longevityAge={displayPlan.assumptions.projectionEndAge}
-                      score={
-                        sheet &&
-                        survivalView?.status === "ready" &&
-                        survivalView.runId === run.id &&
-                        survivalView.score
-                          ? survivalView.score
-                          : null
-                      }
-                      running={Boolean(
-                        sheet &&
-                          survivalView?.status === "running" &&
-                          survivalView.runId === run.id,
-                      )}
-                      progress={
-                        survivalView?.status === "running" && survivalView.runId === run.id
-                          ? survivalView.progress
-                          : 0
-                      }
+                      score={survivalScore}
+                      running={survivalRunning}
+                      progress={survivalRunning && survivalView ? survivalView.progress : 0}
                       onRun={runMonteCarlo}
                       plan={displayPlan}
                       sim={run.sim}
+                      stale={survivalStale}
                     />
                   ) : null}
                 </div>
