@@ -211,7 +211,7 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
           No stretch in the table is long enough for this plan.
         </p>
       ) : null}
-      <div className="mt-3 flex shrink-0 flex-col gap-2">
+      <div className="mt-auto flex shrink-0 flex-col gap-2 pt-3">
         <MixSlider label="Stocks" value={percent} onChange={setPercent} />
         <MixSlider label="Bonds" value={100 - percent} onChange={(next) => setPercent(100 - next)} />
         <button
