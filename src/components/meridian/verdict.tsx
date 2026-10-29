@@ -9,8 +9,8 @@ import {
 } from "@/lib/plan/earliest-retirement";
 import { monthlyIncomeAt } from "@/lib/plan/engine";
 import { usd } from "@/lib/plan/format";
-import { runOutSentence, survivalSentence, type SurvivalScore } from "@/lib/plan/monte-carlo-run";
-import { nestEggTrack, peerRankLine, type PeerBrief } from "@/lib/plan/peers";
+import type { SurvivalScore } from "@/lib/plan/monte-carlo-run";
+import { nestEggTrack, peerCheer, peerRankLine, type PeerBrief, type PeerMark } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 
@@ -45,7 +45,7 @@ export function Verdict({
   plan,
   sim,
   brief,
-  survival,
+  survival: _survival,
   survivalUnlocked = false,
   className,
 }: {
@@ -82,8 +82,6 @@ export function Verdict({
   }
 
   const rank = brief ? peerRankLine(brief) : null;
-  const longevityAge = plan.assumptions.projectionEndAge;
-  const ranOut = survival ? runOutSentence(survival, longevityAge) : null;
   const egg = nestEggTrack(plan, sim);
 
   return (
@@ -100,48 +98,78 @@ export function Verdict({
       {retLine ? (
         <p className="mt-3 text-sm leading-relaxed text-[#3d4a54]">{retLine}</p>
       ) : null}
-      <div className={cn("mt-4 grid items-start gap-3", rank && "@min-[40rem]/bluf:grid-cols-2")}>
-          {rank ? (
-            <div className="rounded-xl bg-[#f3f0e8] px-3.5 py-3">
-              <p className="text-sm font-semibold text-[#1a2330]">
-                {rank.title}
-              </p>
-              <ul className="mt-2 list-disc space-y-1 pl-4 text-left text-sm leading-snug text-[#1a2330]">
-                {rank.lines.map((line) => (
-                  <li key={line}>{line}</li>
-                ))}
-              </ul>
+      {rank ? <PeerRankBlock rank={rank} /> : null}
+      {survivalUnlocked ? null : (
+        <p className="mt-4 rounded-xl bg-[#f3f0e8] px-3.5 py-3 text-xs leading-relaxed text-[#3d4a54]">
+          <Link
+            to="/pricing"
+            className="font-medium text-accent underline underline-offset-2 hover:text-fg"
+          >
+            Upgrade
+          </Link>{" "}
+          <span>to access Plan Survival (Monte Carlo Simulations)</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+const PEER_ZONES = [
+  { width: "69%", light: "color-mix(in srgb, #7eb6ea 42%, white)", ink: "#7eb6ea" },
+  { width: "20%", light: "color-mix(in srgb, #6ecfc4 42%, white)", ink: "#6ecfc4" },
+  { width: "11%", light: "color-mix(in srgb, #3caf62 42%, white)", ink: "#3caf62" },
+];
+
+function PeerMeter({ mark }: { mark: PeerMark }) {
+  const pct = Math.min(100, Math.max(0, mark.percentile));
+  const tick = Math.min(98, Math.max(2, pct));
+  return (
+    <div>
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="min-w-0 text-xs leading-snug text-[#3d4a54]">
+          <span className="font-semibold text-[#1a2330]">{mark.name}</span>
+          <span> · {mark.group}</span>
+        </p>
+        <p className="shrink-0 text-sm font-semibold text-[#1a2330]">{mark.place}</p>
+      </div>
+      <div
+        className="relative mt-1.5 h-2.5"
+        role="img"
+        aria-label={`${mark.name}: ${mark.place} of ${mark.group}`}
+      >
+        <div className="absolute inset-0 flex overflow-hidden rounded-full">
+          {PEER_ZONES.map((zone) => (
+            <div key={zone.light} style={{ width: zone.width, background: zone.light }} />
+          ))}
+        </div>
+        {pct > 0 ? (
+          <div className="absolute inset-y-0 left-0 overflow-hidden rounded-full" style={{ width: `${pct}%` }}>
+            <div className="flex h-full" style={{ width: `${10000 / pct}%` }}>
+              {PEER_ZONES.map((zone) => (
+                <div key={zone.ink} style={{ width: zone.width, background: zone.ink }} />
+              ))}
             </div>
-          ) : null}
-          {survivalUnlocked ? (
-            <div className="rounded-xl bg-[#f3f0e8] px-3.5 py-3">
-              <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#3d4a54]">
-                Plan Survival
-              </p>
-              {survival ? (
-                <p className="mt-2 text-sm leading-snug text-[#1a2330]">
-                  {survivalSentence(survival.score, longevityAge)}
-                  {ranOut ? ` ${ranOut}` : ""}
-                </p>
-              ) : (
-                <p className="mt-2 text-sm leading-snug text-[#3d4a54]">
-                  Run Monte Carlo Simulation on the card{" "}
-                  <span className="@min-[56rem]/act:hidden">below.</span>
-                  <span className="hidden @min-[56rem]/act:inline">to the right.</span>
-                </p>
-              )}
-            </div>
-          ) : (
-            <p className="rounded-xl bg-[#f3f0e8] px-3.5 py-3 text-xs leading-relaxed text-[#3d4a54]">
-              <Link
-                to="/pricing"
-                className="font-medium text-accent underline underline-offset-2 hover:text-fg"
-              >
-                Upgrade
-              </Link>{" "}
-              <span>to access Plan Survival (Monte Carlo Simulations)</span>
-            </p>
-          )}
+          </div>
+        ) : null}
+        <div
+          className="absolute inset-y-[-3px] w-0.5 -translate-x-1/2 rounded-full bg-[#1a1a1a]"
+          style={{ left: `${tick}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function PeerRankBlock({ rank }: { rank: NonNullable<ReturnType<typeof peerRankLine>> }) {
+  const cheer = peerCheer(rank.marks);
+  return (
+    <div className="mt-4">
+      <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#3d4a54]">{rank.title}</p>
+      {cheer ? <p className="mt-1 text-sm font-semibold text-[#1a2330]">{cheer}</p> : null}
+      <div className="mt-3 space-y-3">
+        {rank.marks.map((mark) => (
+          <PeerMeter key={mark.name} mark={mark} />
+        ))}
       </div>
     </div>
   );

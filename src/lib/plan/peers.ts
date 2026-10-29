@@ -141,25 +141,61 @@ function standing(p: number): string {
   return `the bottom ${p}%`;
 }
 
+function placeLabel(p: number): string {
+  const words = standing(p).replace(/^the /, "");
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}
+
+export type PeerMark = {
+  name: string;
+  group: string;
+  percentile: number;
+  place: string;
+};
+
 export function peerRankLine(brief: {
   age: number | null;
   nwPercentile: number | null;
   incomePercentile: number | null;
   bandLabel: string | null;
-}): { title: string; lines: string[] } | null {
+}): { title: string; lines: string[]; marks: PeerMark[] } | null {
   const lines: string[] = [];
+  const marks: PeerMark[] = [];
   if (brief.nwPercentile != null && brief.bandLabel) {
     lines.push(
       `Net worth in ${standing(brief.nwPercentile)} of U.S. families age ${brief.bandLabel}.`,
     );
+    marks.push({
+      name: "Net worth",
+      group: `U.S. families age ${brief.bandLabel}`,
+      percentile: brief.nwPercentile,
+      place: placeLabel(brief.nwPercentile),
+    });
   }
   if (brief.incomePercentile != null) {
     lines.push(`Income in ${standing(brief.incomePercentile)} of U.S. households.`);
+    marks.push({
+      name: "Income",
+      group: "U.S. households",
+      percentile: brief.incomePercentile,
+      place: placeLabel(brief.incomePercentile),
+    });
   }
   if (!lines.length) return null;
   const title =
     brief.age != null ? `Peer rank at ${brief.age} years old` : "Peer rank";
-  return { title, lines };
+  return { title, lines, marks };
+}
+
+export function peerCheer(marks: { percentile: number }[]): string | null {
+  if (!marks.length) return null;
+  const low = Math.min(...marks.map((mark) => mark.percentile));
+  const high = Math.max(...marks.map((mark) => mark.percentile));
+  if (low >= 90) return "Ahead of almost every household on both.";
+  if (low >= 75) return "Ahead of most households on both.";
+  if (high >= 90 && low >= 50) return "A strong showing for this age.";
+  if (high >= 60) return "Ahead of the typical household on at least one.";
+  return null;
 }
 
 function monthsBetween(a: Date, b: Date): number {
