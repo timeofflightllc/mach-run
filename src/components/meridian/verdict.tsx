@@ -95,7 +95,7 @@ export function Verdict({
         {egg ? <NestEggHeadline egg={egg} /> : body}
       </p>
       {egg ? (
-        <p className="mt-2 text-base leading-snug text-[#1a2330]">{body}</p>
+        <p className="mt-2 text-sm leading-snug text-[#1a2330] sm:text-base">{body}</p>
       ) : null}
       {retLine ? (
         <p className="mt-3 text-sm leading-relaxed text-[#3d4a54]">{retLine}</p>

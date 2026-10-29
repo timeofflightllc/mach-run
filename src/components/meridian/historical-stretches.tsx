@@ -258,7 +258,7 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
         </p>
       ) : (
         <p className="mt-2 text-xs leading-relaxed text-[#3d4a54]">
-          Set stocks and bonds percentage estimates for your backtrack, then click Run Mach Rewind.
+          Set stocks and bonds allocation percentages for your Mach Rewind (market look-back) to run historical simulations. Then click Run below.
         </p>
       )}
       <div className="mt-auto flex shrink-0 flex-col gap-2 pt-3">
