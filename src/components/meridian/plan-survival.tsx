@@ -110,21 +110,13 @@ function gaugeArc(from: number, to: number) {
   return `M ${x1} ${y1} A ${GAUGE.r} ${GAUGE.r} 0 0 1 ${x2} ${y2}`;
 }
 
-function letterGrade(percent: number): string {
+function likelihood(percent: number): { words: string; mark: string } {
   const n = Math.round(percent);
-  if (n >= 97) return "A+";
-  if (n >= 93) return "A";
-  if (n >= 90) return "A-";
-  if (n >= 87) return "B+";
-  if (n >= 83) return "B";
-  if (n >= 80) return "B-";
-  if (n >= 77) return "C+";
-  if (n >= 73) return "C";
-  if (n >= 70) return "C-";
-  if (n >= 67) return "D+";
-  if (n >= 63) return "D";
-  if (n >= 60) return "D-";
-  return "F";
+  if (n >= 95) return { words: "Strong", mark: "💪" };
+  if (n >= 85) return { words: "Very likely", mark: "✅" };
+  if (n >= 70) return { words: "Likely", mark: "👍" };
+  if (n >= 50) return { words: "Somewhat likely", mark: "🌤️" };
+  return { words: "Not likely", mark: "⚠️" };
 }
 
 const BAND_NOTES = {
@@ -180,7 +172,7 @@ function SurvivalChance({ percent }: { percent: number | null }) {
       aria-label={
         value == null
           ? "Chance of success, not run yet"
-          : `${value} percent chance of success, grade ${letterGrade(value)}`
+          : `${value} percent chance of success, ${likelihood(value).words}`
       }
     >
       <svg viewBox="-18 0 240 150" className="h-36 w-[14.4rem]" aria-hidden="true">
@@ -282,7 +274,9 @@ function SurvivalChance({ percent }: { percent: number | null }) {
         </span>
       ) : null}
       {value != null ? (
-        <p className="-mt-4 font-display text-[6.5rem] font-black leading-none tracking-tight text-black">{letterGrade(value)}</p>
+        <p className="-mt-2 text-center font-display text-2xl font-black leading-tight tracking-tight text-black">
+          {likelihood(value).words} {likelihood(value).mark}
+        </p>
       ) : null}
       <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-900">Chance of success</p>
     </div>
