@@ -464,14 +464,6 @@ function sketchYears(plan: Plan, longevityAge: number): number[] {
   return years;
 }
 
-function niceCeil(n: number): number {
-  if (!(n > 0)) return 1;
-  const exp = 10 ** Math.floor(Math.log10(n));
-  const frac = n / exp;
-  const step = frac <= 1 ? 1 : frac <= 2 ? 2 : frac <= 5 ? 5 : 10;
-  return step * exp;
-}
-
 function atRank(sorted: number[], p: number): number {
   if (sorted.length === 0) return 0;
   if (sorted.length === 1) return sorted[0];
@@ -497,6 +489,7 @@ function FuturesSketch({
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animRef = useRef({ shown: 0, yMax: 0, band: 0 });
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -523,12 +516,21 @@ function FuturesSketch({
       const plotH = Math.max(1, height - pad.t - pad.b);
       const real = plan.assumptions.dollars !== "nominal";
       const years = traces?.years?.length ? traces.years : sketchYears(plan, longevityAge);
-      const series = traces ? (real ? traces.real : traces.nominal) : [];
-      let yMax = niceCeil(Math.max(startingSpendable(plan) * 2, 10_000));
-      if (showBands && bands && bands.length > 0) {
+      const full = traces ? (real ? traces.real : traces.nominal) : [];
+      const anim = animRef.current;
+      if (full.length < anim.shown) {
+        anim.shown = 0;
+        anim.band = 0;
+        anim.yMax = 0;
+      }
+      const gap = full.length - anim.shown;
+      if (gap > 0) anim.shown = Math.min(full.length, anim.shown + Math.min(16, Math.max(2, Math.round(gap * 0.12))));
+      const series = full.slice(0, anim.shown);
+      let target = Math.max(startingSpendable(plan) * 2, 10_000);
+      if (showBands && bands && bands.length > 0 && anim.shown >= full.length && full.length > 0) {
         let hi = 0;
         for (const band of bands) hi = Math.max(hi, real ? band.p90Real : band.p90);
-        if (hi > 0) yMax = niceCeil(hi * 1.08);
+        if (hi > 0) target = hi * 1.08;
       } else if (series.length > 0) {
         const last: number[] = [];
         for (const row of series) {
@@ -537,8 +539,14 @@ function FuturesSketch({
         }
         last.sort((a, b) => a - b);
         const hi = atRank(last, 0.9);
-        if (hi > 0) yMax = niceCeil(hi * 1.08);
+        if (hi > 0) target = hi * 1.12;
       }
+      if (!(anim.yMax > 0)) anim.yMax = target;
+      else anim.yMax += (target - anim.yMax) * 0.1;
+      const yMax = anim.yMax;
+      const bandsReady = Boolean(showBands && bands && bands.length > 1 && full.length > 0 && anim.shown >= full.length);
+      if (bandsReady) anim.band = Math.min(1, anim.band + 0.07);
+      else anim.band = 0;
       const xOf = (year: number) => {
         if (years.length <= 1) return pad.l + plotW / 2;
         const i = years.indexOf(year);
@@ -578,8 +586,7 @@ function FuturesSketch({
         ctx.rect(pad.l, pad.t, plotW, plotH);
         ctx.clip();
         ctx.beginPath();
-        const opacity = showBands ? 0.16 : series.length < 30 ? 0.7 : series.length < 150 ? 0.28 : 0.14;
-        ctx.strokeStyle = `rgba(90,104,118,${opacity})`;
+        ctx.strokeStyle = "rgba(90,104,118,0.28)";
         ctx.lineWidth = 1;
         for (const row of series) {
           let started = false;
@@ -596,7 +603,9 @@ function FuturesSketch({
         ctx.restore();
       }
 
-      if (showBands && bands && bands.length > 1) {
+      if (bandsReady && bands) {
+        ctx.save();
+        ctx.globalAlpha = anim.band;
         const ordered = bands.slice().sort((a, b) => a.year - b.year);
         const bandValue = (band: SurvivalBand, key: "p10" | "p50" | "p90") =>
           real ? band[`${key}Real`] : band[key];
@@ -653,17 +662,32 @@ function FuturesSketch({
         ctx.strokeStyle = "#1a2330";
         ctx.lineWidth = 2.5;
         ctx.stroke();
+        ctx.restore();
       }
     };
-    draw();
-    const observer = new ResizeObserver(draw);
+    let raf = 0;
+    let alive = true;
+    const frame = () => {
+      if (!alive) return;
+      draw();
+      const full = traces ? (plan.assumptions.dollars !== "nominal" ? traces.real : traces.nominal) : [];
+      const anim = animRef.current;
+      const busy = anim.shown < full.length || (showBands && full.length > 0 && anim.band < 0.99);
+      raf = busy ? requestAnimationFrame(frame) : 0;
+    };
+    frame();
+    const observer = new ResizeObserver(() => draw());
     observer.observe(wrap);
-    return () => observer.disconnect();
+    return () => {
+      alive = false;
+      if (raf) cancelAnimationFrame(raf);
+      observer.disconnect();
+    };
   }, [plan, longevityAge, traces, bands, showBands]);
 
   return (
-    <div ref={wrapRef} className="mt-3 min-h-[18rem] flex-1">
-      <canvas ref={canvasRef} className="block h-full w-full" />
+    <div ref={wrapRef} className="relative mt-2 min-h-0 w-full flex-1">
+      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
     </div>
   );
 }
@@ -818,7 +842,7 @@ export function PlanSurvival({
   }
   const checking = view.status === "running";
   return (
-    <div className={cn(card, "@min-[36rem]:flex @min-[36rem]:min-h-0 @min-[36rem]:flex-1 @min-[36rem]:flex-col")}>
+    <div className={cn(card, "flex h-full min-h-0 flex-1 flex-col")}>
       <SurvivalTitle />
       {stale && view.score ? <div className="mt-3"><MonteCarloStaleNotice onRun={onRun} /></div> : null}
       <div className="mt-3 flex flex-col items-center gap-3 @min-[32rem]:flex-row @min-[32rem]:items-start">

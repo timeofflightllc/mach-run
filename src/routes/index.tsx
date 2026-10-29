@@ -2472,7 +2472,7 @@ function Home() {
                             />
                           </div>
                         </div>
-                        <div className={cn("flex min-w-0 flex-col gap-3", simulatorFull && "@min-[56rem]/act:h-full")}>
+                        <div className="flex h-full min-h-0 min-w-0 flex-col gap-3">
                           <PhaseLabel id="ooda-simulator" label="The Simulator" />
                           <PlanSurvival
                             locked={!survivalOn}
