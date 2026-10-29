@@ -410,7 +410,7 @@ function MonthlyPayBar({
       : `That is ${usd(payShort)} a month short of the ${usd(gap.wanted)} goal.`;
   return (
     <GoalReadout
-      title="Monthly pay at retirement"
+      title="Possible monthly pay at retirement"
       left={
         <>
           <span className="tabular-nums">{usd(take)}</span> a month ({toward}% towards your goal) {from}
@@ -609,7 +609,6 @@ export function KpiStrip({
     roomCache.current = { key, value: sustainableRetirementIncome(plan, sim) };
   }
   const room = roomCache.current.value;
-  const drawnAmount = room ? (real ? room.withdrawalReal : room.withdrawalNominal) : null;
   const gap = incomeGap(plan, sim);
   const [includeGuaranteed, setIncludeGuaranteed] = useState(false);
   const airYear = ret?.incomeYear != null ? sim.years.find((row) => row.year === ret.incomeYear) : undefined;
@@ -705,12 +704,12 @@ export function KpiStrip({
   }
   const payTip = [
     ANNUAL_TIP,
-    drawnAmount != null
-      ? `${usd(drawnAmount)} is a separate number. It is the most you could withdraw from investments that year and still last to longevity. The plan does not take it unless spending needs it.`
-      : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+    "This number is not the maximum you could withdraw without running out of money.",
+    real
+      ? "This retirement pay figure is calculated from the first full calendar year on or after your retirement goal. It adds that year's guaranteed retirement pay (military retirement, VA, Social Security, pension, and any other retirement income) to the investment withdrawals the plan takes to cover spending, then brings the total back to today's dollars by inflation."
+      : "This retirement pay figure is calculated from the first full calendar year on or after your retirement goal. It adds that year's guaranteed retirement pay (military retirement, VA, Social Security, pension, and any other retirement income) to the investment withdrawals the plan takes to cover spending, in that year's dollars.",
+    "Below, Possible Monthly Pay At Retirement is the maximum pay you can expect without running out of money.",
+  ].join(" ");
   const payLabel = ret?.incomeYear ? `Retirement pay (${ret.incomeYear})` : "Retirement pay";
 
   return (

@@ -10,7 +10,7 @@ import {
 import { monthlyIncomeAt } from "@/lib/plan/engine";
 import { usd } from "@/lib/plan/format";
 import type { SurvivalScore } from "@/lib/plan/monte-carlo-run";
-import { nestEggTrack, peerCheer, peerRankLine, type PeerBrief, type PeerMark } from "@/lib/plan/peers";
+import { nestEggTrack, peerBriefing, peerRankLine, type PeerBrief, type PeerMark } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 
@@ -98,7 +98,7 @@ export function Verdict({
       {retLine ? (
         <p className="mt-3 text-sm leading-relaxed text-[#3d4a54]">{retLine}</p>
       ) : null}
-      {rank ? <PeerRankBlock rank={rank} /> : null}
+      {rank && brief ? <PeerRankBlock rank={rank} plan={plan} brief={brief} /> : null}
       {survivalUnlocked ? null : (
         <p className="mt-4 rounded-xl bg-[#f3f0e8] px-3.5 py-3 text-xs leading-relaxed text-[#3d4a54]">
           <Link
@@ -125,48 +125,63 @@ function PeerMeter({ mark }: { mark: PeerMark }) {
   const tick = Math.min(98, Math.max(2, pct));
   return (
     <div>
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="min-w-0 text-xs leading-snug text-[#3d4a54]">
-          <span className="font-semibold text-[#1a2330]">{mark.name}</span>
-          <span> · {mark.group}</span>
-        </p>
-        <p className="shrink-0 text-sm font-semibold text-[#1a2330]">{mark.place}</p>
-      </div>
+      <p className="min-w-0 text-xs leading-snug text-[#3d4a54]">
+        <span className="font-semibold text-[#1a2330]">{mark.name}</span>
+        <span> · {mark.group}</span>
+      </p>
       <div
-        className="relative mt-1.5 h-2.5"
+        className="relative mt-1 pt-6"
         role="img"
         aria-label={`${mark.name}: ${mark.place} of ${mark.group}`}
       >
-        <div className="absolute inset-0 flex overflow-hidden rounded-full">
-          {PEER_ZONES.map((zone) => (
-            <div key={zone.light} style={{ width: zone.width, background: zone.light }} />
-          ))}
-        </div>
-        {pct > 0 ? (
-          <div className="absolute inset-y-0 left-0 overflow-hidden rounded-full" style={{ width: `${pct}%` }}>
-            <div className="flex h-full" style={{ width: `${10000 / pct}%` }}>
-              {PEER_ZONES.map((zone) => (
-                <div key={zone.ink} style={{ width: zone.width, background: zone.ink }} />
-              ))}
-            </div>
+        <div className="relative h-5 overflow-hidden rounded-full">
+          <div className="absolute inset-0 flex">
+            {PEER_ZONES.map((zone) => (
+              <div key={zone.light} style={{ width: zone.width, background: zone.light }} />
+            ))}
           </div>
-        ) : null}
+          {pct > 0 ? (
+            <div className="absolute inset-y-0 left-0 overflow-hidden" style={{ width: `${pct}%` }}>
+              <div className="flex h-full" style={{ width: `${10000 / pct}%` }}>
+                {PEER_ZONES.map((zone) => (
+                  <div key={zone.ink} style={{ width: zone.width, background: zone.ink }} />
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <div className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-[#1a1a1a]" style={{ left: `${tick}%` }} />
+        </div>
         <div
-          className="absolute inset-y-[-3px] w-0.5 -translate-x-1/2 rounded-full bg-[#1a1a1a]"
+          className="pointer-events-none absolute top-0 flex -translate-x-1/2 flex-col items-center"
           style={{ left: `${tick}%` }}
-        />
+        >
+          <span className="whitespace-nowrap text-[11px] font-semibold leading-none text-[#1a2330]">
+            {mark.place}
+          </span>
+          <svg width="12" height="8" viewBox="0 0 12 8" aria-hidden="true" className="mt-[5px]">
+            <polygon points="6,8 0.5,0 11.5,0" fill="#1a1a1a" />
+          </svg>
+        </div>
       </div>
     </div>
   );
 }
 
-function PeerRankBlock({ rank }: { rank: NonNullable<ReturnType<typeof peerRankLine>> }) {
-  const cheer = peerCheer(rank.marks);
+function PeerRankBlock({
+  rank,
+  plan,
+  brief,
+}: {
+  rank: NonNullable<ReturnType<typeof peerRankLine>>;
+  plan: Plan;
+  brief: PeerBrief;
+}) {
+  const briefing = peerBriefing(plan, brief, rank.marks);
   return (
     <div className="mt-4">
       <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#3d4a54]">{rank.title}</p>
-      {cheer ? <p className="mt-1 text-sm font-semibold text-[#1a2330]">{cheer}</p> : null}
-      <div className="mt-3 space-y-3">
+      {briefing ? <p className="mt-1 text-sm font-medium leading-snug text-[#1a2330]">{briefing}</p> : null}
+      <div className="mt-3 space-y-4">
         {rank.marks.map((mark) => (
           <PeerMeter key={mark.name} mark={mark} />
         ))}

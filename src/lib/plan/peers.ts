@@ -187,15 +187,126 @@ export function peerRankLine(brief: {
   return { title, lines, marks };
 }
 
-export function peerCheer(marks: { percentile: number }[]): string | null {
+function firstName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "";
+  return trimmed.split(/\s+/)[0] ?? trimmed;
+}
+
+function householdWho(plan: Plan): string {
+  const primary = firstName(plan.primary.name);
+  const spouseOn = Boolean(plan.spouse.name.trim() || plan.spouse.birthDate);
+  const spouse = spouseOn ? firstName(plan.spouse.name) : "";
+  if (primary && spouse) return `${primary} and ${spouse}`;
+  if (primary) return primary;
+  if (spouse) return spouse;
+  return "You";
+}
+
+function heavyConsumerDebt(plan: Plan): boolean {
+  const rows = plan.liabilities.filter((row) => row.balance > 500);
+  if (!rows.length) return false;
+  const consumer = rows.filter(
+    (row) => row.kind === "credit_card" || row.kind === "personal" || row.aprPct >= 8,
+  );
+  const total = consumer.reduce((sum, row) => sum + row.balance, 0);
+  const highRate = consumer.some((row) => row.aprPct >= 10 && row.balance >= 2000);
+  return highRate || total >= 8000 || consumer.length >= 3;
+}
+
+function pickLine(seed: string, options: string[]): string {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) hash = (hash * 33 + seed.charCodeAt(i)) >>> 0;
+  return options[hash % options.length] ?? options[0];
+}
+
+function named(who: string, line: string): string {
+  if (who === "You") return line.charAt(0).toUpperCase() + line.slice(1);
+  return `${who}, ${line}`;
+}
+
+/** 40,000-foot read of the peer bars. Wording shifts with the household, not on every paint. */
+export function peerBriefing(
+  plan: Plan,
+  brief: { netWorth: number; savingsRatePct: number | null },
+  marks: { percentile: number }[],
+): string | null {
   if (!marks.length) return null;
   const low = Math.min(...marks.map((mark) => mark.percentile));
   const high = Math.max(...marks.map((mark) => mark.percentile));
-  if (low >= 90) return "Ahead of almost every household on both.";
-  if (low >= 75) return "Ahead of most households on both.";
-  if (high >= 90 && low >= 50) return "A strong showing for this age.";
-  if (high >= 60) return "Ahead of the typical household on at least one.";
-  return null;
+  const both = marks.length > 1;
+  const who = householdWho(plan);
+  const debt = heavyConsumerDebt(plan);
+  const save = brief.savingsRatePct;
+  const thinSave = save != null && save < 10;
+  const solidSave = save != null && save >= 15;
+  const tier =
+    low >= 75 ? "lead" : high >= 85 && low >= 40 ? "mixed" : low >= 40 ? "middle" : "work";
+  const seed = `${who}|${tier}|${Math.round(low)}|${debt ? 1 : 0}|${Math.round(brief.netWorth / 10000)}`;
+
+  if (tier === "lead") {
+    const open = pickLine(seed + "a", [
+      "you're crushing it.",
+      "this household is winning.",
+      "you have built a real lead.",
+    ]);
+    const stand = both
+      ? pickLine(seed + "b", [
+          "Net worth and income are both ahead of most households your age.",
+          "On both bars, you are ahead of most people your age.",
+          "The comparison is not close. You are ahead of most households your age on both.",
+        ])
+      : "You are ahead of most households in this comparison.";
+    const keep = debt
+      ? "Keep the lead, and clear any high-interest debt before lifestyle spending grows into it."
+      : pickLine(seed + "c", [
+          "Keep saving, and don't let new spending spend the lead.",
+          "Stay on this heading. The plan you already run is the one to protect.",
+          "The work now is to keep it. Save what you save, and don't add spending that erases it.",
+        ]);
+    return `${named(who, open)} ${stand} ${keep}`;
+  }
+
+  if (tier === "mixed") {
+    const open = pickLine(seed + "a", [
+      "this is a strong household.",
+      "you are ahead where it counts.",
+      "one of these bars is doing real work.",
+    ]);
+    const stand = "You are well ahead on one comparison and still in the hunt on the other.";
+    const keep = debt
+      ? "Pay the highest-interest debt first, then point that payment at the bar that is still catching up."
+      : "Keep saving. The next gains come from staying with it, not from a new trick.";
+    return `${named(who, open)} ${stand} ${keep}`;
+  }
+
+  if (tier === "middle") {
+    const open = pickLine(seed + "a", [
+      "well done. You are in the middle of the pack, and that took work.",
+      "you are right around the typical household your age. That is a real place to stand.",
+      "you have done the unglamorous work. You sit near the middle for your age.",
+    ]);
+    const next = debt
+      ? "The debt on this plan is the drag. Highest interest first, or a debt snowball if a quick payoff will keep you going. Then send that payment to savings."
+      : solidSave
+        ? "The savings rate is already doing its job. Stay with it, and any spending you trim is the next rung."
+        : thinSave
+          ? "Raise what you save each month. That is the cleanest way up from here, along with spending you will not miss."
+          : "Keep saving, and spending you can cut becomes the next step up.";
+    return `${named(who, open)} ${next}`;
+  }
+
+  const open = pickLine(seed + "a", [
+    "you have ground to make up, and it is still a fixable problem.",
+    "the comparison is behind, not stuck. You can close it.",
+    "households your age are ahead right now. That gap is not permanent.",
+  ]);
+  const pedal = debt
+    ? "Pedal hard. Pay the highest-interest debt first, or run a debt snowball if a quick win will keep you in it. Then send that old payment to savings, and cut spending you will not miss."
+    : thinSave
+      ? "Pedal hard. Cut spending you will not miss, and raise what you save each month. Those two moves are the whole catch-up."
+      : "Pedal hard. Cut spending you will not miss, and put more into savings every month. Time still helps if you start now.";
+  return `${named(who, open)} ${pedal}`;
 }
 
 function monthsBetween(a: Date, b: Date): number {
