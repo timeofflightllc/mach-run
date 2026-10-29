@@ -1630,6 +1630,7 @@ function Home() {
           open,
           pass: (prev[key]?.pass ?? 0) + 1,
           progress: 0,
+          live: null,
         },
       }));
     }
@@ -1637,13 +1638,13 @@ function Home() {
       if (survivalTask.current?.controller !== controller) return;
       void runSurvival(snapshot, swing, {
         signal,
-        onProgress: (done, paths) => {
+        onProgress: (done, paths, traces) => {
           if (survivalTask.current?.controller !== controller) return;
           const progress = paths > 0 ? done / paths : 0;
           setSurvival((prev) => {
             const cur = prev[key];
             if (!cur || cur.status !== "running") return prev;
-            return { ...prev, [key]: { ...cur, progress } };
+            return { ...prev, [key]: { ...cur, progress, live: traces } };
           });
         },
       }).then(

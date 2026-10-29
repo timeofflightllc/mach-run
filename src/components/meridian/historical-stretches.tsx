@@ -181,7 +181,7 @@ export function FuturesCard({
         {score} of 100 possible futures
       </p>
       <p className="mt-1 text-sm leading-snug text-[#1a2330]">still have money at age {longevityAge}.</p>
-      <p className="mt-2 text-sm leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden sm:text-base sm:leading-snug">
+      <p className="mt-2 text-sm leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden sm:text-sm sm:leading-snug">
         One thousand random market futures, centered on the return you typed in OBSERVE Assumptions.
         {runOutAge != null && failed > 0
           ? ` In the ${Math.max(0, 100 - score)} random futures where your plan ran out of money prior to longevity age (${longevityAge}), the middle one lasted until age ${runOutAge}.`

@@ -61,7 +61,7 @@ type PathResult = { depletedAge: number | null; yearEnds?: YearEnd[] };
 
 export type SurvivalOptions = {
   signal?: AbortSignal;
-  onProgress?: (done: number, paths: number) => void;
+  onProgress?: (done: number, paths: number, traces: SurvivalTraces | null) => void;
   /** Test seam. Production callers omit this and the engine runs the path. */
   runOne?: (plan: Plan, shocks: ReturnShocks) => PathResult;
 };
@@ -171,7 +171,7 @@ async function execute(
     }
     const done = path + 1;
     if (done === PATHS || performance.now() - paintedAt >= PAINT_MS) {
-      opts?.onProgress?.(done, PATHS);
+      opts?.onProgress?.(done, PATHS, tracesFrom(columns));
       await paint();
       if (opts?.signal?.aborted) return null;
       paintedAt = performance.now();

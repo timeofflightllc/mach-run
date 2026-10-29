@@ -2,7 +2,10 @@ import { Link } from "@tanstack/react-router";
 import { RefreshCw } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { SwingName } from "@/lib/plan/monte-carlo";
-import { type SurvivalScore } from "@/lib/plan/monte-carlo-run";
+import { type SurvivalBand, type SurvivalScore, type SurvivalTraces } from "@/lib/plan/monte-carlo-run";
+import { ageYears, monthStart, validIso } from "@/lib/plan/dates";
+import { startingSpendable } from "@/lib/plan/engine";
+import { usdCompact } from "@/lib/plan/format";
 import { cn } from "@/lib/utils";
 import { BACK_NOTE, CardHelp, FORWARD_NOTE, FuturesCard, HistoricalStretches } from "@/components/meridian/historical-stretches";
 import { useBoydQuotes } from "@/components/meridian/use-boyd-quotes";
@@ -18,6 +21,8 @@ export type SurvivalView = {
   pass: number;
   /** 0 to 1 while status is running. The button fill. */
   progress: number;
+  /** Paths drawn so far. Only set while a run is in progress. */
+  live?: SurvivalTraces | null;
 };
 
 const LOCKED_MIN_KEY = "mach-plan-survival-min";
@@ -447,6 +452,222 @@ export function RunMonteCarloButton({
   );
 }
 
+function sketchYears(plan: Plan, longevityAge: number): number[] {
+  const start = Number(plan.assumptions.asOfDate.slice(0, 4));
+  if (!Number.isFinite(start)) return [];
+  let span = 30;
+  if (validIso(plan.primary.birthDate)) {
+    span = Math.max(1, longevityAge - ageYears(plan.primary.birthDate, monthStart(plan.assumptions.asOfDate)));
+  }
+  const years: number[] = [];
+  for (let year = start; year <= start + span; year++) years.push(year);
+  return years;
+}
+
+function niceCeil(n: number): number {
+  if (!(n > 0)) return 1;
+  const exp = 10 ** Math.floor(Math.log10(n));
+  const frac = n / exp;
+  const step = frac <= 1 ? 1 : frac <= 2 ? 2 : frac <= 5 ? 5 : 10;
+  return step * exp;
+}
+
+function atRank(sorted: number[], p: number): number {
+  if (sorted.length === 0) return 0;
+  if (sorted.length === 1) return sorted[0];
+  const rank = p * (sorted.length - 1);
+  const lo = Math.floor(rank);
+  const hi = Math.ceil(rank);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] * (hi - rank) + sorted[hi] * (rank - lo);
+}
+
+function FuturesSketch({
+  plan,
+  longevityAge,
+  traces,
+  bands,
+  showBands,
+}: {
+  plan: Plan;
+  longevityAge: number;
+  traces: SurvivalTraces | null;
+  bands: SurvivalBand[] | null;
+  showBands: boolean;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    const canvas = canvasRef.current;
+    if (!wrap || !canvas) return;
+    const draw = () => {
+      const width = wrap.clientWidth;
+      const height = wrap.clientHeight;
+      if (width < 8 || height < 8) return;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, width, height);
+
+      const pad = { l: 58, r: 12, t: 10, b: 26 };
+      const plotW = Math.max(1, width - pad.l - pad.r);
+      const plotH = Math.max(1, height - pad.t - pad.b);
+      const real = plan.assumptions.dollars !== "nominal";
+      const years = traces?.years?.length ? traces.years : sketchYears(plan, longevityAge);
+      const series = traces ? (real ? traces.real : traces.nominal) : [];
+      let yMax = niceCeil(Math.max(startingSpendable(plan) * 2, 10_000));
+      if (showBands && bands && bands.length > 0) {
+        let hi = 0;
+        for (const band of bands) hi = Math.max(hi, real ? band.p90Real : band.p90);
+        if (hi > 0) yMax = niceCeil(hi * 1.08);
+      } else if (series.length > 0) {
+        const last: number[] = [];
+        for (const row of series) {
+          const value = row[row.length - 1];
+          if (Number.isFinite(value)) last.push(value);
+        }
+        last.sort((a, b) => a - b);
+        const hi = atRank(last, 0.9);
+        if (hi > 0) yMax = niceCeil(hi * 1.08);
+      }
+      const xOf = (year: number) => {
+        if (years.length <= 1) return pad.l + plotW / 2;
+        const i = years.indexOf(year);
+        const t = i >= 0 ? i / (years.length - 1) : 0;
+        return pad.l + t * plotW;
+      };
+      const yOf = (value: number) => pad.t + (1 - Math.min(yMax, Math.max(0, value)) / yMax) * plotH;
+
+      ctx.strokeStyle = "#e6e1d6";
+      ctx.lineWidth = 1;
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "11px sans-serif";
+      ctx.textAlign = "right";
+      ctx.textBaseline = "middle";
+      for (let tick = 0; tick <= 4; tick++) {
+        const value = (yMax * tick) / 4;
+        const y = yOf(value);
+        ctx.beginPath();
+        ctx.moveTo(pad.l, y);
+        ctx.lineTo(pad.l + plotW, y);
+        ctx.stroke();
+        ctx.fillText(usdCompact(value), pad.l - 6, y);
+      }
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      const labelEvery = Math.max(1, Math.ceil(years.length / 6));
+      years.forEach((year, index) => {
+        if (index % labelEvery !== 0 && index !== years.length - 1) return;
+        ctx.fillText(String(year), xOf(year), pad.t + plotH + 6);
+      });
+      ctx.strokeStyle = "#d5d0c6";
+      ctx.strokeRect(pad.l, pad.t, plotW, plotH);
+
+      if (series.length > 0 && years.length > 0) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(pad.l, pad.t, plotW, plotH);
+        ctx.clip();
+        ctx.beginPath();
+        const opacity = showBands ? 0.16 : series.length < 30 ? 0.7 : series.length < 150 ? 0.28 : 0.14;
+        ctx.strokeStyle = `rgba(90,104,118,${opacity})`;
+        ctx.lineWidth = 1;
+        for (const row of series) {
+          let started = false;
+          for (let i = 0; i < years.length && i < row.length; i++) {
+            const py = yOf(row[i]);
+            const px = xOf(years[i]);
+            if (!started) {
+              ctx.moveTo(px, py);
+              started = true;
+            } else ctx.lineTo(px, py);
+          }
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      if (showBands && bands && bands.length > 1) {
+        const ordered = bands.slice().sort((a, b) => a.year - b.year);
+        const bandValue = (band: SurvivalBand, key: "p10" | "p50" | "p90") =>
+          real ? band[`${key}Real`] : band[key];
+        const fillBetween = (lowKey: "p10" | "p90", highKey: "p10" | "p90", color: string) => {
+          ctx.beginPath();
+          ordered.forEach((band, index) => {
+            const px = xOf(band.year);
+            const py = yOf(bandValue(band, highKey));
+            if (index === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          });
+          for (let index = ordered.length - 1; index >= 0; index--) {
+            const band = ordered[index];
+            ctx.lineTo(xOf(band.year), yOf(bandValue(band, lowKey)));
+          }
+          ctx.closePath();
+          ctx.fillStyle = color;
+          ctx.fill();
+        };
+        fillBetween("p10", "p90", "rgba(58,138,88,0.28)");
+        if (series.length > 0) {
+          ctx.beginPath();
+          years.forEach((year, index) => {
+            const values: number[] = [];
+            for (const row of series) {
+              const value = row[index];
+              if (Number.isFinite(value)) values.push(value);
+            }
+            values.sort((a, b) => a - b);
+            const py = yOf(atRank(values, 0.75));
+            if (index === 0) ctx.moveTo(xOf(year), py);
+            else ctx.lineTo(xOf(year), py);
+          });
+          for (let index = years.length - 1; index >= 0; index--) {
+            const values: number[] = [];
+            for (const row of series) {
+              const value = row[index];
+              if (Number.isFinite(value)) values.push(value);
+            }
+            values.sort((a, b) => a - b);
+            ctx.lineTo(xOf(years[index]), yOf(atRank(values, 0.25)));
+          }
+          ctx.closePath();
+          ctx.fillStyle = "rgba(31,107,64,0.45)";
+          ctx.fill();
+        }
+        ctx.beginPath();
+        ordered.forEach((band, index) => {
+          const px = xOf(band.year);
+          const py = yOf(bandValue(band, "p50"));
+          if (index === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        });
+        ctx.strokeStyle = "#1a2330";
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+      }
+    };
+    draw();
+    const observer = new ResizeObserver(draw);
+    observer.observe(wrap);
+    return () => observer.disconnect();
+  }, [plan, longevityAge, traces, bands, showBands]);
+
+  return (
+    <div ref={wrapRef} className="mt-3 min-h-[18rem] flex-1">
+      <canvas ref={canvasRef} className="block h-full w-full" />
+    </div>
+  );
+}
+
 export function MonteCarloStaleNotice({ onRun }: { onRun?: () => void }) {
   const [sent, setSent] = useState(false);
   return (
@@ -657,6 +878,15 @@ export function PlanSurvival({
         again={!checking && Boolean(view.score)}
         onClick={onRun}
       />
+      {plan ? (
+        <FuturesSketch
+          plan={plan}
+          longevityAge={longevityAge}
+          traces={checking ? view.live ?? null : view.score?.traces ?? null}
+          bands={checking ? null : view.score?.bands ?? null}
+          showBands={!checking && Boolean(view.score && view.score.bands.length > 1)}
+        />
+      ) : null}
       <div className="mt-3 flex items-end justify-between gap-3 border-t border-slate-200 pt-2">
         <p className="max-w-sm text-[11px] leading-snug text-slate-500">
           Plan Survival is a Monte Carlo rating. It runs 1,000 random market futures based upon calm, typical, or rough markets (selected above). The number
