@@ -273,11 +273,11 @@ function SurvivalChance({ percent }: { percent: number | null }) {
           {BAND_NOTES[bandTip.tone]}
         </span>
       ) : null}
-      <p className="-mt-4 max-w-[14.4rem] text-center text-[11px] font-bold uppercase leading-snug tracking-[0.12em] text-slate-900">
+      <p className="-mt-4 max-w-[14.4rem] text-center text-[11px] font-bold uppercase leading-snug tracking-[0.12em] text-slate-900 md:max-w-none md:text-sm">
         Probability of Mission Success
       </p>
       {value != null ? (
-        <p className="mt-1.5 text-center font-display text-2xl font-black leading-tight tracking-tight text-black">
+        <p className="mt-1.5 text-center font-display text-2xl font-black leading-tight tracking-tight text-black md:text-4xl">
           {likelihood(value).words} {likelihood(value).mark}
         </p>
       ) : null}
@@ -446,6 +446,7 @@ export function RunMonteCarloButton({
 }
 
 export function MonteCarloStaleNotice({ onRun }: { onRun?: () => void }) {
+  const [sent, setSent] = useState(false);
   return (
     <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-lg bg-[#e8c547] px-4 py-3">
       <p className="min-w-0 flex-1 text-sm font-medium leading-relaxed text-[#1a1408]">
@@ -454,8 +455,13 @@ export function MonteCarloStaleNotice({ onRun }: { onRun?: () => void }) {
       {onRun ? (
         <button
           type="button"
-          onClick={onRun}
-          className="h-8 shrink-0 rounded-lg bg-[#1a1408] px-3 text-xs font-medium text-white hover:bg-[#2c2614]"
+          disabled={sent}
+          onClick={() => {
+            if (sent) return;
+            setSent(true);
+            onRun();
+          }}
+          className="h-8 shrink-0 rounded-lg bg-[#1a1408] px-3 text-xs font-medium text-white hover:bg-[#2c2614] disabled:cursor-not-allowed disabled:bg-[#9a9484] disabled:text-white/80"
         >
           Re-run Monte Carlo
         </button>
