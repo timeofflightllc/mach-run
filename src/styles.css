@@ -464,3 +464,15 @@
 .quiz-swipe-in {
   animation: quiz-swipe-in 520ms cubic-bezier(0.22, 0.85, 0.32, 1) both;
 }
+
+@media (max-width: 767px) {
+  .recharts-tooltip-wrapper {
+    transition: none !important;
+    pointer-events: none !important;
+  }
+  .mach-chart-tip,
+  .recharts-default-tooltip {
+    max-width: min(200px, 68vw) !important;
+    white-space: normal !important;
+  }
+}

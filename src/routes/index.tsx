@@ -859,21 +859,70 @@ function Home() {
   const { user, isPending } = useCurrentUserState();
   const signedIn = Boolean(user?.id);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const headerRef = useRef<HTMLElement>(null);
+  const headerCollapsedRef = useRef(false);
+  const headerAnimReady = useRef(false);
   useEffect(() => {
     setHeaderCollapsed(readHeaderCollapsed());
+    const id = window.setTimeout(() => {
+      headerAnimReady.current = true;
+    }, 400);
+    return () => window.clearTimeout(id);
   }, []);
-  function toggleHeader() {
-    setHeaderCollapsed((on) => {
-      const next = !on;
-      try {
-        if (next) window.localStorage.setItem(HEADER_COLLAPSE_KEY, "1");
-        else window.localStorage.removeItem(HEADER_COLLAPSE_KEY);
-      } catch {
-        /* private mode */
-      }
-      return next;
-    });
+  function writeHeaderCollapsed(next: boolean) {
+    try {
+      if (next) window.localStorage.setItem(HEADER_COLLAPSE_KEY, "1");
+      else window.localStorage.removeItem(HEADER_COLLAPSE_KEY);
+    } catch {
+      /* private mode */
+    }
   }
+  function commitHeader(next: boolean) {
+    if (headerCollapsedRef.current === next) return;
+    const el = headerRef.current;
+    const mobile = window.matchMedia("(max-width: 767px)").matches;
+    if (mobile && el && headerAnimReady.current) {
+      el.style.transition = "none";
+      el.style.overflow = "hidden";
+      el.style.maxHeight = `${Math.ceil(el.getBoundingClientRect().height)}px`;
+    }
+    headerCollapsedRef.current = next;
+    writeHeaderCollapsed(next);
+    setHeaderCollapsed(next);
+  }
+  function toggleHeader() {
+    commitHeader(!headerCollapsedRef.current);
+  }
+  useLayoutEffect(() => {
+    headerCollapsedRef.current = headerCollapsed;
+    const el = headerRef.current;
+    if (!el) return;
+    const mobile = window.matchMedia("(max-width: 767px)").matches;
+    if (!mobile || !headerAnimReady.current) {
+      if (!mobile) {
+        el.style.maxHeight = "";
+        el.style.overflow = "";
+        el.style.transition = "";
+      }
+      return;
+    }
+    const to = el.scrollHeight;
+    const id = requestAnimationFrame(() => {
+      const node = headerRef.current;
+      if (!node) return;
+      node.style.overflow = "hidden";
+      node.style.transition = "max-height 360ms cubic-bezier(0.22, 1, 0.36, 1)";
+      node.style.maxHeight = `${to}px`;
+      const clear = (event: TransitionEvent) => {
+        if (event.propertyName !== "max-height") return;
+        node.style.maxHeight = "none";
+        node.style.overflow = "";
+        node.removeEventListener("transitionend", clear);
+      };
+      node.addEventListener("transitionend", clear);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [headerCollapsed]);
   const ent = useEntitlement();
   const [step, setStep] = useState<StepId>(actPlace ? "act" : "family");
   const sheet = hasBalanceSheet(ent.plan);
@@ -1252,6 +1301,31 @@ function Home() {
   const stepsRef = useRef<HTMLDivElement>(null);
   const engagedRef = useRef(false);
   const [stepsH, setStepsH] = useState<number | null>(null);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 767px)");
+    let last = window.scrollY;
+    function topOf(event: Event) {
+      const steps = stepsRef.current;
+      if (event.currentTarget === steps && steps) return steps.scrollTop;
+      return window.scrollY;
+    }
+    function onScroll(event: Event) {
+      if (!mq.matches) return;
+      const y = topOf(event);
+      const delta = y - last;
+      last = y;
+      if (delta > 12 && y > 48) commitHeader(true);
+      else if (delta < -1 && y <= 4) commitHeader(false);
+    }
+    const steps = stepsRef.current;
+    window.addEventListener("scroll", onScroll, { passive: true });
+    steps?.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      steps?.removeEventListener("scroll", onScroll);
+    };
+  }, [stepsH]);
 
   function stepsHeight() {
     const header = document.getElementById("mach-header");
@@ -1849,6 +1923,7 @@ function Home() {
       <WelcomeEmailPreviewOverlay />
       <header
         id="mach-header"
+        ref={headerRef}
         className="canopy-bar sticky top-0 z-30 border-b border-border"
       >
         {headerCollapsed ? (

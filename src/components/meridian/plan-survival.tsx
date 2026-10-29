@@ -171,10 +171,13 @@ function SurvivalChance({ percent }: { percent: number | null }) {
       className="flex shrink-0 flex-col items-center"
       aria-label={
         value == null
-          ? "Chance of success, not run yet"
-          : `${value} percent chance of success, ${likelihood(value).words}`
+          ? "Probability of Mission Success, not run yet"
+          : `${value} percent probability of mission success, ${likelihood(value).words}`
       }
     >
+      <p className="mb-1 max-w-[14.4rem] text-center text-[11px] font-bold uppercase leading-snug tracking-[0.12em] text-slate-900">
+        Probability of Mission Success
+      </p>
       <svg viewBox="-18 0 240 150" className="h-36 w-[14.4rem]" aria-hidden="true">
         <path
           d={gaugeArc(0, 70)}
@@ -278,7 +281,6 @@ function SurvivalChance({ percent }: { percent: number | null }) {
           {likelihood(value).words} {likelihood(value).mark}
         </p>
       ) : null}
-      <p className="mt-1 text-[11px] font-bold uppercase tracking-[0.16em] text-slate-900">Chance of success</p>
     </div>
   );
 }

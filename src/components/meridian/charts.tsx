@@ -34,6 +34,13 @@ const tooltipStyle = {
   color: "#1a2330",
 };
 
+const tipFollow = {
+  allowEscapeViewBox: { x: true, y: true },
+  isAnimationActive: false,
+  animationDuration: 0,
+  wrapperStyle: { pointerEvents: "none" as const, zIndex: 30 },
+};
+
 const chartCard =
   "rounded-xl bg-white p-4 text-slate-800 shadow-[0_0_0_1px_#c8d2de] sm:p-5";
 
@@ -143,7 +150,7 @@ function NetWorthTip({
     .sort((a, b) => rank(a) - rank(b));
   const title = labelFormatter && label != null ? labelFormatter(label, payload) : label;
   return (
-    <div style={{ ...tooltipStyle, margin: 0, padding: 10, whiteSpace: "nowrap" }}>
+    <div className="mach-chart-tip" style={{ ...tooltipStyle, margin: 0, padding: 10, whiteSpace: "nowrap" }}>
       {title != null && title !== "" ? (
         <p style={{ margin: 0, color: "#1a2330" }}>{title}</p>
       ) : null}
@@ -1125,6 +1132,7 @@ export function WealthChart({
               width={56}
             />
             <Tooltip
+              {...tipFollow}
               formatter={formatTip}
               labelFormatter={(t) => formatAxisTick(t as string | number, ticks)}
               contentStyle={tooltipStyle}
@@ -1335,6 +1343,7 @@ export function CashChart({
               width={56}
             />
             <Tooltip
+              {...tipFollow}
               formatter={formatTip}
               labelFormatter={(t) => formatCashTip(t as string | number, ticks)}
               contentStyle={tooltipStyle}
@@ -1614,6 +1623,7 @@ export function NetWorthChart({
                 interval={0}
               />
               <Tooltip
+                {...tipFollow}
                 content={<NetWorthTip bottomToTop={visibleKeys} />}
                 labelFormatter={(t) => formatAxisTick(t as string | number, ticks)}
               />
@@ -1882,13 +1892,14 @@ export function MonteCarloBandChart({
               allowDataOverflow
             />
             <Tooltip
+              {...tipFollow}
               content={({ active, payload, label }) => {
                 const row = payload?.[0]?.payload as
                   | { low?: number; mid?: number; high?: number; innerLow?: number; innerHigh?: number }
                   | undefined;
                 if (!active || row?.mid == null || row.low == null || row.high == null) return null;
                 return (
-                  <div style={{ ...tooltipStyle, padding: "8px 10px", maxWidth: 260 }}>
+                  <div className="mach-chart-tip" style={{ ...tooltipStyle, padding: "8px 10px", maxWidth: 260 }}>
                     <p style={{ margin: 0, fontWeight: 600 }}>{label}</p>
                     <p style={{ margin: "8px 0 0", fontWeight: 600 }}>Middle future</p>
                     <p style={{ margin: 0 }}>{usd(row.mid)}</p>
