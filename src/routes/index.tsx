@@ -859,7 +859,6 @@ function Home() {
   const { user, isPending } = useCurrentUserState();
   const signedIn = Boolean(user?.id);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
-  const [headerReady, setHeaderReady] = useState(false);
   const [headerSettled, setHeaderSettled] = useState(true);
   const headerCollapsedRef = useRef(false);
   const headerSettleTimer = useRef<number | null>(null);
@@ -867,8 +866,6 @@ function Home() {
     const stored = readHeaderCollapsed();
     headerCollapsedRef.current = stored;
     setHeaderCollapsed(stored);
-    const id = window.setTimeout(() => setHeaderReady(true), 50);
-    return () => window.clearTimeout(id);
   }, []);
   function writeHeaderCollapsed(next: boolean) {
     try {
@@ -1895,19 +1892,12 @@ function Home() {
         id="mach-header"
         className="canopy-bar sticky top-0 z-30 border-b border-border"
       >
+        <div>
         <div
           className={cn(
-            "grid",
-            headerReady &&
-              "transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-          )}
-          style={{ gridTemplateRows: headerCollapsed ? "1fr 0fr" : "0fr 1fr" }}
-        >
-        <div
-          className={cn(
-            "min-h-0 transition-opacity duration-300",
-            !headerCollapsed || !headerSettled ? "overflow-hidden" : "overflow-visible",
-            headerCollapsed ? "opacity-100" : "pointer-events-none opacity-0",
+            "overflow-hidden transition-[max-height,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+            headerCollapsed ? "max-h-44 opacity-100" : "pointer-events-none max-h-0 opacity-0",
+            headerCollapsed && headerSettled && "overflow-visible",
           )}
           inert={!headerCollapsed}
         >
@@ -1962,9 +1952,9 @@ function Home() {
         </div>
         <div
           className={cn(
-            "min-h-0 transition-opacity duration-300",
-            headerCollapsed || !headerSettled ? "overflow-hidden" : "overflow-visible",
-            headerCollapsed ? "pointer-events-none opacity-0" : "opacity-100",
+            "overflow-hidden transition-[max-height,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+            headerCollapsed ? "pointer-events-none max-h-0 opacity-0" : "max-h-[22rem] opacity-100",
+            !headerCollapsed && headerSettled && "overflow-visible",
           )}
           inert={headerCollapsed}
         >

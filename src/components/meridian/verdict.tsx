@@ -91,7 +91,7 @@ export function Verdict({
       <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#3d4a54]">
         BLUF (Bottom Line Up Front)
       </p>
-      <p className="mt-2 font-sans text-[1.65rem] font-medium leading-tight text-[#1a2330]">
+      <p className="mt-2 font-sans text-[1.15rem] font-medium leading-snug text-[#1a2330] sm:text-[1.65rem] sm:leading-tight">
         {egg ? <NestEggHeadline egg={egg} /> : body}
       </p>
       {egg ? (
