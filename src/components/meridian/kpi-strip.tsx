@@ -51,7 +51,7 @@ function guaranteedAtGoal(plan: Plan, sim: SimResult): { monthly: number; source
 }
 
 const ANNUAL_TIP =
-  "The first full calendar year of Actual Income Retired (A.I.R.) in the ledger. That is the income your spending is scheduled to take: guaranteed retirement pay plus withdrawals.";
+  "This is the first full calendar year of Actual Income Retired (A.I.R.). It is the paycheck this plan is scheduled to take: guaranteed retirement pay, plus only the investment withdrawals your spending needs.";
 
 function HoverLabel({ label, tip }: { label: string; tip?: string }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -706,7 +706,7 @@ export function KpiStrip({
   const payTip = [
     ANNUAL_TIP,
     drawnAmount != null
-      ? `${usd(drawnAmount)} available for withdrawal from investments without overspending.`
+      ? `${usd(drawnAmount)} is a separate number. It is the most you could withdraw from investments that year and still last to longevity. The plan does not take it unless spending needs it.`
       : "",
   ]
     .filter(Boolean)
