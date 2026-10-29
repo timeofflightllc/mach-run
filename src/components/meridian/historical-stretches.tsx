@@ -47,6 +47,7 @@ export const BACK_NOTE = (
 
 export function CardHelp({ note }: { note: ReactNode }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
   const closeTimer = useRef<number | null>(null);
   const [open, setOpen] = useState(false);
   const [box, setBox] = useState<{ top: number; left: number; width: number } | null>(null);
@@ -72,6 +73,35 @@ export function CardHelp({ note }: { note: ReactNode }) {
     closeTimer.current = window.setTimeout(() => setOpen(false), 120);
   }
 
+  function closeNow() {
+    if (closeTimer.current != null) window.clearTimeout(closeTimer.current);
+    setOpen(false);
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    function outside(target: Node | null) {
+      if (!target) return true;
+      if (buttonRef.current?.contains(target)) return false;
+      if (popRef.current?.contains(target)) return false;
+      return true;
+    }
+    function onPointer(event: PointerEvent) {
+      if (!outside(event.target as Node | null)) return;
+      closeNow();
+    }
+    function onScroll(event: Event) {
+      if (!outside(event.target as Node | null)) return;
+      closeNow();
+    }
+    document.addEventListener("pointerdown", onPointer, true);
+    window.addEventListener("scroll", onScroll, true);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer, true);
+      window.removeEventListener("scroll", onScroll, true);
+    };
+  }, [open]);
+
   useEffect(() => {
     return () => {
       if (closeTimer.current != null) window.clearTimeout(closeTimer.current);
@@ -84,10 +114,17 @@ export function CardHelp({ note }: { note: ReactNode }) {
         ref={buttonRef}
         type="button"
         aria-label="What this card means"
+        aria-expanded={open}
         onMouseEnter={show}
         onMouseLeave={hide}
         onFocus={show}
         onBlur={hide}
+        onPointerDown={(event) => {
+          if (event.pointerType !== "touch") return;
+          event.preventDefault();
+          if (open) closeNow();
+          else show();
+        }}
         className="absolute right-2.5 top-2.5 z-20 flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold text-[#6b7280] hover:bg-[#f4f1ea] hover:text-[#1a2330] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1a2330]"
       >
         ?
@@ -95,11 +132,20 @@ export function CardHelp({ note }: { note: ReactNode }) {
       {open && box
         ? createPortal(
             <div
+              ref={popRef}
               onMouseEnter={show}
               onMouseLeave={hide}
               style={{ top: box.top, left: box.left, width: box.width }}
-              className="fixed z-[80] max-h-[min(32rem,70vh)] overflow-y-auto rounded-lg bg-[#1a2330] px-4 py-3 text-left text-sm font-normal normal-case leading-relaxed tracking-normal text-white shadow-lg"
+              className="fixed z-[80] max-h-[min(32rem,70vh)] overflow-y-auto rounded-lg bg-[#1a2330] px-4 py-3 pr-8 text-left text-sm font-normal normal-case leading-relaxed tracking-normal text-white shadow-lg"
             >
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={closeNow}
+                className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md text-base leading-none text-white/80 hover:bg-white/10 hover:text-white"
+              >
+                ×
+              </button>
               {note}
             </div>,
             document.body,
