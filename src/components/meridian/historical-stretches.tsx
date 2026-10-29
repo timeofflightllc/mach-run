@@ -177,11 +177,11 @@ export function FuturesCard({
       <p className="pr-6 text-[10px] font-medium uppercase tracking-[0.14em] text-[#6b7280]">
         Mach Forward (Future Potential)
       </p>
-      <p className="mt-1 font-display text-[1.65rem] font-semibold tabular-nums leading-tight tracking-tight text-[#1a2330]">
+      <p className="mt-1 font-display text-[1.35rem] font-semibold tabular-nums leading-tight tracking-tight text-[#1a2330]">
         {score} of 100 possible futures
       </p>
-      <p className="mt-1 text-sm leading-snug text-[#1a2330]">still have money at age {longevityAge}.</p>
-      <p className="mt-2 text-sm leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden sm:text-sm sm:leading-snug">
+      <p className="mt-0.5 text-xs leading-snug text-[#1a2330]">still have money at age {longevityAge}.</p>
+      <p className="mt-1.5 text-[11px] leading-snug text-[#3d4a54]">
         One thousand random market futures, centered on the return you typed in OBSERVE Assumptions.
         {runOutAge != null && failed > 0
           ? ` In the ${Math.max(0, 100 - score)} random futures where your plan ran out of money prior to longevity age (${longevityAge}), the middle one lasted until age ${runOutAge}.`
@@ -240,33 +240,33 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
         <>
           <p
             className={
-              "mt-1 font-display text-[1.65rem] font-semibold tabular-nums leading-tight tracking-tight " +
+              "mt-1 font-display text-[1.35rem] font-semibold tabular-nums leading-tight tracking-tight " +
               (all ? "text-[#3a8a58]" : "text-[#1a2330]")
             }
           >
             {count.survived} of {count.total} ({pct}%)
           </p>
-          <p className="mt-1 text-sm leading-snug text-[#1a2330] sm:text-base">
+          <p className="mt-0.5 text-xs leading-snug text-[#1a2330]">
             {all
               ? `Every real historical look-back still had money at longevity, at ${used}% stocks and ${100 - used}% bonds.`
               : `${pct}% of the real historical look-backs still had money at longevity, at ${used}% stocks and ${100 - used}% bonds.`}
           </p>
           {failedLine ? (
-            <p className="mt-2 text-xs leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden">
+            <p className="mt-1 text-[11px] leading-snug text-[#3d4a54]">
               {failedLine}
             </p>
           ) : null}
         </>
       ) : count?.total === 0 ? (
-        <p className="mt-2 text-xs leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden">
+        <p className="mt-2 text-[11px] leading-snug text-[#3d4a54]">
           No stretch in the table is long enough for this plan.
         </p>
       ) : (
-        <p className="mt-2 text-xs leading-relaxed text-[#3d4a54] sm:text-base sm:leading-snug">
+        <p className="mt-2 text-[11px] leading-snug text-[#3d4a54]">
           Set stocks and bonds allocation percentages for your Mach Rewind (market look-back) to run historical simulations. Then click Run below.
         </p>
       )}
-      <div className="mt-auto flex shrink-0 flex-col gap-2 pt-3">
+      <div className="mt-auto flex shrink-0 flex-col gap-1.5 pt-2">
         <MixSlider label="Stocks" value={percent} onChange={setPercent} />
         <MixSlider label="Bonds" value={100 - percent} onChange={(next) => setPercent(100 - next)} />
         <button
