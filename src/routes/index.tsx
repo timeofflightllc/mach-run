@@ -862,6 +862,7 @@ function Home() {
   const [headerSettled, setHeaderSettled] = useState(true);
   const headerCollapsedRef = useRef(false);
   const headerSettleTimer = useRef<number | null>(null);
+  const headerHoldUntil = useRef(0);
   useEffect(() => {
     const stored = readHeaderCollapsed();
     headerCollapsedRef.current = stored;
@@ -888,6 +889,7 @@ function Home() {
     }, 520);
   }
   function toggleHeader() {
+    headerHoldUntil.current = performance.now() + 900;
     commitHeader(!headerCollapsedRef.current);
   }
   const ent = useEntitlement();
@@ -1280,6 +1282,10 @@ function Home() {
     function onScroll(event: Event) {
       if (!mq.matches) return;
       const y = topOf(event);
+      if (performance.now() < headerHoldUntil.current) {
+        last = y;
+        return;
+      }
       const delta = y - last;
       last = y;
       if (delta > 12 && y > 48) commitHeader(true);
