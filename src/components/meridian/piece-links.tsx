@@ -70,17 +70,19 @@ export function PieceCrumbs({ path }: { path: PiecePath }) {
 export function RelatedPieces({ path }: { path: PiecePath }) {
   const links = RELATED[path].map(piece);
   return (
-    <aside aria-label="Related" className="border-t border-border pt-6">
-      <h2 className="font-display text-xl text-fg">Related</h2>
-      <ul className="mt-3 space-y-2">
-        {links.map((item) => (
-          <li key={item.to}>
-            <Link to={item.to} className="text-fg underline underline-offset-4 hover:text-accent">
-              {item.title}
-            </Link>
-          </li>
-        ))}
-      </ul>
+    <aside aria-label="Related" className="mt-8 border-t border-border pt-4">
+      <div className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
+        <h2 className="font-display text-base text-fg">Related</h2>
+        <ul className="flex flex-wrap items-baseline gap-x-5 gap-y-2 text-sm">
+          {links.map((item) => (
+            <li key={item.to}>
+              <Link to={item.to} className="text-fg underline underline-offset-4 hover:text-accent">
+                {item.title}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
     </aside>
   );
 }

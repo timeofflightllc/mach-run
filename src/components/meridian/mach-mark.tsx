@@ -215,7 +215,7 @@ export function MachFooter({
 
   if (variant === "short") {
     return (
-      <footer className="relative z-10 mt-8 w-screen max-w-[100vw] border-t border-border bg-bg [margin-left:calc(50%-50vw)] before:pointer-events-none before:absolute before:inset-x-0 before:-top-[calc(2rem+2px)] before:h-[calc(2rem+2px)] before:bg-bg before:content-['']">
+      <footer className="relative z-10 mt-5 w-screen max-w-[100vw] border-t border-border bg-bg [margin-left:calc(50%-50vw)] before:pointer-events-none before:absolute before:inset-x-0 before:-top-[calc(1.25rem+2px)] before:h-[calc(1.25rem+2px)] before:bg-bg before:content-['']">
         <div className={cn(staticInset ? "static-gutter" : "short-footer-gutter", "mx-auto flex w-full flex-col gap-3 py-6")}>
           <div className="flex items-center justify-between gap-x-6">
             <Link to="/" className="inline-flex shrink-0 items-center" aria-label="MACH RUN">

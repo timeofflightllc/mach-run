@@ -1,7 +1,7 @@
 import type { PricingCardCopy, PricingCopy } from "./types";
 
 export const DEFAULT_PRICING_COPY: PricingCopy = {
-  heroH1: "Pick a lane:\nPersonal or Professional.",
+  heroH1: "Pick your runway:\nPersonal or Professional.",
   heroSub: "Monthly or yearly. Fly yearly and we throw in two months.",
   personalP1: "Individual is a monthly hop for the full cash-flow MACH RUN.",
   personalP2: "Individual Unlimited adds Net Worth and Liabilities.",
@@ -91,7 +91,9 @@ export function mergePricingCopy(raw: unknown): PricingCopy {
   const src = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   const d = DEFAULT_PRICING_COPY;
   return {
-    heroH1: str(src.heroH1, d.heroH1),
+    heroH1: str(src.heroH1, d.heroH1) === "Pick a lane:\nPersonal or Professional."
+      ? d.heroH1
+      : str(src.heroH1, d.heroH1),
     heroSub: str(src.heroSub, d.heroSub),
     personalP1: str(src.personalP1, d.personalP1),
     personalP2: str(src.personalP2, d.personalP2),
