@@ -20,7 +20,7 @@ export const PINNED_ANNOUNCEMENTS: SiteAnnouncement[] = [
   {
     id: "feat-2026-10-27-mach-back",
     at: "2026-10-27",
-    title: "Mach Back",
+    title: "Mach Rewind",
     blurb:
       "The plan runs through longevity for every start year in U.S. market history. Each year keeps its own returns. The number is how many still had money.",
     sortOrder: 0,

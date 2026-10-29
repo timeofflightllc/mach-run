@@ -70,7 +70,7 @@ function StarterQuestions({
   const questions = [
     showSurvival ? "What is the chance of success on this run?" : null,
     showAccounts ? "Which account is the largest?" : null,
-    showMachBack ? "What did Mach Back say?" : null,
+    showMachBack ? "What did Mach Rewind say?" : null,
   ].filter((question): question is string => question != null);
   if (!questions.length) return null;
   return (

@@ -140,6 +140,9 @@ async function ensurePinnedAnnouncements(): Promise<void> {
       [flag],
     );
   }
+  await sql.query(
+    `update mach_announcements set title = 'Mach Rewind' where id = 'feat-2026-10-27-mach-back' and title = 'Mach Back'`,
+  );
 }
 
 function freshenStoredCopy(body: string): string {

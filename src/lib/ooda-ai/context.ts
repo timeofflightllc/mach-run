@@ -72,10 +72,10 @@ export function buildOodaAskContext(
   const back = page?.machBack;
   if (back && back.total > 0) {
     lines.push(
-      `Mach Back on screen: ${back.survived} of ${back.total} stretches lasted, at ${back.stocks}% stocks, ${100 - back.stocks}% bonds.`,
+      `Mach Rewind on screen: ${back.survived} of ${back.total} stretches lasted, at ${back.stocks}% stocks, ${100 - back.stocks}% bonds.`,
     );
   } else if (back && back.total === 0) {
-    lines.push("Mach Back on screen: no stretch in the table is long enough for this plan.");
+    lines.push("Mach Rewind on screen: no stretch in the table is long enough for this plan.");
   }
   if (plan.portfolios.length) {
     lines.push(

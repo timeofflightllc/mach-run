@@ -22,7 +22,7 @@ export function subscribeMachBackFact(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-/** One Mach Back card. A later run replaces it. Unmount clears only its own result. */
+/** One Mach Rewind card. A later run replaces it. Unmount clears only its own result. */
 export function claimMachBackSlot() {
   const id = nextId++;
   return {

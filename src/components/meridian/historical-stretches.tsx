@@ -185,7 +185,7 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
     <div className={cn(card, className ?? "w-[min(100%,18rem)]")}>
       <CardHelp note={BACK_NOTE} />
       <p className="pr-6 text-[10px] font-medium uppercase tracking-[0.14em] text-[#6b7280]">
-        Mach Back (Past Estimations)
+        Mach Rewind (Past Estimations)
       </p>
       {count && count.total > 0 ? (
         <>
@@ -212,7 +212,7 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
         </p>
       ) : (
         <p className="mt-2 text-xs leading-relaxed text-[#3d4a54]">
-          Set stocks and bonds percentage estimates for your backtrack, then click Run.
+          Set stocks and bonds percentage estimates for your backtrack, then click Run Mach Rewind.
         </p>
       )}
       <div className="mt-auto flex shrink-0 flex-col gap-2 pt-3">
@@ -224,7 +224,7 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
           onClick={run}
           className="h-8 rounded-lg bg-[#3a8a58] text-xs font-medium text-white disabled:opacity-50"
         >
-          {busy ? "…" : "Run"}
+          {busy ? "…" : "Run Mach Rewind"}
         </button>
       </div>
     </div>
