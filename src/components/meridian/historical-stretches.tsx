@@ -9,6 +9,57 @@ import type { Plan } from "@/lib/plan/types";
 const card =
   "pointer-events-auto relative flex flex-col rounded-2xl bg-white/95 px-4 py-3.5 shadow-[0_10px_28px_rgba(26,35,48,0.14),0_0_0_1px_#d5d0c6] backdrop-blur-sm";
 
+/** Desktop cards have a fixed height. Grow the copy to fill it, shrink as the card narrows, and scroll only if the readable floor still overflows. Mobile keeps its own size and does not scroll. */
+function FillBlock({ on, watch, children }: { on: boolean; watch: string; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const box = ref.current;
+    if (!box) return;
+    const desktop = window.matchMedia("(min-width: 640px)");
+    let frame = 0;
+    function fit() {
+      box.style.fontSize = "";
+      box.style.overflowY = "";
+      if (!on || !desktop.matches || box.clientHeight < 24) return;
+      const min = 13;
+      const max = 28;
+      let lo = min;
+      let hi = max;
+      let best = min;
+      for (let i = 0; i < 10; i++) {
+        const mid = (lo + hi) / 2;
+        box.style.fontSize = `${mid}px`;
+        if (box.scrollHeight <= box.clientHeight + 1) {
+          best = mid;
+          lo = mid;
+        } else {
+          hi = mid;
+        }
+      }
+      box.style.fontSize = `${best}px`;
+      box.style.overflowY = box.scrollHeight > box.clientHeight + 1 ? "auto" : "hidden";
+    }
+    function schedule() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(fit);
+    }
+    schedule();
+    const obs = new ResizeObserver(schedule);
+    if (box.parentElement) obs.observe(box.parentElement);
+    desktop.addEventListener("change", schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      obs.disconnect();
+      desktop.removeEventListener("change", schedule);
+    };
+  }, [on, watch]);
+  return (
+    <div ref={ref} className={cn("mt-1 leading-snug", on && "sm:min-h-0 sm:flex-1 sm:overflow-y-auto")}>
+      {children}
+    </div>
+  );
+}
+
 export const FORWARD_NOTE = (
   <>
     <p>1,000 random future markets, centered on the rate of return you typed in Observe.</p>
@@ -177,16 +228,23 @@ export function FuturesCard({
       <p className="pr-6 text-[10px] font-medium uppercase tracking-[0.14em] text-[#6b7280]">
         Mach Forward (Future Potential)
       </p>
-      <p className="mt-1 font-display text-[1.35rem] font-semibold tabular-nums leading-tight tracking-tight text-[#1a2330]">
-        {score} of 100 possible futures
-      </p>
-      <p className="mt-0.5 text-xs leading-snug text-[#1a2330]">still have money at age {longevityAge}.</p>
-      <p className="mt-1.5 text-[11px] leading-snug text-[#3d4a54]">
-        One thousand random market futures, centered on the return you typed in OBSERVE Assumptions.
-        {runOutAge != null && failed > 0
-          ? ` In the ${Math.max(0, 100 - score)} random futures where your plan ran out of money prior to longevity age (${longevityAge}), the middle one lasted until age ${runOutAge}.`
-          : ""}
-      </p>
+      <FillBlock
+        on={Boolean(className?.includes("sm:h-"))}
+        watch={`${score}|${longevityAge}|${runOutAge}|${failed}`}
+      >
+        <p className="font-display text-[1.45em] font-semibold tabular-nums leading-tight tracking-tight text-[#1a2330]">
+          {score} of 100 possible futures
+        </p>
+        <p className="mt-[0.35em] text-[0.95em] leading-snug text-[#1a2330]">
+          still have money at age {longevityAge}.
+        </p>
+        <p className="mt-[0.55em] text-[0.9em] leading-snug text-[#3d4a54]">
+          One thousand random market futures, centered on the return you typed in OBSERVE Assumptions.
+          {runOutAge != null && failed > 0
+            ? ` In the ${Math.max(0, 100 - score)} random futures where your plan ran out of money prior to longevity age (${longevityAge}), the middle one lasted until age ${runOutAge}.`
+            : ""}
+        </p>
+      </FillBlock>
     </div>
   );
 }
@@ -236,36 +294,37 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
       <p className="pr-6 text-[10px] font-medium uppercase tracking-[0.14em] text-[#6b7280]">
         Mach Rewind (Past Estimations)
       </p>
-      {count && count.total > 0 ? (
-        <>
-          <p
-            className={
-              "mt-1 font-display text-[1.35rem] font-semibold tabular-nums leading-tight tracking-tight " +
-              (all ? "text-[#3a8a58]" : "text-[#1a2330]")
-            }
-          >
-            {count.survived} of {count.total} ({pct}%)
-          </p>
-          <p className="mt-0.5 text-xs leading-snug text-[#1a2330]">
-            {all
-              ? `Every real historical look-back still had money at longevity, at ${used}% stocks and ${100 - used}% bonds.`
-              : `${pct}% of the real historical look-backs still had money at longevity, at ${used}% stocks and ${100 - used}% bonds.`}
-          </p>
-          {failedLine ? (
-            <p className="mt-1 text-[11px] leading-snug text-[#3d4a54]">
-              {failedLine}
+      <FillBlock
+        on={Boolean(className?.includes("sm:h-"))}
+        watch={`${count?.survived ?? ""}|${count?.total ?? ""}|${used}|${failedLine ?? ""}`}
+      >
+        {count && count.total > 0 ? (
+          <>
+            <p
+              className={
+                "font-display text-[1.45em] font-semibold tabular-nums leading-tight tracking-tight " +
+                (all ? "text-[#3a8a58]" : "text-[#1a2330]")
+              }
+            >
+              {count.survived} of {count.total} ({pct}%)
             </p>
-          ) : null}
-        </>
-      ) : count?.total === 0 ? (
-        <p className="mt-2 text-[11px] leading-snug text-[#3d4a54]">
-          No stretch in the table is long enough for this plan.
-        </p>
-      ) : (
-        <p className="mt-2 text-[11px] leading-snug text-[#3d4a54]">
-          Set stocks and bonds allocation percentages for your Mach Rewind (market look-back) to run historical simulations. Then click Run below.
-        </p>
-      )}
+            <p className="mt-[0.35em] text-[0.9em] leading-snug text-[#1a2330]">
+              {all
+                ? `Every real historical look-back still had money at longevity, at ${used}% stocks and ${100 - used}% bonds.`
+                : `${pct}% of the real historical look-backs still had money at longevity, at ${used}% stocks and ${100 - used}% bonds.`}
+            </p>
+            {failedLine ? <p className="mt-[0.45em] text-[0.85em] leading-snug text-[#3d4a54]">{failedLine}</p> : null}
+          </>
+        ) : count?.total === 0 ? (
+          <p className="text-[0.9em] leading-snug text-[#3d4a54]">
+            No stretch in the table is long enough for this plan.
+          </p>
+        ) : (
+          <p className="text-[0.9em] leading-snug text-[#3d4a54]">
+            Set stocks and bonds allocation percentages for your Mach Rewind (market look-back) to run historical simulations. Then click Run below.
+          </p>
+        )}
+      </FillBlock>
       <div className="mt-auto flex shrink-0 flex-col gap-1.5 pt-2">
         <MixSlider label="Stocks" value={percent} onChange={setPercent} />
         <MixSlider label="Bonds" value={100 - percent} onChange={(next) => setPercent(100 - next)} />

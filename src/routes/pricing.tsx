@@ -622,9 +622,24 @@ function Pricing() {
 
           <article
             className={cn(
-              "relative z-10 order-2 flex flex-col rounded-xl border-4 border-black bg-elevated px-6 pb-6 pt-4",
+              "relative z-10 order-2 flex flex-col overflow-hidden rounded-xl border-4 border-black bg-elevated px-6 pb-6 pt-0",
             )}
           >
+            <div aria-hidden="true" className="-mx-6 mb-3 h-[27px] bg-[#7eb6ea]">
+              <svg className="h-full w-full" preserveAspectRatio="xMidYMid slice">
+                <defs>
+                  <pattern id="unlimited-flag-stars" width="33" height="27" patternUnits="userSpaceOnUse">
+                    <polygon
+                      fill="#fff"
+                      transform="translate(16.5 13.5) scale(0.69) translate(-18 -15.3)"
+                      points="18,9 19.6,13.7 24.7,13.8 20.7,16.9 22.1,21.7 18,18.8 13.9,21.7 15.3,16.9 11.3,13.8 16.4,13.7"
+                    />
+                  </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="#7eb6ea" />
+                <rect width="100%" height="100%" fill="url(#unlimited-flag-stars)" />
+              </svg>
+            </div>
             <p className="mb-2 flex items-center justify-center gap-2 text-2xl font-bold uppercase tracking-[0.12em] text-[#7eb6ea]">
               <FlagStar className="h-4 w-4 shrink-0 fill-[#7eb6ea]" />
               Best Value

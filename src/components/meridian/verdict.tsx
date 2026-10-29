@@ -129,7 +129,7 @@ function PeerMeter({ mark }: { mark: PeerMark }) {
         <span> · {mark.group}</span>
       </p>
       <div
-        className="relative mt-1 pt-6"
+        className="relative mt-1 pt-8"
         role="img"
         aria-label={`${mark.name}: ${mark.place} of ${mark.group}`}
       >
@@ -154,12 +154,17 @@ function PeerMeter({ mark }: { mark: PeerMark }) {
           className="pointer-events-none absolute top-0 flex -translate-x-1/2 flex-col items-center"
           style={{ left: `${pct}%` }}
         >
-          <span className="whitespace-nowrap text-[11px] font-semibold leading-none text-[#1a2330]">
+          <span className="whitespace-nowrap text-sm font-bold leading-none text-[#1a2330]">
             {mark.place}
           </span>
           <svg width="12" height="8" viewBox="0 0 12 8" aria-hidden="true" className="mt-[5px]">
             <polygon points="6,8 0.5,0 11.5,0" fill="#1a1a1a" />
           </svg>
+        </div>
+        <div className="relative mt-1 h-3 text-[10px] leading-none text-[#6b7280]">
+          <span className="absolute left-0">0%</span>
+          <span className="absolute left-[70%] -translate-x-1/2">70%</span>
+          <span className="absolute left-[90%] -translate-x-1/2">90%</span>
         </div>
       </div>
     </div>
