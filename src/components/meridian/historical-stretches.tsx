@@ -177,11 +177,11 @@ export function FuturesCard({
       <p className="pr-6 text-[10px] font-medium uppercase tracking-[0.14em] text-[#6b7280]">
         Mach Forward (Future Potential)
       </p>
-      <p className="mt-1 font-display text-[2.6rem] font-semibold tabular-nums leading-none tracking-tight text-[#1a2330]">
-        {score}
+      <p className="mt-1 font-display text-[1.65rem] font-semibold tabular-nums leading-tight tracking-tight text-[#1a2330]">
+        {score} of 100 possible futures
       </p>
-      <p className="mt-1 text-sm leading-snug text-[#1a2330]">of 100 still have money at age {longevityAge}</p>
-      <p className="mt-2 text-sm leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden">
+      <p className="mt-1 text-sm leading-snug text-[#1a2330]">still have money at age {longevityAge}.</p>
+      <p className="mt-2 text-sm leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden md:text-lg">
         One thousand random markets, centered on the return you typed in Observe.
         {runOutAge != null && failed > 0 ? ` In the futures that run out, the middle one is age ${runOutAge}.` : ""}
       </p>
