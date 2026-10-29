@@ -226,6 +226,7 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
 
   const all = count != null && count.total > 0 && count.failedStartYears.length === 0;
   const failedLine = count && count.failedStartYears.length > 0 ? shortFailed(count.failedStartYears) : null;
+  const pct = count && count.total > 0 ? Math.round((count.survived / count.total) * 100) : 0;
 
   return (
     <div className={cn(card, className ?? "w-[min(100%,18rem)]")}>
@@ -237,14 +238,16 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
         <>
           <p
             className={
-              "mt-1 font-display text-[2.6rem] font-semibold tabular-nums leading-none tracking-tight " +
+              "mt-1 font-display text-[1.65rem] font-semibold tabular-nums leading-tight tracking-tight " +
               (all ? "text-[#3a8a58]" : "text-[#1a2330]")
             }
           >
-            {count.survived}
+            {count.survived} of {count.total} ({pct}%)
           </p>
           <p className="mt-1 text-sm leading-snug text-[#1a2330]">
-            of {count.total} real stretches lasted, at {used}% stocks, {100 - used}% bonds.
+            {all
+              ? `Every real historical look-back still had money at longevity, at ${used}% stocks and ${100 - used}% bonds.`
+              : `${pct}% of the real historical look-backs still had money at longevity, at ${used}% stocks and ${100 - used}% bonds.`}
           </p>
           {failedLine ? (
             <p className="mt-2 text-xs leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden">
