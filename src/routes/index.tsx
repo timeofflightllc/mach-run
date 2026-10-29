@@ -859,14 +859,15 @@ function Home() {
   const { user, isPending } = useCurrentUserState();
   const signedIn = Boolean(user?.id);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
-  const headerRef = useRef<HTMLElement>(null);
+  const [headerReady, setHeaderReady] = useState(false);
+  const [headerSettled, setHeaderSettled] = useState(true);
   const headerCollapsedRef = useRef(false);
-  const headerAnimReady = useRef(false);
+  const headerSettleTimer = useRef<number | null>(null);
   useEffect(() => {
-    setHeaderCollapsed(readHeaderCollapsed());
-    const id = window.setTimeout(() => {
-      headerAnimReady.current = true;
-    }, 400);
+    const stored = readHeaderCollapsed();
+    headerCollapsedRef.current = stored;
+    setHeaderCollapsed(stored);
+    const id = window.setTimeout(() => setHeaderReady(true), 50);
     return () => window.clearTimeout(id);
   }, []);
   function writeHeaderCollapsed(next: boolean) {
@@ -879,50 +880,19 @@ function Home() {
   }
   function commitHeader(next: boolean) {
     if (headerCollapsedRef.current === next) return;
-    const el = headerRef.current;
-    const mobile = window.matchMedia("(max-width: 767px)").matches;
-    if (mobile && el && headerAnimReady.current) {
-      el.style.transition = "none";
-      el.style.overflow = "hidden";
-      el.style.maxHeight = `${Math.ceil(el.getBoundingClientRect().height)}px`;
-    }
     headerCollapsedRef.current = next;
     writeHeaderCollapsed(next);
+    if (headerSettleTimer.current != null) window.clearTimeout(headerSettleTimer.current);
+    setHeaderSettled(false);
     setHeaderCollapsed(next);
+    headerSettleTimer.current = window.setTimeout(() => {
+      setHeaderSettled(true);
+      headerSettleTimer.current = null;
+    }, 520);
   }
   function toggleHeader() {
     commitHeader(!headerCollapsedRef.current);
   }
-  useLayoutEffect(() => {
-    headerCollapsedRef.current = headerCollapsed;
-    const el = headerRef.current;
-    if (!el) return;
-    const mobile = window.matchMedia("(max-width: 767px)").matches;
-    if (!mobile || !headerAnimReady.current) {
-      if (!mobile) {
-        el.style.maxHeight = "";
-        el.style.overflow = "";
-        el.style.transition = "";
-      }
-      return;
-    }
-    const to = el.scrollHeight;
-    const id = requestAnimationFrame(() => {
-      const node = headerRef.current;
-      if (!node) return;
-      node.style.overflow = "hidden";
-      node.style.transition = "max-height 360ms cubic-bezier(0.22, 1, 0.36, 1)";
-      node.style.maxHeight = `${to}px`;
-      const clear = (event: TransitionEvent) => {
-        if (event.propertyName !== "max-height") return;
-        node.style.maxHeight = "none";
-        node.style.overflow = "";
-        node.removeEventListener("transitionend", clear);
-      };
-      node.addEventListener("transitionend", clear);
-    });
-    return () => cancelAnimationFrame(id);
-  }, [headerCollapsed]);
   const ent = useEntitlement();
   const [step, setStep] = useState<StepId>(actPlace ? "act" : "family");
   const sheet = hasBalanceSheet(ent.plan);
@@ -1923,10 +1893,24 @@ function Home() {
       <WelcomeEmailPreviewOverlay />
       <header
         id="mach-header"
-        ref={headerRef}
         className="canopy-bar sticky top-0 z-30 border-b border-border"
       >
-        {headerCollapsed ? (
+        <div
+          className={cn(
+            "grid",
+            headerReady &&
+              "transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          )}
+          style={{ gridTemplateRows: headerCollapsed ? "1fr 0fr" : "0fr 1fr" }}
+        >
+        <div
+          className={cn(
+            "min-h-0 transition-opacity duration-300",
+            !headerCollapsed || !headerSettled ? "overflow-hidden" : "overflow-visible",
+            headerCollapsed ? "opacity-100" : "pointer-events-none opacity-0",
+          )}
+          inert={!headerCollapsed}
+        >
         <div className="page-gutter mx-auto flex max-w-none flex-col gap-1.5 py-1.5 sm:flex-row sm:items-center sm:gap-2">
           <div className="flex min-w-0 items-center gap-1 sm:contents">
             <Link to="/" className="shrink-0 [&_img]:!h-7 sm:[&_img]:!h-8" aria-label="MACH RUN">
@@ -1975,8 +1959,15 @@ function Home() {
             </div>
           </nav>
         </div>
-        ) : (
-        <>
+        </div>
+        <div
+          className={cn(
+            "min-h-0 transition-opacity duration-300",
+            headerCollapsed || !headerSettled ? "overflow-hidden" : "overflow-visible",
+            headerCollapsed ? "pointer-events-none opacity-0" : "opacity-100",
+          )}
+          inert={headerCollapsed}
+        >
         <div className="page-gutter relative z-50 mx-auto max-w-none py-2.5">
           <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
             <div className="flex min-w-0 items-center gap-0">
@@ -2066,8 +2057,8 @@ function Home() {
             <span aria-hidden="true" className="text-base leading-none">▴</span>
           </button>
         </nav>
-        </>
-        )}
+        </div>
+        </div>
         <EmailVerifyBanner />
         <PasswordLaterBanner />
       </header>
