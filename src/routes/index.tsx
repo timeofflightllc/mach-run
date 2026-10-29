@@ -500,7 +500,7 @@ function MonteCarloTab({
   return (
     <div className="flex min-w-0 flex-col gap-3">
       <PhaseLabel id="ooda-monte" label="Monte Carlo" />
-      {stale && score ? <MonteCarloStaleNotice /> : null}
+      {stale && score ? <MonteCarloStaleNotice onRun={onRun} /> : null}
       <div className="relative">
         {unlocked && score && score.bands.length > 0 ? (
           <MonteCarloBandChart

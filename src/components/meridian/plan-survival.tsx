@@ -445,11 +445,22 @@ export function RunMonteCarloButton({
   );
 }
 
-export function MonteCarloStaleNotice() {
+export function MonteCarloStaleNotice({ onRun }: { onRun?: () => void }) {
   return (
-    <p className="rounded-lg bg-[#e8c547] px-4 py-3 text-sm font-medium leading-relaxed text-[#1a1408]">
-      This Monte Carlo is not current. The plan changed. Run it again.
-    </p>
+    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 rounded-lg bg-[#e8c547] px-4 py-3">
+      <p className="min-w-0 flex-1 text-sm font-medium leading-relaxed text-[#1a1408]">
+        This Monte Carlo is not current. The plan changed. Run it again.
+      </p>
+      {onRun ? (
+        <button
+          type="button"
+          onClick={onRun}
+          className="h-8 shrink-0 rounded-lg bg-[#1a1408] px-3 text-xs font-medium text-white hover:bg-[#2c2614]"
+        >
+          Re-run Monte Carlo
+        </button>
+      ) : null}
+    </div>
   );
 }
 
@@ -580,7 +591,7 @@ export function PlanSurvival({
   return (
     <div className={cn(card, "@min-[36rem]:flex @min-[36rem]:min-h-0 @min-[36rem]:flex-1 @min-[36rem]:flex-col")}>
       <SurvivalTitle />
-      {stale && view.score ? <div className="mt-3"><MonteCarloStaleNotice /></div> : null}
+      {stale && view.score ? <div className="mt-3"><MonteCarloStaleNotice onRun={onRun} /></div> : null}
       <div className="mt-3 flex flex-col items-center gap-3 @min-[32rem]:flex-row @min-[32rem]:items-start">
         <SurvivalChance percent={view.score ? view.score.score : null} />
         {plan ? (
