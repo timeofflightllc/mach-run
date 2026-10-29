@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { PieceCrumbs, RelatedPieces } from "@/components/meridian/piece-links";
 import { BombBurstSketch } from "@/components/meridian/guest-hero";
@@ -47,6 +47,66 @@ export const Route = createFileRoute("/pricing")({
 });
 
 const checkoutOnce = new Set<string>();
+
+function aboutPerDay(usd: number, interval: "month" | "year"): number {
+  const days = interval === "year" ? 365 : 30;
+  return Math.max(1, Math.round((usd / days) * 100));
+}
+
+function AboutPerDay({ usd, interval }: { usd: number; interval: "month" | "year" }) {
+  const cents = aboutPerDay(usd, interval);
+  const amount = cents < 100 ? `${cents}¢` : `$${(cents / 100).toFixed(2)}`;
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      <p className="inline-flex items-baseline gap-1.5 rounded-full bg-[#e7f4ec] px-3 py-1">
+        <span className="font-display text-lg font-semibold tabular-nums leading-none text-[#1f6b40]">
+          About {amount}
+        </span>
+        <span className="text-xs font-medium text-[#2f6b4a]">a day</span>
+      </p>
+      <p className="text-xs text-muted">
+        {interval === "year" ? "Paid yearly." : "Paid monthly."}
+      </p>
+    </div>
+  );
+}
+
+function FlagStar({ className = "mt-[0.32rem] h-2 w-2 shrink-0 fill-[#002868]" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className}>
+      <path d="M12 1.5 14.8 8.6 22.2 9.2 16.5 14.2 18.3 21.6 12 17.6 5.7 21.6 7.5 14.2 1.8 9.2 9.2 8.6Z" />
+    </svg>
+  );
+}
+
+function FeatureLine({ children }: { children: ReactNode }) {
+  return (
+    <li className="flex items-start gap-1.5">
+      <FlagStar />
+      <span>{children}</span>
+    </li>
+  );
+}
+
+function unlimitedLines(lines: string[]): string[] {
+  const forward = "Mach Forward — 1,000 random futures, and how many still have money";
+  const rewind = "Mach Rewind — the same plan on real U.S. market history";
+  const has = (bit: string) => lines.some((line) => line.toLowerCase().includes(bit));
+  const extras = [has("mach forward") ? null : forward, has("mach rewind") ? null : rewind].filter(
+    (line): line is string => Boolean(line),
+  );
+  if (!extras.length) return lines;
+  const next = [...lines];
+  const at = next.findIndex((line) => /plan survival/i.test(line));
+  next.splice(at >= 0 ? at + 1 : next.length, 0, ...extras);
+  return next;
+}
+
+function advisorUnlimitedLines(lines: string[]): string[] {
+  const line = "Coming soon — sharing accounts with your clients at no additional charge to your clients";
+  if (lines.some((item) => item.toLowerCase().includes("sharing accounts"))) return lines;
+  return [...lines, line];
+}
 
 function billingSelectedLabel(interval: "month" | "year" | null): string | null {
   if (interval === "year") return "(Annual billing selected)";
@@ -474,12 +534,13 @@ function Pricing() {
               : copy.intervalNoteMonth}
         </p>
 
-        <div className="relative mt-8">
+        <div className="relative mb-10 mt-8">
           <BombBurstSketch raised />
-          <div className="relative z-10 mx-auto grid w-full max-w-6xl gap-4 md:grid-cols-3">
+          <div className="relative z-10 mx-auto grid w-full max-w-6xl items-start gap-4 md:grid-cols-3">
           <article
             className={cn(
-              "flex flex-col rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]",
+              "flex flex-col rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)]",
+              audience === "individual" && "order-1",
               onFree && "shadow-[0_0_0_2px_var(--color-accent)]",
             )}
           >
@@ -495,13 +556,13 @@ function Pricing() {
             </div>
             <p className="mt-3 font-display text-4xl tabular-nums">$0</p>
             <p className="mt-1 text-sm text-muted">{copy.free.tag}</p>
-            <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
+            <ul className="mt-3 space-y-1.5 text-sm text-muted">
               {copy.free.bullets.map((line, i) => (
-                <li key={`free-${i}`}>
+                <FeatureLine key={`free-${i}`}>
                   {audience === "advisor" && i === copy.free.bullets.length - 1
                     ? copy.freeAdvisorBullet
                     : line}
-                </li>
+                </FeatureLine>
               ))}
             </ul>
             {!signedIn ? (
@@ -524,7 +585,7 @@ function Pricing() {
             <>
           <article
             className={cn(
-              "flex flex-col rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]",
+              "order-3 flex flex-col rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]",
               onIndividual && "shadow-[0_0_0_2px_var(--color-accent)]",
             )}
           >
@@ -544,12 +605,13 @@ function Pricing() {
               ${indPrice}
               <span className="text-xl text-muted">{per}</span>
             </p>
+            <AboutPerDay usd={indPrice} interval={interval} />
             <p className="mt-1 text-sm text-muted">
               {copy.individual.tag}
             </p>
-            <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
+            <ul className="mt-5 space-y-2 text-sm text-muted">
               {copy.individual.bullets.map((line, i) => (
-                <li key={`ind-${i}`}>{line}</li>
+                <FeatureLine key={`ind-${i}`}>{line}</FeatureLine>
               ))}
             </ul>
             {!signedIn ? (
@@ -576,10 +638,14 @@ function Pricing() {
 
           <article
             className={cn(
-              "flex flex-col rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]",
-              onUnlimited && "shadow-[0_0_0_2px_var(--color-accent)]",
+              "relative z-10 order-2 flex flex-col rounded-xl border-4 border-black bg-elevated p-6",
             )}
           >
+            <p className="mb-3 flex items-center justify-center gap-2 text-lg font-bold uppercase tracking-[0.14em] text-[#7eb6ea]">
+              <FlagStar className="h-3.5 w-3.5 shrink-0 fill-[#7eb6ea]" />
+              Best Value
+              <FlagStar className="h-3.5 w-3.5 shrink-0 fill-[#7eb6ea]" />
+            </p>
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">
                 Individual Unlimited
@@ -596,12 +662,13 @@ function Pricing() {
               ${unlPrice}
               <span className="text-xl text-muted">{per}</span>
             </p>
+            <AboutPerDay usd={unlPrice} interval={interval} />
             <p className="mt-1 text-sm text-muted">
               {copy.unlimited.tag}
             </p>
-            <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
-              {copy.unlimited.bullets.map((line, i) => (
-                <li key={`unl-${i}`}>{line}</li>
+            <ul className="mt-5 space-y-2 text-sm text-muted">
+              {unlimitedLines(copy.unlimited.bullets).map((line, i) => (
+                <FeatureLine key={`unl-${i}`}>{line}</FeatureLine>
               ))}
             </ul>
             {!signedIn ? (
@@ -650,6 +717,7 @@ function Pricing() {
               ${advPrice}
               <span className="text-xl text-muted">{per}</span>
             </p>
+            <AboutPerDay usd={advPrice} interval={interval} />
             <p className="mt-1 text-sm text-muted">
               {trialOnAdvisorLite && (promoDays || promoPct)
                 ? advisorSubtitle
@@ -657,9 +725,9 @@ function Pricing() {
                   ? copy.advisorLiteTagYear
                   : copy.advisorLite.tag}
             </p>
-            <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
+            <ul className="mt-5 space-y-2 text-sm text-muted">
               {copy.advisorLite.bullets.map((line, i) => (
-                <li key={`advl-${i}`}>{line}</li>
+                <FeatureLine key={`advl-${i}`}>{line}</FeatureLine>
               ))}
             </ul>
             <p className="mt-4 text-sm leading-relaxed text-muted">
@@ -709,6 +777,7 @@ function Pricing() {
               ${advUnlPrice}
               <span className="text-xl text-muted">{per}</span>
             </p>
+            <AboutPerDay usd={advUnlPrice} interval={interval} />
             <p className="mt-1 text-sm text-muted">
               {trialOnAdvisor && (promoDays || promoPct)
                 ? advisorUnlSubtitle
@@ -716,9 +785,9 @@ function Pricing() {
                   ? copy.advisorUnlimitedTagYear
                   : copy.advisorUnlimited.tag}
             </p>
-            <ul className="mt-5 flex-1 space-y-2 text-sm text-muted">
-              {copy.advisorUnlimited.bullets.map((line, i) => (
-                <li key={`advu-${i}`}>{line}</li>
+            <ul className="mt-5 space-y-2 text-sm text-muted">
+              {advisorUnlimitedLines(copy.advisorUnlimited.bullets).map((line, i) => (
+                <FeatureLine key={`advu-${i}`}>{line}</FeatureLine>
               ))}
             </ul>
             <p className="mt-4 text-sm leading-relaxed text-muted">
@@ -770,14 +839,6 @@ function Pricing() {
           </p>
         ) : null}
 
-        <p className="mt-10 flex justify-center">
-          <Link
-            to="/"
-            className="inline-flex h-11 items-center justify-center rounded-lg px-5 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
-          >
-            Back to MACH Run
-          </Link>
-        </p>
         <RelatedPieces path="/pricing" />
       </div>
       <MachFooter staticInset />

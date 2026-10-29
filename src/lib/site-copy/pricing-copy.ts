@@ -40,6 +40,8 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
       "Everything in Individual, plus:",
       "Live Net Worth radar — assets vs liabilities",
       "Plan Survival — 1,000 futures of this MACH RUN",
+      "Mach Forward — 1,000 random futures, and how many still have money",
+      "Mach Rewind — the same plan on real U.S. market history",
       "Liabilities (car, student, HELOC, other)",
       "Encrypted MACH RUN backup download",
       "Pay yearly, we throw in two months",
@@ -62,6 +64,7 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
       "Unlimited named profiles",
       "Same encrypted export / import file",
       "For a full book of clients",
+      "Coming soon — sharing accounts with your clients at no additional charge to your clients",
     ],
   },
 };
