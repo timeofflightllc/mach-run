@@ -273,11 +273,11 @@ function SurvivalChance({ percent }: { percent: number | null }) {
           {BAND_NOTES[bandTip.tone]}
         </span>
       ) : null}
-      <p className="-mt-1 max-w-[14.4rem] text-center text-[11px] font-bold uppercase leading-snug tracking-[0.12em] text-slate-900">
+      <p className="-mt-4 max-w-[14.4rem] text-center text-[11px] font-bold uppercase leading-snug tracking-[0.12em] text-slate-900">
         Probability of Mission Success
       </p>
       {value != null ? (
-        <p className="-mt-2 text-center font-display text-2xl font-black leading-tight tracking-tight text-black">
+        <p className="mt-1.5 text-center font-display text-2xl font-black leading-tight tracking-tight text-black">
           {likelihood(value).words} {likelihood(value).mark}
         </p>
       ) : null}
