@@ -10,7 +10,11 @@ import { useHeroCopy } from "@/components/meridian/use-hero-copy";
 export function BombBurstSketch({ raised = false }: { raised?: boolean }) {
   return (
     <svg
-      className="pointer-events-none absolute left-1/2 top-0 hidden h-[155%] w-screen -translate-x-1/2 -translate-y-[30%] overflow-visible md:block"
+      className={
+        raised
+          ? "pointer-events-none absolute left-1/2 top-0 hidden h-[155%] max-h-[44rem] w-screen -translate-x-1/2 -translate-y-[30%] overflow-visible md:block"
+          : "pointer-events-none absolute left-1/2 top-0 hidden h-[155%] w-screen -translate-x-1/2 -translate-y-[30%] overflow-visible md:block"
+      }
       viewBox="0 0 1600 900"
       fill="none"
       aria-hidden
