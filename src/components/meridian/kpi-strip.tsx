@@ -51,7 +51,7 @@ function guaranteedAtGoal(plan: Plan, sim: SimResult): { monthly: number; source
 }
 
 const ANNUAL_TIP =
-  "This is the first full calendar year of Actual Income Retired (A.I.R.). It is the paycheck this plan is scheduled to take: guaranteed retirement pay, plus only the investment withdrawals your spending needs.";
+  "This is the first full calendar year of Actual Income Retired (A.I.R.). It is the paycheck this plan is scheduled to take: guaranteed retirement income, plus only the investment withdrawals your spending needs.";
 
 function HoverLabel({ label, tip }: { label: string; tip?: string }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
@@ -410,7 +410,7 @@ function MonthlyPayBar({
       : `That is ${usd(payShort)} a month short of the ${usd(gap.wanted)} goal.`;
   return (
     <GoalReadout
-      title="Possible monthly pay at retirement"
+      title="Possible monthly income at retirement"
       left={
         <>
           <span className="tabular-nums">{usd(take)}</span> a month ({toward}% towards your goal) {from}
@@ -706,11 +706,11 @@ export function KpiStrip({
     ANNUAL_TIP,
     "This number is not the maximum you could withdraw without running out of money.",
     real
-      ? "This retirement pay figure is calculated from the first full calendar year on or after your retirement goal. It adds that year's guaranteed retirement pay (military retirement, VA, Social Security, pension, and any other retirement income) to the investment withdrawals the plan takes to cover spending, then brings the total back to today's dollars by inflation."
-      : "This retirement pay figure is calculated from the first full calendar year on or after your retirement goal. It adds that year's guaranteed retirement pay (military retirement, VA, Social Security, pension, and any other retirement income) to the investment withdrawals the plan takes to cover spending, in that year's dollars.",
-    "Below, Possible Monthly Pay At Retirement is the maximum pay you can expect without running out of money.",
+      ? "This retirement income figure is calculated from the first full calendar year on or after your retirement goal. It adds that year's guaranteed retirement income (military retirement, VA, Social Security, pension, and any other retirement income) to the investment withdrawals the plan takes to cover spending, then brings the total back to today's dollars by inflation."
+      : "This retirement income figure is calculated from the first full calendar year on or after your retirement goal. It adds that year's guaranteed retirement income (military retirement, VA, Social Security, pension, and any other retirement income) to the investment withdrawals the plan takes to cover spending, in that year's dollars.",
+    "Below, Possible Monthly Income At Retirement is the maximum income you can expect in retirement without running out of money.",
   ].join(" ");
-  const payLabel = ret?.incomeYear ? `Retirement pay (${ret.incomeYear})` : "Retirement pay";
+  const payLabel = ret?.incomeYear ? `Retirement income (${ret.incomeYear})` : "Retirement income";
 
   return (
     <dl className="@container/kpi rounded-xl bg-white px-5 py-5 shadow-[0_0_0_1px_#d5d0c6] sm:px-6">
