@@ -216,7 +216,7 @@ function GoalScore({
         </div>
       </div>
       {view === "income" ? (
-        <div className="mt-2 flex items-start gap-2">
+        <div className="mt-2 flex items-center justify-center gap-2 text-center">
           <div
             className="inline-flex shrink-0 gap-1 rounded-xl bg-[#f3f0e8] p-1"
             role="group"
@@ -246,7 +246,7 @@ function GoalScore({
               );
             })}
           </div>
-          <span className="text-sm leading-5 text-fg">
+          <span className="text-center text-sm leading-5 text-fg">
             Include guaranteed retirement income starting on Retirement Goal Date.
             <span className="mt-0.5 block text-xs leading-snug text-muted">
               Non-investment sources such as military, VA, Social Security, pension, and annuity, etc.
