@@ -10,7 +10,7 @@ import {
 import { monthlyIncomeAt } from "@/lib/plan/engine";
 import { usd } from "@/lib/plan/format";
 import type { SurvivalScore } from "@/lib/plan/monte-carlo-run";
-import { nestEggTrack, peerBriefing, peerRankLine, type PeerBrief, type PeerMark } from "@/lib/plan/peers";
+import { debtPeer, nestEggTrack, peerBriefing, peerRankLine, type PeerBrief, type PeerMark } from "@/lib/plan/peers";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import { cn } from "@/lib/utils";
 
@@ -68,11 +68,11 @@ export function Verdict({
 
   let body: string;
   if (!hasIncome) {
-    body = `No income on the run yet. Add a named paycheck under Income — amount, start, and end — and hit Calculate.`;
+    body = `No income on the run yet. Add a named paycheck under Income — amount, start, and end — and hit Calculate. 📝`;
   } else if (sim.depletedAge != null) {
-    body = `Spendable accounts run out at age ${sim.depletedAge} (${sim.depletedYear}). Raise income, extend a stage, or cut spending before that date.`;
+    body = `Spendable accounts run out at age ${sim.depletedAge} (${sim.depletedYear}). Raise income, extend a stage, or cut spending before that date. ⚠️`;
   } else {
-    body = `Your current plan funds spending through age ${plan.assumptions.projectionEndAge} with ${usd(atTerm)} remaining (${unit}).`;
+    body = `Your current plan funds spending through age ${plan.assumptions.projectionEndAge} with ${usd(atTerm)} remaining (${unit}). ✅`;
   }
 
   const ret = sim.retirement;
@@ -122,7 +122,6 @@ const PEER_ZONES = [
 
 function PeerMeter({ mark }: { mark: PeerMark }) {
   const pct = Math.min(100, Math.max(0, mark.percentile));
-  const tick = Math.min(98, Math.max(2, pct));
   return (
     <div>
       <p className="min-w-0 text-xs leading-snug text-[#3d4a54]">
@@ -149,11 +148,11 @@ function PeerMeter({ mark }: { mark: PeerMark }) {
               </div>
             </div>
           ) : null}
-          <div className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-[#1a1a1a]" style={{ left: `${tick}%` }} />
+          <div className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-[#1a1a1a]" style={{ left: `${pct}%` }} />
         </div>
         <div
           className="pointer-events-none absolute top-0 flex -translate-x-1/2 flex-col items-center"
-          style={{ left: `${tick}%` }}
+          style={{ left: `${pct}%` }}
         >
           <span className="whitespace-nowrap text-[11px] font-semibold leading-none text-[#1a2330]">
             {mark.place}
@@ -177,6 +176,7 @@ function PeerRankBlock({
   brief: PeerBrief;
 }) {
   const briefing = peerBriefing(plan, brief, rank.marks);
+  const debt = debtPeer(plan, brief);
   return (
     <div className="mt-4">
       <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#3d4a54]">{rank.title}</p>
@@ -186,6 +186,14 @@ function PeerRankBlock({
           <PeerMeter key={mark.name} mark={mark} />
         ))}
       </div>
+      {debt ? (
+        <>
+          <p className="mt-4 text-sm font-medium leading-snug text-[#1a2330]">{debt.line}</p>
+          <div className="mt-3">
+            <PeerMeter mark={debt.mark} />
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

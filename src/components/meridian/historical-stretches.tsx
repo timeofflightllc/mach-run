@@ -181,7 +181,7 @@ export function FuturesCard({
         {score} of 100 possible futures
       </p>
       <p className="mt-1 text-sm leading-snug text-[#1a2330]">still have money at age {longevityAge}.</p>
-      <p className="mt-2 text-sm leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden md:text-[13px] md:leading-snug">
+      <p className="mt-2 text-sm leading-relaxed text-[#3d4a54] sm:min-h-0 sm:flex-1 sm:overflow-hidden sm:text-base sm:leading-snug">
         One thousand random market futures, centered on the return you typed in OBSERVE Assumptions.
         {runOutAge != null && failed > 0
           ? ` In the ${Math.max(0, 100 - score)} random futures where your plan ran out of money prior to longevity age (${longevityAge}), the middle one lasted until age ${runOutAge}.`
@@ -246,7 +246,7 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
           >
             {count.survived} of {count.total} ({pct}%)
           </p>
-          <p className="mt-1 text-sm leading-snug text-[#1a2330]">
+          <p className="mt-1 text-sm leading-snug text-[#1a2330] sm:text-base">
             {all
               ? `Every real historical look-back still had money at longevity, at ${used}% stocks and ${100 - used}% bonds.`
               : `${pct}% of the real historical look-backs still had money at longevity, at ${used}% stocks and ${100 - used}% bonds.`}
@@ -262,7 +262,7 @@ export function HistoricalStretches({ plan, className }: { plan: Plan; className
           No stretch in the table is long enough for this plan.
         </p>
       ) : (
-        <p className="mt-2 text-xs leading-relaxed text-[#3d4a54]">
+        <p className="mt-2 text-xs leading-relaxed text-[#3d4a54] sm:text-base sm:leading-snug">
           Set stocks and bonds allocation percentages for your Mach Rewind (market look-back) to run historical simulations. Then click Run below.
         </p>
       )}

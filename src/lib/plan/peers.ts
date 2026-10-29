@@ -187,6 +187,156 @@ export function peerRankLine(brief: {
   return { title, lines, marks };
 }
 
+/** SCF 2022 total debt by income percentile, all families, zeros included. DQYDJ tabulation of the Fed survey. 2022 dollars. */
+const DEBT_BY_INCOME: { min: number; max: number; p25: number; p50: number; p75: number }[] = [
+  { min: 0, max: 10, p25: 0, p50: 50, p75: 10_520 },
+  { min: 10, max: 20, p25: 0, p50: 1_600, p75: 21_200 },
+  { min: 20, max: 30, p25: 170, p50: 10_000, p75: 53_070 },
+  { min: 30, max: 40, p25: 0, p50: 14_350, p75: 63_050 },
+  { min: 40, max: 50, p25: 1_350, p50: 33_140, p75: 123_500 },
+  { min: 50, max: 60, p25: 6_000, p50: 49_200, p75: 167_900 },
+  { min: 60, max: 70, p25: 15_400, p50: 101_750, p75: 197_000 },
+  { min: 70, max: 80, p25: 24_000, p50: 147_000, p75: 264_000 },
+  { min: 80, max: 90, p25: 32_470, p50: 180_000, p75: 329_900 },
+  { min: 90, max: 95, p25: 36_300, p50: 250_600, p75: 465_650 },
+  { min: 95, max: 99, p25: 1_600, p50: 276_000, p75: 539_000 },
+  { min: 99, max: 101, p25: 0, p50: 541_000, p75: 1_210_000 },
+];
+
+/**
+ * SCF 2022 median total debt, zeros included, by the published generation closest to the age band.
+ * Millennial, Gen X, Boomer, Silent. DQYDJ tabulation.
+ */
+const DEBT_AGE_MEDIAN: { min: number; max: number; median: number }[] = [
+  { min: 0, max: 34, median: 65_600 },
+  { min: 35, max: 44, median: 65_600 },
+  { min: 45, max: 54, median: 91_550 },
+  { min: 55, max: 64, median: 91_550 },
+  { min: 65, max: 74, median: 15_000 },
+  { min: 75, max: 120, median: 130 },
+];
+
+const ALL_FAMILY_DEBT_MEDIAN = 31_760;
+
+function debtIncomeRow(incomePercentile: number) {
+  return (
+    DEBT_BY_INCOME.find((row) => incomePercentile >= row.min && incomePercentile < row.max) ??
+    DEBT_BY_INCOME[DEBT_BY_INCOME.length - 1]
+  );
+}
+
+function debtAgeMedian(age: number | null): number | null {
+  if (age == null) return null;
+  return (DEBT_AGE_MEDIAN.find((row) => age >= row.min && age <= row.max) ?? DEBT_AGE_MEDIAN[DEBT_AGE_MEDIAN.length - 1]).median;
+}
+
+/** Income-band debt in 2026 dollars. Age-only debt uses the all-family shape, centered on that age band's median. */
+function incomeDebtKnots(incomePercentile: number): { p: number; v: number }[] {
+  const income = debtIncomeRow(incomePercentile);
+  const dollars = (n: number) => Math.round(n * 1.12);
+  const p25 = dollars(income.p25);
+  const p50 = dollars(income.p50);
+  const p75 = dollars(income.p75);
+  const knots = [{ p: 10, v: 0 }];
+  if (p25 > 0) knots.push({ p: 25, v: p25 });
+  knots.push({ p: 50, v: p50 }, { p: 75, v: p75 }, { p: 90, v: Math.round(p75 * 1.65) });
+  return knots;
+}
+
+function ageDebtKnots(age: number): { p: number; v: number }[] {
+  const median = debtAgeMedian(age) ?? ALL_FAMILY_DEBT_MEDIAN;
+  const scale = median / ALL_FAMILY_DEBT_MEDIAN;
+  const dollars = (n: number) => Math.round(n * scale * 1.12);
+  return [
+    { p: 10, v: 0 },
+    { p: 30, v: dollars(2_000) },
+    { p: 40, v: dollars(13_000) },
+    { p: 50, v: dollars(ALL_FAMILY_DEBT_MEDIAN) },
+    { p: 70, v: dollars(135_680) },
+    { p: 80, v: dollars(206_110) },
+    { p: 90, v: dollars(340_000) },
+  ];
+}
+
+function debtBurden(debt: number, age: number | null, incomePercentile: number | null): number {
+  const parts: number[] = [];
+  if (incomePercentile != null) parts.push(percentileFromKnots(debt, incomeDebtKnots(incomePercentile)));
+  if (age != null) parts.push(percentileFromKnots(debt, ageDebtKnots(age)));
+  if (!parts.length) return 50;
+  return Math.round(parts.reduce((sum, n) => sum + n, 0) / parts.length);
+}
+
+export function debtPeer(
+  plan: Plan,
+  brief: { age: number | null; incomePercentile: number | null; bandLabel: string | null },
+): { mark: PeerMark; line: string } | null {
+  if (brief.age == null && brief.incomePercentile == null) return null;
+  const { debt } = balanceSheetNow(plan);
+  const burden = debtBurden(Math.max(0, debt), brief.age, brief.incomePercentile);
+  const light = Math.max(1, Math.min(99, 100 - burden));
+  const none = debt < 1;
+  const group = brief.bandLabel
+    ? brief.incomePercentile != null
+      ? `U.S. families age ${brief.bandLabel}, similar income`
+      : `U.S. families age ${brief.bandLabel}`
+    : "U.S. households with similar income";
+  const who = householdWho(plan);
+  const mortgage = plan.portfolios.some(
+    (row) => row.kind === "real_estate" && remainingMortgage(row.mortgage, plan.assumptions.asOfDate) > 1,
+  );
+  const peers = brief.bandLabel
+    ? brief.incomePercentile != null
+      ? `households age ${brief.bandLabel} with income near yours`
+      : `households age ${brief.bandLabel}`
+    : "households with income near yours";
+  const seed = `${who}|${Math.round(burden / 5)}|${none ? 1 : 0}|${mortgage ? 1 : 0}`;
+  let line: string;
+  let place: string;
+  let shown: number;
+  if (none) {
+    place = "No debt";
+    shown = 97;
+    line = `${named(who, "no debt is on this plan.")} Most ${peers} still carry some. That is a light balance sheet. ✨`;
+  } else if (light >= 70) {
+    place = `Less than ${light}%`;
+    shown = light;
+    line = `${named(who, pickLine(seed, [
+      `your debt is lighter than most ${peers}.`,
+      `you owe less than most ${peers}.`,
+      `the loan balance is on the light side for ${peers}.`,
+    ]))} ${mortgage ? "The house loan is not out of line. 🏠" : "What you do owe is a small share of that group. 👍"}`;
+  } else if (light >= 40) {
+    place = `Less than ${light}%`;
+    shown = light;
+    line = `${named(who, `your debt sits near the middle of ${peers}.`)} ${
+      mortgage
+        ? "A mortgage usually explains a number like this. 🏠"
+        : "It is not out of line for this income, and it is not a house loan. 💳"
+    }`;
+  } else {
+    place = `More than ${burden}%`;
+    shown = light;
+    line = `${named(who, pickLine(seed, [
+      `your debt is heavier than most ${peers}.`,
+      `you owe more than most ${peers}.`,
+      `the loan balance is on the heavy side for ${peers}.`,
+    ]))} ${
+      mortgage
+        ? "The highest-interest balances, not the house, are the ones to clear first. 💳"
+        : "Clear the highest-interest balances first. 💳"
+    }`;
+  }
+  return {
+    mark: {
+      name: "Debt and liabilities",
+      group,
+      percentile: shown,
+      place,
+    },
+    line,
+  };
+}
+
 function firstName(name: string): string {
   const trimmed = name.trim();
   if (!trimmed) return "";
@@ -246,9 +396,9 @@ export function peerBriefing(
 
   if (tier === "lead") {
     const open = pickLine(seed + "a", [
-      "you're crushing it.",
-      "this household is winning.",
-      "you have built a real lead.",
+      "you're crushing it. 💪",
+      "this household is winning. 🏆",
+      "you have built a real lead. 🚀",
     ]);
     const stand = both
       ? pickLine(seed + "b", [
@@ -258,54 +408,54 @@ export function peerBriefing(
         ])
       : "You are ahead of most households in this comparison.";
     const keep = debt
-      ? "Keep the lead, and clear any high-interest debt before lifestyle spending grows into it."
+      ? "Keep the lead, and clear any high-interest debt before lifestyle spending grows into it. 💳"
       : pickLine(seed + "c", [
-          "Keep saving, and don't let new spending spend the lead.",
-          "Stay on this heading. The plan you already run is the one to protect.",
-          "The work now is to keep it. Save what you save, and don't add spending that erases it.",
+          "Keep saving, and don't let new spending spend the lead. 💰",
+          "Stay on this heading. The plan you already run is the one to protect. 🛡️",
+          "The work now is to keep it. Save what you save, and don't add spending that erases it. 💰",
         ]);
     return `${named(who, open)} ${stand} ${keep}`;
   }
 
   if (tier === "mixed") {
     const open = pickLine(seed + "a", [
-      "this is a strong household.",
-      "you are ahead where it counts.",
-      "one of these bars is doing real work.",
+      "this is a strong household. 👍",
+      "you are ahead where it counts. 🎯",
+      "one of these bars is doing real work. 📈",
     ]);
     const stand = "You are well ahead on one comparison and still in the hunt on the other.";
     const keep = debt
-      ? "Pay the highest-interest debt first, then point that payment at the bar that is still catching up."
-      : "Keep saving. The next gains come from staying with it, not from a new trick.";
+      ? "Pay the highest-interest debt first, then point that payment at the bar that is still catching up. 💳"
+      : "Keep saving. The next gains come from staying with it, not from a new trick. 💰";
     return `${named(who, open)} ${stand} ${keep}`;
   }
 
   if (tier === "middle") {
     const open = pickLine(seed + "a", [
-      "well done. You are in the middle of the pack, and that took work.",
-      "you are right around the typical household your age. That is a real place to stand.",
-      "you have done the unglamorous work. You sit near the middle for your age.",
+      "well done. You are in the middle of the pack, and that took work. 👏",
+      "you are right around the typical household your age. That is a real place to stand. 👍",
+      "you have done the unglamorous work. You sit near the middle for your age. 👏",
     ]);
     const next = debt
-      ? "The debt on this plan is the drag. Highest interest first, or a debt snowball if a quick payoff will keep you going. Then send that payment to savings."
+      ? "The debt on this plan is the drag. Highest interest first, or a debt snowball if a quick payoff will keep you going. Then send that payment to savings. 💳"
       : solidSave
-        ? "The savings rate is already doing its job. Stay with it, and any spending you trim is the next rung."
+        ? "The savings rate is already doing its job. Stay with it, and any spending you trim is the next rung. 💰"
         : thinSave
-          ? "Raise what you save each month. That is the cleanest way up from here, along with spending you will not miss."
-          : "Keep saving, and spending you can cut becomes the next step up.";
+          ? "Raise what you save each month. That is the cleanest way up from here, along with spending you will not miss. ✂️"
+          : "Keep saving, and spending you can cut becomes the next step up. 📈";
     return `${named(who, open)} ${next}`;
   }
 
   const open = pickLine(seed + "a", [
-    "you have ground to make up, and it is still a fixable problem.",
-    "the comparison is behind, not stuck. You can close it.",
-    "households your age are ahead right now. That gap is not permanent.",
+    "you have ground to make up, and it is still a fixable problem. 🚴",
+    "the comparison is behind, not stuck. You can close it. 🚴",
+    "households your age are ahead right now. That gap is not permanent. 🌱",
   ]);
   const pedal = debt
-    ? "Pedal hard. Pay the highest-interest debt first, or run a debt snowball if a quick win will keep you in it. Then send that old payment to savings, and cut spending you will not miss."
+    ? "Pedal hard. Pay the highest-interest debt first, or run a debt snowball if a quick win will keep you in it. Then send that old payment to savings, and cut spending you will not miss. 💳"
     : thinSave
-      ? "Pedal hard. Cut spending you will not miss, and raise what you save each month. Those two moves are the whole catch-up."
-      : "Pedal hard. Cut spending you will not miss, and put more into savings every month. Time still helps if you start now.";
+      ? "Pedal hard. Cut spending you will not miss, and raise what you save each month. Those two moves are the whole catch-up. ✂️"
+      : "Pedal hard. Cut spending you will not miss, and put more into savings every month. Time still helps if you start now. 💰";
   return `${named(who, open)} ${pedal}`;
 }
 
