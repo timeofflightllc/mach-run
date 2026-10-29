@@ -8,8 +8,7 @@ import { StaleRunPrompt } from "@/components/meridian/confirm-remove";
 import { CalculateButton } from "@/components/meridian/calculate-button";
 import { AdvisoryStrip } from "@/components/meridian/advisory-note";
 import { CashChart, MonteCarloBandChart, NetWorthChart, WealthChart } from "@/components/meridian/charts";
-import { BoydQuote, MonteCarloStaleNotice, PlanSurvival, readPlanSurvivalMinimized, RunMonteCarloButton, type SurvivalView } from "@/components/meridian/plan-survival";
-import { FuturesCard, HistoricalStretches } from "@/components/meridian/historical-stretches";
+import { BoydQuote, MonteCarloStaleNotice, PlanSurvival, readPlanSurvivalMinimized, RunMonteCarloButton, SurvivalChartNote, type SurvivalView } from "@/components/meridian/plan-survival";
 import { useBoydQuotes } from "@/components/meridian/use-boyd-quotes";
 import { Pinnable, useChartPins } from "@/components/meridian/chart-pin";
 import { ContributionForm } from "@/components/meridian/contribution-form";
@@ -511,15 +510,7 @@ function MonteCarloTab({
             sim={sim}
             survival={score}
             note={
-              <>
-                <FuturesCard
-                  score={score.score}
-                  longevityAge={longevityAge}
-                  runOutAge={score.runOutAge}
-                  failed={score.paths - score.survived}
-                />
-                <HistoricalStretches plan={plan} />
-              </>
+              <SurvivalChartNote plan={plan} score={score} longevityAge={longevityAge} />
             }
           />
         ) : (
@@ -2485,6 +2476,7 @@ function Home() {
                             longevityAge={displayPlan.assumptions.projectionEndAge}
                             plan={survivalOn ? displayPlan : null}
                             stale={survivalStale}
+                            onOpenMonte={() => setActTab("monte")}
                           />
                         </div>
                       </div>

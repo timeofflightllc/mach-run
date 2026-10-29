@@ -480,14 +480,16 @@ function FuturesSketch({
   traces,
   bands,
   showBands,
+  onOpenMonte,
 }: {
   plan: Plan;
   longevityAge: number;
   traces: SurvivalTraces | null;
   bands: SurvivalBand[] | null;
   showBands: boolean;
+  onOpenMonte?: () => void;
 }) {
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLButtonElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animRef = useRef({ shown: 0, yMax: 0, band: 0 });
 
@@ -686,9 +688,19 @@ function FuturesSketch({
   }, [plan, longevityAge, traces, bands, showBands]);
 
   return (
-    <div ref={wrapRef} className="relative mt-2 min-h-0 w-full flex-1">
-      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
-    </div>
+    <button
+      ref={wrapRef}
+      type="button"
+      onClick={onOpenMonte}
+      className="group relative mt-2 min-h-0 w-full flex-1 text-left"
+    >
+      <canvas ref={canvasRef} className="pointer-events-none absolute inset-0 h-full w-full" />
+      <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-[#1a2330]/45 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+        <span className="rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-[#1a2330] shadow-[0_8px_24px_rgba(26,35,48,0.28)]">
+          Click here to go to Monte Carlo tab
+        </span>
+      </span>
+    </button>
   );
 }
 
@@ -717,6 +729,35 @@ export function MonteCarloStaleNotice({ onRun }: { onRun?: () => void }) {
   );
 }
 
+export function SurvivalChartNote({
+  plan,
+  score,
+  longevityAge,
+}: {
+  plan: Plan;
+  score: SurvivalScore;
+  longevityAge: number;
+}) {
+  return (
+    <div className="pointer-events-auto flex w-full min-w-0 flex-col items-stretch gap-2 sm:flex-row">
+      <div className="flex w-full shrink-0 flex-col items-center rounded-2xl bg-white/95 px-3 py-3 shadow-[0_10px_28px_rgba(26,35,48,0.14),0_0_0_1px_#d5d0c6] sm:w-auto">
+        <div className="self-start">
+          <SurvivalTitle />
+        </div>
+        <SurvivalChance percent={score.score} />
+      </div>
+      <FuturesCard
+        className={countCard}
+        score={score.score}
+        longevityAge={longevityAge}
+        runOutAge={score.runOutAge}
+        failed={score.paths - score.survived}
+      />
+      <HistoricalStretches className={countCard} plan={plan} />
+    </div>
+  );
+}
+
 export function PlanSurvival({
   locked,
   view,
@@ -728,6 +769,7 @@ export function PlanSurvival({
   longevityAge,
   plan = null,
   stale = false,
+  onOpenMonte,
 }: {
   locked: boolean;
   view: SurvivalView | null;
@@ -739,6 +781,7 @@ export function PlanSurvival({
   longevityAge: number;
   plan?: Plan | null;
   stale?: boolean;
+  onOpenMonte?: () => void;
 }) {
   const quotes = useBoydQuotes();
   const [lockedMin, setLockedMin] = useState(readLockedMin);
@@ -909,6 +952,7 @@ export function PlanSurvival({
           traces={checking ? view.live ?? null : view.score?.traces ?? null}
           bands={checking ? null : view.score?.bands ?? null}
           showBands={!checking && Boolean(view.score && view.score.bands.length > 1)}
+          onOpenMonte={onOpenMonte}
         />
       ) : null}
       <div className="mt-3 flex items-end justify-between gap-3 border-t border-slate-200 pt-2">
