@@ -21,11 +21,13 @@ export function BombBurstSketch({ raised = false }: { raised?: boolean }) {
     >
       {raised ? (
         <>
-          <SmokeTrail d="M800 640 C 760 450, 560 180, 430 30" />
-          <SmokeTrail d="M800 640 C 840 450, 1040 180, 1170 30" />
-          <SmokeTrail d="M800 640 C 720 560, 380 280, 150 130" />
-          <SmokeTrail d="M800 640 C 880 560, 1220 280, 1450 130" />
-          <g stroke="#1a2330" strokeLinecap="round" strokeLinejoin="round">
+          <g transform="translate(0 102)">
+            <SmokeTrail d="M800 640 C 760 450, 560 180, 430 30" />
+            <SmokeTrail d="M800 640 C 840 450, 1040 180, 1170 30" />
+            <SmokeTrail d="M800 640 C 720 560, 380 280, 150 130" />
+            <SmokeTrail d="M800 640 C 880 560, 1220 280, 1450 130" />
+          </g>
+          <g stroke="#1a2330" strokeLinecap="round" strokeLinejoin="round" transform="translate(0 102)">
             <SketchJet x={401} y={-4} rotate={-131} scale={2.35} flip />
             <SketchJet x={1199} y={-4} rotate={-49} scale={2.35} />
             <SketchJet x={118} y={112} rotate={-147} scale={2.2} flip />

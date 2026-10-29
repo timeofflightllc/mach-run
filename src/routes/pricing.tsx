@@ -368,20 +368,15 @@ function Pricing() {
   return (
     <main className="min-h-screen bg-bg py-10 text-fg">
       <div className="static-gutter mx-auto w-full">
-        <div className="mx-auto w-full max-w-7xl">
+        <div className="relative z-20 mx-auto w-full max-w-7xl">
           <PageMast />
           <PieceCrumbs path="/pricing" />
 
-          <header className="mt-10 max-w-2xl">
+          <header className="mt-8 max-w-4xl">
           <h1 className="font-display text-4xl leading-tight text-fg sm:text-5xl">
-            {copy.heroH1.split("\n").map((line, i) => (
-              <span key={`${line}-${i}`}>
-                {i > 0 ? <br /> : null}
-                {line}
-              </span>
-            ))}
+            {copy.heroH1.replace(/\s*\n\s*/g, " ")}
           </h1>
-          <p className="mt-5 font-display text-2xl leading-snug text-fg sm:text-3xl">
+          <p className="mt-4 font-display text-2xl leading-snug text-fg sm:text-3xl">
             {copy.heroSub}
           </p>
           <p className="mt-4 text-base leading-relaxed text-muted">
@@ -398,17 +393,9 @@ function Pricing() {
               </p>
             </>
           ) : (
-            <>
-              <p className="mt-6 text-base leading-relaxed text-muted">
-                {copy.personalP1}
-              </p>
-              <p className="mt-3 text-base leading-relaxed text-muted">
-                {copy.personalP2}
-              </p>
-              <p className="mt-3 text-base leading-relaxed text-muted">
-                {copy.personalP3}
-              </p>
-            </>
+            <p className="mt-4 text-base leading-relaxed text-muted">
+              {[copy.personalP1, copy.personalP2, copy.personalP3].filter(Boolean).join(" ")}
+            </p>
           )}
           <p className="mt-6 rounded-lg bg-surface px-4 py-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)]">
             {planPending ? (
@@ -445,7 +432,7 @@ function Pricing() {
         </header>
         </div>
 
-        <div className="mt-8 flex justify-center">
+        <div className="relative z-20 mt-8 flex flex-wrap items-center justify-center gap-3">
           <div className="inline-flex rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
             <button
               type="button"
@@ -470,9 +457,40 @@ function Pricing() {
               Professional
             </button>
           </div>
+          <div className="inline-flex rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+            <button
+              type="button"
+              aria-pressed={interval === "month"}
+              onClick={() => setInterval("month")}
+              className={cn(
+                "h-11 rounded-md px-4 text-sm font-medium",
+                interval === "month" ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
+              )}
+            >
+              Monthly
+            </button>
+            <button
+              type="button"
+              aria-pressed={interval === "year"}
+              onClick={() => setInterval("year")}
+              className={cn(
+                "h-11 rounded-md px-4 text-sm font-medium",
+                interval === "year" ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
+              )}
+            >
+              Yearly
+            </button>
+          </div>
         </div>
+        <p className="relative z-20 mt-2 text-center text-xs text-subtle">
+          {interval === "year"
+            ? copy.intervalNoteYear
+            : audience === "advisor"
+              ? copy.intervalNoteAdvisorMonth
+              : copy.intervalNoteMonth}
+        </p>
 
-        <div className="mx-auto mt-6 flex w-full max-w-[20rem] flex-col items-center text-center">
+        <div className="relative z-20 mx-auto mt-6 flex w-full max-w-[20rem] flex-col items-center text-center">
           <label className="flex w-full min-w-0 flex-col items-center gap-1.5">
             <span className="text-sm font-medium text-muted">
               {copy.couponLabel}
@@ -500,41 +518,7 @@ function Pricing() {
           </p>
         </div>
 
-        <div className="mt-6 flex justify-center">
-          <div className="inline-flex rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
-            <button
-              type="button"
-              aria-pressed={interval === "month"}
-              onClick={() => setInterval("month")}
-              className={cn(
-                "h-10 rounded-md px-4 text-sm font-medium",
-                interval === "month" ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
-              )}
-            >
-              Monthly
-            </button>
-            <button
-              type="button"
-              aria-pressed={interval === "year"}
-              onClick={() => setInterval("year")}
-              className={cn(
-                "h-10 rounded-md px-4 text-sm font-medium",
-                interval === "year" ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
-              )}
-            >
-              Yearly
-            </button>
-          </div>
-        </div>
-        <p className="mt-2 text-center text-xs text-subtle">
-          {interval === "year"
-            ? copy.intervalNoteYear
-            : audience === "advisor"
-              ? copy.intervalNoteAdvisorMonth
-              : copy.intervalNoteMonth}
-        </p>
-
-        <div className="relative mb-10 mt-8">
+        <div className="relative z-0 mb-10 mt-8">
           <BombBurstSketch raised />
           <div className="relative z-10 mx-auto grid w-full max-w-6xl items-start gap-4 md:grid-cols-3">
           <article
@@ -638,13 +622,13 @@ function Pricing() {
 
           <article
             className={cn(
-              "relative z-10 order-2 flex flex-col rounded-xl border-4 border-black bg-elevated p-6",
+              "relative z-10 order-2 flex flex-col rounded-xl border-4 border-black bg-elevated px-6 pb-6 pt-4",
             )}
           >
-            <p className="mb-3 flex items-center justify-center gap-2 text-lg font-bold uppercase tracking-[0.14em] text-[#7eb6ea]">
-              <FlagStar className="h-3.5 w-3.5 shrink-0 fill-[#7eb6ea]" />
+            <p className="mb-2 flex items-center justify-center gap-2 text-2xl font-bold uppercase tracking-[0.12em] text-[#7eb6ea]">
+              <FlagStar className="h-4 w-4 shrink-0 fill-[#7eb6ea]" />
               Best Value
-              <FlagStar className="h-3.5 w-3.5 shrink-0 fill-[#7eb6ea]" />
+              <FlagStar className="h-4 w-4 shrink-0 fill-[#7eb6ea]" />
             </p>
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">

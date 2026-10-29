@@ -1,7 +1,7 @@
 import type { PricingCardCopy, PricingCopy } from "./types";
 
 export const DEFAULT_PRICING_COPY: PricingCopy = {
-  heroH1: "Pick your runway:\nPersonal or Professional.",
+  heroH1: "Pick your runway: Personal or Professional.",
   heroSub: "Monthly or yearly. Fly yearly and we throw in two months.",
   personalP1: "Individual is a monthly hop for the full cash-flow MACH RUN.",
   personalP2: "Individual Unlimited adds Net Worth and Liabilities.",
