@@ -148,7 +148,7 @@ function PeerMeter({ mark }: { mark: PeerMark }) {
               </div>
             </div>
           ) : null}
-          <div className="absolute inset-y-0 w-0.5 -translate-x-1/2 bg-[#1a1a1a]" style={{ left: `${pct}%` }} />
+          <div className="absolute inset-y-0 w-[3px] -translate-x-1/2 bg-[#1a1a1a]" style={{ left: `${pct}%` }} />
         </div>
         <div
           className="pointer-events-none absolute top-0 flex -translate-x-1/2 flex-col items-center"
