@@ -129,6 +129,40 @@ export function serializePricingCopy(copy: PricingCopy): string {
   return JSON.stringify(copy, null, 2);
 }
 
+const MACH_FORWARD = "Mach Forward — 1,000 random futures, and how many still have money";
+const MACH_REWIND = "Mach Rewind — the same plan on real U.S. market history";
+const CLIENT_SHARING =
+  "Coming soon — sharing accounts with your clients at no additional charge to your clients";
+
+/** The lines the pricing cards were drawing even when Top 3 did not list them. */
+export function withLivePricingLines(copy: PricingCopy): PricingCopy {
+  return {
+    ...copy,
+    unlimited: { ...copy.unlimited, bullets: withUnlimited(copy.unlimited.bullets) },
+    advisorUnlimited: {
+      ...copy.advisorUnlimited,
+      bullets: withSharing(copy.advisorUnlimited.bullets),
+    },
+  };
+}
+
+function withUnlimited(lines: string[]): string[] {
+  const has = (bit: string) => lines.some((line) => line.toLowerCase().includes(bit));
+  const extras = [has("mach forward") ? null : MACH_FORWARD, has("mach rewind") ? null : MACH_REWIND].filter(
+    (line): line is string => Boolean(line),
+  );
+  if (!extras.length) return lines;
+  const next = [...lines];
+  const at = next.findIndex((line) => /plan survival/i.test(line));
+  next.splice(at >= 0 ? at + 1 : next.length, 0, ...extras);
+  return next;
+}
+
+function withSharing(lines: string[]): string[] {
+  if (lines.some((item) => item.toLowerCase().includes("sharing accounts"))) return lines;
+  return [...lines, CLIENT_SHARING];
+}
+
 export function bulletsToText(lines: string[]): string {
   return lines.join("\n");
 }

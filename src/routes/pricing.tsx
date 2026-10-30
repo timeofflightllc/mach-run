@@ -88,26 +88,6 @@ function FeatureLine({ children }: { children: ReactNode }) {
   );
 }
 
-function unlimitedLines(lines: string[]): string[] {
-  const forward = "Mach Forward — 1,000 random futures, and how many still have money";
-  const rewind = "Mach Rewind — the same plan on real U.S. market history";
-  const has = (bit: string) => lines.some((line) => line.toLowerCase().includes(bit));
-  const extras = [has("mach forward") ? null : forward, has("mach rewind") ? null : rewind].filter(
-    (line): line is string => Boolean(line),
-  );
-  if (!extras.length) return lines;
-  const next = [...lines];
-  const at = next.findIndex((line) => /plan survival/i.test(line));
-  next.splice(at >= 0 ? at + 1 : next.length, 0, ...extras);
-  return next;
-}
-
-function advisorUnlimitedLines(lines: string[]): string[] {
-  const line = "Coming soon — sharing accounts with your clients at no additional charge to your clients";
-  if (lines.some((item) => item.toLowerCase().includes("sharing accounts"))) return lines;
-  return [...lines, line];
-}
-
 function billingSelectedLabel(interval: "month" | "year" | null): string | null {
   if (interval === "year") return "(Annual billing selected)";
   if (interval === "month") return "(Monthly billing selected)";
@@ -666,7 +646,7 @@ function Pricing() {
               {copy.unlimited.tag}
             </p>
             <ul className="mt-5 space-y-2 text-sm text-muted">
-              {unlimitedLines(copy.unlimited.bullets).map((line, i) => (
+              {copy.unlimited.bullets.map((line, i) => (
                 <FeatureLine key={`unl-${i}`}>{line}</FeatureLine>
               ))}
             </ul>
@@ -785,7 +765,7 @@ function Pricing() {
                   : copy.advisorUnlimited.tag}
             </p>
             <ul className="mt-5 space-y-2 text-sm text-muted">
-              {advisorUnlimitedLines(copy.advisorUnlimited.bullets).map((line, i) => (
+              {copy.advisorUnlimited.bullets.map((line, i) => (
                 <FeatureLine key={`advu-${i}`}>{line}</FeatureLine>
               ))}
             </ul>

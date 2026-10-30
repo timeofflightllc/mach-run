@@ -1,5 +1,6 @@
 import { getSql } from "@/lib/db";
 import { pathsForSlug, pingIndexNow } from "@/lib/seo/sitemap";
+import { parsePricingCopy, serializePricingCopy, withLivePricingLines } from "./pricing-copy";
 import { DEFAULT_PAGES, defaultAnnouncements, byAnnouncementDateDesc, PINNED_ANNOUNCEMENTS, REFUND_FAQ_BLOCK, REFUND_LEGAL_BLOCK, FREE_CALCULATORS_BLOCK } from "./defaults";
 import {
   SITE_PAGE_SLUGS,
@@ -109,7 +110,31 @@ async function ensureToolsDecisionLine(): Promise<void> {
   );
 }
 
-/** A later ship note inserts once. A desk delete stays deleted. */
+/** Once. Writes the lines the pricing cards were adding on their own into the desk. A later edit sticks. */
+async function ensurePricingLiveBullets(): Promise<void> {
+  const sql = await getSql();
+  const flagged = await sql.query<{ key: string }>(
+    "select key from mach_copy_flags where key = 'pricing_live_bullets'",
+  );
+  if (flagged.length) return;
+  const rows = await sql.query<{ body: string }>(
+    "select body from mach_site_pages where slug = 'pricing'",
+  );
+  const stored = parsePricingCopy(rows[0]?.body);
+  const live = withLivePricingLines(stored);
+  const changed =
+    live.unlimited.bullets.join("\n") !== stored.unlimited.bullets.join("\n") ||
+    live.advisorUnlimited.bullets.join("\n") !== stored.advisorUnlimited.bullets.join("\n");
+  if (changed) {
+    await sql.query("update mach_site_pages set body = $1, updated_at = now() where slug = 'pricing'", [
+      serializePricingCopy(live),
+    ]);
+  }
+  await sql.query(
+    `insert into mach_copy_flags (key) values ('pricing_live_bullets')
+     on conflict (key) do nothing`,
+  );
+}
 async function ensurePinnedAnnouncements(): Promise<void> {
   const sql = await getSql();
   for (const item of [...PINNED_ANNOUNCEMENTS].reverse()) {
@@ -344,6 +369,7 @@ export async function loadSiteCopy(): Promise<SiteCopy> {
   try {
     await seedIfEmpty();
     await ensureToolsDecisionLine();
+    await ensurePricingLiveBullets();
     await ensurePinnedAnnouncements();
     const sql = await getSql();
     const pageRows = await sql.query<{
