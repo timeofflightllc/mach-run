@@ -20,7 +20,7 @@ import {
   type RetiredPayResult,
 } from "@/lib/retired-pay/formula";
 import { pageHead } from "@/lib/seo";
-import { CalculatorDesktopFooter } from "@/components/meridian/mach-mark";
+import { CalculatorDesktopFooter, RetiredPayPhoneFooter } from "@/components/meridian/mach-mark";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { isRealUser } from "@/lib/auth/gates";
 import { writeActPlace } from "@/lib/act-place";
@@ -633,6 +633,7 @@ function RetiredPayQuiz() {
           </button>
         </div>
       </div>
+      <RetiredPayPhoneFooter />
       <CalculatorDesktopFooter />
     </main>
   );

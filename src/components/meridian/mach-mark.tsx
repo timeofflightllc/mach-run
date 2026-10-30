@@ -301,3 +301,33 @@ export function CalculatorDesktopFooter() {
     </div>
   );
 }
+
+/** Phone only, retired-pay page. The line and what sits under it. Nothing above the line. */
+export function RetiredPayPhoneFooter() {
+  return (
+    <footer className="relative z-10 mt-5 w-full border-t border-border bg-bg lg:hidden">
+      <div className="short-footer-gutter mx-auto w-full py-6">
+        <p className="w-full text-center text-[12.5px] leading-snug text-muted">
+          <Link to="/privacy" className="font-medium text-fg underline underline-offset-4 hover:text-accent">
+            Privacy
+          </Link>
+          <span className="px-4">|</span>
+          <Link to="/legal" className="font-medium text-fg underline underline-offset-4 hover:text-accent">
+            Terms of Service
+          </Link>
+          <span className="px-4">|</span>
+          <a
+            href="https://www.linkedin.com/company/machrun-com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium text-fg underline underline-offset-4 hover:text-accent"
+          >
+            LinkedIn
+          </a>
+        </p>
+        <p className="mt-2 w-full text-center text-[11px] leading-snug text-muted">Copyright © MACHRUN.com</p>
+        <VeteranOwned />
+      </div>
+    </footer>
+  );
+}
