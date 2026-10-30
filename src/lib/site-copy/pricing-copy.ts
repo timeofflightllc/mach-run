@@ -25,7 +25,7 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
     ],
   },
   individual: {
-    tag: "A monthly hop — not a fuel bill.",
+    tag: "",
     bullets: [
       "One household, unlimited accounts",
       "Unlimited contributions and incomes",
@@ -35,7 +35,7 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
     ],
   },
   unlimited: {
-    tag: "The household balance sheet on top of Individual",
+    tag: "",
     bullets: [
       "Everything in Individual, plus:",
       "Live Net Worth radar — assets vs liabilities",

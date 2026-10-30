@@ -135,6 +135,41 @@ async function ensurePricingLiveBullets(): Promise<void> {
      on conflict (key) do nothing`,
   );
 }
+
+const RETIRED_INDIVIDUAL_TAG = "A monthly hop — not a fuel bill.";
+const RETIRED_UNLIMITED_TAG = "The household balance sheet on top of Individual";
+
+/** Once. Drops the two retired price tags from the desk. A later tag stays. */
+async function ensurePricingTagsCleared(): Promise<void> {
+  const sql = await getSql();
+  const flagged = await sql.query<{ key: string }>(
+    "select key from mach_copy_flags where key = 'pricing_tags_cleared'",
+  );
+  if (flagged.length) return;
+  const rows = await sql.query<{ body: string }>(
+    "select body from mach_site_pages where slug = 'pricing'",
+  );
+  const stored = parsePricingCopy(rows[0]?.body);
+  const individual =
+    stored.individual.tag.replace(/\s*[—–-]\s*/g, " — ").trim() === RETIRED_INDIVIDUAL_TAG
+      ? ""
+      : stored.individual.tag;
+  const unlimited = stored.unlimited.tag.trim() === RETIRED_UNLIMITED_TAG ? "" : stored.unlimited.tag;
+  if (individual !== stored.individual.tag || unlimited !== stored.unlimited.tag) {
+    const next = {
+      ...stored,
+      individual: { ...stored.individual, tag: individual },
+      unlimited: { ...stored.unlimited, tag: unlimited },
+    };
+    await sql.query("update mach_site_pages set body = $1, updated_at = now() where slug = 'pricing'", [
+      serializePricingCopy(next),
+    ]);
+  }
+  await sql.query(
+    `insert into mach_copy_flags (key) values ('pricing_tags_cleared')
+     on conflict (key) do nothing`,
+  );
+}
 async function ensurePinnedAnnouncements(): Promise<void> {
   const sql = await getSql();
   for (const item of [...PINNED_ANNOUNCEMENTS].reverse()) {
@@ -370,6 +405,7 @@ export async function loadSiteCopy(): Promise<SiteCopy> {
     await seedIfEmpty();
     await ensureToolsDecisionLine();
     await ensurePricingLiveBullets();
+    await ensurePricingTagsCleared();
     await ensurePinnedAnnouncements();
     const sql = await getSql();
     const pageRows = await sql.query<{

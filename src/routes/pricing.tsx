@@ -53,20 +53,43 @@ function aboutPerDay(usd: number, interval: "month" | "year"): number {
   return Math.max(1, Math.round((usd / days) * 100));
 }
 
-function AboutPerDay({ usd, interval }: { usd: number; interval: "month" | "year" }) {
+function AboutPerDay({
+  usd,
+  interval,
+  onYearly,
+}: {
+  usd: number;
+  interval: "month" | "year";
+  onYearly?: () => void;
+}) {
   const cents = aboutPerDay(usd, interval);
   const amount = cents < 100 ? `${cents}¢` : `$${(cents / 100).toFixed(2)}`;
   return (
-    <div className="mt-3 flex flex-wrap items-center gap-2">
-      <p className="inline-flex items-baseline gap-1.5 rounded-full bg-[#e7f4ec] px-3 py-1">
-        <span className="font-display text-lg font-semibold tabular-nums leading-none text-[#1f6b40]">
-          About {amount}
-        </span>
-        <span className="text-xs font-medium text-[#2f6b4a]">a day</span>
-      </p>
-      <p className="text-xs text-muted">
-        {interval === "year" ? "Paid yearly." : "Paid monthly."}
-      </p>
+    <div className="mt-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="inline-flex items-baseline gap-1.5 rounded-full bg-[#e7f4ec] px-3 py-1">
+          <span className="font-display text-lg font-semibold tabular-nums leading-none text-[#1f6b40]">
+            About {amount}
+          </span>
+          <span className="text-xs font-medium text-[#2f6b4a]">a day</span>
+        </p>
+        <p className="text-xs text-muted">
+          {interval === "year" ? "Paid yearly." : "Paid monthly."}
+        </p>
+      </div>
+      {interval === "month" && onYearly ? (
+        <p className="mt-2 text-center text-xs text-muted">
+          Check out{" "}
+          <button
+            type="button"
+            onClick={onYearly}
+            className="font-medium text-fg underline underline-offset-4 hover:text-accent"
+          >
+            yearly pricing
+          </button>{" "}
+          for 2 months free.
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -569,10 +592,10 @@ function Pricing() {
               ${indPrice}
               <span className="text-xl text-muted">{per}</span>
             </p>
-            <AboutPerDay usd={indPrice} interval={interval} />
-            <p className="mt-1 text-sm text-muted">
-              {copy.individual.tag}
-            </p>
+            <AboutPerDay usd={indPrice} interval={interval} onYearly={() => setInterval("year")} />
+            {copy.individual.tag ? (
+              <p className="mt-1 text-sm text-muted">{copy.individual.tag}</p>
+            ) : null}
             <ul className="mt-5 space-y-2 text-sm text-muted">
               {copy.individual.bullets.map((line, i) => (
                 <FeatureLine key={`ind-${i}`}>{line}</FeatureLine>
@@ -641,10 +664,10 @@ function Pricing() {
               ${unlPrice}
               <span className="text-xl text-muted">{per}</span>
             </p>
-            <AboutPerDay usd={unlPrice} interval={interval} />
-            <p className="mt-1 text-sm text-muted">
-              {copy.unlimited.tag}
-            </p>
+            <AboutPerDay usd={unlPrice} interval={interval} onYearly={() => setInterval("year")} />
+            {copy.unlimited.tag ? (
+              <p className="mt-1 text-sm text-muted">{copy.unlimited.tag}</p>
+            ) : null}
             <ul className="mt-5 space-y-2 text-sm text-muted">
               {copy.unlimited.bullets.map((line, i) => (
                 <FeatureLine key={`unl-${i}`}>{line}</FeatureLine>
@@ -696,7 +719,7 @@ function Pricing() {
               ${advPrice}
               <span className="text-xl text-muted">{per}</span>
             </p>
-            <AboutPerDay usd={advPrice} interval={interval} />
+            <AboutPerDay usd={advPrice} interval={interval} onYearly={() => setInterval("year")} />
             <p className="mt-1 text-sm text-muted">
               {trialOnAdvisorLite && (promoDays || promoPct)
                 ? advisorSubtitle
@@ -756,7 +779,7 @@ function Pricing() {
               ${advUnlPrice}
               <span className="text-xl text-muted">{per}</span>
             </p>
-            <AboutPerDay usd={advUnlPrice} interval={interval} />
+            <AboutPerDay usd={advUnlPrice} interval={interval} onYearly={() => setInterval("year")} />
             <p className="mt-1 text-sm text-muted">
               {trialOnAdvisor && (promoDays || promoPct)
                 ? advisorUnlSubtitle
