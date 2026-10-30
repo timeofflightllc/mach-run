@@ -280,7 +280,7 @@ export function GuestHero({
         <h1 className="hero-backlight max-w-4xl text-center font-display text-[1.25rem] font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
           <HeroLines text={hero.headline} />
         </h1>
-        <div className="mt-1.5 max-w-3xl text-center text-[0.667rem] leading-relaxed text-[#3d4a54] sm:mt-4 sm:text-lg">
+        <div className="relative z-10 mt-1.5 max-w-3xl text-center text-[0.667rem] leading-relaxed text-[#3d4a54] sm:mt-4 sm:text-lg">
           <p>
             <HeroLines text={hero.text} />
           </p>
