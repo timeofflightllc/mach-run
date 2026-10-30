@@ -1,12 +1,6 @@
-import { useEffect, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, getRouteApi } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { SiteMenu, SiteNav } from "@/components/meridian/site-nav";
-import { loadPublicSiteCopy } from "@/lib/site-copy/api";
-import {
-  DEFAULT_FOOTER_COPY,
-  footerFromSiteCopy,
-} from "@/lib/site-copy/footer-copy";
 import type { FooterCopy } from "@/lib/site-copy/types";
 
 /** Nested Mach-cone chevrons. currentColor = outer; inner is titanium. */
@@ -188,6 +182,8 @@ function PlannerDisclaimer() {
   );
 }
 
+const rootRoute = getRouteApi("__root__");
+
 export function MachFooter({
   variant = "short",
   disclaimer = false,
@@ -198,20 +194,7 @@ export function MachFooter({
   /** Match the 10% gutter on static pages. The calculator leaves this off. */
   staticInset?: boolean;
 }) {
-  const [copy, setCopy] = useState<FooterCopy>(DEFAULT_FOOTER_COPY);
-  useEffect(() => {
-    let live = true;
-    void loadPublicSiteCopy()
-      .then((site) => {
-        if (live) setCopy(footerFromSiteCopy(site));
-      })
-      .catch(() => {
-        /* keep defaults */
-      });
-    return () => {
-      live = false;
-    };
-  }, []);
+  const copy = rootRoute.useLoaderData().footer;
 
   if (variant === "short") {
     return (

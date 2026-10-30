@@ -11,6 +11,9 @@ import { SessionSnapshotProvider } from "@/lib/auth/session-snapshot-context";
 import type { SessionSnapshot } from "@/lib/auth/session-snapshot";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { IdleLockGate } from "@/components/meridian/idle-lock";
+import { loadPublicSiteCopy } from "@/lib/site-copy/api";
+import { DEFAULT_FOOTER_COPY, footerFromSiteCopy } from "@/lib/site-copy/footer-copy";
+import type { FooterCopy } from "@/lib/site-copy/types";
 import appCss from "../styles.css?url";
 
 analytics.init({
@@ -29,12 +32,16 @@ export const Route = createRootRoute({
   // Sign In while the browser session check is still pending.
   staleTime: Number.POSITIVE_INFINITY,
   loader: async () => {
-    try {
-      const sessionUser = await loadSessionSnapshot();
-      return { sessionUser: sessionUser ?? null };
-    } catch {
-      return { sessionUser: null as SessionSnapshot | null };
-    }
+    const [sessionUser, footer] = await Promise.all([
+      loadSessionSnapshot().catch(() => null),
+      loadPublicSiteCopy()
+        .then((site) => footerFromSiteCopy(site))
+        .catch(() => DEFAULT_FOOTER_COPY),
+    ]);
+    return {
+      sessionUser: (sessionUser ?? null) as SessionSnapshot | null,
+      footer: footer as FooterCopy,
+    };
   },
   head: () => ({
     meta: [
