@@ -101,15 +101,15 @@ export const DEFAULT_PAGES: SitePage[] = [
 
 MACH RUN is *The Supersonic Retirement Calculator*.
 
-I wanted one concise place to see income, investments, and a nest-egg goal, at a fair price. None existed. So I built it.
+I wanted one place to see the household. Income. Investments. The nest-egg goal. No pitch at the end of the chart. That place did not exist. So I built it.
 
-The name is MACH RUN - Measure, Allocate, Compound, Harvest. The method is Colonel John Boyd's OODA loop. John Boyd was one of the greatest fighter pilots in U.S. Air Force history. As a retired U.S. Air Force fighter pilot, I found it useful to apply OODA to my finances and financial planning. Boyd created OODA to teach young fighter pilots how to kill and survive. I use it here as a way to look at your money.
+The name is MACH RUN — Measure, Allocate, Compound, Harvest. The method is Colonel John Boyd's OODA loop. Boyd was one of the best fighter pilots the Air Force ever produced. He wrote OODA so a young pilot could observe, orient, and act inside the other guy's decision cycle. I'm a retired Air Force fighter pilot. I run the family money the same way.
 
-Join for free. Type your numbers, run it, change an input, and run it again. Iterate as many times as you want. All data is encrypted in transit and at rest.
+Start free. Type the numbers. Run it. Change one input. Run it again. Do that until the picture is clear. The data is encrypted in transit and at rest.
 
-Paid plans unlock Net Worth, encrypted/downloadable backups, and OODA AI. MACH RUN is not a financial advisor, and it does not sell financial products. It is a tool in your toolkit. Like how an advanced radar in a fighter jet increases the pilot's situational awareness (SA), a robust retirement calculator -- with unlimited iterations -- can do the same for SA of your finances. Greater SA of your family's financial position raises the odds you hit your retirement goal.
+A paid plan adds Net Worth, an encrypted backup you can download, and OODA AI. MACH RUN is not a financial advisor. It does not sell investments, insurance, or annuities. A radar does not fly the jet. It gives the pilot the picture. That is the job here. Better awareness of where the household stands. Better odds you hit the goal.
 
-You alone own the decisions. Talk to a professional fiduciary before you act on them.
+You own the decisions. Talk to a professional fiduciary before you act on them.
 
 Thanks for checking out MACH RUN. Find me on [LinkedIn](https://www.linkedin.com/in/cainf-15advanced/).
 

@@ -299,6 +299,7 @@ function preferCurrentLegal(page: SitePage): SitePage {
   if (page.slug === "privacy" && !page.body.includes("Cloudflare Turnstile")) return fresh;
   if (page.slug === "legal" && !page.body.includes("Florida law governs")) return fresh;
   if (page.slug === "about" && !page.body.includes("FIGHTS ON!")) return fresh;
+  if (page.slug === "about" && page.body.includes("I wanted one concise place")) return fresh;
   return freshenKicker(page);
 }
 
