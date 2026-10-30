@@ -103,6 +103,10 @@ function FlagStar({ className = "mt-[0.32rem] h-2 w-2 shrink-0 fill-[#002868]" }
 }
 
 function FeatureLine({ children }: { children: ReactNode }) {
+  const header = typeof children === "string" && /^everything in\b/i.test(children.trim()) && /plus:\s*$/i.test(children.trim());
+  if (header) {
+    return <li className="font-medium text-fg">{children}</li>;
+  }
   return (
     <li className="flex items-start gap-1.5">
       <FlagStar />
