@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import QRCode from "qrcode";
 import { authClient, rememberBearerIfPreview } from "@/lib/auth/client";
 import { turnOffAdvisorCheckFn } from "@/lib/auth/advisor-mfa-api";
-import { SignInFactor } from "@/components/auth/sign-in-factor";
+import { SignInFactor, AuthenticatorMarks, PasskeyButton } from "@/components/auth/sign-in-factor";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 
 type EnableResult = { totpURI?: string; backupCodes?: string[] };
@@ -214,7 +214,6 @@ export function AdvisorSignInEnroll({
   if (alreadyOn) {
     return (
       <div className="space-y-4">
-        <p className="text-base text-fg">Advisor sign-in check</p>
         {showOff ? (
           <form
             onSubmit={(e) => {
@@ -251,7 +250,7 @@ export function AdvisorSignInEnroll({
               className="text-sm text-fg underline underline-offset-4"
               onClick={() => void turnOff("passkey")}
             >
-              Use Face ID or this device
+              Login with Apple Face ID or Touch ID
             </button>
             <button
               type="button"
@@ -273,9 +272,6 @@ export function AdvisorSignInEnroll({
           </form>
         ) : (
           <>
-            <p className="text-sm text-muted">
-              Enter the code from your authenticator, or use this device, to open the client.
-            </p>
             <SignInFactor next="/" onDone={() => onEnrolledRef.current?.()} />
             <button
               type="button"
@@ -292,21 +288,32 @@ export function AdvisorSignInEnroll({
   }
 
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted">This is the advisor sign-in check.</p>
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => void onPasskey()}
-        className="inline-flex h-11 w-full items-center justify-center whitespace-nowrap rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90 disabled:opacity-50"
-      >
-        Use Face ID or this device
-      </button>
+    <div className="space-y-5">
+      <div className="space-y-1">
+        <p className="text-base font-medium text-fg">Set up the advisor sign-in check</p>
+        <p className="text-sm leading-snug text-muted">
+          A client plan stays covered until this account has a second check. Choose one. You do not need both.
+        </p>
+      </div>
+      <div className="space-y-2">
+        <p className="text-sm font-medium text-fg">This Mac, iPhone, or iPad</p>
+        <PasskeyButton busy={busy} onClick={() => void onPasskey()} />
+        <p className="text-xs leading-snug text-muted">
+          The next prompt is from your device. Approving it saves a passkey for MACH RUN. It is not an Apple ID login, and it does not create a six-digit code.
+        </p>
+      </div>
       {passkeyOn && !authenticatorOn ? (
         <p className="text-sm text-fg">
-          A lost device locks the client list until the desk clears it.
+          This device is paired. A lost device locks the client list until the desk clears it.
         </p>
       ) : null}
+      <div className="space-y-3 border-t border-border pt-4">
+        <p className="text-sm font-medium text-fg">Or pair an authenticator app</p>
+        <p className="text-xs leading-snug text-muted">
+          Scan the QR code in one of these apps. The app shows a six-digit code. Type that code below. You do not choose the number.
+        </p>
+        <AuthenticatorMarks />
+      </div>
       {needPassword ? (
         <form onSubmit={(e) => void onPassword(e)} className="space-y-4">
           <Field label="Password">
@@ -315,10 +322,11 @@ export function AdvisorSignInEnroll({
               value={password}
               onChange={(ev) => setPassword(ev.target.value)}
               autoComplete="current-password"
+              className="max-w-none"
             />
           </Field>
           <PrimaryButton type="submit" disabled={busy || !password} className="w-full">
-            {busy ? "Working…" : "Show the code"}
+            {busy ? "Working…" : "Show the QR code"}
           </PrimaryButton>
         </form>
       ) : null}
@@ -326,12 +334,13 @@ export function AdvisorSignInEnroll({
         <div className="space-y-4">
           <TotpQr uri={uri} />
           <form onSubmit={(e) => void onCode(e)} className="space-y-4">
-            <Field label="Authenticator code">
+            <Field label="Six-digit code from the app">
               <TextInput
                 value={code}
                 onChange={(ev) => setCode(ev.target.value.replace(/\D/g, "").slice(0, 6))}
                 inputMode="numeric"
                 autoComplete="one-time-code"
+                className="max-w-none"
                 placeholder="000000"
               />
             </Field>
@@ -340,10 +349,12 @@ export function AdvisorSignInEnroll({
             </PrimaryButton>
           </form>
         </div>
+      ) : !needPassword && !showCodes && !passkeyOn && !error ? (
+        <p className="text-sm text-muted">Preparing the QR code…</p>
       ) : null}
       {showCodes ? (
         <div className="space-y-3">
-          <p className="text-sm text-fg">Save these codes. They are shown once.</p>
+          <p className="text-sm text-fg">Save these backup codes. They are shown once.</p>
           <ul className="space-y-1 font-mono text-sm text-fg">
             {codes.map((item) => (
               <li key={item}>{item}</li>
