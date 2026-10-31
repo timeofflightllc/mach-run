@@ -290,7 +290,11 @@ export function AdvisorSignInEnroll({
   return (
     <div className="space-y-5">
       <div className="space-y-1">
-        <p className="text-center text-2xl font-semibold leading-tight text-fg">MACH RUN Advisor Authentication</p>
+        <p className="text-center text-2xl font-semibold leading-tight text-fg">
+          MACH RUN
+          <br />
+          Advisor Authentication
+        </p>
         <p className="text-sm leading-snug text-muted">
           Advisor Lite and Advisor Heavy require multi-factor authentication (MFA) before a client plan opens. Use one of the methods below. A device passkey or an authenticator app is the standard for a book of clients. MACH RUN does not use text-message codes.
         </p>

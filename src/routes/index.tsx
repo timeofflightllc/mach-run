@@ -2189,7 +2189,7 @@ function Home() {
             <circle cx="500" cy="470" r="64" fill="#3a8a58" />
             <rect x="470" y="510" width="60" height="100" rx="20" fill="#3a8a58" />
           </svg>
-          <div className="relative z-10 mx-auto mt-20 w-[26rem] max-w-[calc(100vw-2rem)] rounded-xl bg-elevated p-6 shadow-[0_12px_40px_rgba(26,35,48,0.12),0_0_0_1px_var(--color-border)]">
+          <div className="relative z-10 mx-auto mt-20 w-[28.6rem] max-w-[calc(100vw-2rem)] rounded-xl bg-elevated p-6 shadow-[0_12px_40px_rgba(26,35,48,0.12),0_0_0_1px_var(--color-border)]">
           {advisor && advisorProof && advisorProof !== "fail" ? (
             <AdvisorSignInEnroll
               alreadyOn={advisorProof.enrolled}
