@@ -560,9 +560,9 @@ function MonteCarloTab({
 
 const PAGES = [
   { id: "family", phase: "observe" },
-  { id: "assumptions", phase: "observe" },
   { id: "assets", phase: "observe" },
   { id: "liabilities", phase: "observe" },
+  { id: "assumptions", phase: "observe" },
   { id: "income", phase: "orient" },
   { id: "spending", phase: "orient" },
   { id: "goals", phase: "decide" },
@@ -661,9 +661,9 @@ function ActPhase() {
 
 const OBSERVE_TABS = [
   { id: "family", label: "Family" },
-  { id: "assumptions", label: "Assumptions" },
   { id: "assets", label: "Assets" },
   { id: "liabilities", label: "Liabilities" },
+  { id: "assumptions", label: "Assumptions" },
 ] as const;
 
 const ORIENT_TABS = [
