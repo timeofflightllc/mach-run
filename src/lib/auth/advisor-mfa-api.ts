@@ -4,6 +4,13 @@ import { getSql } from "@/lib/db";
 import { ADVISOR_MFA_COOKIE, advisorMfaProofMatches, turnOffAdvisorCheck } from "./advisor-mfa.server";
 import { auth } from "./server";
 
+export const ADVISOR_MFA_CHANGED = "mach-advisor-mfa";
+
+export function notifyAdvisorMfaChanged() {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new Event(ADVISOR_MFA_CHANGED));
+}
+
 const bearerMiddleware = createMiddleware({ type: "function" })
   .client(async ({ next }) => {
     const { getBearerToken } = await import("./client");

@@ -15,7 +15,7 @@ import type { Entitlement } from "@/lib/billing/limits";
 import { canDownloadBackup, isAdvisorPlan } from "@/lib/billing/limits";
 import { atProfileCap } from "@/lib/billing/use-entitlement";
 import { AdvisorSignInEnroll } from "@/components/auth/advisor-sign-in-enroll";
-import { advisorMfaStatusFn } from "@/lib/auth/advisor-mfa-api";
+import { advisorMfaStatusFn, ADVISOR_MFA_CHANGED } from "@/lib/auth/advisor-mfa-api";
 
 function AdvisorMfaWall() {
   return (
@@ -85,6 +85,14 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
       live = false;
     };
   }, [advisor, proofTick]);
+
+  useEffect(() => {
+    function refresh() {
+      setProofTick((n) => n + 1);
+    }
+    window.addEventListener(ADVISOR_MFA_CHANGED, refresh);
+    return () => window.removeEventListener(ADVISOR_MFA_CHANGED, refresh);
+  }, []);
 
   if (!allowed) return null;
   if (advisor && (!proof || !proof.enrolled || !proof.proven)) {

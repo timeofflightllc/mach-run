@@ -3,7 +3,7 @@ import { ChartLine, FileSearch, RefreshCw, Sparkles, Table2 } from "lucide-react
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { AuthSlot } from "@/components/meridian/auth-slot";
 import { AdvisorSignInEnroll } from "@/components/auth/advisor-sign-in-enroll";
-import { advisorMfaStatusFn } from "@/lib/auth/advisor-mfa-api";
+import { advisorMfaStatusFn, notifyAdvisorMfaChanged } from "@/lib/auth/advisor-mfa-api";
 import { ProfileSwitcher } from "@/components/meridian/profile-switcher";
 import { MACH_RESET_BASELINE } from "@/components/meridian/account-menu";
 import { StaleRunPrompt } from "@/components/meridian/confirm-remove";
@@ -2207,8 +2207,14 @@ function Home() {
           {advisor && advisorProof && advisorProof !== "fail" ? (
             <AdvisorSignInEnroll
               alreadyOn={advisorProof.enrolled}
-              onEnrolled={() => setAdvisorProofTick((n) => n + 1)}
-              onTurnedOff={() => setAdvisorProofTick((n) => n + 1)}
+              onEnrolled={() => {
+                notifyAdvisorMfaChanged();
+                setAdvisorProofTick((n) => n + 1);
+              }}
+              onTurnedOff={() => {
+                notifyAdvisorMfaChanged();
+                setAdvisorProofTick((n) => n + 1);
+              }}
             />
           ) : advisor ? (
             <p className="text-sm text-muted">Checking this sign-in.</p>
