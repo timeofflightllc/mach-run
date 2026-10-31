@@ -3,6 +3,8 @@
  * Later: set CONTACT_EMAIL_GENERAL / CONTACT_EMAIL_BUG / CONTACT_EMAIL_FEATURE.
  */
 
+import { wrapEmail } from "./signup";
+
 export type ContactTopic = "general" | "bug" | "feature";
 
 const TOPIC_LABEL: Record<ContactTopic, string> = {
@@ -92,18 +94,32 @@ export async function sendEnterpriseMail(
   if (!key) return { ok: false, reason: "Mail is not connected yet." };
   const to = contactInbox("general");
   const clean = email.trim();
-  const subject = `[MACH RUN Enterprise] ${clean.slice(0, 80)}`;
-  const text = [
-    "Advisor Enterprise inquiry.",
-    `From: ${clean}`,
-    "",
-    "A book over 50 clients, or a second login on the same book.",
-  ].join("\n");
-  const html = `
-    <p><strong>Advisor Enterprise inquiry.</strong></p>
-    <p><strong>From:</strong> ${escapeHtml(clean)}</p>
-    <p>A book over 50 clients, or a second login on the same book.</p>
-  `;
+  const when = new Date().toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "America/Chicago",
+  });
+  const line = `There is an interested party seeking more information about Custom Enterprise Solutions on ${when} CT.`;
+  const subject = `Custom Enterprise Solutions — ${clean.slice(0, 80)}`;
+  const text = [line, "", `Email: ${clean}`, `When: ${when} CT`].join("\n");
+  const html = wrapEmail(
+    "Custom Enterprise Solutions",
+    `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#3D4A54;">
+          ${escapeHtml(line)}
+        </td></tr>
+        <tr><td style="padding:0 28px 24px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE7DC;">
+            <tr><td style="padding:14px 16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1E2A32;">
+              Email<br /><strong>${escapeHtml(clean)}</strong><br /><br />
+              When<br /><strong>${escapeHtml(when)} CT</strong>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:0 28px 24px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#5D6C78;">
+          This is an owner alert. The interested party was not copied.
+        </td></tr>`,
+    line,
+  );
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
