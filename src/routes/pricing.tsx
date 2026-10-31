@@ -169,7 +169,11 @@ function EnterpriseCard({
         ))}
       </ul>
       {sent ? (
-        <p className="mt-6 text-sm font-medium text-fg">Sent. I will write you back.</p>
+        <p className="mt-6 text-sm font-medium text-fg">
+          ✅ MACH RUN Custom Enterprise Solutions information request successfully sent. You can expect a
+          reply within 24 hours. Please check your spam folder and add matt@machrun.com to your authorized
+          email list.
+        </p>
       ) : (
         <form
           className="mt-6 space-y-3"
