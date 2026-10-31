@@ -242,7 +242,7 @@ function Top3DeskDoor() {
           <CountTile label="Individual" value={counts.individual} />
           <CountTile label="Ind. Unlimited" value={counts.unlimited} />
           <CountTile label="Advisor Lite" value={counts.advisor_lite} />
-          <CountTile label="Advisor Unl." value={counts.advisor} />
+          <CountTile label="Adv. Heavy" value={counts.advisor} />
           <CountTile label="Trialing" value={counts.trialing} />
           <CountTile label="Past due" value={counts.past_due} />
         </div>
@@ -271,7 +271,7 @@ function Top3DeskDoor() {
               <option value="individual">Individual</option>
               <option value="unlimited">Individual Unlimited</option>
               <option value="advisor_lite">Advisor Lite</option>
-              <option value="advisor">Advisor Unlimited</option>
+              <option value="advisor">Advisor Heavy</option>
             </SelectInput>
           </Field>
           <Field label="Paid">
@@ -678,7 +678,7 @@ function PersonPane({
               <option value="individual">Individual</option>
               <option value="unlimited">Individual Unlimited</option>
               <option value="advisor_lite">Advisor Lite</option>
-              <option value="advisor">Advisor Unlimited</option>
+              <option value="advisor">Advisor Heavy</option>
             </SelectInput>
           </Field>
           {pkg !== "free" ? (

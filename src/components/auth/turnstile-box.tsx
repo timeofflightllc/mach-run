@@ -36,22 +36,26 @@ declare global {
 export function TurnstileBox({
   onToken,
   resetKey = 0,
+  siteKey,
 }: {
   onToken: (token: string | null) => void;
   resetKey?: number;
+  siteKey?: string;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const widget = useRef<string | null>(null);
   const onTokenRef = useRef(onToken);
   onTokenRef.current = onToken;
+  const key = (siteKey ?? turnstileSiteKey()).trim();
 
   useEffect(() => {
+    if (!key) return;
     let cancelled = false;
 
     function mount() {
       if (cancelled || !host.current || !window.turnstile || widget.current) return;
       widget.current = window.turnstile.render(host.current, {
-        sitekey: turnstileSiteKey(),
+        sitekey: key,
         theme: "dark",
         size: "flexible",
         action: "signup",
@@ -89,7 +93,9 @@ export function TurnstileBox({
         widget.current = null;
       }
     };
-  }, [resetKey]);
+  }, [key, resetKey]);
+
+  if (!key) return null;
 
   return <div ref={host} className="min-h-[65px]" />;
 }

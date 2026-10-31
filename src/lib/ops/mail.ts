@@ -63,7 +63,7 @@ export function audienceLabel(query: OpsRosterQuery, count: number): string {
   if (plan === "individual") bits.push("Individual");
   else if (plan === "unlimited") bits.push("Individual Unlimited");
   else if (plan === "advisor_lite") bits.push("Advisor Lite");
-  else if (plan === "advisor") bits.push("Advisor Unlimited");
+  else if (plan === "advisor") bits.push("Advisor Heavy");
   else if (plan === "free") bits.push("Free");
   if (paid === "paid") bits.push("paid");
   if (paid === "free") bits.push("unpaid");

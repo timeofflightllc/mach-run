@@ -297,7 +297,7 @@ function PricingFields({
           ["individual", "Individual — tag + bullets"],
           ["unlimited", "Individual Unlimited — tag + bullets"],
           ["advisorLite", "Advisor Lite — tag + bullets"],
-          ["advisorUnlimited", "Advisor Unlimited — tag + bullets"],
+          ["advisorUnlimited", "Advisor Heavy — tag + bullets"],
         ] as const
       ).map(([key, label]) => (
         <div key={key} className="space-y-2 border-t border-border pt-4">
@@ -340,6 +340,26 @@ function PricingFields({
           </Field>
         </div>
       ))}
+      <div className="space-y-2 border-t border-border pt-4">
+        <p className="text-xs font-medium uppercase tracking-[0.14em] text-subtle">
+          Advisor Enterprise
+        </p>
+        <Field label="Line in place of the price">
+          <TextInput
+            value={value.enterprisePrice}
+            onChange={(e) => set({ enterprisePrice: e.target.value })}
+          />
+        </Field>
+        <Field label="Intro">
+          <Area rows={3} value={value.enterpriseIntro} onChange={(enterpriseIntro) => set({ enterpriseIntro })} />
+        </Field>
+        <Field label="Bullets (one per line; blank line omitted)">
+          <BulletLines
+            lines={value.enterpriseBullets}
+            onChange={(enterpriseBullets) => set({ enterpriseBullets })}
+          />
+        </Field>
+      </div>
     </div>
   );
 }

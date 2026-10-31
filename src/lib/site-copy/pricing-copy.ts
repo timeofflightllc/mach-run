@@ -7,11 +7,11 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
   personalP2: "Individual Unlimited adds Net Worth and Liabilities.",
   personalP3: "Professional financial advisors have even more capability built in.",
   advisorP1: "Advisor Lite is five named client profiles. 14-day trial, then $69/month.",
-  advisorP2: "Advisor Unlimited is unlimited profiles. 14-day trial, then $169/month.",
+  advisorP2: "Advisor Heavy is 50 named profiles. 14-day trial, then $169/month.",
   couponLabel: "Do you have a coupon code?",
   intervalNoteMonth: "Monthly or yearly — fly yearly and we throw in two months.",
   intervalNoteYear: "Yearly: we throw in two months.",
-  intervalNoteAdvisorMonth: "Advisor Lite and Advisor Unlimited each include a 14-day free trial (card on file).",
+  intervalNoteAdvisorMonth: "Advisor Lite and Advisor Heavy each include a 14-day free trial (card on file).",
   freeAdvisorBullet: "Same free start. Paid advisor packages sit next to it.",
   advisorLiteTagYear: "14-day trial, we throw in two months",
   advisorUnlimitedTagYear: "14-day trial, we throw in two months.",
@@ -61,12 +61,27 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
     tag: "14-day trial, then $169/month",
     bullets: [
       "Everything in Advisor Lite, plus:",
-      "Unlimited named profiles",
+      "50 named profiles",
       "Same encrypted export / import file",
       "For a full book of clients",
       "Coming soon — sharing accounts with your clients at no additional charge to your clients",
     ],
   },
+  enterprisePrice: "Custom Enterprise Solutions",
+  enterpriseIntro:
+    "A book over 50 clients, or more than one advisor on that book. Write me and I will set it up with you.",
+  enterpriseBullets: [
+    "Private Label Solutions available",
+    "More than 50 client profiles",
+    "A second login for an office manager or a client support specialist",
+    "Both logins work the same book of clients",
+    "The staff login cannot change billing",
+    "Search the book instead of a dropdown",
+    "See the last MACH RUN on each client",
+    "See which plans are stale",
+    "Export the whole book, not one file at a time",
+    "Share a plan with the household. The advisor keeps the file",
+  ],
 };
 
 function str(value: unknown, fallback: string): string {
@@ -112,6 +127,9 @@ export function mergePricingCopy(raw: unknown): PricingCopy {
     unlimited: card(src.unlimited, d.unlimited),
     advisorLite: card(src.advisorLite, d.advisorLite),
     advisorUnlimited: card(src.advisorUnlimited, d.advisorUnlimited),
+    enterprisePrice: str(src.enterprisePrice, d.enterprisePrice),
+    enterpriseIntro: str(src.enterpriseIntro, d.enterpriseIntro),
+    enterpriseBullets: bullets(src.enterpriseBullets, d.enterpriseBullets),
   };
 }
 

@@ -22,7 +22,7 @@ export const PACKAGE_LABEL: Record<CheckoutPackage, string> = {
   individual: "Individual",
   unlimited: "Individual Unlimited",
   advisor_lite: "Advisor Lite",
-  advisor: "Advisor Unlimited",
+  advisor: "Advisor Heavy",
 };
 
 export type PromoKind = "trial_days" | "percent_off";

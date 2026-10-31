@@ -58,6 +58,9 @@ export type PricingCopy = {
   unlimited: PricingCardCopy;
   advisorLite: PricingCardCopy;
   advisorUnlimited: PricingCardCopy;
+  enterprisePrice: string;
+  enterpriseIntro: string;
+  enterpriseBullets: string[];
 };
 
 /** Desk-editable public footer strings. Links stay in MachFooter. */

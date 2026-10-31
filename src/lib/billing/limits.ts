@@ -13,6 +13,7 @@ export const ADVISOR_TRIAL_DAYS = 14;
 /** Prefill only. The desk can send any whole number of days from 1 to 730. */
 export const DESK_UNLIMITED_TRIAL_DAYS = 90;
 export const ADVISOR_LITE_PROFILE_LIMIT = 5;
+export const ADVISOR_HEAVY_PROFILE_LIMIT = 50;
 export const TRIAL_PROMO_CODE = "SUPER14";
 export const TRIAL_PROMO_DAYS = 14;
 export const MARVIN_PROMO_CODE = "MARVIN";
@@ -91,7 +92,7 @@ export function isAdvisorPlan(plan: MachPackage): boolean {
 }
 
 export function packageLabel(plan: MachPackage): string {
-  if (plan === "advisor") return "Advisor Unlimited";
+  if (plan === "advisor") return "Advisor Heavy";
   if (plan === "advisor_lite") return "Advisor Lite";
   if (plan === "unlimited") return "Individual Unlimited";
   if (plan === "individual") return "Individual";
@@ -108,9 +109,9 @@ export function hasBalanceSheet(plan: MachPackage): boolean {
   return plan === "unlimited" || plan === "advisor" || plan === "advisor_lite";
 }
 
-/** null = unlimited profiles. 0 = switcher hidden. */
+/** null is unused. 0 hides the switcher. Advisor Heavy is capped. */
 export function profileLimitFor(plan: MachPackage): number | null {
-  if (plan === "advisor") return null;
+  if (plan === "advisor") return ADVISOR_HEAVY_PROFILE_LIMIT;
   if (plan === "advisor_lite") return ADVISOR_LITE_PROFILE_LIMIT;
   return 0;
 }

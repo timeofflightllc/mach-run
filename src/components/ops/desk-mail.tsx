@@ -226,7 +226,7 @@ export function DeskMail({
                 <option value="individual">Individual</option>
                 <option value="unlimited">Individual Unlimited</option>
                 <option value="advisor_lite">Advisor Lite</option>
-                <option value="advisor">Advisor Unlimited</option>
+                <option value="advisor">Advisor Heavy</option>
               </SelectInput>
             </Field>
             <Field label="Paid">

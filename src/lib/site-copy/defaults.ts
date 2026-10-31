@@ -79,7 +79,7 @@ Example. You paid $40 for the year and you ask in month 4. Four months count as 
 
 Ask from the email on the account through [Contact](/contact). Say monthly or yearly. The refund goes back to the card through Stripe. Banks usually show it in 5 to 10 business days. MACH RUN does not keep the card number.
 
-The paid plan ends when the refund is sent. The household stays, on the free limits. A 14-day Advisor Lite or Advisor Unlimited trial canceled before it ends is not charged, so there is nothing to refund.
+The paid plan ends when the refund is sent. The household stays, on the free limits. A 14-day Advisor Lite or Advisor Heavy trial canceled before it ends is not charged, so there is nothing to refund.
 
 A refund is not an upgrade. Stepping up a tier is handled in Manage billing, with credit for time already paid. Deleting the account does not send a refund. Ask first. If a refund was sent, do not also dispute that charge with the bank.`;
 
@@ -178,7 +178,7 @@ Individual ($4/month or $40/year) is one household with unlimited accounts, cont
 
 Individual Unlimited ($15/month or $150/year): everything in Individual, plus Net Worth (assets vs liabilities), a liabilities list, Plan Survival, and encrypted MACH RUN backup download.
 
-Advisor Lite and Advisor Unlimited are for professionals who need named client profiles. Each includes a 14-day trial. Details live on [Pricing](/pricing). Yearly billing is two months on us.
+Advisor Lite and Advisor Heavy are for professionals who need named client profiles. Each includes a 14-day trial. Details live on [Pricing](/pricing). Yearly billing is two months on us.
 
 # How do I start if I am already retired?
 In Family, set the retirement goal date. An already-retired path lets you enter the month and year you left work. Then add pension, Social Security, VA, and the rest as income blocks.
@@ -261,7 +261,7 @@ A calculator result is not a decision. The rule is in the [Terms of Service](/le
 You may register with email or a sign-in provider. You are responsible for the account and for the numbers you type. Do not share your password.
 
 # Subscriptions
-Paid plans are billed by Stripe. You can cancel anytime in Manage billing. Canceling stops the next charge. It does not by itself refund a charge already made. Access lasts through the paid period unless a refund is sent or the account is closed for abuse. Advisor Lite and Advisor Unlimited each include a 14-day trial. The card is charged when that trial ends unless canceled before then. The plan renews until canceled.
+Paid plans are billed by Stripe. You can cancel anytime in Manage billing. Canceling stops the next charge. It does not by itself refund a charge already made. Access lasts through the paid period unless a refund is sent or the account is closed for abuse. Advisor Lite and Advisor Heavy each include a 14-day trial. The card is charged when that trial ends unless canceled before then. The plan renews until canceled.
 
 ${REFUND_LEGAL_BLOCK}
 

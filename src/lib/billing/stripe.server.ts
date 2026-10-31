@@ -124,7 +124,7 @@ export function priceIdFor(
   if (!id) {
     throw new Error(
       pkg === "advisor"
-        ? "Advisor Unlimited Stripe prices are not configured yet."
+        ? "Advisor Heavy Stripe prices are not configured yet."
         : pkg === "advisor_lite"
           ? "Advisor Lite Stripe prices are not configured yet."
           : pkg === "unlimited"

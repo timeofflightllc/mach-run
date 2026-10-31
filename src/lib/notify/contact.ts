@@ -85,4 +85,46 @@ export async function sendContactMail(input: {
   }
 }
 
+export async function sendEnterpriseMail(
+  email: string,
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const key = env("RESEND_API_KEY");
+  if (!key) return { ok: false, reason: "Mail is not connected yet." };
+  const to = contactInbox("general");
+  const clean = email.trim();
+  const subject = `[MACH RUN Enterprise] ${clean.slice(0, 80)}`;
+  const text = [
+    "Advisor Enterprise inquiry.",
+    `From: ${clean}`,
+    "",
+    "A book over 50 clients, or a second login on the same book.",
+  ].join("\n");
+  const html = `
+    <p><strong>Advisor Enterprise inquiry.</strong></p>
+    <p><strong>From:</strong> ${escapeHtml(clean)}</p>
+    <p>A book over 50 clients, or a second login on the same book.</p>
+  `;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: fromAddress(),
+        to: [to],
+        reply_to: clean,
+        subject,
+        html,
+        text,
+      }),
+    });
+    if (!res.ok) return { ok: false, reason: "Could not send. Try again." };
+    return { ok: true };
+  } catch {
+    return { ok: false, reason: "Could not reach mail." };
+  }
+}
+
 export { TOPIC_LABEL };

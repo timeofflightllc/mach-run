@@ -284,7 +284,13 @@ function freshenStoredCopy(body: string): string {
     .replaceAll(
       '"advisorUnlimitedTagYear": "Fly yearly and we throw in two months."',
       '"advisorUnlimitedTagYear": "14-day trial, we throw in two months."',
-    );
+    )
+    .replaceAll("Advisor Unlimited", "Advisor Heavy")
+    .replaceAll(
+      "Advisor Heavy is unlimited profiles. 14-day trial, then $169/month.",
+      "Advisor Heavy is 50 named profiles. 14-day trial, then $169/month.",
+    )
+    .replaceAll("Unlimited named profiles", "50 named profiles");
   return ensureFreeCalculators(ensureRefundCopy(next));
 }
 

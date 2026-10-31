@@ -59,12 +59,12 @@ test("encrypted backup is Unlimited and Advisor only", () => {
   assert.equal(canDownloadBackup("advisor"), true);
 });
 
-test("Advisor Lite is 5 profiles; Unlimited is uncapped", () => {
+test("Advisor Lite is 5 profiles; Heavy is 50", () => {
   assert.equal(profileLimitFor("advisor_lite"), 5);
-  assert.equal(profileLimitFor("advisor"), null);
+  assert.equal(profileLimitFor("advisor"), 50);
   assert.equal(profileLimitFor("unlimited"), 0);
   assert.equal(packageLabel("advisor_lite"), "Advisor Lite");
-  assert.equal(packageLabel("advisor"), "Advisor Unlimited");
+  assert.equal(packageLabel("advisor"), "Advisor Heavy");
 });
 
 test("paid upgrade uses prorate instead of a second checkout", () => {

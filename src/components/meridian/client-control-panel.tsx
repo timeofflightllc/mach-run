@@ -163,7 +163,7 @@ export function ClientControlPanel({
         </div>
         {capped ? (
           <p className="mt-2 text-xs leading-snug text-[#e8c547]">
-            Advisor Lite is 5 profiles. Upgrade to Advisor Unlimited for more.
+            Advisor Lite is 5 profiles. Upgrade to Advisor Heavy for more.
           </p>
         ) : null}
 

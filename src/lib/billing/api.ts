@@ -262,7 +262,7 @@ export const startCheckout = createServerFn({ method: "POST" })
     if (pkg === "advisor") {
       if (!advisorUnlimitedStripeConfigured()) {
         throw new Error(
-          "Advisor Unlimited checkout is not connected yet. Add STRIPE_PRICE_ADVISOR_UNLIMITED_MONTHLY and STRIPE_PRICE_ADVISOR_UNLIMITED_YEARLY in Vercel.",
+          "Advisor Heavy checkout is not connected yet. Add STRIPE_PRICE_ADVISOR_UNLIMITED_MONTHLY and STRIPE_PRICE_ADVISOR_UNLIMITED_YEARLY in Vercel.",
         );
       }
     } else if (pkg === "advisor_lite") {

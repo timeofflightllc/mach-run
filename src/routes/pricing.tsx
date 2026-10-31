@@ -27,6 +27,8 @@ import {
 import { builtinPromo, describePromo, evaluatePromo, type PromoRecord } from "@/lib/billing/promo";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { TurnstileBox, turnstileSiteKey } from "@/components/auth/turnstile-box";
+import { requestEnterprise } from "@/lib/notify/enterprise-api";
 import { cn } from "@/lib/utils";
 import { loadPublicSiteCopy, pageBySlug } from "@/lib/site-copy/api";
 import { parsePricingCopy } from "@/lib/site-copy/pricing-copy";
@@ -112,6 +114,101 @@ function FeatureLine({ children }: { children: ReactNode }) {
       <FlagStar />
       <span>{children}</span>
     </li>
+  );
+}
+
+function EnterpriseCard({
+  price,
+  intro,
+  features,
+}: {
+  price: string;
+  intro: string;
+  features: string[];
+}) {
+  const [email, setEmail] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [captcha, setCaptcha] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sent, setSent] = useState(false);
+  const siteKey = turnstileSiteKey() || "1x00000000000000000000AA";
+  const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const matched = email.trim().toLowerCase() === confirm.trim().toLowerCase();
+  const ready = emailOk && confirm.trim().length > 0 && matched && Boolean(captcha);
+
+  async function send() {
+    if (!ready || busy) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await requestEnterprise({ data: { email: email.trim(), captcha: captcha ?? "" } });
+      if (!result.ok) {
+        setError(result.reason);
+        setCaptcha(null);
+        setCaptchaReset((n) => n + 1);
+        return;
+      }
+      setSent(true);
+    } catch {
+      setError("Could not send. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <article className="order-3 flex flex-col rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]">
+      <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">Advisor Enterprise</p>
+      <p className="mt-3 font-display text-4xl leading-none text-fg">{price}</p>
+      <p className="mt-3 text-sm leading-relaxed text-muted">{intro}</p>
+      <ul className="mt-5 space-y-2 text-sm text-muted">
+        {features.map((line) => (
+          <FeatureLine key={line}>{line}</FeatureLine>
+        ))}
+      </ul>
+      {sent ? (
+        <p className="mt-6 text-sm font-medium text-fg">Sent. I will write you back.</p>
+      ) : (
+        <form
+          className="mt-6 space-y-3"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void send();
+          }}
+        >
+          <label className="block text-sm font-medium text-fg">
+            Your email
+            <TextInput
+              className="mt-1.5 max-w-none"
+              type="email"
+              value={email}
+              autoComplete="email"
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </label>
+          <label className="block text-sm font-medium text-fg">
+            Confirm email
+            <TextInput
+              className="mt-1.5 max-w-none"
+              type="email"
+              value={confirm}
+              autoComplete="off"
+              onChange={(event) => setConfirm(event.target.value)}
+            />
+          </label>
+          {confirm.trim() && !matched ? (
+            <p className="text-sm text-negative">Those emails do not match.</p>
+          ) : null}
+          <TurnstileBox siteKey={siteKey} resetKey={captchaReset} onToken={setCaptcha} />
+          {error ? <p className="text-sm text-negative">{error}</p> : null}
+          <PrimaryButton type="submit" disabled={!ready || busy}>
+            {busy ? "Sending…" : "Send"}
+          </PrimaryButton>
+        </form>
+      )}
+    </article>
   );
 }
 
@@ -328,7 +425,7 @@ function Pricing() {
       : interval === "year"
         ? `${ADVISOR_TRIAL_DAYS}-day trial, 2 months free`
         : `${ADVISOR_TRIAL_DAYS}-day trial, then $${ADVISOR_UNLIMITED_MONTHLY_USD}/month`;
-  const advisorUnlSignIn = "Create an account, then choose Advisor Unlimited";
+  const advisorUnlSignIn = "Create an account, then choose Advisor Heavy";
   const advisorUnlButton =
     busy === `advisor-${interval}`
       ? "Redirecting…"
@@ -528,10 +625,10 @@ function Pricing() {
         <div className="relative z-0 mb-10 mt-8">
           <BombBurstSketch raised />
           <div className="relative z-10 mx-auto grid w-full max-w-6xl items-start gap-4 md:grid-cols-3">
+          {audience === "individual" ? (
           <article
             className={cn(
-              "flex flex-col rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)]",
-              audience === "individual" && "order-1",
+              "order-1 flex flex-col rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)]",
               onFree && "shadow-[0_0_0_2px_var(--color-accent)]",
             )}
           >
@@ -571,6 +668,7 @@ function Pricing() {
               </p>
             )}
           </article>
+          ) : null}
 
           {audience === "individual" ? (
             <>
@@ -703,7 +801,7 @@ function Pricing() {
             <>
           <article
             className={cn(
-              "flex flex-col rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]",
+              "order-1 flex flex-col rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]",
               onAdvisorLite && "shadow-[0_0_0_2px_var(--color-accent)]",
             )}
           >
@@ -763,13 +861,13 @@ function Pricing() {
 
           <article
             className={cn(
-              "flex flex-col rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]",
+              "order-2 flex flex-col rounded-xl bg-elevated p-5 shadow-[0_0_0_1px_var(--color-border)]",
               onAdvisor && "shadow-[0_0_0_2px_var(--color-accent)]",
             )}
           >
             <div className="flex items-center justify-between gap-2">
               <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">
-                Advisor Unlimited
+                Advisor Heavy
               </p>
               {onAdvisor ? (
                 <YourPlanMark interval={ent.interval} />
@@ -820,6 +918,12 @@ function Pricing() {
               </PrimaryButton>
             )}
           </article>
+
+          <EnterpriseCard
+            price={copy.enterprisePrice}
+            intro={copy.enterpriseIntro}
+            features={copy.enterpriseBullets}
+          />
             </>
           )}
           </div>
@@ -840,7 +944,7 @@ function Pricing() {
         ) : null}
         {ent.stripeConfigured && !ent.advisorUnlimitedStripeConfigured ? (
           <p className="mt-3 text-sm text-subtle">
-            Advisor Unlimited checkout needs STRIPE_PRICE_ADVISOR_UNLIMITED_MONTHLY and
+            Advisor Heavy checkout needs STRIPE_PRICE_ADVISOR_UNLIMITED_MONTHLY and
             STRIPE_PRICE_ADVISOR_UNLIMITED_YEARLY in Vercel, then a redeploy.
           </p>
         ) : null}

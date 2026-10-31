@@ -46,7 +46,7 @@ export function productSchema(path: string): JsonLd {
       offer("Individual", MACH_MONTHLY_USD),
       offer("Individual Unlimited", UNLIMITED_MONTHLY_USD),
       offer("Advisor Lite", ADVISOR_MONTHLY_USD),
-      offer("Advisor Unlimited", ADVISOR_UNLIMITED_MONTHLY_USD),
+      offer("Advisor Heavy", ADVISOR_UNLIMITED_MONTHLY_USD),
     ],
   };
 }
