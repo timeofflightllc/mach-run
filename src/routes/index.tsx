@@ -2160,8 +2160,35 @@ function Home() {
       >
 
       {advisorPlanHeld ? (
-        <div className="flex w-full justify-center px-4 py-10">
-          <div className="w-[26rem] max-w-[calc(100vw-2rem)] shrink-0 rounded-xl bg-elevated p-6 shadow-[0_12px_40px_rgba(26,35,48,0.12),0_0_0_1px_var(--color-border)]">
+        <div className="relative flex w-full justify-center overflow-visible px-4 pb-16 pt-28">
+          <svg
+            viewBox="0 0 480 560"
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-2 w-[min(100vw,52rem)] -translate-x-1/2"
+          >
+            <defs>
+              <linearGradient id="advisor-lock-shackle" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#9ebbd4" />
+                <stop offset="1" stopColor="#5d7f9e" />
+              </linearGradient>
+              <linearGradient id="advisor-lock-body" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor="#f4e7d0" />
+                <stop offset="1" stopColor="#d4bc96" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M132 214 V148 C132 62 348 62 348 148 V214"
+              fill="none"
+              stroke="url(#advisor-lock-shackle)"
+              strokeWidth="48"
+              strokeLinecap="round"
+            />
+            <rect x="70" y="188" width="340" height="330" rx="64" fill="url(#advisor-lock-body)" />
+            <rect x="108" y="220" width="78" height="250" rx="39" fill="#fff" opacity="0.35" />
+            <circle cx="240" cy="330" r="40" fill="#3a8a58" />
+            <rect x="222" y="352" width="36" height="58" rx="12" fill="#3a8a58" />
+          </svg>
+          <div className="relative z-10 w-[26rem] max-w-[calc(100vw-2rem)] shrink-0 rounded-xl bg-elevated p-6 shadow-[0_12px_40px_rgba(26,35,48,0.12),0_0_0_1px_var(--color-border)]">
           {advisor && advisorProof && advisorProof !== "fail" ? (
             <AdvisorSignInEnroll
               alreadyOn={advisorProof.enrolled}
