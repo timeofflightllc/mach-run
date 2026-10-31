@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChartLine, FileSearch, RefreshCw, Sparkles, Table2 } from "lucide-react";
 import { useEffect, useLayoutEffect, useRef, useState, type ComponentType, type ReactNode } from "react";
 import { AuthSlot } from "@/components/meridian/auth-slot";
+import { AdvisorSignInEnroll } from "@/components/auth/advisor-sign-in-enroll";
+import { advisorMfaStatusFn } from "@/lib/auth/advisor-mfa-api";
 import { ProfileSwitcher } from "@/components/meridian/profile-switcher";
 import { MACH_RESET_BASELINE } from "@/components/meridian/account-menu";
 import { StaleRunPrompt } from "@/components/meridian/confirm-remove";
@@ -47,7 +49,7 @@ import { MACH_PROFILE_REMOVED, useProfileStore } from "@/lib/plan/profile-store"
 import { useCloudPlan } from "@/lib/plan/use-cloud-plan";
 import { quizOpenPending, takeQuizOpen } from "@/lib/plan/quiz-plan";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
-import { hasBalanceSheet } from "@/lib/billing/limits";
+import { hasBalanceSheet, isAdvisorPlan } from "@/lib/billing/limits";
 import { getEntitlement } from "@/lib/billing/api";
 import type { Plan, SimResult } from "@/lib/plan/types";
 import {
@@ -1257,6 +1259,33 @@ function Home() {
 
   const guestChrome = useGuestChrome(user?.primaryEmail);
   const heroOn = !isRealUser(user) || guestChrome;
+  const advisor = isAdvisorPlan(ent.plan);
+  const [advisorProof, setAdvisorProof] = useState<
+    { enrolled: boolean; proven: boolean } | "fail" | null
+  >(null);
+  const [advisorProofTick, setAdvisorProofTick] = useState(0);
+  useEffect(() => {
+    if (!advisor) return;
+    let live = true;
+    setAdvisorProof(null);
+    void advisorMfaStatusFn()
+      .then((status) => {
+        if (live) setAdvisorProof(status);
+      })
+      .catch(() => {
+        if (live) setAdvisorProof("fail");
+      });
+    return () => {
+      live = false;
+    };
+  }, [advisor, advisorProofTick]);
+  const advisorPlanHeld =
+    (signedIn && !heroOn && ent.pending) ||
+    (advisor &&
+      (advisorProof == null ||
+        advisorProof === "fail" ||
+        !advisorProof.enrolled ||
+        !advisorProof.proven));
   const [demoLoaded, setDemoLoaded] = useState(false);
   const stepsRef = useRef<HTMLDivElement>(null);
   const engagedRef = useRef(false);
@@ -2124,6 +2153,19 @@ function Home() {
         style={stepsH != null ? { height: stepsH, overflowAnchor: "none" } : undefined}
       >
 
+      {advisorPlanHeld ? (
+        <div className="page-gutter mx-auto w-full max-w-md py-8">
+          {advisor && advisorProof && advisorProof !== "fail" ? (
+            <AdvisorSignInEnroll
+              alreadyOn={advisorProof.enrolled}
+              onEnrolled={() => setAdvisorProofTick((n) => n + 1)}
+              onTurnedOff={() => setAdvisorProofTick((n) => n + 1)}
+            />
+          ) : advisor ? (
+            <p className="text-sm text-muted">Checking this sign-in.</p>
+          ) : null}
+        </div>
+      ) : (
       <main className="relative z-10 bg-bg page-gutter mx-auto flex max-w-none flex-col gap-5 py-5">
         <div
           className="relative"
@@ -2594,10 +2636,11 @@ function Home() {
         </div>
         </div>
       </main>
+      )}
       <MachFooter disclaimer />
       </div>
       </div>
-      {stalePrompt ? (
+      {stalePrompt && !advisorPlanHeld ? (
         <StaleRunPrompt
           onIgnore={() => {
             dismissedStale.current = inputSignature(usePlanStore.getState().plan);
