@@ -2160,12 +2160,12 @@ function Home() {
       >
 
       {advisorPlanHeld ? (
-        <div className="relative mx-auto w-full max-w-[76rem] px-4 pb-20 pt-4">
+        <div className="relative mx-auto w-full px-4 pb-8 pt-2">
           <svg
             viewBox="0 0 1000 900"
-            preserveAspectRatio="none"
             aria-hidden
-            className="pointer-events-none absolute inset-0 h-full w-full"
+            className="pointer-events-none absolute left-1/2 top-0 h-auto -translate-x-1/2"
+            style={{ width: "min(100%, 38rem)" }}
           >
             <defs>
               <linearGradient id="advisor-lock-shackle" x1="0" y1="0" x2="1" y2="1">
@@ -2189,7 +2189,7 @@ function Home() {
             <circle cx="500" cy="470" r="64" fill="#3a8a58" />
             <rect x="470" y="510" width="60" height="100" rx="20" fill="#3a8a58" />
           </svg>
-          <div className="relative z-10 mx-auto mt-28 w-[26rem] max-w-[calc(100vw-2rem)] rounded-xl bg-elevated p-6 shadow-[0_12px_40px_rgba(26,35,48,0.12),0_0_0_1px_var(--color-border)]">
+          <div className="relative z-10 mx-auto mt-20 w-[26rem] max-w-[calc(100vw-2rem)] rounded-xl bg-elevated p-6 shadow-[0_12px_40px_rgba(26,35,48,0.12),0_0_0_1px_var(--color-border)]">
           {advisor && advisorProof && advisorProof !== "fail" ? (
             <AdvisorSignInEnroll
               alreadyOn={advisorProof.enrolled}
