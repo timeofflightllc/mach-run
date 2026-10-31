@@ -2160,11 +2160,12 @@ function Home() {
       >
 
       {advisorPlanHeld ? (
-        <div className="relative flex w-full justify-center overflow-visible px-4 pb-16 pt-28">
+        <div className="relative mx-auto w-full max-w-[76rem] px-4 pb-20 pt-4">
           <svg
-            viewBox="0 0 480 560"
+            viewBox="0 0 1000 900"
+            preserveAspectRatio="none"
             aria-hidden
-            className="pointer-events-none absolute left-1/2 top-2 w-[min(100vw,52rem)] -translate-x-1/2"
+            className="pointer-events-none absolute inset-0 h-full w-full"
           >
             <defs>
               <linearGradient id="advisor-lock-shackle" x1="0" y1="0" x2="1" y2="1">
@@ -2177,18 +2178,18 @@ function Home() {
               </linearGradient>
             </defs>
             <path
-              d="M132 214 V148 C132 62 348 62 348 148 V214"
+              d="M250 150 V90 C250 24 750 24 750 90 V150"
               fill="none"
               stroke="url(#advisor-lock-shackle)"
-              strokeWidth="48"
+              strokeWidth="70"
               strokeLinecap="round"
             />
-            <rect x="70" y="188" width="340" height="330" rx="64" fill="url(#advisor-lock-body)" />
-            <rect x="108" y="220" width="78" height="250" rx="39" fill="#fff" opacity="0.35" />
-            <circle cx="240" cy="330" r="40" fill="#3a8a58" />
-            <rect x="222" y="352" width="36" height="58" rx="12" fill="#3a8a58" />
+            <rect x="28" y="130" width="944" height="740" rx="80" fill="url(#advisor-lock-body)" />
+            <rect x="78" y="170" width="120" height="620" rx="60" fill="#fff" opacity="0.28" />
+            <circle cx="500" cy="470" r="64" fill="#3a8a58" />
+            <rect x="470" y="510" width="60" height="100" rx="20" fill="#3a8a58" />
           </svg>
-          <div className="relative z-10 w-[26rem] max-w-[calc(100vw-2rem)] shrink-0 rounded-xl bg-elevated p-6 shadow-[0_12px_40px_rgba(26,35,48,0.12),0_0_0_1px_var(--color-border)]">
+          <div className="relative z-10 mx-auto mt-28 w-[26rem] max-w-[calc(100vw-2rem)] rounded-xl bg-elevated p-6 shadow-[0_12px_40px_rgba(26,35,48,0.12),0_0_0_1px_var(--color-border)]">
           {advisor && advisorProof && advisorProof !== "fail" ? (
             <AdvisorSignInEnroll
               alreadyOn={advisorProof.enrolled}
