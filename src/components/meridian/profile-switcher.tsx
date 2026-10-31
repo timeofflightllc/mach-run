@@ -17,39 +17,12 @@ import { atProfileCap } from "@/lib/billing/use-entitlement";
 import { AdvisorSignInEnroll } from "@/components/auth/advisor-sign-in-enroll";
 import { advisorMfaStatusFn } from "@/lib/auth/advisor-mfa-api";
 
-function AdvisorMfaWall({
-  enrolled,
-  ready,
-  onRefresh,
-}: {
-  enrolled: boolean;
-  ready: boolean;
-  onRefresh: () => void;
-}) {
-  const [open, setOpen] = useState(false);
+function AdvisorMfaWall() {
   return (
     <div className="relative z-[80] min-w-0">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-        className="inline-flex h-11 max-w-[8rem] items-center truncate rounded-lg px-1 text-xs font-medium text-fg hover:bg-surface sm:max-w-[12rem] sm:px-2 sm:text-sm"
-      >
+      <span className="inline-flex h-11 max-w-[8rem] items-center truncate rounded-lg px-1 text-xs font-medium text-fg sm:max-w-[12rem] sm:px-2 sm:text-sm">
         Sign-in check
-      </button>
-      {open ? (
-        <div className="fixed left-1/2 top-24 z-[90] w-[26rem] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-elevated p-6 shadow-[0_12px_40px_rgba(26,35,48,0.18),0_0_0_1px_var(--color-border)]">
-          {!ready ? (
-            <p className="text-sm text-muted">Checking this sign-in.</p>
-          ) : (
-            <AdvisorSignInEnroll
-              alreadyOn={enrolled}
-              onEnrolled={onRefresh}
-              onTurnedOff={onRefresh}
-            />
-          )}
-        </div>
-      ) : null}
+      </span>
     </div>
   );
 }
@@ -116,11 +89,7 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
   if (!allowed) return null;
   if (advisor && (!proof || !proof.enrolled || !proof.proven)) {
     return (
-      <AdvisorMfaWall
-        enrolled={Boolean(proof?.enrolled)}
-        ready={proof !== null}
-        onRefresh={() => setProofTick((n) => n + 1)}
-      />
+      <AdvisorMfaWall />
     );
   }
   const active = profiles.find((p) => p.id === activeId);
