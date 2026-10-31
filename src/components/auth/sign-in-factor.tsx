@@ -78,7 +78,7 @@ export function SignInFactor({
         type="button"
         disabled={busy}
         onClick={() => void onPasskey()}
-        className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90 disabled:opacity-50"
+        className="inline-flex h-11 w-full items-center justify-center whitespace-nowrap rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90 disabled:opacity-50"
       >
         Use Face ID or this device
       </button>
@@ -95,11 +95,12 @@ export function SignInFactor({
             }
             inputMode={backup ? "text" : "numeric"}
             autoComplete="one-time-code"
+            className="max-w-none"
             placeholder={backup ? "xxxxx-xxxxx" : "000000"}
           />
         </Field>
         {error ? <p className="text-sm text-negative">{error}</p> : null}
-        <PrimaryButton type="submit" disabled={busy || !code.trim()} className="w-full">
+        <PrimaryButton type="submit" disabled={busy || !code.trim()} className="w-full whitespace-nowrap">
           {busy ? "Working…" : "Continue"}
         </PrimaryButton>
       </form>

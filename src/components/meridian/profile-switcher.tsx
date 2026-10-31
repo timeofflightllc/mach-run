@@ -38,7 +38,7 @@ function AdvisorMfaWall({
         Sign-in check
       </button>
       {open ? (
-        <div className="absolute right-0 z-[80] mt-1 w-80 rounded-lg bg-elevated p-3 shadow-[0_0_0_1px_var(--color-border)]">
+        <div className="fixed left-1/2 top-24 z-[90] w-[26rem] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-elevated p-6 shadow-[0_12px_40px_rgba(26,35,48,0.18),0_0_0_1px_var(--color-border)]">
           {!ready ? (
             <p className="text-sm text-muted">Checking this sign-in.</p>
           ) : (
@@ -311,7 +311,7 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
         </div>
       ) : null}
       {checkOpen && advisor && proof?.proven ? (
-        <div className="absolute right-0 z-[80] mt-1 w-80 rounded-lg bg-elevated p-3 shadow-[0_0_0_1px_var(--color-border)]">
+        <div className="fixed left-1/2 top-24 z-[90] w-[26rem] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-elevated p-6 shadow-[0_12px_40px_rgba(26,35,48,0.18),0_0_0_1px_var(--color-border)]">
           <AdvisorSignInEnroll
             alreadyOn
             onEnrolled={() => setProofTick((n) => n + 1)}

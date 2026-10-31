@@ -2051,7 +2051,13 @@ function Home() {
             </div>
           </div>
         </div>
-        <nav aria-label="OODA loop" className="page-gutter mx-auto flex max-w-none items-center gap-2 pb-3">
+        <nav
+          aria-label="OODA loop"
+          className={cn(
+            "page-gutter mx-auto flex max-w-none items-center gap-2 pb-3",
+            advisorPlanHeld && "hidden",
+          )}
+        >
           <div className="mx-auto flex min-w-0 max-w-3xl flex-1 rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
             <OodaPhaseBar
               shown={shown}
@@ -2154,7 +2160,8 @@ function Home() {
       >
 
       {advisorPlanHeld ? (
-        <div className="page-gutter mx-auto w-full max-w-md py-8">
+        <div className="flex w-full justify-center px-4 py-10">
+          <div className="w-[26rem] max-w-[calc(100vw-2rem)] shrink-0 rounded-xl bg-elevated p-6 shadow-[0_12px_40px_rgba(26,35,48,0.12),0_0_0_1px_var(--color-border)]">
           {advisor && advisorProof && advisorProof !== "fail" ? (
             <AdvisorSignInEnroll
               alreadyOn={advisorProof.enrolled}
@@ -2164,6 +2171,7 @@ function Home() {
           ) : advisor ? (
             <p className="text-sm text-muted">Checking this sign-in.</p>
           ) : null}
+          </div>
         </div>
       ) : (
       <main className="relative z-10 bg-bg page-gutter mx-auto flex max-w-none flex-col gap-5 py-5">

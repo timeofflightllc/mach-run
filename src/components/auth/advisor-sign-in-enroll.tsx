@@ -58,6 +58,7 @@ export function AdvisorSignInEnroll({
   const [authenticatorOn, setAuthenticatorOn] = useState(false);
   const [showCodes, setShowCodes] = useState(false);
   const [code, setCode] = useState("");
+  const [showOff, setShowOff] = useState(false);
   const [offBackup, setOffBackup] = useState(false);
   const [offCode, setOffCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -213,53 +214,78 @@ export function AdvisorSignInEnroll({
   if (alreadyOn) {
     return (
       <div className="space-y-4">
-        <p className="text-sm text-muted">This is the advisor sign-in check.</p>
-        <SignInFactor next="/" onDone={() => onEnrolledRef.current?.()} />
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            void turnOff("code");
-          }}
-          className="space-y-3 border-t border-border pt-4"
-        >
-          <p className="text-sm text-fg">Turn the check off</p>
-          <Field label={offBackup ? "Backup code" : "Authenticator code"}>
-            <TextInput
-              value={offCode}
-              onChange={(ev) =>
-                setOffCode(
-                  offBackup ? ev.target.value : ev.target.value.replace(/\D/g, "").slice(0, 6),
-                )
-              }
-              inputMode={offBackup ? "text" : "numeric"}
-              autoComplete="one-time-code"
-            />
-          </Field>
-          <PrimaryButton
-            type="submit"
-            disabled={busy || (offBackup ? !offCode.trim() : offCode.length !== 6)}
-            className="w-full"
-          >
-            {busy ? "Working…" : "Turn the check off"}
-          </PrimaryButton>
-          <button
-            type="button"
-            className="text-sm text-fg underline underline-offset-4"
-            onClick={() => void turnOff("passkey")}
-          >
-            Use Face ID or this device
-          </button>
-          <button
-            type="button"
-            className="block text-sm text-muted underline underline-offset-4"
-            onClick={() => {
-              setOffBackup((v) => !v);
-              setOffCode("");
+        <p className="text-base text-fg">Advisor sign-in check</p>
+        {showOff ? (
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void turnOff("code");
             }}
+            className="space-y-3"
           >
-            {offBackup ? "Use a six-digit code" : "Use a backup code"}
-          </button>
-        </form>
+            <p className="text-sm text-muted">
+              A current code or this device turns the check off.
+            </p>
+            <Field label={offBackup ? "Backup code" : "Authenticator code"}>
+              <TextInput
+                className="max-w-none"
+                value={offCode}
+                onChange={(ev) =>
+                  setOffCode(
+                    offBackup ? ev.target.value : ev.target.value.replace(/\D/g, "").slice(0, 6),
+                  )
+                }
+                inputMode={offBackup ? "text" : "numeric"}
+                autoComplete="one-time-code"
+              />
+            </Field>
+            <PrimaryButton
+              type="submit"
+              disabled={busy || (offBackup ? !offCode.trim() : offCode.length !== 6)}
+              className="w-full whitespace-nowrap"
+            >
+              {busy ? "Working…" : "Turn the check off"}
+            </PrimaryButton>
+            <button
+              type="button"
+              className="text-sm text-fg underline underline-offset-4"
+              onClick={() => void turnOff("passkey")}
+            >
+              Use Face ID or this device
+            </button>
+            <button
+              type="button"
+              className="block text-sm text-muted underline underline-offset-4"
+              onClick={() => {
+                setOffBackup((v) => !v);
+                setOffCode("");
+              }}
+            >
+              {offBackup ? "Use a six-digit code" : "Use a backup code"}
+            </button>
+            <button
+              type="button"
+              className="block text-sm text-muted underline underline-offset-4"
+              onClick={() => setShowOff(false)}
+            >
+              Back
+            </button>
+          </form>
+        ) : (
+          <>
+            <p className="text-sm text-muted">
+              Enter the code from your authenticator, or use this device, to open the client.
+            </p>
+            <SignInFactor next="/" onDone={() => onEnrolledRef.current?.()} />
+            <button
+              type="button"
+              className="text-sm text-muted underline underline-offset-4"
+              onClick={() => setShowOff(true)}
+            >
+              Turn the check off
+            </button>
+          </>
+        )}
         {error ? <p className="text-sm text-negative">{error}</p> : null}
       </div>
     );
@@ -272,7 +298,7 @@ export function AdvisorSignInEnroll({
         type="button"
         disabled={busy}
         onClick={() => void onPasskey()}
-        className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90 disabled:opacity-50"
+        className="inline-flex h-11 w-full items-center justify-center whitespace-nowrap rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90 disabled:opacity-50"
       >
         Use Face ID or this device
       </button>
