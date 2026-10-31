@@ -67,6 +67,7 @@ function Account() {
   const [deleteBusy, setDeleteBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteHasPassword, setDeleteHasPassword] = useState(true);
+  const [deleteNeedsFactor, setDeleteNeedsFactor] = useState(false);
   const [deleteProviders, setDeleteProviders] = useState<DeleteProvider[]>([]);
   const [deleteReauthed, setDeleteReauthed] = useState(false);
   const [backupMode, setBackupMode] = useState<"download" | "import" | null>(null);
@@ -117,6 +118,7 @@ function Account() {
     void getDeleteOptions()
       .then((opts) => {
         setDeleteHasPassword(opts.hasPassword);
+        setDeleteNeedsFactor(opts.needsFactor);
         setDeleteProviders(opts.providers);
       })
       .catch(() => {
@@ -322,11 +324,14 @@ function Account() {
     }
   }
 
-  async function confirmDeleteAccount(password: string) {
+  async function confirmDeleteAccount(
+    password: string,
+    factor: { code: string; backup: boolean; passkey: boolean },
+  ) {
     setDeleteBusy(true);
     setDeleteError(null);
     try {
-      await deleteMyAccount({ data: { password } });
+      await deleteMyAccount({ data: { password, ...factor } });
       try {
         clearIdleLockPrefs(user.id);
       } catch {
@@ -649,6 +654,7 @@ function Account() {
       {confirmDelete ? (
         <DeleteAccountModal
           hasPassword={deleteHasPassword}
+          needsFactor={deleteNeedsFactor}
           providers={deleteProviders}
           reauthed={deleteReauthed}
           busy={deleteBusy}
@@ -661,7 +667,7 @@ function Account() {
           }}
           onManageBilling={() => void openBilling()}
           onReauth={(providerId) => void startDeleteReauth(providerId)}
-          onConfirm={(password) => void confirmDeleteAccount(password)}
+          onConfirm={(password, factor) => void confirmDeleteAccount(password, factor)}
         />
       ) : null}
       <MachFooter staticInset />

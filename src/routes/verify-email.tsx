@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
+import { SignInFactor, emailSignInNeedsFactor } from "@/components/auth/sign-in-factor";
 import { authClient } from "@/lib/auth/client";
 import {
   completePendingSignup,
@@ -78,6 +79,7 @@ function VerifyEmail() {
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState<"check" | "send" | null>(null);
   const [opening, setOpening] = useState(false);
+  const [factorNext, setFactorNext] = useState<string | null>(null);
 
   async function openFromLink(email: string, code: string) {
     const key = `${email}:${code}`;
@@ -101,12 +103,18 @@ function VerifyEmail() {
       useProfileStore.getState().hydrateFromPlan(plan);
     }
     if (result.quiz?.password) {
-      const { error: err } = await authClient.signIn.email({
+      const signed = await authClient.signIn.email({
         email,
         password: result.quiz.password,
         callbackURL: "/",
       });
-      if (err) throw new Error(err.message ?? "Account created. Sign in.");
+      if (signed.error) throw new Error(signed.error.message ?? "Account created. Sign in.");
+      if (emailSignInNeedsFactor(signed.data)) {
+        clearPending();
+        setFactorNext("/");
+        setOpening(false);
+        return;
+      }
     }
     clearPending();
     window.location.href = "/";
@@ -171,12 +179,17 @@ function VerifyEmail() {
           return;
         }
         if (pendingPassword) {
-          const { error: err } = await authClient.signIn.email({
+          const signed = await authClient.signIn.email({
             email: pendingEmail,
             password: pendingPassword,
             callbackURL: next,
           });
-          if (err) throw new Error(err.message ?? "Account created. Sign in.");
+          if (signed.error) throw new Error(signed.error.message ?? "Account created. Sign in.");
+          if (emailSignInNeedsFactor(signed.data)) {
+            clearPending();
+            setFactorNext(next);
+            return;
+          }
         }
         clearPending();
         window.location.href = next;
@@ -235,6 +248,11 @@ function VerifyEmail() {
       </div>
       <div className="flex flex-1 items-center justify-center">
       <div className="w-full max-w-lg space-y-8">
+        {factorNext ? (
+          <div className="space-y-5 rounded-2xl bg-surface p-6 shadow-[0_0_0_1px_var(--color-border)] sm:p-8">
+            <SignInFactor next={factorNext} />
+          </div>
+        ) : (
         <form
           onSubmit={(e) => void onSubmit(e)}
           className="space-y-5 rounded-2xl bg-surface p-6 shadow-[0_0_0_1px_var(--color-border)] sm:p-8"
@@ -301,6 +319,7 @@ function VerifyEmail() {
             {busy === "send" ? "Sending…" : "Resend code"}
           </button>
         </form>
+        )}
       </div>
       </div>
       <MachFooter staticInset />

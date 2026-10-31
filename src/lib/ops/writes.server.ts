@@ -527,3 +527,27 @@ async function userExists(userId: string): Promise<boolean> {
     return false;
   }
 }
+
+export async function clearAdvisorSignInCheck(
+  actor: OpsActor,
+  input: { userId: string; email: string; confirmEmail: string },
+): Promise<OpsWriteResult> {
+  const target = await resolveTarget(input.userId, input.email);
+  if (!target?.email) return { ok: false, error: "No person with that email." };
+  if (!emailsMatch(target.email, input.confirmEmail)) {
+    return { ok: false, error: "Type that person's email to clear the sign-in check." };
+  }
+  try {
+    const sql = await getSql();
+    await sql.query(`update "user" set "twoFactorEnabled" = false where id = $1`, [target.id]);
+    await sql.query(`delete from "twoFactor" where "userId" = $1`, [target.id]);
+    await sql.query(`delete from "passkey" where "userId" = $1`, [target.id]);
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Could not clear the sign-in check.",
+    };
+  }
+  await log(actor, target.id, "clear_advisor_mfa", { email: target.email });
+  return { ok: true, message: "Sign-in check cleared. They can sign in with their password again." };
+}

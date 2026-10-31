@@ -1,5 +1,6 @@
 import { analytics } from "@heycatch/sdk";
-import { genericOAuthClient } from "better-auth/client/plugins";
+import { genericOAuthClient, twoFactorClient } from "better-auth/client/plugins";
+import { passkeyClient } from "@better-auth/passkey/client";
 import { createAuthClient } from "better-auth/react";
 import { runPreSignInSignOut, runSignOut } from "../../../scripts/sign-out-plan.mjs";
 import { clearLocalMachRunWorkspace } from "@/lib/plan/clear-local";
@@ -20,7 +21,7 @@ import { GROK_PROVIDERS } from "./providers";
  * the visitor stays signed in.
  */
 export const authClient = createAuthClient({
-  plugins: [genericOAuthClient()],
+  plugins: [genericOAuthClient(), twoFactorClient(), passkeyClient()],
   fetchOptions: {
     onRequest(ctx) {
       const token = getBearerToken();
@@ -70,6 +71,12 @@ function setBearerToken(token: string | null): void {
   } catch {
     /* storage unavailable — ignore */
   }
+}
+
+/** Keep the preview bearer on the new session a passkey sign-in just created. No-op when the cookie path is in use. */
+export function rememberBearerIfPreview(token: string | null | undefined): void {
+  if (!token || !getBearerToken()) return;
+  setBearerToken(token);
 }
 
 /**

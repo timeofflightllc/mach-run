@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Field, TextInput } from "@/components/ui/field";
 import { DELETE_ACCOUNT_CONFIRM, type DeleteProvider } from "@/lib/auth/delete-account";
+import { authClient, rememberBearerIfPreview } from "@/lib/auth/client";
 
 export function DeleteAccountModal({
   hasPassword,
+  needsFactor,
   providers,
   reauthed,
   busy,
@@ -14,6 +16,7 @@ export function DeleteAccountModal({
   onConfirm,
 }: {
   hasPassword: boolean;
+  needsFactor: boolean;
   providers: DeleteProvider[];
   reauthed: boolean;
   busy: boolean;
@@ -21,15 +24,43 @@ export function DeleteAccountModal({
   onCancel: () => void;
   onManageBilling: () => void;
   onReauth: (providerId: string) => void;
-  onConfirm: (password: string) => void;
+  onConfirm: (password: string, factor: { code: string; backup: boolean; passkey: boolean }) => void;
 }) {
   const [password, setPassword] = useState("");
-  const ready = hasPassword ? password.length > 0 : reauthed;
+  const [code, setCode] = useState("");
+  const [backup, setBackup] = useState(false);
+  const [passkeyOk, setPasskeyOk] = useState(false);
+  const [factorError, setFactorError] = useState<string | null>(null);
+  const factorReady = !needsFactor || passkeyOk || (backup ? code.trim().length > 0 : code.length === 6);
+  const ready = (hasPassword ? password.length > 0 : reauthed) && factorReady;
 
   function submit(e: FormEvent) {
     e.preventDefault();
     if (!ready || busy) return;
-    onConfirm(hasPassword ? password : "");
+    onConfirm(hasPassword ? password : "", {
+      code: passkeyOk ? "" : code.trim(),
+      backup,
+      passkey: passkeyOk,
+    });
+  }
+
+  async function onPasskey() {
+    setFactorError(null);
+    try {
+      const result = await authClient.signIn.passkey();
+      const token =
+        result && "data" in result && result.data && "session" in result.data
+          ? String((result.data.session as { token?: string } | undefined)?.token ?? "")
+          : "";
+      if (!token) {
+        setFactorError("This device has no passkey for this account.");
+        return;
+      }
+      rememberBearerIfPreview(token);
+      setPasskeyOk(true);
+    } catch {
+      setFactorError("This device has no passkey for this account.");
+    }
   }
 
   return (
@@ -110,6 +141,48 @@ export function DeleteAccountModal({
             Set a MACH RUN password on this page first, then delete the account.
           </p>
         )}
+
+        {needsFactor ? (
+          <div className="mt-4 space-y-3">
+            <p className="text-sm leading-relaxed text-muted">
+              This advisor sign-in check is on. Enter a current code, or use Face ID or this device.
+            </p>
+            {passkeyOk ? (
+              <p className="text-sm text-fg">This device confirmed.</p>
+            ) : (
+              <>
+                <Field label={backup ? "Backup code" : "Authenticator code"}>
+                  <TextInput
+                    value={code}
+                    onChange={(e) =>
+                      setCode(backup ? e.target.value : e.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
+                    inputMode={backup ? "text" : "numeric"}
+                    autoComplete="one-time-code"
+                  />
+                </Field>
+                <button
+                  type="button"
+                  className="text-sm text-fg underline underline-offset-4"
+                  onClick={() => void onPasskey()}
+                >
+                  Use Face ID or this device
+                </button>
+                <button
+                  type="button"
+                  className="block text-sm text-muted underline underline-offset-4"
+                  onClick={() => {
+                    setBackup((v) => !v);
+                    setCode("");
+                  }}
+                >
+                  {backup ? "Use a six-digit code" : "Use a backup code"}
+                </button>
+              </>
+            )}
+            {factorError ? <p className="text-sm text-negative">{factorError}</p> : null}
+          </div>
+        ) : null}
 
         {error ? <p className="mt-3 text-sm text-negative">{error}</p> : null}
         <div className="mt-5 flex flex-col gap-2">

@@ -229,6 +229,25 @@ export const deleteOpsAccountFn = createServerFn({ method: "POST" })
     return deleteOpsAccount(actor, data);
   });
 
+export const clearAdvisorSignInFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((input: { userId?: string; email?: string; confirmEmail?: string }) => {
+    const ref = readUserRef(input);
+    const raw = asRecord(input);
+    return {
+      userId: ref.userId,
+      email: ref.email,
+      confirmEmail: String(input?.confirmEmail ?? raw.confirmEmail ?? "").trim(),
+    };
+  })
+  .handler(async ({ context, data }) => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { ok: false as const, error: "Not found." };
+    const { clearAdvisorSignInCheck } = await import("./writes.server");
+    return clearAdvisorSignInCheck(actor, data);
+  });
+
 export const listOpsEventsFn = createServerFn({ method: "POST" })
   .middleware([opsSessionMiddleware])
   .validator((input: { targetUserId?: string }) => ({

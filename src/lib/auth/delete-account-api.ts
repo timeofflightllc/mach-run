@@ -8,10 +8,22 @@ export const getDeleteOptions = createServerFn({ method: "GET" })
 
 export const deleteMyAccount = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
-  .validator((input: { password?: string }) => ({
+  .validator((input: { password?: string; code?: string; backup?: boolean; passkey?: boolean }) => ({
     password: String(input?.password ?? ""),
+    code: String(input?.code ?? "").trim(),
+    backup: Boolean(input?.backup),
+    passkey: Boolean(input?.passkey),
   }))
   .handler(async ({ context, data }) => {
-    await deleteAccountForUser(context.userId, { password: data.password || undefined });
+    await deleteAccountForUser(
+      context.userId,
+      {
+        password: data.password || undefined,
+        code: data.code || undefined,
+        backup: data.backup,
+        passkey: data.passkey,
+      },
+      context.bearerToken,
+    );
     return { ok: true as const };
   });

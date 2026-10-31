@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Field, TextInput } from "@/components/ui/field";
 import { paidFromStatus } from "@/lib/billing/limits";
-import { getOpsUserUsageFn, listOpsRoster } from "@/lib/ops/api";
+import { getOpsUserUsageFn, listOpsRoster, clearAdvisorSignInFn } from "@/lib/ops/api";
 import { activityLabel, describeActivity } from "@/lib/ops/activity";
 import { OPS_ROSTER_PAGE, type OpsRosterRow } from "@/lib/ops/roster";
 import { RISK_GRADE_CLASS, scoreBotRisk, type RiskGrade } from "@/lib/ops/risk";
@@ -356,9 +356,87 @@ function UserDetail({
       </div>
 
       <div className="mt-6 border-t border-border/70 pt-4">
+        <ClearAdvisorSignIn row={row} />
+      </div>
+
+      <div className="mt-6 border-t border-border/70 pt-4">
         <OpsDeleteAccount row={row} onDeleted={onDeleted} />
       </div>
     </section>
+  );
+}
+
+function ClearAdvisorSignIn({ row }: { row: OpsRosterRow }) {
+  const [open, setOpen] = useState(false);
+  const [typed, setTyped] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [msg, setMsg] = useState<string | null>(null);
+  const email = row.email ?? "";
+
+  async function clear() {
+    if (!email || typed.trim().toLowerCase() !== email.trim().toLowerCase()) {
+      setErr("Type that person's email to clear the sign-in check.");
+      setMsg(null);
+      return;
+    }
+    setBusy(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const result = await clearAdvisorSignInFn({
+        data: { userId: row.id, email, confirmEmail: typed.trim() },
+      });
+      if (result.ok) {
+        setMsg(result.message);
+        setTyped("");
+        setOpen(false);
+      } else {
+        setErr(result.error ?? "Could not clear the sign-in check.");
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not clear the sign-in check.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (!email) return null;
+
+  return (
+    <div className="space-y-3">
+      <button
+        type="button"
+        className="text-sm text-fg underline underline-offset-4"
+        onClick={() => {
+          setOpen((on) => !on);
+          setErr(null);
+        }}
+      >
+        Clear advisor sign-in check
+      </button>
+      {open ? (
+        <div className="space-y-3">
+          <Field label="Type this person's email">
+            <TextInput
+              value={typed}
+              onChange={(e) => setTyped(e.target.value)}
+              autoComplete="off"
+            />
+          </Field>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => void clear()}
+            className="rounded-lg border border-border px-3 py-1.5 text-sm disabled:opacity-40"
+          >
+            {busy ? "Clearing…" : "Clear"}
+          </button>
+        </div>
+      ) : null}
+      {err ? <p className="text-sm text-negative">{err}</p> : null}
+      {msg ? <p className="text-sm text-fg">{msg}</p> : null}
+    </div>
   );
 }
 

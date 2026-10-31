@@ -14,6 +14,45 @@ import { usePlanStore } from "@/lib/plan/store";
 import type { Entitlement } from "@/lib/billing/limits";
 import { canDownloadBackup, isAdvisorPlan } from "@/lib/billing/limits";
 import { atProfileCap } from "@/lib/billing/use-entitlement";
+import { AdvisorSignInEnroll } from "@/components/auth/advisor-sign-in-enroll";
+import { advisorMfaStatusFn } from "@/lib/auth/advisor-mfa-api";
+
+function AdvisorMfaWall({
+  enrolled,
+  ready,
+  onRefresh,
+}: {
+  enrolled: boolean;
+  ready: boolean;
+  onRefresh: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="relative z-[80] min-w-0">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+        className="inline-flex h-11 max-w-[8rem] items-center truncate rounded-lg px-1 text-xs font-medium text-fg hover:bg-surface sm:max-w-[12rem] sm:px-2 sm:text-sm"
+      >
+        Sign-in check
+      </button>
+      {open ? (
+        <div className="absolute right-0 z-[80] mt-1 w-80 rounded-lg bg-elevated p-3 shadow-[0_0_0_1px_var(--color-border)]">
+          {!ready ? (
+            <p className="text-sm text-muted">Checking this sign-in.</p>
+          ) : (
+            <AdvisorSignInEnroll
+              alreadyOn={enrolled}
+              onEnrolled={onRefresh}
+              onTurnedOff={onRefresh}
+            />
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export function canUseProfiles(ent: Entitlement): boolean {
   return Boolean(ent.signedIn && isAdvisorPlan(ent.plan));
@@ -21,11 +60,15 @@ export function canUseProfiles(ent: Entitlement): boolean {
 
 export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
   const allowed = canUseProfiles(ent);
+  const advisor = Boolean(ent.signedIn && isAdvisorPlan(ent.plan));
+  const [proof, setProof] = useState<{ enrolled: boolean; proven: boolean } | null>(null);
+  const [proofTick, setProofTick] = useState(0);
   const navigate = useNavigate();
   const setPlan = usePlanStore((s) => s.setPlan);
   const profiles = useProfileStore((s) => s.profiles);
   const activeId = useProfileStore((s) => s.activeId);
   const [open, setOpen] = useState(false);
+  const [checkOpen, setCheckOpen] = useState(false);
   const [backupMode, setBackupMode] = useState<"download" | "import" | null>(null);
   const [backupBusy, setBackupBusy] = useState(false);
   const [backupError, setBackupError] = useState<string | null>(null);
@@ -44,15 +87,42 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
   }, []);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open && !checkOpen) return;
     function onDoc(e: MouseEvent) {
-      if (!root.current?.contains(e.target as Node)) setOpen(false);
+      if (!root.current?.contains(e.target as Node)) {
+        setOpen(false);
+        setCheckOpen(false);
+      }
     }
     document.addEventListener("mousedown", onDoc);
     return () => document.removeEventListener("mousedown", onDoc);
-  }, [open]);
+  }, [open, checkOpen]);
+
+  useEffect(() => {
+    if (!advisor) return;
+    let live = true;
+    void advisorMfaStatusFn()
+      .then((status) => {
+        if (live) setProof(status);
+      })
+      .catch(() => {
+        if (live) setProof({ enrolled: false, proven: false });
+      });
+    return () => {
+      live = false;
+    };
+  }, [advisor, proofTick]);
 
   if (!allowed) return null;
+  if (advisor && (!proof || !proof.enrolled || !proof.proven)) {
+    return (
+      <AdvisorMfaWall
+        enrolled={Boolean(proof?.enrolled)}
+        ready={proof !== null}
+        onRefresh={() => setProofTick((n) => n + 1)}
+      />
+    );
+  }
   const active = profiles.find((p) => p.id === activeId);
   const label = active?.name ?? "Profiles";
   const capped = atProfileCap(profiles.length, ent);
@@ -216,6 +286,18 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
             </button>
           ))}
           <div className="my-1 h-px bg-border" />
+          {advisor && proof?.proven ? (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                setCheckOpen(true);
+              }}
+              className="block w-full px-3 py-2 text-left text-sm text-muted hover:text-fg"
+            >
+              Sign-in check
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => {
@@ -226,6 +308,18 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
           >
             Client Control Panel
           </button>
+        </div>
+      ) : null}
+      {checkOpen && advisor && proof?.proven ? (
+        <div className="absolute right-0 z-[80] mt-1 w-80 rounded-lg bg-elevated p-3 shadow-[0_0_0_1px_var(--color-border)]">
+          <AdvisorSignInEnroll
+            alreadyOn
+            onEnrolled={() => setProofTick((n) => n + 1)}
+            onTurnedOff={() => {
+              setCheckOpen(false);
+              setProofTick((n) => n + 1);
+            }}
+          />
         </div>
       ) : null}
 

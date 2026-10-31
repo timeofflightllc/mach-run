@@ -30,7 +30,9 @@
  * a verified id via `@/lib/auth/middleware`.
  */
 import { betterAuth } from "better-auth";
-import { bearer, genericOAuth } from "better-auth/plugins";
+import { bearer, genericOAuth, twoFactor } from "better-auth/plugins";
+import { passkey } from "@better-auth/passkey";
+import { advisorMfaStampPlugin } from "./advisor-mfa.server";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { getCookie } from "@tanstack/react-start/server";
 import { randomBytes } from "node:crypto";
@@ -116,6 +118,21 @@ const baseURL = explicitBaseURL ?? {
   protocol: "auto" as const,
   fallback: "http://localhost:8080",
 };
+
+/** Passkey ids only when this process has one public URL. Preview is per-request, so we do not pin machrun.com there. */
+function passkeyRelyingParty(): { rpID: string; origin: string } | Record<string, never> {
+  if (!explicitBaseURL) return {};
+  let url: URL;
+  try {
+    url = new URL(explicitBaseURL);
+  } catch {
+    return {};
+  }
+  return {
+    rpID: url.hostname.replace(/^www\./i, ""),
+    origin: explicitBaseURL.replace(/\/+$/, ""),
+  };
+}
 
 // Origins Better Auth accepts on credentialed POSTs (sign-up/sign-in, etc.).
 // Missing entries here surface as FORBIDDEN "Invalid origin".
@@ -361,6 +378,17 @@ export const auth = betterAuth({
     // fires when an Authorization header is present, so the cookie path
     // (deployed apps) is unaffected.
     bearer(),
+
+    twoFactor({
+      issuer: "MACH RUN",
+      allowPasswordless: true,
+      skipVerificationOnEnable: false,
+    }),
+    passkey({
+      rpName: "MACH RUN",
+      ...passkeyRelyingParty(),
+    }),
+    advisorMfaStampPlugin(),
 
     // Bridges Better Auth's Set-Cookie into TanStack Start responses. MUST be
     // last so it runs after every other plugin's hooks.

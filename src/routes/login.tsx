@@ -8,6 +8,7 @@ import { startPendingSignup } from "@/lib/auth/pending-signup-api";
 import { suggestEmailFix } from "@/lib/auth/email-domain-typo";
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/auth/email-password";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
+import { SignInFactor, emailSignInNeedsFactor } from "@/components/auth/sign-in-factor";
 
 import { pageHead } from "@/lib/seo";
 
@@ -41,6 +42,7 @@ function Login() {
   const [honeypot, setHoneypot] = useState("");
   const [keptTypo, setKeptTypo] = useState<string | null>(null);
   const [typoHold, setTypoHold] = useState(false);
+  const [factor, setFactor] = useState(false);
 
   const suggestion = mode === "up" ? suggestEmailFix(email) : null;
   const holdingTypo = Boolean(
@@ -93,12 +95,17 @@ function Login() {
         window.location.href = qs ? `/verify-email?${qs}` : "/verify-email";
         return;
       } else {
-        const { error: err } = await authClient.signIn.email({
+        const signed = await authClient.signIn.email({
           email: email.trim(),
           password,
           callbackURL: next,
         });
-        if (err) throw new Error(err.message ?? "Could not sign in.");
+        if (signed.error) throw new Error(signed.error.message ?? "Could not sign in.");
+        if (emailSignInNeedsFactor(signed.data)) {
+          setFactor(true);
+          setBusy(false);
+          return;
+        }
       }
       window.location.href = next;
     } catch (err) {
@@ -126,6 +133,7 @@ function Login() {
               onClick={() => {
                 setMode("in");
                 setCaptcha(null);
+                setFactor(false);
               }}
               className={`h-11 flex-1 rounded-md text-sm font-medium ${
                 mode === "in" ? "bg-accent text-accent-fg" : "text-muted"
@@ -138,6 +146,7 @@ function Login() {
               onClick={() => {
                 setMode("up");
                 setCaptcha(null);
+                setFactor(false);
               }}
               className={`h-11 flex-1 rounded-md text-sm font-medium ${
                 mode === "up" ? "bg-accent text-accent-fg" : "text-muted"
@@ -149,6 +158,9 @@ function Login() {
 
           {authEnabled ? (
             <>
+              {factor && mode === "in" ? (
+                <SignInFactor next={next} />
+              ) : (
               <form onSubmit={(e) => void onEmail(e)} className="space-y-4">
                 {mode === "up" ? (
                   <Field label="Name">
@@ -242,6 +254,7 @@ function Login() {
                       : "Sign in"}
                 </PrimaryButton>
               </form>
+              )}
 
               <p className="text-center text-xs text-subtle">or</p>
 
