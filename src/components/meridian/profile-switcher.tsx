@@ -288,7 +288,15 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
         </div>
       ) : null}
       {checkOpen && advisor && proof?.proven ? (
-        <div className="fixed left-1/2 top-24 z-[90] w-[26rem] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-elevated p-6 shadow-[0_12px_40px_rgba(26,35,48,0.18),0_0_0_1px_var(--color-border)]">
+        <div className="fixed left-1/2 top-24 z-[90] w-[26rem] max-w-[calc(100vw-2rem)] -translate-x-1/2 rounded-xl bg-elevated p-6 pr-12 shadow-[0_12px_40px_rgba(26,35,48,0.18),0_0_0_1px_var(--color-border)]">
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={() => setCheckOpen(false)}
+            className="absolute right-2 top-2 grid size-9 place-items-center rounded-md text-lg leading-none text-fg hover:bg-surface"
+          >
+            ×
+          </button>
           <AdvisorSignInEnroll
             alreadyOn
             onEnrolled={() => setProofTick((n) => n + 1)}
