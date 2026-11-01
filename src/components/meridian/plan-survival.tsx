@@ -131,7 +131,15 @@ const BAND_NOTES = {
     "90-100% probability of success with this plan. You are doing very well with your retirement planning — success is never guaranteed, but you are certainly on the right path.",
 } as const;
 
-function SurvivalChance({ percent }: { percent: number | null }) {
+function SurvivalChance({
+  percent,
+  survived = null,
+  paths = null,
+}: {
+  percent: number | null;
+  survived?: number | null;
+  paths?: number | null;
+}) {
   const value = percent == null ? null : Math.max(0, Math.min(100, percent));
   const cap = GAUGE.stroke / 2;
   const [x0, y0] = gaugePoint(0, GAUGE.r);
@@ -283,6 +291,11 @@ function SurvivalChance({ percent }: { percent: number | null }) {
         <br />
         <span className="whitespace-nowrap">Mission Success</span>
       </p>
+      {survived != null && paths != null && paths > 0 ? (
+        <p className="mt-0.5 text-center text-[10px] leading-none text-slate-500 sm:text-[11px]">
+          ({survived} of {paths} survived)
+        </p>
+      ) : null}
       {value != null ? (
         <p className="mt-1.5 text-center font-display text-2xl font-black leading-tight tracking-tight text-black md:text-4xl">
           {likelihood(value).words} {likelihood(value).mark}
@@ -744,7 +757,7 @@ export function SurvivalChartNote({
         <div className="self-start">
           <SurvivalTitle />
         </div>
-        <SurvivalChance percent={score.score} />
+        <SurvivalChance percent={score.score} survived={score.survived} paths={score.paths} />
       </div>
       <FuturesCard
         className={countCard}
@@ -889,7 +902,11 @@ export function PlanSurvival({
       <SurvivalTitle />
       {stale && view.score ? <div className="mt-3"><MonteCarloStaleNotice onRun={onRun} /></div> : null}
       <div className="mt-3 flex flex-col items-center gap-3 @min-[32rem]:flex-row @min-[32rem]:items-start">
-        <SurvivalChance percent={view.score ? view.score.score : null} />
+        <SurvivalChance
+          percent={view.score ? view.score.score : null}
+          survived={view.score ? view.score.survived : null}
+          paths={view.score ? view.score.paths : null}
+        />
         {plan ? (
           <div className="flex w-full min-w-0 flex-1 flex-col items-stretch gap-2 sm:flex-row">
             {view.score ? (
