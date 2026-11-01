@@ -1,5 +1,6 @@
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { authClient, rememberBearerIfPreview } from "@/lib/auth/client";
+import { authenticatorAppFn } from "@/lib/auth/advisor-mfa-api";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 
 export function emailSignInNeedsFactor(data: unknown): boolean {
@@ -44,18 +45,147 @@ export function PasskeyButton({
 
 function AppMark({
   name,
+  selected,
+  onSelect,
   children,
 }: {
   name: string;
+  selected?: boolean;
+  onSelect?: () => void;
   children: ReactNode;
 }) {
-  return (
-    <li className="flex min-w-0 items-center gap-1.5 rounded-md bg-white px-1.5 py-1 shadow-[0_0_0_1px_var(--color-border)]">
+  const className = [
+    "flex min-w-0 items-center gap-1.5 rounded-md bg-white px-1.5 py-1.5 text-left",
+    selected
+      ? "shadow-[0_0_0_2px_#fff,0_0_0_4px_#3a8a58]"
+      : "shadow-[0_0_0_1px_var(--color-border)]",
+    onSelect && !selected ? "opacity-75 hover:opacity-100" : "",
+    onSelect ? "w-full" : "",
+  ].join(" ");
+  const body = (
+    <>
       <span className="grid size-4 shrink-0 place-items-center" aria-hidden>
         {children}
       </span>
       <span className="truncate text-[10px] font-medium leading-none text-[#1a2330]">{name}</span>
+    </>
+  );
+  if (!onSelect) return <li className={className}>{body}</li>;
+  return (
+    <li>
+      <button type="button" aria-pressed={selected} onClick={onSelect} className={className}>
+        {body}
+      </button>
     </li>
+  );
+}
+
+function GoogleIcon({ className }: { className: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className}>
+      <path fill="#4285F4" d="M21.6 12.23c0-.74-.07-1.45-.19-2.14H12v4.05h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.23c1.89-1.74 2.99-4.3 2.99-7.44Z" />
+      <path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.61-2.43l-3.23-2.51c-.9.6-2.04.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H3.08v2.59A10 10 0 0 0 12 22Z" />
+      <path fill="#FBBC05" d="M6.41 13.9A6 6 0 0 1 6.1 12c0-.66.11-1.3.31-1.9V7.51H3.08A10 10 0 0 0 2 12c0 1.61.39 3.14 1.08 4.49l3.33-2.59Z" />
+      <path fill="#EA4335" d="M12 5.98c1.47 0 2.79.5 3.83 1.5l2.87-2.87C16.96 2.99 14.7 2 12 2A10 10 0 0 0 3.08 7.51l3.33 2.59C7.2 7.74 9.4 5.98 12 5.98Z" />
+    </svg>
+  );
+}
+
+function MicrosoftIcon({ className }: { className: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className}>
+      <path fill="#F25022" d="M1 1h6.5v6.5H1z" />
+      <path fill="#7FBA00" d="M8.5 1H15v6.5H8.5z" />
+      <path fill="#00A4EF" d="M1 8.5h6.5V15H1z" />
+      <path fill="#FFB900" d="M8.5 8.5H15V15H8.5z" />
+    </svg>
+  );
+}
+
+function OktaIcon({ className }: { className: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className}>
+      <circle cx="8" cy="8" r="7" fill="#007DC1" />
+      <circle cx="8" cy="8" r="3.2" fill="#fff" />
+    </svg>
+  );
+}
+
+function DuoIcon({ className }: { className: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className}>
+      <rect width="16" height="16" rx="3" fill="#6BB33F" />
+      <path fill="#fff" d="M3.2 11.2V4.8h2.15c1.55 0 2.45.82 2.45 2.05 0 1.22-.9 2.05-2.45 2.05H4.7v2.3H3.2Zm1.5-3.35h.55c.72 0 1.15-.36 1.15-.95s-.43-.95-1.15-.95H4.7v1.9Zm4.15 3.35 1.55-2.35L8.4 4.8h1.7l.85 1.55.9-1.55h1.6l-1.6 2.35 1.7 2.7h-1.75l-1-1.7-.95 1.7H8.85Z" />
+    </svg>
+  );
+}
+
+function OnePasswordIcon({ className }: { className: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className}>
+      <rect width="16" height="16" rx="3" fill="#0572EC" />
+      <path fill="#fff" d="M5.1 11.4V4.6h1.35v5.35h2.7v1.45H5.1Z" />
+    </svg>
+  );
+}
+
+function AuthyIcon({ className }: { className: string }) {
+  return (
+    <svg viewBox="0 0 16 16" className={className}>
+      <circle cx="8" cy="8" r="7" fill="#EC1C24" />
+      <path fill="#fff" d="M8 3.2 9.15 6.6h3.55l-2.85 2.1 1.1 3.4L8 10.05 5.05 12.1l1.1-3.4-2.85-2.1h3.55L8 3.2Z" />
+    </svg>
+  );
+}
+
+export const AUTHENTICATOR_APPS = [
+  { id: "google", name: "Google Authenticator", Icon: GoogleIcon },
+  { id: "microsoft", name: "Microsoft Authenticator", Icon: MicrosoftIcon },
+  { id: "okta", name: "Okta Verify", Icon: OktaIcon },
+  { id: "duo", name: "Duo Mobile", Icon: DuoIcon },
+  { id: "1password", name: "1Password", Icon: OnePasswordIcon },
+  { id: "authy", name: "Authy", Icon: AuthyIcon },
+] as const;
+
+export type AuthenticatorAppId = (typeof AUTHENTICATOR_APPS)[number]["id"];
+
+export function authenticatorAppName(id: AuthenticatorAppId): string {
+  return AUTHENTICATOR_APPS.find((app) => app.id === id)?.name ?? "your authenticator app";
+}
+
+export function AuthenticatorChoices({
+  value,
+  onChange,
+}: {
+  value: AuthenticatorAppId | null;
+  onChange: (id: AuthenticatorAppId) => void;
+}) {
+  return (
+    <ul className="grid grid-cols-2 gap-1.5">
+      {AUTHENTICATOR_APPS.map((app) => (
+        <AppMark
+          key={app.id}
+          name={app.name}
+          selected={value === app.id}
+          onSelect={() => onChange(app.id)}
+        >
+          <app.Icon className="size-4" />
+        </AppMark>
+      ))}
+    </ul>
+  );
+}
+
+export function AuthenticatorAppLogo({ id }: { id: AuthenticatorAppId }) {
+  const app = AUTHENTICATOR_APPS.find((item) => item.id === id);
+  if (!app) return null;
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <span className="grid size-16 place-items-center rounded-2xl bg-white shadow-[0_0_0_1px_#d5d0c6]">
+        <app.Icon className="size-10" />
+      </span>
+      <p className="text-sm font-medium text-fg">{app.name}</p>
+    </div>
   );
 }
 
@@ -66,46 +196,11 @@ export function AuthenticatorMarks() {
         Works with
       </p>
       <ul className="grid grid-cols-2 gap-1.5">
-        <AppMark name="Google Authenticator">
-          <svg viewBox="0 0 24 24" className="size-4">
-            <path fill="#4285F4" d="M21.6 12.23c0-.74-.07-1.45-.19-2.14H12v4.05h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.23c1.89-1.74 2.99-4.3 2.99-7.44Z" />
-            <path fill="#34A853" d="M12 22c2.7 0 4.96-.9 6.61-2.43l-3.23-2.51c-.9.6-2.04.96-3.38.96-2.6 0-4.8-1.76-5.59-4.12H3.08v2.59A10 10 0 0 0 12 22Z" />
-            <path fill="#FBBC05" d="M6.41 13.9A6 6 0 0 1 6.1 12c0-.66.11-1.3.31-1.9V7.51H3.08A10 10 0 0 0 2 12c0 1.61.39 3.14 1.08 4.49l3.33-2.59Z" />
-            <path fill="#EA4335" d="M12 5.98c1.47 0 2.79.5 3.83 1.5l2.87-2.87C16.96 2.99 14.7 2 12 2A10 10 0 0 0 3.08 7.51l3.33 2.59C7.2 7.74 9.4 5.98 12 5.98Z" />
-          </svg>
-        </AppMark>
-        <AppMark name="Microsoft Authenticator">
-          <svg viewBox="0 0 16 16" className="size-3.5">
-            <path fill="#F25022" d="M1 1h6.5v6.5H1z" />
-            <path fill="#7FBA00" d="M8.5 1H15v6.5H8.5z" />
-            <path fill="#00A4EF" d="M1 8.5h6.5V15H1z" />
-            <path fill="#FFB900" d="M8.5 8.5H15V15H8.5z" />
-          </svg>
-        </AppMark>
-        <AppMark name="Okta Verify">
-          <svg viewBox="0 0 16 16" className="size-3.5">
-            <circle cx="8" cy="8" r="7" fill="#007DC1" />
-            <circle cx="8" cy="8" r="3.2" fill="#fff" />
-          </svg>
-        </AppMark>
-        <AppMark name="Duo Mobile">
-          <svg viewBox="0 0 16 16" className="size-3.5">
-            <rect width="16" height="16" rx="3" fill="#6BB33F" />
-            <path fill="#fff" d="M3.2 11.2V4.8h2.15c1.55 0 2.45.82 2.45 2.05 0 1.22-.9 2.05-2.45 2.05H4.7v2.3H3.2Zm1.5-3.35h.55c.72 0 1.15-.36 1.15-.95s-.43-.95-1.15-.95H4.7v1.9Zm4.15 3.35 1.55-2.35L8.4 4.8h1.7l.85 1.55.9-1.55h1.6l-1.6 2.35 1.7 2.7h-1.75l-1-1.7-.95 1.7H8.85Z" />
-          </svg>
-        </AppMark>
-        <AppMark name="1Password">
-          <svg viewBox="0 0 16 16" className="size-3.5">
-            <rect width="16" height="16" rx="3" fill="#0572EC" />
-            <path fill="#fff" d="M5.1 11.4V4.6h1.35v5.35h2.7v1.45H5.1Z" />
-          </svg>
-        </AppMark>
-        <AppMark name="Authy">
-          <svg viewBox="0 0 16 16" className="size-3.5">
-            <circle cx="8" cy="8" r="7" fill="#EC1C24" />
-            <path fill="#fff" d="M8 3.2 9.15 6.6h3.55l-2.85 2.1 1.1 3.4L8 10.05 5.05 12.1l1.1-3.4-2.85-2.1h3.55L8 3.2Z" />
-          </svg>
-        </AppMark>
+        {AUTHENTICATOR_APPS.map((app) => (
+          <AppMark key={app.id} name={app.name}>
+            <app.Icon className="size-4" />
+          </AppMark>
+        ))}
       </ul>
     </div>
   );
@@ -122,6 +217,20 @@ export function SignInFactor({
   const [backup, setBackup] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [appId, setAppId] = useState<AuthenticatorAppId | null>(null);
+
+  useEffect(() => {
+    let live = true;
+    void authenticatorAppFn()
+      .then((id) => {
+        if (!live || !id) return;
+        if (AUTHENTICATOR_APPS.some((app) => app.id === id)) setAppId(id as AuthenticatorAppId);
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, []);
 
   async function onPasskey() {
     setBusy(true);
@@ -185,8 +294,14 @@ export function SignInFactor({
         </p>
       </div>
       <PasskeyButton busy={busy} onClick={() => void onPasskey()} />
-      <p className="text-center text-xs text-subtle">or the app you paired</p>
-      <AuthenticatorMarks />
+      {appId ? (
+        <div className="space-y-2">
+          <AuthenticatorAppLogo id={appId} />
+          <p className="text-center text-sm text-fg">
+            Open {authenticatorAppName(appId)}. Type the six-digit code.
+          </p>
+        </div>
+      ) : null}
       <form onSubmit={(e) => void onCode(e)} className="space-y-4">
         <Field label={backup ? "Backup code" : "Six-digit code from the app"}>
           <TextInput

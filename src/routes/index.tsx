@@ -27,7 +27,7 @@ import { SiteMenu } from "@/components/meridian/site-nav";
 import { SpendingForm } from "@/components/meridian/spending-form";
 import { Verdict } from "@/components/meridian/verdict";
 import { YearTable } from "@/components/meridian/year-table";
-import { MachFooter, BrandLockup } from "@/components/meridian/mach-mark";
+import { MachFooter, BrandLockup, AuthCheckFooter } from "@/components/meridian/mach-mark";
 import { MachOrbit } from "@/components/meridian/mach-orbit";
 import { MatrixRain } from "@/components/meridian/matrix-rain";
 import { isRealUser } from "@/lib/auth/gates";
@@ -1912,6 +1912,56 @@ function Home() {
     if (prev) goStep(prev);
   };
 
+  if (advisorNeedsCheck) {
+    return (
+      <div className="flex min-h-screen flex-col bg-bg text-fg">
+        <div className="flex flex-1 flex-col items-center px-4 py-10">
+          <Link to="/" aria-label="MACH RUN">
+            <img
+              src="/brand/mach-run-logo.jpg"
+              alt="MACH RUN"
+              width={887}
+              height={271}
+              className="h-11 w-auto"
+            />
+          </Link>
+          <div
+            className="mt-10 w-[28.6rem] max-w-[calc(100vw-2rem)] rounded-xl p-6 shadow-[0_12px_40px_rgba(26,35,48,0.28),0_0_0_1px_#3a4652]"
+            style={{
+              backgroundColor: "#2c3a48",
+              color: "#d7dde4",
+              ["--color-fg" as string]: "#e8edf1",
+              ["--color-muted" as string]: "#b8c3cd",
+              ["--color-subtle" as string]: "#9aa7b3",
+              ["--color-border" as string]: "#3a4652",
+              ["--color-surface" as string]: "#243040",
+              ["--color-elevated" as string]: "#2c3a48",
+              ["--color-accent" as string]: "#d7dde4",
+              ["--color-accent-fg" as string]: "#1a2330",
+            }}
+          >
+            {advisor && advisorProof && advisorProof !== "fail" ? (
+              <AdvisorSignInEnroll
+                alreadyOn={advisorProof.enrolled}
+                onEnrolled={() => {
+                  notifyAdvisorMfaChanged();
+                  setAdvisorProofTick((n) => n + 1);
+                }}
+                onTurnedOff={() => {
+                  notifyAdvisorMfaChanged();
+                  setAdvisorProofTick((n) => n + 1);
+                }}
+              />
+            ) : (
+              <p className="text-sm text-muted">Checking this sign-in.</p>
+            )}
+          </div>
+        </div>
+        <AuthCheckFooter />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-bg text-fg">
       <WelcomeEmailPreviewOverlay />
@@ -2159,69 +2209,7 @@ function Home() {
         style={stepsH != null ? { height: stepsH, overflowAnchor: "none" } : undefined}
       >
 
-      {advisorNeedsCheck ? (
-        <div className="relative mx-auto w-full px-4 pb-8 pt-2">
-          <svg
-            viewBox="0 0 1000 900"
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-0 h-auto -translate-x-1/2"
-            style={{ width: "min(100%, 38rem)" }}
-          >
-            <defs>
-              <linearGradient id="advisor-lock-shackle" x1="0" y1="0" x2="1" y2="1">
-                <stop offset="0" stopColor="#9ebbd4" />
-                <stop offset="1" stopColor="#5d7f9e" />
-              </linearGradient>
-              <linearGradient id="advisor-lock-body" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stopColor="#f4e7d0" />
-                <stop offset="1" stopColor="#d4bc96" />
-              </linearGradient>
-            </defs>
-            <path
-              d="M250 150 V90 C250 24 750 24 750 90 V150"
-              fill="none"
-              stroke="url(#advisor-lock-shackle)"
-              strokeWidth="70"
-              strokeLinecap="round"
-            />
-            <rect x="28" y="130" width="944" height="740" rx="80" fill="url(#advisor-lock-body)" />
-            <rect x="78" y="170" width="120" height="620" rx="60" fill="#fff" opacity="0.28" />
-            <circle cx="500" cy="470" r="64" fill="#3a8a58" />
-            <rect x="470" y="510" width="60" height="100" rx="20" fill="#3a8a58" />
-          </svg>
-          <div
-            className="relative z-10 mx-auto mt-20 w-[28.6rem] max-w-[calc(100vw-2rem)] rounded-xl p-6 shadow-[0_12px_40px_rgba(26,35,48,0.28),0_0_0_1px_#3a4652]"
-            style={{
-              backgroundColor: "#2c3a48",
-              color: "#d7dde4",
-              ["--color-fg" as string]: "#e8edf1",
-              ["--color-muted" as string]: "#b8c3cd",
-              ["--color-subtle" as string]: "#9aa7b3",
-              ["--color-border" as string]: "#3a4652",
-              ["--color-surface" as string]: "#243040",
-              ["--color-elevated" as string]: "#2c3a48",
-              ["--color-accent" as string]: "#d7dde4",
-              ["--color-accent-fg" as string]: "#1a2330",
-            }}
-          >
-          {advisor && advisorProof && advisorProof !== "fail" ? (
-            <AdvisorSignInEnroll
-              alreadyOn={advisorProof.enrolled}
-              onEnrolled={() => {
-                notifyAdvisorMfaChanged();
-                setAdvisorProofTick((n) => n + 1);
-              }}
-              onTurnedOff={() => {
-                notifyAdvisorMfaChanged();
-                setAdvisorProofTick((n) => n + 1);
-              }}
-            />
-          ) : advisor ? (
-            <p className="text-sm text-muted">Checking this sign-in.</p>
-          ) : null}
-          </div>
-        </div>
-      ) : advisorPlanHeld ? null : (
+      {advisorPlanHeld ? null : (
       <main className="relative z-10 bg-bg page-gutter mx-auto flex max-w-none flex-col gap-5 py-5">
         <div
           className="relative"

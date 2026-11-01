@@ -539,7 +539,10 @@ export async function clearAdvisorSignInCheck(
   }
   try {
     const sql = await getSql();
-    await sql.query(`update "user" set "twoFactorEnabled" = false where id = $1`, [target.id]);
+    await sql.query(
+      `update "user" set "twoFactorEnabled" = false, "authenticatorApp" = null where id = $1`,
+      [target.id],
+    );
     await sql.query(`delete from "twoFactor" where "userId" = $1`, [target.id]);
     await sql.query(`delete from "passkey" where "userId" = $1`, [target.id]);
   } catch (err) {

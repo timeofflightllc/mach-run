@@ -146,7 +146,7 @@ export async function turnOffAdvisorCheck(
   await proveAdvisorFactor(userId, input, bearerToken);
   const { getSql } = await import("@/lib/db");
   const sql = await getSql();
-  await sql.query(`update "user" set "twoFactorEnabled" = false where id = $1`, [userId]);
+  await sql.query(`update "user" set "twoFactorEnabled" = false, "authenticatorApp" = null where id = $1`, [userId]);
   await sql.query(`delete from "twoFactor" where "userId" = $1`, [userId]).catch(() => undefined);
   await sql.query(`delete from passkey where "userId" = $1`, [userId]).catch(() => undefined);
   await sql

@@ -61,6 +61,53 @@ export const advisorMfaStatusFn = createServerFn({ method: "GET" })
     return { enrolled, proven: enrolled && (cookieOk || rowOk) };
   });
 
+const AUTHENTICATOR_APP_IDS = new Set([
+  "google",
+  "microsoft",
+  "okta",
+  "duo",
+  "1password",
+  "authy",
+]);
+
+async function sessionUserId(bearerToken?: string): Promise<string | null> {
+  const request = getRequest();
+  if (!request) return null;
+  const headers = new Headers(request.headers);
+  if (bearerToken) headers.set("Authorization", `Bearer ${bearerToken}`);
+  const session = await auth.api.getSession({ headers });
+  return session?.user?.id ?? null;
+}
+
+export const authenticatorAppFn = createServerFn({ method: "GET" })
+  .middleware([bearerMiddleware])
+  .handler(async ({ context }): Promise<string | null> => {
+    const userId = await sessionUserId(context.bearerToken);
+    if (!userId) return null;
+    const sql = await getSql();
+    const rows = await sql.query<{ authenticatorApp: string | null }>(
+      `select "authenticatorApp" from "user" where id = $1 limit 1`,
+      [userId],
+    );
+    const app = rows[0]?.authenticatorApp ?? null;
+    return app && AUTHENTICATOR_APP_IDS.has(app) ? app : null;
+  });
+
+export const saveAuthenticatorAppFn = createServerFn({ method: "POST" })
+  .middleware([bearerMiddleware])
+  .validator((input: { app?: string }) => {
+    const app = String(input?.app ?? "");
+    if (!AUTHENTICATOR_APP_IDS.has(app)) throw new Error("Unknown authenticator app.");
+    return { app };
+  })
+  .handler(async ({ context, data }) => {
+    const userId = await sessionUserId(context.bearerToken);
+    if (!userId) throw new Error("Could not save the authenticator app.");
+    const sql = await getSql();
+    await sql.query(`update "user" set "authenticatorApp" = $1 where id = $2`, [data.app, userId]);
+    return { ok: true as const };
+  });
+
 export const turnOffAdvisorCheckFn = createServerFn({ method: "POST" })
   .middleware([bearerMiddleware])
   .validator((input: { code?: string; backup?: boolean; passkey?: boolean }) => ({

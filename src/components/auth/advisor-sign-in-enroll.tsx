@@ -1,8 +1,15 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import QRCode from "qrcode";
 import { authClient, rememberBearerIfPreview } from "@/lib/auth/client";
-import { turnOffAdvisorCheckFn } from "@/lib/auth/advisor-mfa-api";
-import { SignInFactor, AuthenticatorMarks, PasskeyButton } from "@/components/auth/sign-in-factor";
+import { turnOffAdvisorCheckFn, saveAuthenticatorAppFn } from "@/lib/auth/advisor-mfa-api";
+import {
+  SignInFactor,
+  PasskeyButton,
+  AuthenticatorChoices,
+  AuthenticatorAppLogo,
+  authenticatorAppName,
+  type AuthenticatorAppId,
+} from "@/components/auth/sign-in-factor";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 
 type EnableResult = { totpURI?: string; backupCodes?: string[] };
@@ -53,7 +60,7 @@ export function AdvisorSignInEnroll({
   const [uri, setUri] = useState<string | null>(null);
   const [codes, setCodes] = useState<string[]>([]);
   const [password, setPassword] = useState("");
-  const [needPassword, setNeedPassword] = useState(false);
+  const [appId, setAppId] = useState<AuthenticatorAppId | null>(null);
   const [passkeyOn, setPasskeyOn] = useState(false);
   const [authenticatorOn, setAuthenticatorOn] = useState(false);
   const [showCodes, setShowCodes] = useState(false);
@@ -96,16 +103,6 @@ export function AdvisorSignInEnroll({
         return;
       }
       if (!userId) return;
-      const started = await startEnable(userId);
-      if (!live) return;
-      if (started.error || !started.data?.totpURI) {
-        const message = started.error?.message ?? "";
-        if (/password/i.test(message)) setNeedPassword(true);
-        else if (message) setError(message);
-        return;
-      }
-      setUri(started.data.totpURI);
-      setCodes(started.data.backupCodes ?? []);
     })();
     return () => {
       live = false;
@@ -126,7 +123,6 @@ export function AdvisorSignInEnroll({
         setError(started.error?.message ?? "That password did not work.");
         return;
       }
-      setNeedPassword(false);
       setUri(started.data.totpURI);
       setCodes(started.data.backupCodes ?? []);
     } finally {
@@ -167,6 +163,9 @@ export function AdvisorSignInEnroll({
         return;
       }
       setAuthenticatorOn(true);
+      if (appId) {
+        await saveAuthenticatorAppFn({ data: { app: appId } }).catch(() => undefined);
+      }
       setShowCodes(true);
       enrolled();
     } catch (err) {
@@ -310,14 +309,16 @@ export function AdvisorSignInEnroll({
           This device is paired. A lost device locks the client list until the desk clears it.
         </p>
       ) : null}
-      <div className="space-y-3 border-t border-border pt-4">
-        <p className="text-sm font-medium text-fg">Or pair an authenticator app</p>
-        <p className="text-xs leading-snug text-muted">
-          Scan the QR code in one of these apps. The app shows a six-digit code. Type that code below. You do not choose the number.
-        </p>
-        <AuthenticatorMarks />
-      </div>
-      {needPassword ? (
+      {!uri && !showCodes ? (
+        <div className="space-y-3 border-t border-border pt-4">
+          <p className="text-sm font-medium text-fg">Or pair an authenticator app</p>
+          <p className="text-xs leading-snug text-muted">
+            Choose the app you will use. Then enter your password. The QR code comes after that.
+          </p>
+          <AuthenticatorChoices value={appId} onChange={setAppId} />
+        </div>
+      ) : null}
+      {appId && !uri && !showCodes ? (
         <form onSubmit={(e) => void onPassword(e)} className="space-y-4">
           <Field label="Password">
             <TextInput
@@ -333,9 +334,15 @@ export function AdvisorSignInEnroll({
           </PrimaryButton>
         </form>
       ) : null}
-      {uri && !showCodes ? (
+      {uri && !showCodes && appId ? (
         <div className="space-y-4">
-          <TotpQr uri={uri} />
+          <AuthenticatorAppLogo id={appId} />
+          <p className="text-center text-sm text-fg">
+            Open {authenticatorAppName(appId)} and scan this code.
+          </p>
+          <div className="flex justify-center">
+            <TotpQr uri={uri} />
+          </div>
           <form onSubmit={(e) => void onCode(e)} className="space-y-4">
             <Field label="Six-digit code from the app">
               <TextInput
@@ -352,8 +359,6 @@ export function AdvisorSignInEnroll({
             </PrimaryButton>
           </form>
         </div>
-      ) : !needPassword && !showCodes && !passkeyOn && !error ? (
-        <p className="text-sm text-muted">Preparing the QR code…</p>
       ) : null}
       {showCodes ? (
         <div className="space-y-3">
