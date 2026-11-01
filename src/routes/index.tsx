@@ -1267,7 +1267,6 @@ function Home() {
   useEffect(() => {
     if (!advisor) return;
     let live = true;
-    setAdvisorProof(null);
     void advisorMfaStatusFn()
       .then((status) => {
         if (live) setAdvisorProof(status);
@@ -1279,13 +1278,14 @@ function Home() {
       live = false;
     };
   }, [advisor, advisorProofTick]);
+  const advisorNeedsCheck =
+    advisor &&
+    advisorProof != null &&
+    (advisorProof === "fail" || !advisorProof.enrolled || !advisorProof.proven);
   const advisorPlanHeld =
     (signedIn && !heroOn && ent.pending) ||
-    (advisor &&
-      (advisorProof == null ||
-        advisorProof === "fail" ||
-        !advisorProof.enrolled ||
-        !advisorProof.proven));
+    (advisor && advisorProof == null) ||
+    advisorNeedsCheck;
   const [demoLoaded, setDemoLoaded] = useState(false);
   const stepsRef = useRef<HTMLDivElement>(null);
   const engagedRef = useRef(false);
@@ -2159,7 +2159,7 @@ function Home() {
         style={stepsH != null ? { height: stepsH, overflowAnchor: "none" } : undefined}
       >
 
-      {advisorPlanHeld ? (
+      {advisorNeedsCheck ? (
         <div className="relative mx-auto w-full px-4 pb-8 pt-2">
           <svg
             viewBox="0 0 1000 900"
@@ -2221,7 +2221,7 @@ function Home() {
           ) : null}
           </div>
         </div>
-      ) : (
+      ) : advisorPlanHeld ? null : (
       <main className="relative z-10 bg-bg page-gutter mx-auto flex max-w-none flex-col gap-5 py-5">
         <div
           className="relative"

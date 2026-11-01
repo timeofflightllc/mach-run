@@ -95,7 +95,8 @@ export function ProfileSwitcher({ ent }: { ent: Entitlement }) {
   }, []);
 
   if (!allowed) return null;
-  if (advisor && (!proof || !proof.enrolled || !proof.proven)) {
+  if (advisor && proof === null) return null;
+  if (advisor && proof && (!proof.enrolled || !proof.proven)) {
     return (
       <AdvisorMfaWall />
     );
