@@ -306,7 +306,17 @@ export const startCheckout = createServerFn({ method: "POST" })
     }
     const { resolvePromo } = await import("./promo.server");
     const typedCode = normalizePromoCode(data.trialCode);
-    const promo = typedCode ? await resolvePromo(typedCode, pkg) : null;
+    const { personalInviteOpen } = await import("@/lib/referrals/checkout.server");
+    const { personalYearlyInvite, referralCouponRefusal } = await import("@/lib/referrals/checkout");
+    const inviteOpen = await personalInviteOpen(context.userId);
+    const yearlyInvite = personalYearlyInvite(inviteOpen, data.interval);
+    const refusal = referralCouponRefusal({
+      personalOpen: inviteOpen,
+      interval: data.interval,
+      promoCode: typedCode,
+    });
+    if (refusal) throw new Error(refusal);
+    const promo = yearlyInvite || !typedCode ? null : await resolvePromo(typedCode, pkg);
     if (typedCode && promo && !promo.ok) {
       throw new Error(promo.message);
     }
@@ -315,8 +325,9 @@ export const startCheckout = createServerFn({ method: "POST" })
     if (promoPercent && !promoPercent.stripeCouponId) {
       throw new Error("That percent-off code is not connected to Stripe yet.");
     }
-    const trialDays =
-      promoTrialDays ?? (pkg === "advisor_lite" || pkg === "advisor" ? ADVISOR_TRIAL_DAYS : null);
+    const trialDays = yearlyInvite
+      ? null
+      : promoTrialDays ?? (pkg === "advisor_lite" || pkg === "advisor" ? ADVISOR_TRIAL_DAYS : null);
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: priceIdFor(data.interval, pkg), quantity: 1 }],
@@ -326,23 +337,27 @@ export const startCheckout = createServerFn({ method: "POST" })
       metadata: {
         userId: context.userId,
         package: pkg,
-        ...(typedCode ? { trialCode: typedCode } : {}),
+        interval: data.interval,
+        ...(typedCode && !yearlyInvite ? { trialCode: typedCode } : {}),
       },
       subscription_data: {
         metadata: {
           userId: context.userId,
           package: pkg,
-          ...(typedCode ? { trialCode: typedCode } : {}),
+          interval: data.interval,
+          ...(typedCode && !yearlyInvite ? { trialCode: typedCode } : {}),
         },
         ...(trialDays ? { trial_period_days: trialDays } : {}),
       },
       customer: dropped ? undefined : existing?.stripe_customer_id || undefined,
-      ...(promoPercent?.stripeCouponId
-        ? { discounts: [{ coupon: promoPercent.stripeCouponId }] }
-        : { allow_promotion_codes: true }),
+      ...(yearlyInvite
+        ? {}
+        : promoPercent?.stripeCouponId
+          ? { discounts: [{ coupon: promoPercent.stripeCouponId }] }
+          : { allow_promotion_codes: true }),
     });
     if (!session.url) throw new Error("Stripe did not return a checkout URL.");
-    if (typedCode) {
+    if (typedCode && !yearlyInvite) {
       const { recordPromoRedemption } = await import("./promo.server");
       await recordPromoRedemption(context.userId, typedCode);
     }

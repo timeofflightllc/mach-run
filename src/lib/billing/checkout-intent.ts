@@ -16,6 +16,7 @@ export type LoginSearch = {
   mode: "in" | "up";
   package?: CheckoutPackage;
   interval?: "month" | "year";
+  next?: string;
 };
 
 export type PricingSearch = {
@@ -54,8 +55,18 @@ export function resumeCheckoutHref(intent: CheckoutIntent): string | null {
   return `/pricing?${q.toString()}`;
 }
 
+/** Same-origin path only. Rejects protocol-relative and off-site returns. */
+export function safeNextPath(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const path = raw.trim();
+  if (!path.startsWith("/") || path.startsWith("//") || path.includes("\\") || path.includes("://")) {
+    return null;
+  }
+  return path;
+}
+
 export function afterAuthHref(search: Record<string, unknown>): string {
-  return resumeCheckoutHref(parseCheckoutIntent(search)) ?? "/";
+  return resumeCheckoutHref(parseCheckoutIntent(search)) ?? safeNextPath(search.next) ?? "/";
 }
 
 export function wantsCheckout(search: Record<string, unknown>): boolean {
@@ -64,10 +75,12 @@ export function wantsCheckout(search: Record<string, unknown>): boolean {
 
 export function loginSearch(search: Record<string, unknown>): LoginSearch {
   const intent = parseCheckoutIntent(search);
+  const next = safeNextPath(search.next);
   return {
     mode: search.mode === "up" ? "up" : "in",
     ...(intent.package ? { package: intent.package } : {}),
     ...(intent.interval ? { interval: intent.interval } : {}),
+    ...(next ? { next } : {}),
   };
 }
 

@@ -15,6 +15,11 @@ type StripeClient = {
       args: Record<string, unknown>,
       options?: { idempotencyKey?: string },
     ) => Promise<{ id: string }>;
+    createBalanceTransaction: (
+      customerId: string,
+      args: { amount: number; currency: string; description: string },
+      options?: { idempotencyKey?: string },
+    ) => Promise<{ id?: string }>;
   };
   subscriptions: {
     retrieve: (id: string) => Promise<StripeSubscription>;
@@ -44,6 +49,7 @@ type StripeCheckoutSession = {
   metadata?: Record<string, string>;
   subscription?: string | { id: string } | null;
   customer?: string | { id: string } | null;
+  payment_status?: string | null;
 };
 
 export function stripeConfigured(): boolean {
@@ -367,6 +373,25 @@ export async function applyStripeEvent(event: StripeEvent): Promise<void> {
       priceId,
       periodEnd,
     });
+    try {
+      const { settleReferralCheckout } = await import("@/lib/referrals/checkout.server");
+      await settleReferralCheckout({
+        userId,
+        subscriptionId: subId ?? null,
+        priceId,
+        periodEnd,
+        paymentStatus: session.payment_status ?? null,
+        subscriptionStatus: status,
+      });
+    } catch (err) {
+      console.warn("[referral] checkout settle failed:", err instanceof Error ? err.message : err);
+    }
+    try {
+      const { flushHeldReferralCredits } = await import("@/lib/referrals/credit.server");
+      await flushHeldReferralCredits(userId);
+    } catch (err) {
+      console.warn("[referral] held credit stayed held:", err instanceof Error ? err.message : err);
+    }
     const plan = (session.metadata?.package || "").trim();
     if (plan) await analytics.setIdentity(userId, { plan });
     await analytics.trackEvent("subscription_started", plan ? { plan } : {}, { userId });
@@ -396,6 +421,25 @@ export async function applyStripeEvent(event: StripeEvent): Promise<void> {
       priceId: sub.items.data[0]?.price.id ?? null,
       periodEnd: periodEndOf(sub),
     });
+    if (event.type !== "customer.subscription.deleted") {
+      try {
+        const { keepReferralRenewal } = await import("@/lib/referrals/checkout.server");
+        await keepReferralRenewal({
+          userId,
+          subscriptionId: sub.id,
+          periodEnd: periodEndOf(sub),
+          status: sub.status,
+        });
+      } catch (err) {
+        console.warn("[referral] could not keep the renewal:", err instanceof Error ? err.message : err);
+      }
+      try {
+        const { flushHeldReferralCredits } = await import("@/lib/referrals/credit.server");
+        await flushHeldReferralCredits(userId);
+      } catch (err) {
+        console.warn("[referral] held credit stayed held:", err instanceof Error ? err.message : err);
+      }
+    }
     const plan = (sub.metadata?.package || "").trim();
     if (event.type === "customer.subscription.deleted") {
       await analytics.setIdentity(userId, { plan: "free" });

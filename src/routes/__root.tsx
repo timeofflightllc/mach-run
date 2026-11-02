@@ -128,6 +128,12 @@ function RootShell() {
         <HeadContent />
       </head>
       <body className="bg-bg text-fg">
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              '(function(){try{var p=new URLSearchParams(location.search).get("ref");if(!p)return;p=p.trim().toLowerCase();if(!/^[a-z0-9]{4,32}$/.test(p))return;if(/(?:^|; )mach_ref=/.test(document.cookie))return;var s=location.protocol==="https:"?"; Secure":"";document.cookie="mach_ref="+p+"; Max-Age=2592000; Path=/; SameSite=Lax"+s;}catch(e){}})();',
+          }}
+        />
         <PreviewHostBridge />
         <SessionSnapshotProvider value={snapshot}>
           <AuthProvider>

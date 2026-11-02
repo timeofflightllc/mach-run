@@ -4,6 +4,7 @@ import { BackupPasswordModal } from "@/components/meridian/backup-modal";
 import { DeleteAccountModal } from "@/components/meridian/delete-account-modal";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { IdleLockSettings } from "@/components/meridian/idle-lock-settings";
+import { ReferralAccountCard } from "@/components/meridian/referral-card";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import { startBillingPortal } from "@/lib/billing/api";
 import { formatDeskTrialEnd } from "@/lib/billing/desk-trial";
@@ -377,6 +378,8 @@ function Account() {
           </p>
           <h1 className="mt-2 font-display text-3xl text-fg">Your MACH Run identity</h1>
         </header>
+
+        <ReferralAccountCard />
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
         {msg ? <p className="text-sm text-muted">{msg}</p> : null}

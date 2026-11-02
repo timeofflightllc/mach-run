@@ -22,6 +22,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as MethodRouteImport } from './routes/method'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ReferralsRouteImport } from './routes/referrals'
 import { Route as RetiredPayRouteImport } from './routes/retired-pay'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StartRouteImport } from './routes/start'
@@ -97,6 +98,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
   path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReferralsRoute = ReferralsRouteImport.update({
+  id: '/referrals',
+  path: '/referrals',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RetiredPayRoute = RetiredPayRouteImport.update({
   id: '/retired-pay',
   path: '/retired-pay',
@@ -157,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/method': typeof MethodRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/referrals': typeof ReferralsRoute
   '/retired-pay': typeof RetiredPayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/start': typeof StartRoute
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/method': typeof MethodRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/referrals': typeof ReferralsRoute
   '/retired-pay': typeof RetiredPayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/start': typeof StartRoute
@@ -206,6 +214,7 @@ export interface FileRoutesById {
   '/method': typeof MethodRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/referrals': typeof ReferralsRoute
   '/retired-pay': typeof RetiredPayRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/start': typeof StartRoute
@@ -232,6 +241,7 @@ export interface FileRouteTypes {
     | '/method'
     | '/pricing'
     | '/privacy'
+    | '/referrals'
     | '/retired-pay'
     | '/sitemap.xml'
     | '/start'
@@ -256,6 +266,7 @@ export interface FileRouteTypes {
     | '/method'
     | '/pricing'
     | '/privacy'
+    | '/referrals'
     | '/retired-pay'
     | '/sitemap.xml'
     | '/start'
@@ -280,6 +291,7 @@ export interface FileRouteTypes {
     | '/method'
     | '/pricing'
     | '/privacy'
+    | '/referrals'
     | '/retired-pay'
     | '/sitemap.xml'
     | '/start'
@@ -305,6 +317,7 @@ export interface RootRouteChildren {
   MethodRoute: typeof MethodRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  ReferralsRoute: typeof ReferralsRoute
   RetiredPayRoute: typeof RetiredPayRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StartRoute: typeof StartRoute
@@ -409,6 +422,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/referrals': {
+      id: '/referrals'
+      path: '/referrals'
+      fullPath: '/referrals'
+      preLoaderRoute: typeof ReferralsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/retired-pay': {
       id: '/retired-pay'
       path: '/retired-pay'
@@ -489,6 +509,7 @@ const rootRouteChildren: RootRouteChildren = {
   MethodRoute: MethodRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  ReferralsRoute: ReferralsRoute,
   RetiredPayRoute: RetiredPayRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StartRoute: StartRoute,

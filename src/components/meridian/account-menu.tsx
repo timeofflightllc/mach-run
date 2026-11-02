@@ -68,6 +68,14 @@ export function AccountMenu() {
           >
             Account profile
           </Link>
+          <Link
+            to="/referrals"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="block px-3 py-2.5 text-sm text-fg hover:bg-surface"
+          >
+            Referrals
+          </Link>
           <button
             type="button"
             role="menuitem"

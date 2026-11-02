@@ -98,7 +98,41 @@ function clearCookie(ctx: {
   );
 }
 
-/** Sets the advisor proof cookie after a real code or passkey. Does not log anyone out. */
+export async function advisorMfaSessionState(input: {
+  userId: string;
+  sessionToken: string;
+  sessionId: string;
+  cookie: string | null | undefined;
+}): Promise<{ enrolled: boolean; proven: boolean }> {
+  const { getSql } = await import("@/lib/db");
+  const sql = await getSql();
+  const users = await sql.query<{ twoFactorEnabled: boolean | null }>(
+    `select "twoFactorEnabled" from "user" where id = $1 limit 1`,
+    [input.userId],
+  );
+  const passkeys = await sql.query<{ id: string }>(
+    `select id from "passkey" where "userId" = $1 limit 1`,
+    [input.userId],
+  );
+  const enrolled = Boolean(users[0]?.twoFactorEnabled) || Boolean(passkeys[0]);
+  if (!enrolled) return { enrolled: false, proven: false };
+
+  const cookieOk = advisorMfaProofMatches(input.sessionToken, input.cookie);
+  let rowOk = false;
+  if (!cookieOk) {
+    const rows = await sql.query<{ value: string; expiresAt: Date | string }>(
+      `select value, "expiresAt" from "verification" where identifier = $1 limit 1`,
+      [`advisor-mfa:${input.sessionId}`],
+    );
+    const row = rows[0];
+    rowOk = Boolean(
+      row &&
+        row.value === input.userId &&
+        new Date(row.expiresAt).getTime() > Date.now(),
+    );
+  }
+  return { enrolled: true, proven: cookieOk || rowOk };
+}
 export function advisorMfaStampPlugin(): BetterAuthPlugin {
   return {
     id: "advisor-mfa-stamp",

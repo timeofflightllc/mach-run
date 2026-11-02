@@ -40,4 +40,7 @@ test("junk package or a cancelled checkout does not start a charge", () => {
   assert.equal(wantsCheckout({ checkout: "cancel" }), false);
   assert.equal(wantsCheckout({ checkout: "1" }), true);
   assert.equal(afterAuthHref({ package: "nope", interval: "year" }), "/");
+  assert.equal(afterAuthHref({ next: "/top-3-desk" }), "/top-3-desk");
+  assert.equal(afterAuthHref({ next: "https://evil.example" }), "/");
+  assert.equal(afterAuthHref({ next: "//evil.example" }), "/");
 });

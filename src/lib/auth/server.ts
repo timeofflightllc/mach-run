@@ -251,6 +251,15 @@ export const auth = betterAuth({
       create: {
         after: async (user) => {
           try {
+            const { attributeReferralSignup } = await import("../referrals/attribute.server");
+            await attributeReferralSignup({ id: user.id, email: user.email });
+          } catch (err) {
+            console.warn(
+              "[signup] referral failed:",
+              err instanceof Error ? err.message : err,
+            );
+          }
+          try {
             const { notifyOwnerOfSignup } = await import("../notify/signup");
             await notifyOwnerOfSignup({
               id: user.id,

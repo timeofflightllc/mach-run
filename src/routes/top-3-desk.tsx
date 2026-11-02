@@ -1,5 +1,9 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
-import { BrandLockup } from "@/components/meridian/mach-mark";
+import { BrandLockup, AuthCheckFooter } from "@/components/meridian/mach-mark";
+import { AdvisorSignInEnroll } from "@/components/auth/advisor-sign-in-enroll";
+import { advisorMfaStatusFn, notifyAdvisorMfaChanged } from "@/lib/auth/advisor-mfa-api";
+import { isRealUser } from "@/lib/auth/gates";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { SiteCopyDesk } from "@/components/ops/site-copy-desk";
 import { DeskUsers } from "@/components/ops/desk-users";
 import { OpsDeleteAccount } from "@/components/ops/ops-delete-account";
@@ -7,6 +11,7 @@ import { PromoCodesDesk } from "@/components/ops/promo-codes-desk";
 import { DeskMail } from "@/components/ops/desk-mail";
 import { EmailCopyDesk } from "@/components/ops/email-copy-desk";
 import { PayTablesDesk } from "@/components/ops/pay-tables-desk";
+import { ReferralDesk } from "@/components/ops/referral-desk";
 import { SavedAt } from "@/components/ops/saved-at";
 import { useEffect, useMemo, useState } from "react";
 import { Field, SelectInput, TextInput } from "@/components/ui/field";
@@ -67,8 +72,14 @@ function intervalLabel(value: OpsRosterRow["interval"]): string {
 }
 
 function Top3DeskDoor() {
+  const { user, isPending } = useCurrentUserState();
+  const signedIn = isRealUser(user);
+  const [proof, setProof] = useState<
+    { enrolled: boolean; proven: boolean } | "fail" | null
+  >(null);
+  const [proofTick, setProofTick] = useState(0);
   const [gate, setGate] = useState<"wait" | "no" | "yes">("wait");
-  const [tab, setTab] = useState<"roster" | "users" | "copy" | "codes" | "mail" | "emails" | "pay">("roster");
+  const [tab, setTab] = useState<"roster" | "users" | "copy" | "codes" | "mail" | "emails" | "pay" | "referrals">("roster");
   const [q, setQ] = useState("");
   const [plan, setPlan] = useState<OpsPlanFilter>("all");
   const [paid, setPaid] = useState<OpsPaidFilter>("all");
@@ -84,6 +95,30 @@ function Top3DeskDoor() {
   const [feed, setFeed] = useState<OpsAdminEvent[]>([]);
 
   useEffect(() => {
+    if (isPending || signedIn) return;
+    window.location.replace("/login?next=%2Ftop-3-desk");
+  }, [isPending, signedIn]);
+
+  useEffect(() => {
+    if (!signedIn) return;
+    let live = true;
+    void advisorMfaStatusFn()
+      .then((status) => {
+        if (live) setProof(status);
+      })
+      .catch(() => {
+        if (live) setProof("fail");
+      });
+    return () => {
+      live = false;
+    };
+  }, [signedIn, proofTick]);
+
+  const proven = proof != null && proof !== "fail" && proof.enrolled && proof.proven;
+  const needsCheck = signedIn && proof != null && !proven;
+
+  useEffect(() => {
+    if (!proven) return;
     let live = true;
     void probeOpsDoor()
       .then((r) => {
@@ -95,7 +130,7 @@ function Top3DeskDoor() {
     return () => {
       live = false;
     };
-  }, []);
+  }, [proven]);
 
   useEffect(() => {
     if (gate !== "no") return;
@@ -141,6 +176,58 @@ function Top3DeskDoor() {
     [rows, openId],
   );
 
+  if (isPending || !signedIn || proof == null) return null;
+
+  if (needsCheck) {
+    return (
+      <div className="flex min-h-screen flex-col bg-bg text-fg">
+        <div className="flex flex-1 flex-col items-center px-4 py-10">
+          <Link to="/" aria-label="MACH RUN">
+            <img
+              src="/brand/mach-run-logo.jpg"
+              alt="MACH RUN"
+              width={887}
+              height={271}
+              className="h-11 w-auto"
+            />
+          </Link>
+          <div
+            className="mt-10 w-[28.6rem] max-w-[calc(100vw-2rem)] rounded-xl p-6 shadow-[0_12px_40px_rgba(26,35,48,0.28),0_0_0_1px_#3a4652]"
+            style={{
+              backgroundColor: "#2c3a48",
+              color: "#d7dde4",
+              ["--color-fg" as string]: "#e8edf1",
+              ["--color-muted" as string]: "#b8c3cd",
+              ["--color-subtle" as string]: "#9aa7b3",
+              ["--color-border" as string]: "#3a4652",
+              ["--color-surface" as string]: "#243040",
+              ["--color-elevated" as string]: "#2c3a48",
+              ["--color-accent" as string]: "#d7dde4",
+              ["--color-accent-fg" as string]: "#1a2330",
+            }}
+          >
+            {proof !== "fail" ? (
+              <AdvisorSignInEnroll
+                alreadyOn={proof.enrolled}
+                onEnrolled={() => {
+                  notifyAdvisorMfaChanged();
+                  setProofTick((n) => n + 1);
+                }}
+                onTurnedOff={() => {
+                  notifyAdvisorMfaChanged();
+                  setProofTick((n) => n + 1);
+                }}
+              />
+            ) : (
+              <p className="text-sm text-muted">Checking this sign-in.</p>
+            )}
+          </div>
+        </div>
+        <AuthCheckFooter />
+      </div>
+    );
+  }
+
   if (gate !== "yes") return null;
 
   const from = total === 0 ? 0 : offset + 1;
@@ -166,6 +253,8 @@ function Top3DeskDoor() {
           <p className="text-sm text-muted">
             {tab === "pay"
               ? "Basic pay. Upload the four official DFAS pages when a new year is published."
+              : tab === "referrals"
+                ? "Referrals. The credit on a sender's next bill, and campaign links that only count."
               : tab === "users"
               ? "Users. Click a person for site use, then delete with your desk password."
               : tab === "copy"
@@ -180,11 +269,11 @@ function Top3DeskDoor() {
           </p>
           <p className="mt-3 max-w-3xl text-xs text-subtle">
             Vercel Deployment Protection password: Preview deployments only. Never on
-            Production. Production lock is MACH_OWNER_EMAILS plus this page’s 404.
+            Production. Production lock is a signed-in owner, the same sign-in check as Advisor, plus this page's 404.
           </p>
         </header>
 
-        <div className="flex max-w-[70rem] rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+        <div className="flex max-w-[90rem] rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
           {(
             [
               ["roster", "Roster"],
@@ -194,6 +283,7 @@ function Top3DeskDoor() {
               ["mail", "Mail"],
               ["emails", "Emails"],
               ["pay", "Pay"],
+              ["referrals", "Referrals"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -215,6 +305,7 @@ function Top3DeskDoor() {
         {tab === "codes" ? <PromoCodesDesk /> : null}
         {tab === "emails" ? <EmailCopyDesk /> : null}
         {tab === "pay" ? <PayTablesDesk /> : null}
+        {tab === "referrals" ? <ReferralDesk /> : null}
         {tab === "mail" ? (
           <DeskMail
             q={q}
