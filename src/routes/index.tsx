@@ -59,6 +59,7 @@ import {
   loadStoredSurvivals,
   saveStoredRun,
   saveStoredSurvival,
+  setRunScope,
 } from "@/lib/plan/last-run";
 import { cn } from "@/lib/utils";
 import { WelcomeEmailPreviewOverlay } from "@/components/meridian/welcome-email-preview";
@@ -1073,6 +1074,7 @@ function Home() {
   useEffect(() => {
     if (isPending) return;
     if (!signedIn) {
+      setRunScope(null);
       setRuns({});
       survivalTask.current?.controller.abort();
       survivalTask.current = null;
@@ -1080,6 +1082,7 @@ function Home() {
       setRunsLoaded(true);
       return;
     }
+    setRunScope(user?.id ?? null);
     const stored = loadStoredRuns();
     const loaded: Record<
       string,
@@ -1126,7 +1129,7 @@ function Home() {
       return next;
     });
     setRunsLoaded(true);
-  }, [isPending, signedIn]);
+  }, [isPending, signedIn, user?.id]);
 
   useEffect(() => {
     function onReset() {

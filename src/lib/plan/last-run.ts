@@ -5,6 +5,17 @@ import type { Plan } from "./types";
 const STORAGE_KEY = "mach-last-run-v1";
 const SURVIVAL_KEY = "mach-last-survival-v1";
 
+/** This browser's last run belongs to one account. A different account never reads it. */
+let runScope = "guest";
+
+export function setRunScope(userId: string | null) {
+  runScope = userId || "guest";
+}
+
+function scopedKey(base: string): string {
+  return `${base}:${runScope}`;
+}
+
 export type StoredRun = {
   id: number;
   plan: Plan;
@@ -15,7 +26,7 @@ type Store = Record<string, StoredRun>;
 function readStore(): Store {
   if (typeof localStorage === "undefined") return {};
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(scopedKey(STORAGE_KEY));
     if (!raw) return {};
     const parsed = JSON.parse(raw) as Store;
     if (!parsed || typeof parsed !== "object") return {};
@@ -34,7 +45,7 @@ function readStore(): Store {
 function writeStore(store: Store) {
   if (typeof localStorage === "undefined") return;
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
+    localStorage.setItem(scopedKey(STORAGE_KEY), JSON.stringify(store));
   } catch {
     /* quota / private mode */
   }
@@ -62,8 +73,12 @@ export function clearStoredRun(key: string) {
 export function clearAllStoredRuns() {
   if (typeof localStorage === "undefined") return;
   try {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(SURVIVAL_KEY);
+    const keys = Object.keys(localStorage);
+    for (const key of keys) {
+      if (key === STORAGE_KEY || key.startsWith(`${STORAGE_KEY}:`) || key === SURVIVAL_KEY || key.startsWith(`${SURVIVAL_KEY}:`)) {
+        localStorage.removeItem(key);
+      }
+    }
   } catch {
     /* ignore */
   }
@@ -107,7 +122,7 @@ function readScore(value: unknown): SurvivalScore | null {
 function readSurvivalStore(): SurvivalStore {
   if (typeof localStorage === "undefined") return {};
   try {
-    const raw = localStorage.getItem(SURVIVAL_KEY);
+    const raw = localStorage.getItem(scopedKey(SURVIVAL_KEY));
     if (!raw) return {};
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (!parsed || typeof parsed !== "object") return {};
@@ -125,7 +140,7 @@ function readSurvivalStore(): SurvivalStore {
 function writeSurvivalStore(store: SurvivalStore) {
   if (typeof localStorage === "undefined") return;
   try {
-    localStorage.setItem(SURVIVAL_KEY, JSON.stringify(store));
+    localStorage.setItem(scopedKey(SURVIVAL_KEY), JSON.stringify(store));
   } catch {
     /* quota / private mode: keep the result for this visit */
   }

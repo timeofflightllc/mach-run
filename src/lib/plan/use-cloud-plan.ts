@@ -7,8 +7,8 @@ import {
   FREE_INCOME_LIMIT,
   clampPlan,
 } from "@/lib/billing/limits";
-import { pickDisplayedPlan } from "./cloud-hydrate";
-import { clearLocalMachRunWorkspace } from "./clear-local";
+import { planForSignedInUser } from "./cloud-hydrate";
+import { claimWorkspaceForUser, clearLocalMachRunWorkspace } from "./clear-local";
 import { appendMilitaryIncome, appendQuizAccount, consumeHeldQuizPlan, quizPlanHeld } from "./quiz-plan";
 import { loadMachPlan, saveMachPlan } from "./plan-api";
 import { usePlanStore } from "./store";
@@ -71,6 +71,7 @@ export function useCloudPlan() {
     }
     let cancelled = false;
     setCloudReady(false);
+    const switchedAccount = claimWorkspaceForUser(userId);
     void Promise.all([
       Promise.resolve(usePlanStore.persist.rehydrate()),
       Promise.resolve(useProfileStore.persist.rehydrate()),
@@ -85,14 +86,14 @@ export function useCloudPlan() {
         const library =
           saved && typeof saved === "object" && "library" in saved ? saved.library : null;
         if (library) useProfileStore.getState().hydrateLibrary(library);
-        else if (!useProfileStore.getState().profiles.length) {
-          useProfileStore.getState().hydrateFromPlan(local);
-        }
-        const base = pickDisplayedPlan({
+        else useProfileStore.getState().resetLibrary();
+        const base = planForSignedInUser({
           local,
           cloudPlan: cloudPlan ?? null,
           library,
+          switchedAccount,
         });
+        if (!library) useProfileStore.getState().hydrateFromPlan(base);
         const next = held?.add
           ? appendQuizAccount(base, held.plan)
           : held?.income

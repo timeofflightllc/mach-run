@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { pickDisplayedPlan } from "./cloud-hydrate";
+import { pickDisplayedPlan, planForSignedInUser } from "./cloud-hydrate";
 import { createDefaultPlan } from "./defaults";
 import type { PlanLibrary } from "./profile-store";
 import type { Plan } from "./types";
@@ -143,5 +143,51 @@ describe("pickDisplayedPlan — advisor isolation", () => {
     });
     expect(shown.primary.name).toBe("Client 2");
     expect(shown.portfolios[0].currentValue).toBe(400_000);
+  });
+});
+
+describe("planForSignedInUser — new accounts stay empty", () => {
+  it("a new account with no cloud plan ignores a leftover local plan", () => {
+    const leftover = fatClient();
+    leftover.primary.name = "Cary";
+    const shown = planForSignedInUser({
+      local: leftover,
+      cloudPlan: null,
+      library: null,
+      switchedAccount: true,
+    });
+    expect(shown.primary.name).toBe("");
+    expect(shown.spouse.name).toBe("");
+    expect(shown.children).toHaveLength(0);
+    expect(shown.portfolios).toHaveLength(0);
+    expect(shown.incomes).toHaveLength(0);
+    expect(shown.spending).toHaveLength(0);
+    expect(shown.contributions).toHaveLength(0);
+    expect(shown.liabilities ?? []).toHaveLength(0);
+  });
+
+  it("a new account stays empty even if the browser did not detect a switch", () => {
+    const shown = planForSignedInUser({
+      local: fatClient(),
+      cloudPlan: null,
+      library: null,
+      switchedAccount: false,
+    });
+    expect(shown.primary.name).toBe("");
+    expect(shown.portfolios).toHaveLength(0);
+  });
+
+  it("a returning account after a switch shows its own cloud plan, not the leftover", () => {
+    const leftover = fatClient();
+    leftover.primary.name = "Cary";
+    const own = thinTest();
+    const shown = planForSignedInUser({
+      local: leftover,
+      cloudPlan: own,
+      library: null,
+      switchedAccount: true,
+    });
+    expect(shown.primary.name).toBe("Test");
+    expect(shown.portfolios).toHaveLength(1);
   });
 });
