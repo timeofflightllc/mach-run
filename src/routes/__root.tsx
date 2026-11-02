@@ -12,6 +12,7 @@ import type { SessionSnapshot } from "@/lib/auth/session-snapshot";
 import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { IdleLockGate } from "@/components/meridian/idle-lock";
 import { loadPublicSiteCopy } from "@/lib/site-copy/api";
+import { recordCampaignClickFn } from "@/lib/referrals/api";
 import { DEFAULT_FOOTER_COPY, footerFromSiteCopy } from "@/lib/site-copy/footer-copy";
 import type { FooterCopy } from "@/lib/site-copy/types";
 import appCss from "../styles.css?url";
@@ -31,12 +32,14 @@ export const Route = createRootRoute({
   // Painted once per document. A later refetch must not flip a name back to
   // Sign In while the browser session check is still pending.
   staleTime: Number.POSITIVE_INFINITY,
-  loader: async () => {
-    try {
-      const { recordCampaignClick } = await import("@/lib/referrals/clicks.server");
-      await recordCampaignClick();
-    } catch {
-      /* a missed click must not blank the page */
+  loader: async ({ location }) => {
+    const search = `${location.searchStr ?? ""}${location.href ?? ""}`;
+    if (search.includes("ref=")) {
+      try {
+        await recordCampaignClickFn();
+      } catch {
+        /* a missed click must not blank the page */
+      }
     }
     const [sessionUser, footer] = await Promise.all([
       loadSessionSnapshot().catch(() => null),
