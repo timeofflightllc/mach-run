@@ -110,6 +110,7 @@ export function ReferralDesk() {
             <tr>
               <th className="px-4 py-3 font-medium">Name</th>
               <th className="px-4 py-3 font-medium">Link</th>
+              <th className="px-4 py-3 font-medium">Clicks</th>
               <th className="px-4 py-3 font-medium">Signed up</th>
               <th className="px-4 py-3 font-medium">Yearly</th>
               <th className="px-4 py-3 font-medium">Rate</th>
@@ -118,7 +119,7 @@ export function ReferralDesk() {
           <tbody>
             {campaigns.length === 0 ? (
               <tr>
-                <td className="px-4 py-3 text-muted" colSpan={5}>
+                <td className="px-4 py-3 text-muted" colSpan={6}>
                   No campaign links yet.
                 </td>
               </tr>
@@ -127,6 +128,7 @@ export function ReferralDesk() {
                 <tr key={row.code} className="border-t border-border">
                   <td className="px-4 py-3 text-fg">{row.name}</td>
                   <td className="px-4 py-3 font-mono text-xs text-fg">?ref={row.code}</td>
+                  <td className="px-4 py-3 tabular-nums text-fg">{row.clicks}</td>
                   <td className="px-4 py-3 tabular-nums text-fg">{row.signedUp}</td>
                   <td className="px-4 py-3 tabular-nums text-fg">{row.yearly}</td>
                   <td className="px-4 py-3 tabular-nums text-fg">{row.rate}</td>

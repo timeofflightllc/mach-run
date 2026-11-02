@@ -88,23 +88,30 @@ function ReferralsPage() {
         {error ? <p className="text-sm text-negative">{error}</p> : null}
 
         <section className="space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
-          <p className="text-sm text-muted">
+          <p className="text-sm leading-relaxed text-muted">
             Send this link. A friend who starts a yearly plan puts a credit on your next bill.
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <p className="min-w-0 flex-1 break-all font-mono text-sm text-fg">
-              {link || "Preparing your link…"}
+          <div className="space-y-3">
+            <p className="font-mono text-sm leading-relaxed text-fg">
+              {summary ? (
+                <>
+                  <span className="block">https://machrun.com/</span>
+                  <span className="block">?ref={summary.code}</span>
+                </>
+              ) : (
+                "Preparing your link…"
+              )}
             </p>
             <button
               type="button"
               disabled={!link}
               onClick={() => void copy()}
-              className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90 disabled:opacity-60"
+              className="inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90 disabled:opacity-60"
             >
               {copied ? "Copied" : "Copy link"}
             </button>
           </div>
-          <p className="text-sm text-fg">
+          <p className="text-sm leading-relaxed text-fg">
             {summary
               ? referralCountLine(summary.signedUp, summary.yearly)
               : "Loading your referrals…"}

@@ -15,13 +15,16 @@ export async function referralDesk(ownerId: string): Promise<{
     code: string;
     signed_up: number;
     yearly: number;
+    clicks: number;
   }>(
     `select c.name,
             c.code,
             count(s.id)::int as signed_up,
-            count(s.id) filter (where s.status in ('yearly', 'credit'))::int as yearly
+            count(s.id) filter (where s.status in ('yearly', 'credit'))::int as yearly,
+            coalesce(max(k.clicks), 0)::int as clicks
      from mach_referral_codes c
      left join mach_referral_signups s on s.code = c.code
+     left join mach_referral_clicks k on k.code = c.code
      where c.kind = 'campaign' and c.owner_user_id = $1
      group by c.name, c.code, c.created_at
      order by c.created_at desc`,
@@ -37,6 +40,7 @@ export async function referralDesk(ownerId: string): Promise<{
         code: row.code,
         signedUp,
         yearly,
+        clicks: Number(row.clicks ?? 0),
         rate: referralRate(signedUp, yearly),
       };
     }),

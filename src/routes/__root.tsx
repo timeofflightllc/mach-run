@@ -32,6 +32,12 @@ export const Route = createRootRoute({
   // Sign In while the browser session check is still pending.
   staleTime: Number.POSITIVE_INFINITY,
   loader: async () => {
+    try {
+      const { recordCampaignClick } = await import("@/lib/referrals/clicks.server");
+      await recordCampaignClick();
+    } catch {
+      /* a missed click must not blank the page */
+    }
     const [sessionUser, footer] = await Promise.all([
       loadSessionSnapshot().catch(() => null),
       loadPublicSiteCopy()

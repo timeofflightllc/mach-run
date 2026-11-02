@@ -4,4 +4,5 @@ export type CampaignStat = {
   signedUp: number;
   yearly: number;
   rate: string;
+  clicks: number;
 };
