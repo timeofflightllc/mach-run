@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
+import { ReferralLinkLine } from "@/components/meridian/referral-card";
 import { RedirectToSignIn, isRealUser } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { referralPeopleFn, referralSummaryFn } from "@/lib/referrals/api";
@@ -19,15 +20,10 @@ export const Route = createFileRoute("/referrals")({
   component: ReferralsPage,
 });
 
-function referralLink(code: string): string {
-  return `https://machrun.com/?ref=${code}`;
-}
-
 function ReferralsPage() {
   const { user, isPending } = useCurrentUserState();
   const [summary, setSummary] = useState<ReferralSummary | null>(null);
   const [people, setPeople] = useState<ReferralPerson[] | null>(null);
-  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,19 +57,6 @@ function ReferralsPage() {
   }
   if (!isPending && !isRealUser(user)) return <RedirectToSignIn />;
 
-  const link = summary ? referralLink(summary.code) : "";
-
-  async function copy() {
-    if (!link) return;
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      window.setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
-  }
-
   return (
     <main className="min-h-screen bg-bg py-10 text-fg">
       <div className="static-gutter mx-auto w-full max-w-2xl space-y-8">
@@ -91,26 +74,7 @@ function ReferralsPage() {
           <p className="text-sm leading-relaxed text-muted">
             Send this link. A friend who starts a yearly plan puts a credit on your next bill.
           </p>
-          <div className="space-y-3">
-            <p className="font-mono text-sm leading-relaxed text-fg">
-              {summary ? (
-                <>
-                  <span className="block">https://machrun.com/</span>
-                  <span className="block">?ref={summary.code}</span>
-                </>
-              ) : (
-                "Preparing your link…"
-              )}
-            </p>
-            <button
-              type="button"
-              disabled={!link}
-              onClick={() => void copy()}
-              className="inline-flex h-11 items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90 disabled:opacity-60"
-            >
-              {copied ? "Copied" : "Copy link"}
-            </button>
-          </div>
+          <ReferralLinkLine code={summary?.code ?? null} />
           <p className="text-sm leading-relaxed text-fg">
             {summary
               ? referralCountLine(summary.signedUp, summary.yearly)
