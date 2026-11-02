@@ -22,6 +22,11 @@ export function referralStatusLabel(status: string, creditCents?: number | null)
   return "Signed up";
 }
 
+export function referralMoney(cents: number): string {
+  const dollars = Math.round((Number(cents) || 0) / 100);
+  return `$${dollars}`;
+}
+
 export function referralRate(signedUp: number, yearly: number): string {
   if (signedUp <= 0 || yearly <= 0) return "0%";
   return `${Math.round((yearly / signedUp) * 100)}%`;

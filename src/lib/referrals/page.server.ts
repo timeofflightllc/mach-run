@@ -11,6 +11,7 @@ export type ReferralPerson = {
   name: string;
   date: string;
   status: ReferralRowStatus;
+  creditCents: number;
 };
 
 export type ReferralSummary = {
@@ -18,14 +19,16 @@ export type ReferralSummary = {
   signedUp: number;
   yearly: number;
   rate: string;
+  creditCents: number;
 };
 
 export async function loadReferralSummary(userId: string): Promise<ReferralSummary> {
   const code = await ensurePersonalCode(userId);
   const sql = await getSql();
-  const rows = await sql.query<{ signed_up: number; yearly: number }>(
+  const rows = await sql.query<{ signed_up: number; yearly: number; credit_cents: number }>(
     `select count(*)::int as signed_up,
-            count(*) filter (where s.status in ('yearly', 'credit'))::int as yearly
+            count(*) filter (where s.status in ('yearly', 'credit'))::int as yearly,
+            coalesce(sum(s.credit_cents) filter (where s.credit_cents > 0), 0)::int as credit_cents
      from mach_referral_signups s
      join mach_referral_codes c on c.code = s.code
      where c.owner_user_id = $1 and c.kind = 'personal'`,
@@ -33,7 +36,8 @@ export async function loadReferralSummary(userId: string): Promise<ReferralSumma
   );
   const signedUp = Number(rows[0]?.signed_up ?? 0);
   const yearly = Number(rows[0]?.yearly ?? 0);
-  return { code, signedUp, yearly, rate: referralRate(signedUp, yearly) };
+  const creditCents = Number(rows[0]?.credit_cents ?? 0);
+  return { code, signedUp, yearly, rate: referralRate(signedUp, yearly), creditCents };
 }
 
 export async function loadReferralPeople(userId: string): Promise<ReferralPerson[]> {
@@ -54,5 +58,6 @@ export async function loadReferralPeople(userId: string): Promise<ReferralPerson
     name: referralDisplayName(row.name),
     date: row.date,
     status: referralStatusLabel(row.status, row.credit_cents),
+    creditCents: Number(row.credit_cents ?? 0),
   }));
 }

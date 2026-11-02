@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { referralSummaryFn } from "@/lib/referrals/api";
-import { referralCountLine } from "@/lib/referrals/summary";
+import { referralCountLine, referralMoney } from "@/lib/referrals/summary";
 import type { ReferralSummary } from "@/lib/referrals/page.server";
 
 export function referralLink(code: string): string {
@@ -26,20 +26,22 @@ export function ReferralLinkLine({ code }: { code: string | null }) {
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <p className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap font-mono text-sm text-fg">
-        {link || "Preparing your link…"}
-      </p>
-      <button
-        type="button"
-        disabled={!link}
-        onClick={() => void copy()}
-        aria-label={copied ? "Copied" : "Copy link"}
-        title={copied ? "Copied" : "Copy link"}
-        className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated disabled:opacity-60"
-      >
-        {copied ? <Check className="h-4 w-4" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
-      </button>
+    <div className="w-full overflow-x-auto">
+      <div className="inline-flex items-center gap-2">
+        <button
+          type="button"
+          disabled={!link}
+          onClick={() => void copy()}
+          aria-label={copied ? "Copied" : "Copy"}
+          className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated disabled:opacity-60"
+        >
+          {copied ? <Check className="h-4 w-4" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
+          {copied ? "Copied" : "Copy"}
+        </button>
+        <span className="whitespace-nowrap font-mono text-sm text-fg">
+          {link || "Preparing your link…"}
+        </span>
+      </div>
     </div>
   );
 }
@@ -72,6 +74,9 @@ export function ReferralAccountCard() {
       <p className="text-sm leading-relaxed text-fg">
         {summary ? referralCountLine(summary.signedUp, summary.yearly) : "Loading your referrals…"}
       </p>
+      {summary ? (
+        <p className="text-sm text-fg">Credits received: {referralMoney(summary.creditCents)}.</p>
+      ) : null}
       <Link to="/referrals" className="inline-flex text-sm font-medium text-fg underline underline-offset-4">
         See who signed up
       </Link>
