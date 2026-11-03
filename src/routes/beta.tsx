@@ -1,11 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { DebriefForm } from "@/components/beta/debrief-form";
+import { useBoydQuotes } from "@/components/meridian/use-boyd-quotes";
+import { GhostButton } from "@/components/ui/field";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { RedirectToSignIn, isRealUser } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { betaPageFn, saveBetaDraftFn, submitBetaFn } from "@/lib/beta/api";
 import { emptyAnswers, hatMissing, todayIso, type BetaAnswers, type BetaPage } from "@/lib/beta/form";
+import { DEFAULT_BOYD_QUOTES } from "@/lib/site-copy/boyd-quotes";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/beta")({
@@ -47,7 +50,11 @@ function BetaPageView() {
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState<"draft" | "submit" | null>(null);
+  const [received, setReceived] = useState(false);
+  const [quote, setQuote] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
   const busyRef = useRef(false);
+  const quotes = useBoydQuotes();
 
   const userId = isRealUser(user) ? user.id : "";
 
@@ -115,7 +122,10 @@ function BetaPageView() {
         return;
       }
       await reload();
-      setNote("Submitted.");
+      const list = quotes.length ? quotes : DEFAULT_BOYD_QUOTES;
+      setQuote(list[Math.floor(Math.random() * list.length)] ?? "");
+      setReceived(true);
+      setNote(null);
     } catch {
       setError("The debrief did not submit.");
     } finally {
@@ -161,7 +171,35 @@ function BetaPageView() {
               {page.submittedCount} of {page.limit} submitted.
             </p>
 
-            {atLimit ? (
+            {received ? (
+              <section className="flex min-h-[28rem] w-full flex-col items-center justify-center rounded-xl bg-surface px-6 py-16 text-center shadow-[0_0_0_1px_var(--color-border)]">
+                <h2 className="font-display text-3xl text-fg sm:text-4xl">Submission received, thank you!</h2>
+                {quote ? (
+                  <figure className="mt-12 max-w-2xl">
+                    <blockquote className="font-display text-2xl leading-snug text-fg sm:text-3xl">“{quote}”</blockquote>
+                    <figcaption className="mt-6 text-sm font-medium uppercase tracking-[0.18em] text-subtle">
+                      John Boyd
+                    </figcaption>
+                  </figure>
+                ) : null}
+                {page.submittedCount < page.limit ? (
+                  <GhostButton
+                    className="mt-12"
+                    onClick={() => {
+                      const blank = emptyAnswers(todayIso());
+                      if (page.knownHat) blank.hat = page.knownHat;
+                      setAnswers(blank);
+                      setReceived(false);
+                      setQuote("");
+                      setNote(null);
+                      setError(null);
+                    }}
+                  >
+                    File another debrief
+                  </GhostButton>
+                ) : null}
+              </section>
+            ) : atLimit ? (
               <p className="text-base text-fg">
                 You have used all {page.limit} debriefs. Ask MACH RUN if you need another pass.
               </p>
@@ -180,17 +218,28 @@ function BetaPageView() {
             )}
 
             {page.submitted.length > 0 ? (
-              <section className="space-y-4">
+              <section className="space-y-3">
                 <h2 className="font-display text-2xl text-fg">Submitted</h2>
-                {page.submitted.map((row) => (
-                  <article
-                    key={row.id}
-                    className="w-full space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)] sm:p-6"
-                  >
-                    <p className="text-sm font-medium text-fg">Submitted {submittedDate(row.submittedAt)} UTC</p>
-                    <DebriefForm answers={row.answers} email={row.answers.email || page.email} readOnly />
-                  </article>
-                ))}
+                {page.submitted.map((row) => {
+                  const openRow = openId === row.id;
+                  return (
+                    <article
+                      key={row.id}
+                      className="w-full space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)] sm:p-6"
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setOpenId(openRow ? null : row.id)}
+                        className="text-left text-sm font-medium text-fg underline underline-offset-4"
+                      >
+                        Submitted {submittedDate(row.submittedAt)} UTC
+                      </button>
+                      {openRow ? (
+                        <DebriefForm answers={row.answers} email={row.answers.email || page.email} readOnly />
+                      ) : null}
+                    </article>
+                  );
+                })}
               </section>
             ) : null}
 

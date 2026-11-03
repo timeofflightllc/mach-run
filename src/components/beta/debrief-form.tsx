@@ -71,18 +71,23 @@ export function DebriefForm({
 
   const section = BETA_SECTIONS.find((row) => row.key === current.id);
 
+  const pct = Math.round(((step + 1) / STEPS.length) * 100);
+
   return (
     <div className="space-y-8">
       <div ref={top} className="scroll-mt-6 space-y-3">
-        <div className="flex items-baseline justify-between gap-3">
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">
-            Step {step + 1} of {STEPS.length}
-          </p>
-          <p className="text-right text-sm font-medium text-fg">{current.label}</p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <p className="text-sm font-medium text-fg">{pct}% completed</p>
+          {!readOnly && onDraft ? (
+            <GhostButton onClick={onDraft} disabled={busy != null}>
+              {busy === "draft" ? "Saving…" : "Save draft"}
+            </GhostButton>
+          ) : null}
         </div>
-        <div className="h-2 w-full bg-elevated" aria-hidden>
-          <div className="h-full bg-fg" style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
+        <div className="h-2 w-full bg-[#d5d0c6]" aria-hidden>
+          <div className="h-full bg-[#3a8a58]" style={{ width: `${pct}%` }} />
         </div>
+        <p className="text-center text-sm font-medium text-fg">{current.label}</p>
         <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Debrief steps">
           {STEPS.map((item, index) => (
             <button
@@ -376,11 +381,6 @@ export function DebriefForm({
           <PrimaryButton onClick={() => go(step + 1)} disabled={busy != null}>
             Next
           </PrimaryButton>
-        ) : null}
-        {!readOnly && onDraft ? (
-          <GhostButton onClick={onDraft} disabled={busy != null}>
-            {busy === "draft" ? "Saving…" : "Save draft"}
-          </GhostButton>
         ) : null}
         {!readOnly && last && onSubmit ? (
           <PrimaryButton onClick={onSubmit} disabled={busy != null}>
