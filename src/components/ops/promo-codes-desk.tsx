@@ -134,68 +134,6 @@ export function PromoCodesDesk() {
         checkout. Active = those still trialing or paid.
       </p>
 
-      <ul className="space-y-2">
-        {rows.map((row) => (
-          <li
-            key={row.code}
-            className="rounded-xl bg-surface px-4 py-3 shadow-[0_0_0_1px_var(--color-border)]"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="font-medium text-fg">
-                  {row.code}
-                  {!row.active ? (
-                    <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-[#e8c547]">
-                      Off
-                    </span>
-                  ) : null}
-                </p>
-                <p className="mt-1 text-sm text-muted">{describePromo(row)}</p>
-                <p className="mt-1 text-sm text-fg">
-                  Used {row.used} · Active {row.activeUsers}
-                  {row.activeUsers === 0 ? " (none live)" : ""}
-                </p>
-                {row.activeEmails.length > 0 ? (
-                  <p className="mt-1 text-xs text-subtle">{row.activeEmails.join(" · ")}</p>
-                ) : null}
-                <p className="mt-1 text-xs text-subtle">
-                  {row.startsAt || row.endsAt
-                    ? `${row.startsAt ?? "open"} → ${row.endsAt ?? "open"}`
-                    : "No date window"}
-                  {row.note ? ` · ${row.note}` : ""}
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  className="text-sm text-muted hover:text-fg"
-                  onClick={() => loadRow(row)}
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  className="text-sm text-muted hover:text-fg"
-                  disabled={busy}
-                  onClick={() => void setActive(row.code, !row.active)}
-                >
-                  {row.active ? "Turn off" : "Turn on"}
-                </button>
-                <button
-                  type="button"
-                  className="text-sm text-muted hover:text-fg"
-                  disabled={busy}
-                  onClick={() => void remove(row.code)}
-                >
-                  Delete
-                </button>
-                <SavedAt at={rowSavedAt[row.code]} />
-              </div>
-            </div>
-          </li>
-        ))}
-      </ul>
-
       <div className="rounded-xl bg-surface p-4 shadow-[0_0_0_1px_var(--color-border)]">
         <p className="font-display text-lg text-fg">New or replace</p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -294,6 +232,69 @@ export function PromoCodesDesk() {
         </div>
         {status ? <p className="mt-3 text-sm text-muted">{status}</p> : null}
       </div>
+
+      <ul className="space-y-2">
+        {rows.map((row) => (
+          <li
+            key={row.code}
+            className="rounded-xl bg-surface px-4 py-3 shadow-[0_0_0_1px_var(--color-border)]"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="font-medium text-fg">
+                  {row.code}
+                  {!row.active ? (
+                    <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-[#e8c547]">
+                      Off
+                    </span>
+                  ) : null}
+                </p>
+                <p className="mt-1 text-sm text-muted">{describePromo(row)}</p>
+                <p className="mt-1 text-sm text-fg">
+                  Used {row.used} · Active {row.activeUsers}
+                  {row.activeUsers === 0 ? " (none live)" : ""}
+                </p>
+                {row.activeEmails.length > 0 ? (
+                  <p className="mt-1 text-xs text-subtle">{row.activeEmails.join(" · ")}</p>
+                ) : null}
+                <p className="mt-1 text-xs text-subtle">
+                  {row.startsAt || row.endsAt
+                    ? `${row.startsAt ?? "open"} → ${row.endsAt ?? "open"}`
+                    : "No date window"}
+                  {row.note ? ` · ${row.note}` : ""}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  className="text-sm text-muted hover:text-fg"
+                  onClick={() => loadRow(row)}
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  className="text-sm text-muted hover:text-fg"
+                  disabled={busy}
+                  onClick={() => void setActive(row.code, !row.active)}
+                >
+                  {row.active ? "Turn off" : "Turn on"}
+                </button>
+                <button
+                  type="button"
+                  className="text-sm text-muted hover:text-fg"
+                  disabled={busy}
+                  onClick={() => void remove(row.code)}
+                >
+                  Delete
+                </button>
+                <SavedAt at={rowSavedAt[row.code]} />
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+
     </div>
   );
 }

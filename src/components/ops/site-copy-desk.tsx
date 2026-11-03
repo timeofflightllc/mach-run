@@ -486,10 +486,11 @@ function FooterFields({
   );
 }
 
-export function SiteCopyDesk() {
+export function SiteCopyDesk({ only }: { only?: "boyd" } = {}) {
+  const boydOnly = only === "boyd";
   const [pages, setPages] = useState<SitePage[]>([]);
   const [notes, setNotes] = useState<SiteAnnouncement[]>([]);
-  const [slug, setSlug] = useState<SitePageSlug>("about");
+  const [slug, setSlug] = useState<SitePageSlug>(boydOnly ? "boyd" : "about");
   const [draft, setDraft] = useState<SitePage | null>(null);
   const [pricing, setPricing] = useState<PricingCopy>(DEFAULT_PRICING_COPY);
   const [footer, setFooter] = useState<FooterCopy>(DEFAULT_FOOTER_COPY);
@@ -656,7 +657,7 @@ export function SiteCopyDesk() {
   return (
     <div className="space-y-6">
       <section className="rounded-xl bg-surface p-4 text-sm shadow-[0_0_0_1px_var(--color-border)]">
-        <h2 className="font-display text-xl font-bold text-fg">Site pages</h2>
+        <h2 className="font-display text-xl font-bold text-fg">{boydOnly ? "Boyd quotes" : "Site pages"}</h2>
         <p className="mt-1 text-muted">
           {pricingOpen
             ? "Pricing cards, hero, and bullets. One line per bullet."
@@ -672,8 +673,9 @@ export function SiteCopyDesk() {
                       ? "The Compare page. Checks, prices, the intro, and the Get Started button."
                       : "About, The Method, FAQ, Tools, Contact intro, Privacy, Terms of Service, and the Updates header. Lines that start with # become headings. Use [Contact](/contact) for a link."}
         </p>
+        {boydOnly ? null : (
         <div className="mt-3 inline-flex flex-wrap rounded-lg bg-elevated p-1">
-          {SITE_PAGE_SLUGS.map((id) => (
+          {SITE_PAGE_SLUGS.filter((id) => id !== "boyd").map((id) => (
             <button
               key={id}
               type="button"
@@ -687,6 +689,7 @@ export function SiteCopyDesk() {
             </button>
           ))}
         </div>
+        )}
         {draft && pricingOpen ? (
           <>
             <PricingFields value={pricing} onChange={onPricingChange} />
@@ -821,6 +824,7 @@ export function SiteCopyDesk() {
         ) : null}
       </section>
 
+      {slug === "announcements" ? (
       <section className="rounded-xl bg-surface p-4 text-sm shadow-[0_0_0_1px_var(--color-border)]">
         <h2 className="font-display text-xl font-bold text-fg">Feature announcements</h2>
         <p className="mt-1 text-muted">
@@ -916,6 +920,7 @@ export function SiteCopyDesk() {
           ))}
         </ul>
       </section>
+      ) : null}
       {status ? <p className="text-sm text-muted">{status}</p> : null}
     </div>
   );

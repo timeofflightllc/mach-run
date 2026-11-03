@@ -655,13 +655,6 @@ export function MilitaryHousehold() {
         >
           Start with just six questions
         </Link>
-        <img
-          src="/brand/veteran-owned.png"
-          alt="U.S. Veteran Owned Business"
-          width={338}
-          height={292}
-          className="mt-5 h-28 w-auto sm:h-32"
-        />
         <FounderStory />
         <FlagStripe />
       </div>
@@ -669,11 +662,18 @@ export function MilitaryHousehold() {
   );
 }
 
-/** Short founder story. Text on the left, a small flight-line photo on the right. */
+/** Founder story. Photo, then the text, then the veteran mark. */
 function FounderStory() {
   return (
-    <div className="mt-8 grid w-full max-w-3xl grid-cols-1 items-stretch gap-5 text-left sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-8">
-      <div className="min-w-0">
+    <div className="mt-8 flex w-full flex-col items-center gap-6 text-left lg:-mx-8 lg:w-[calc(100%+4rem)] lg:flex-row lg:items-center lg:gap-8">
+      <img
+        src="/brand/about-flightline.jpg?v=1"
+        alt="A pilot standing in front of an F-15 with the canopy open."
+        width={1755}
+        height={1790}
+        className="h-64 w-52 shrink-0 rounded-lg object-cover lg:h-72 lg:w-64"
+      />
+      <div className="min-w-0 lg:flex-1">
         <h2 className="font-display text-2xl font-semibold leading-tight text-[#1a2330] sm:text-3xl">
           Built by a fighter pilot who needed it.
         </h2>
@@ -687,15 +687,13 @@ function FounderStory() {
           Read the full story →
         </Link>
       </div>
-      <div className="relative mx-auto h-56 w-48 overflow-hidden rounded-lg sm:mx-0 sm:h-auto sm:w-56 sm:self-stretch">
-        <img
-          src="/brand/about-flightline.jpg?v=1"
-          alt="A pilot standing in front of an F-15 with the canopy open."
-          width={1755}
-          height={1790}
-          className="absolute inset-0 h-full w-full object-cover"
-        />
-      </div>
+      <img
+        src="/brand/veteran-owned.png"
+        alt="U.S. Veteran Owned Business"
+        width={338}
+        height={292}
+        className="h-36 w-auto shrink-0 lg:h-52"
+      />
     </div>
   );
 }

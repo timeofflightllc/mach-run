@@ -1,19 +1,19 @@
 export const SITE_PAGE_SLUGS = [
+  "hero",
   "about",
-  "method",
-  "faq",
   "learn",
   "tools",
+  "method",
+  "pricing",
+  "faq",
   "compare",
+  "announcements",
   "contact",
   "privacy",
   "legal",
-  "announcements",
-  "pricing",
   "footer",
   "planner",
   "boyd",
-  "hero",
 ] as const;
 export type SitePageSlug = (typeof SITE_PAGE_SLUGS)[number];
 

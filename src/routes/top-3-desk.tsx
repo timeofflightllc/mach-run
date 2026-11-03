@@ -95,22 +95,12 @@ const DESK_SECTIONS = [
     label: "Words",
     tabs: [
       ["copy", "Site pages"],
+      ["boyd", "Boyd quotes"],
       ["emails", "Email templates"],
-      ["mail", "Send a letter"],
+      ["mail", "Communicate with customers"],
     ],
   },
 ] as const;
-
-const DESK_BLURB: Record<(typeof DESK_SECTIONS)[number]["tabs"][number][0], string> = {
-  roster: "Accounts. Packages only — no household numbers.",
-  beta: "Beta debriefs. Who can file a debrief, and the debriefs they submitted.",
-  codes: "Promo codes. Create a code, set the window, set the offer, pick packages.",
-  referrals: "Referrals. The credit on a sender's next bill, and campaign links that only count.",
-  pay: "Retired pay. Upload the four official DFAS pages when a new year is published.",
-  copy: "Site pages. Pages and announcements.",
-  emails: "Email templates. Verify, first flight, and the owner alert.",
-  mail: "Send a letter. One template, merged per person. Roster filters choose who.",
-};
 
 function Top3DeskDoor() {
   const { user, isPending } = useCurrentUserState();
@@ -120,7 +110,7 @@ function Top3DeskDoor() {
   >(null);
   const [proofTick, setProofTick] = useState(0);
   const [gate, setGate] = useState<"wait" | "no" | "yes">("wait");
-  const [tab, setTab] = useState<"roster" | "copy" | "codes" | "mail" | "emails" | "pay" | "referrals" | "beta">("roster");
+  const [tab, setTab] = useState<"roster" | "copy" | "boyd" | "codes" | "mail" | "emails" | "pay" | "referrals" | "beta">("roster");
   const [personFace, setPersonFace] = useState<"billing" | "activity">("billing");
   const [q, setQ] = useState("");
   const [plan, setPlan] = useState<OpsPlanFilter>("all");
@@ -282,23 +272,12 @@ function Top3DeskDoor() {
           <Link to="/" className="inline-flex shrink-0">
             <BrandLockup framed />
           </Link>
-          <p className="min-w-0 flex-1 px-2 text-center text-[11px] font-bold leading-snug tracking-[0.12em] text-muted sm:text-xs md:text-[13px]">
-            The Supersonic Retirement Calculator
-          </p>
           <p className="font-display text-xl tracking-[0.08em] text-fg sm:text-2xl">
             Top 3 Desk
           </p>
         </div>
       </header>
       <div className="desk-gutter mx-auto w-full max-w-[90rem] space-y-6 py-8">
-        <header>
-          <p className="text-sm text-muted">{DESK_BLURB[tab]}</p>
-          <p className="mt-3 max-w-3xl text-xs text-subtle">
-            Vercel Deployment Protection password: Preview deployments only. Never on
-            Production. Production lock is a signed-in owner, the same sign-in check as Advisor, plus this page's 404.
-          </p>
-        </header>
-
         <div className="space-y-2">
           <div className="flex flex-wrap gap-1 rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
             {DESK_SECTIONS.map((section) => {
@@ -338,6 +317,7 @@ function Top3DeskDoor() {
         </div>
 
         {tab === "copy" ? <SiteCopyDesk /> : null}
+        {tab === "boyd" ? <SiteCopyDesk only="boyd" /> : null}
         {tab === "codes" ? <PromoCodesDesk /> : null}
         {tab === "emails" ? <EmailCopyDesk /> : null}
         {tab === "pay" ? <PayTablesDesk /> : null}
