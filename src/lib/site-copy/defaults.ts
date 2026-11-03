@@ -210,7 +210,7 @@ Account menu → Manage billing. Stripe handles upgrades with credit for time al
 ${REFUND_FAQ_BLOCK}
 
 # Who built this?
-A retired U.S. Air Force fighter pilot who wanted one strip for income, contributions, a nest-egg goal, and the date the money runs out. More on [About](/about). Pronounce MACH like “mock.”`,
+Matthew 'Cain' Olde, a retired U.S. Air Force F-15 pilot, who wanted one strip for income, contributions, a nest-egg goal, and the date the money runs out. More on [About](/about). Pronounce MACH like “mock.”`,
   },
   {
     slug: "learn",

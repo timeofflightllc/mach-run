@@ -563,22 +563,17 @@ export function MilitaryHousehold() {
           MACH RUN, they iterate and build a household that is on track for more than $2,500,000,
           with their money lasting at least through age 95.
         </p>
-        <p className="mt-4 max-w-none px-4 text-center text-lg font-medium italic leading-snug text-[#1a2330] sm:text-2xl">
-          <span className="sm:whitespace-nowrap">
-            “Households that plan arrive with three times the wealth
-          </span>
-          <br className="hidden sm:inline" />
-          <span className="sm:whitespace-nowrap"> of households that do not.”</span>
-        </p>
-        <p className="mt-1 max-w-3xl text-center text-[0.65rem] leading-snug text-muted sm:text-xs">
+        <p className="mt-4 max-w-3xl px-4 text-center text-lg font-medium italic leading-snug text-[#1a2330] sm:text-2xl">
+          Households that plan for retirement end up with roughly three times the wealth of those that don't (
           <a
             href="https://www.nber.org/papers/w17078"
             target="_blank"
             rel="noopener noreferrer"
-            className="italic underline underline-offset-4 hover:text-fg"
+            className="underline underline-offset-4 hover:text-fg"
           >
-            Lusardi and Mitchell, National Bureau of Economic Research, Working Paper 17078 (2011).
+            Lusardi & Mitchell, NBER Working Paper 17078, 2011
           </a>
+          ).
         </p>
         <FlagStripe />
         <p className="font-display text-lg font-semibold uppercase tracking-[0.14em] text-[#3a8a58] sm:text-2xl">
@@ -667,8 +662,40 @@ export function MilitaryHousehold() {
           height={292}
           className="mt-5 h-28 w-auto sm:h-32"
         />
+        <FounderStory />
         <FlagStripe />
       </div>
     </section>
+  );
+}
+
+/** Short founder story. Text on the left, a small flight-line photo on the right. */
+function FounderStory() {
+  return (
+    <div className="mt-8 grid w-full max-w-3xl grid-cols-1 items-stretch gap-5 text-left sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-8">
+      <div className="min-w-0">
+        <h2 className="font-display text-2xl font-semibold leading-tight text-[#1a2330] sm:text-3xl">
+          Built by a fighter pilot who needed it.
+        </h2>
+        <p className="mt-3 text-sm leading-relaxed text-[#1a2330] sm:text-base">
+          Matthew "Cain" Olde flew F-15s for the U.S. Air Force and retired into the same problem every military household has: active duty, guard/reserve, or retired pay, VA, TSP, a spouse's paycheck, and Social Security all land in different places, and nothing shows them together. His father was a USAF fighter pilot who became a Certified Financial Planner, so he grew up with a love of fighter jets and personal finances. MACH RUN is the tool Matt wished existed, built after he hung up the G-suit.
+        </p>
+        <Link
+          to="/about"
+          className="mt-4 inline-flex text-sm font-medium text-[#1a2330] underline underline-offset-4 hover:text-accent sm:text-base"
+        >
+          Read the full story →
+        </Link>
+      </div>
+      <div className="relative mx-auto h-56 w-48 overflow-hidden rounded-lg sm:mx-0 sm:h-auto sm:w-56 sm:self-stretch">
+        <img
+          src="/brand/about-flightline.jpg?v=1"
+          alt="A pilot standing in front of an F-15 with the canopy open."
+          width={1755}
+          height={1790}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      </div>
+    </div>
   );
 }
