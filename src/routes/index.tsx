@@ -1326,7 +1326,7 @@ function Home() {
   function stepsHeight() {
     const header = document.getElementById("mach-header");
     const caution = document.getElementById("master-caution");
-    if (!header || !caution) return 0;
+    if (!header || !caution) return null;
     return Math.max(
       120,
       window.innerHeight - header.getBoundingClientRect().height - caution.getBoundingClientRect().height,
@@ -1336,13 +1336,12 @@ function Home() {
   function engageSteps() {
     const steps = stepsRef.current;
     const h = stepsHeight();
+    if (h == null || !steps) return;
     engagedRef.current = true;
-    if (steps) {
-      steps.style.height = `${h}px`;
-      steps.style.overflowY = "auto";
-      steps.style.overscrollBehavior = "contain";
-      steps.style.overflowAnchor = "none";
-    }
+    steps.style.height = `${h}px`;
+    steps.style.overflowY = "auto";
+    steps.style.overscrollBehavior = "contain";
+    steps.style.overflowAnchor = "none";
     setStepsH(h);
   }
 
@@ -1481,7 +1480,12 @@ function Home() {
 
     const onResize = () => {
       if (!engagedRef.current) return;
-      setStepsH(stepsHeight());
+      const h = stepsHeight();
+      if (h == null) {
+        releaseSteps();
+        return;
+      }
+      setStepsH(h);
     };
 
     window.addEventListener("wheel", onWheel, { passive: false });
@@ -1512,11 +1516,19 @@ function Home() {
       const y =
         window.scrollY + caution.getBoundingClientRect().top - header.getBoundingClientRect().bottom;
       window.scrollTo(0, Math.max(0, y));
+      engageSteps();
+      window.requestAnimationFrame(() => {
+        if (stepsRef.current) stepsRef.current.scrollTop = 0;
+      });
+      return;
     }
-    engageSteps();
-    window.requestAnimationFrame(() => {
-      if (stepsRef.current) stepsRef.current.scrollTop = 0;
-    });
+    releaseSteps();
+    const steps = stepsRef.current;
+    const headerH = header?.getBoundingClientRect().height ?? 0;
+    if (steps) {
+      const y = window.scrollY + steps.getBoundingClientRect().top - headerH;
+      window.scrollTo(0, Math.max(0, y));
+    }
   }
 
   useEffect(() => {
