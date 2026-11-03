@@ -137,7 +137,7 @@ function BetaPageView() {
 
   return (
     <main className="box-border min-h-screen w-screen max-w-[100vw] bg-bg py-10 text-fg">
-      <div className="static-gutter mx-auto w-full max-w-3xl space-y-8">
+      <div className="static-gutter mx-auto w-full space-y-8">
         <PageMast />
         <header>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">
@@ -165,7 +165,7 @@ function BetaPageView() {
                 You have used all {page.limit} debriefs. Ask MACH RUN if you need another pass.
               </p>
             ) : (
-              <section className="space-y-6 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)] sm:p-6">
+              <section className="w-full space-y-6 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)] sm:p-6">
                 <div className="space-y-3 text-sm leading-relaxed text-muted">
                   <p>
                     Thank you for beta testing MACH RUN — The Supersonic Retirement Calculator.
@@ -201,7 +201,7 @@ function BetaPageView() {
                 {page.submitted.map((row) => (
                   <article
                     key={row.id}
-                    className="space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)] sm:p-6"
+                    className="w-full space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)] sm:p-6"
                   >
                     <p className="text-sm font-medium text-fg">Submitted {submittedDate(row.submittedAt)} UTC</p>
                     <DebriefForm answers={row.answers} email={row.answers.email || page.email} readOnly />

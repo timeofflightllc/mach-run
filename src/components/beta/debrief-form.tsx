@@ -1,7 +1,7 @@
 import { BETA_SECTIONS, type BetaAnswers, type BetaSectionKey } from "@/lib/beta/form";
 import { TextArea, TextInput } from "@/components/ui/field";
 
-const wide = "max-w-none";
+const wide = "w-full min-w-0 max-w-none";
 
 export function DebriefForm({
   answers,
@@ -37,7 +37,7 @@ export function DebriefForm({
   return (
     <div className="space-y-8">
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
           <span className="text-xs font-medium tracking-wide text-muted">Name</span>
           <TextInput
             value={answers.name}
@@ -46,11 +46,11 @@ export function DebriefForm({
             onChange={(event) => patch({ name: event.target.value })}
           />
         </label>
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
           <span className="text-xs font-medium tracking-wide text-muted">Email</span>
           <TextInput value={email || answers.email} readOnly disabled className={wide} />
         </label>
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
           <span className="text-xs font-medium tracking-wide text-muted">Date of testing</span>
           <TextInput
             type="date"
@@ -60,7 +60,7 @@ export function DebriefForm({
             onChange={(event) => patch({ testedOn: event.target.value })}
           />
         </label>
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
           <span className="text-xs font-medium tracking-wide text-muted">Device / browser used</span>
           <TextInput
             value={answers.device}
@@ -77,7 +77,7 @@ export function DebriefForm({
             value={answers.plan}
             disabled={readOnly}
             onChange={(event) => patch({ plan: event.target.value === "paid" || event.target.value === "free" ? event.target.value : "" })}
-            className="h-11 w-full max-w-xs rounded-lg border border-border bg-elevated px-3 text-sm text-fg outline-none disabled:opacity-50"
+            className="h-11 w-full min-w-0 rounded-lg border border-border bg-elevated px-3 text-sm text-fg outline-none disabled:opacity-50"
           >
             <option value="">Select</option>
             <option value="free">Free plan</option>
@@ -128,7 +128,7 @@ export function DebriefForm({
         {addressOnFile ? (
           <p className="text-sm text-fg">We already have this address from an earlier debrief.</p>
         ) : null}
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
           <span className="text-xs font-medium tracking-wide text-muted">Full name (as it should appear on the package)</span>
           <TextInput
             value={answers.hat.fullName}
@@ -137,7 +137,7 @@ export function DebriefForm({
             onChange={(event) => patchHat({ fullName: event.target.value })}
           />
         </label>
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
           <span className="text-xs font-medium tracking-wide text-muted">Street address (line 1)</span>
           <TextInput
             value={answers.hat.line1}
@@ -146,7 +146,7 @@ export function DebriefForm({
             onChange={(event) => patchHat({ line1: event.target.value })}
           />
         </label>
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
           <span className="text-xs font-medium tracking-wide text-muted">Street address (line 2 — apt, suite, etc.)</span>
           <TextInput
             value={answers.hat.line2}
@@ -156,7 +156,7 @@ export function DebriefForm({
           />
         </label>
         <div className="grid gap-4 sm:grid-cols-3">
-          <label className="flex flex-col gap-1.5 text-sm">
+          <label className="flex min-w-0 flex-col gap-1.5 text-sm">
             <span className="text-xs font-medium tracking-wide text-muted">City</span>
             <TextInput
               value={answers.hat.city}
@@ -165,7 +165,7 @@ export function DebriefForm({
               onChange={(event) => patchHat({ city: event.target.value })}
             />
           </label>
-          <label className="flex flex-col gap-1.5 text-sm">
+          <label className="flex min-w-0 flex-col gap-1.5 text-sm">
             <span className="text-xs font-medium tracking-wide text-muted">State</span>
             <TextInput
               value={answers.hat.state}
@@ -174,7 +174,7 @@ export function DebriefForm({
               onChange={(event) => patchHat({ state: event.target.value })}
             />
           </label>
-          <label className="flex flex-col gap-1.5 text-sm">
+          <label className="flex min-w-0 flex-col gap-1.5 text-sm">
             <span className="text-xs font-medium tracking-wide text-muted">ZIP</span>
             <TextInput
               value={answers.hat.zip}
@@ -184,7 +184,7 @@ export function DebriefForm({
             />
           </label>
         </div>
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
           <span className="text-xs font-medium tracking-wide text-muted">Country (if outside the U.S.)</span>
           <TextInput
             value={answers.hat.country}
@@ -193,7 +193,7 @@ export function DebriefForm({
             onChange={(event) => patchHat({ country: event.target.value })}
           />
         </label>
-        <label className="flex flex-col gap-1.5 text-sm">
+        <label className="flex min-w-0 flex-col gap-1.5 text-sm">
           <span className="text-xs font-medium tracking-wide text-muted">Any special delivery notes or preferences</span>
           <TextArea
             value={answers.hat.notes}
