@@ -2148,7 +2148,7 @@ function Home() {
               {[
                 "Change the savings rate and contributions.",
                 "Watch that date and FIRE number move.",
-                "Test if your money lasts across 1,000 futures.",
+                "Test if your money lasts across 1,000 futures (Individual Unlimited).",
               ].map((line) => (
                 <p
                   key={line}
@@ -2172,12 +2172,12 @@ function Home() {
           <p className="mx-auto mt-7 mb-7 w-full max-w-6xl px-4 text-center text-[calc(0.667rem-1pt)] leading-relaxed text-muted sm:mt-9 sm:mb-9 sm:px-8 sm:text-[calc(1.125rem-1pt)]">
             Spreadsheets take time you'll never get back, and FIRECalc isn't built for TSP, military,
             and veterans. MACH RUN saves that time and is built for those paychecks. Use the fighter
-            pilot's OODA Loop and Monte Carlo Simulator to inform your financial path quickly and
-            efficiently, <span className="font-bold">giving you time back</span>.
+            pilot's OODA Loop to inform your financial path quickly and
+            efficiently, <span className="font-bold">giving you time back</span>. Monte Carlo is on Individual Unlimited.
           </p>
         </section>
       ) : null}
-      {heroOn ? (
+      {heroOn && run ? (
         <div id="master-caution" className="relative z-20 border-t border-[#8a7020] bg-[#2c220e]">
           <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-2 py-4 text-center">
             <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
@@ -2669,6 +2669,7 @@ function Home() {
                   </div>
                 </div>
               </div>
+              {heroOn ? null : (
               <div className="rounded-xl bg-surface px-5 py-8 shadow-[0_0_0_1px_var(--color-border)]">
                 <p className="text-left font-display text-3xl text-fg">No MACH RUN yet.</p>
                 <p className="mt-1 text-left font-display text-lg text-fg">
@@ -2678,6 +2679,7 @@ function Home() {
                   Finish Observe, Orient, and Decide, then come to Act and execute the MACH RUN.
                 </p>
               </div>
+              )}
             </div>
           )}
         </div>

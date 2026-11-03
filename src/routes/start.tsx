@@ -29,8 +29,8 @@ import { pageHead } from "@/lib/seo";
 export const Route = createFileRoute("/start")({
   head: () =>
     pageHead({
-      title: "Seven questions | MACH RUN",
-      description: "Seven questions. One account. About a minute. See what it pays you each month.",
+      title: "Six questions | MACH RUN",
+      description: "Six questions. One account. About a minute. See what it pays you each month.",
       path: "/start",
       noindex: true,
     }),

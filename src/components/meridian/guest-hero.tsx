@@ -291,6 +291,9 @@ export function GuestHero({
         >
           Start with just six questions
         </Link>
+        <p className="mt-3 max-w-3xl px-4 text-center text-sm leading-snug text-[#1a2330] sm:text-base">
+          Free includes 2 incomes and 2 accounts — enough to start; upgrade for the full household stack.
+        </p>
         <p className="mt-4 max-w-3xl px-4 text-center text-base font-medium leading-snug text-[#1a2330] sm:text-lg">
           Six questions. One account. About a minute. See what it pays you each month.
         </p>
@@ -303,13 +306,9 @@ export function GuestHero({
               onShowFamily();
             }}
           >
-            <span className="sm:hidden">
+            <span>
               I have my numbers.
-              <br />
-              Start a MACH RUN.
-            </span>
-            <span className="hidden sm:inline">
-              I have my numbers. Start a MACH RUN.
+              <br className="sm:hidden" /> Start a MACH RUN.
             </span>
           </PrimaryButton>
           <PrimaryButton

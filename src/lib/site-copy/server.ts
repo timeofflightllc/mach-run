@@ -215,7 +215,9 @@ function freshenStoredCopy(body: string): string {
       "[Free vs MACH RUN paid](/pricing) — $4/month or $40/year unlocks unlimited accounts, contribution rules, income stages, Net Worth, and the full OODA.",
       "[Free vs MACH RUN paid](/pricing) — Individual ($4/month or $40/year) keeps unlimited accounts, contributions, and incomes. Net Worth stays locked until Individual Unlimited or Advisor.",
     )
-    .replaceAll("MachRun Financial Analysis", "MACH OODA Financial Analysis")
+    .replaceAll("Spreadsheets are bandaids", "Spreadsheets are band-aids")
+    .replaceAll("Who it is not for?", "Who is it not for?")
+    .replaceAll("Who it is for?", "Who is it for?")
     .replaceAll("MachRun", "MACH RUN")
     .replaceAll("Supersonic Financial Calculator", "Supersonic Retirement Calculator")
     .replaceAll("Project through primary age", "Project through longevity age")

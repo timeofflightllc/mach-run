@@ -80,7 +80,6 @@ function Mark({ on }: { on: boolean }) {
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-        <title>Yes</title>
       </svg>
     );
   }
@@ -93,7 +92,6 @@ function Mark({ on }: { on: boolean }) {
         strokeWidth="1.8"
         strokeLinecap="round"
       />
-      <title>No</title>
     </svg>
   );
 }
