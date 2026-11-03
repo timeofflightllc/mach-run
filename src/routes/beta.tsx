@@ -12,7 +12,7 @@ import { pageHead } from "@/lib/seo";
 export const Route = createFileRoute("/beta")({
   head: () =>
     pageHead({
-      title: "Beta debrief | MACH RUN",
+      title: "Beta Testing Feedback / Debrief Form | MACH RUN",
       description: "A private debrief for invited MACH RUN beta testers.",
       path: "/beta",
       noindex: true,
@@ -143,7 +143,7 @@ function BetaPageView() {
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">
             Fighter pilot debrief
           </p>
-          <h1 className="mt-2 font-display text-4xl text-fg">Beta debrief</h1>
+          <h1 className="mt-2 font-display text-4xl text-fg">Beta Testing Feedback / Debrief Form</h1>
         </header>
 
         {page == null && !error ? <p className="text-sm text-muted">Loading…</p> : null}
@@ -176,7 +176,6 @@ function BetaPageView() {
                   <p>
                     This is not a test of you — it is a test of the tool. Honest feedback (including things that felt wrong or missing) is the most useful.
                   </p>
-                  <p>If you need more room on any section, check the box and attach a separate writeup.</p>
                 </div>
                 <DebriefForm
                   answers={answers}

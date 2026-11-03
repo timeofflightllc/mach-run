@@ -35,10 +35,17 @@ function ReadOnlyDebrief({ answers }: { answers: BetaAnswers }) {
         return (
           <div key={section.key} className="space-y-1">
             <p className="text-sm font-semibold text-fg">{section.title}</p>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-fg">{answer.notes.trim() || "—"}</p>
-            <p className="text-sm text-muted">
-              Continued in a separate writeup: {answer.continued ? "yes" : "no"}
-            </p>
+            {answer.notes.trim() ? (
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-fg">{answer.notes}</p>
+            ) : null}
+            {section.prompts.map((prompt, index) => (
+              <div key={prompt} className="space-y-1">
+                <p className="text-sm text-muted">{prompt}</p>
+                <p className="whitespace-pre-wrap text-sm leading-relaxed text-fg">
+                  {(answer.replies?.[index] ?? "").trim() || "—"}
+                </p>
+              </div>
+            ))}
           </div>
         );
       })}
@@ -83,7 +90,7 @@ export function BetaAccountLink() {
 
   return (
     <section className="space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
-      <p className="font-display text-lg text-fg">Beta debrief</p>
+      <p className="font-display text-lg text-fg">Beta Testing Feedback / Debrief Form</p>
       <p className="text-sm text-fg">
         {page.submittedCount} of {page.limit} submitted.
       </p>

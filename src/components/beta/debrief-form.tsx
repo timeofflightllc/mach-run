@@ -1,4 +1,4 @@
-import { BETA_SECTIONS, type BetaAnswers, type BetaSectionKey } from "@/lib/beta/form";
+import { BETA_PLANS, BETA_SECTIONS, betaPlanLabel, type BetaAnswers, type BetaPlan, type BetaSectionKey } from "@/lib/beta/form";
 import { TextArea, TextInput } from "@/components/ui/field";
 
 const wide = "w-full min-w-0 max-w-none";
@@ -70,18 +70,24 @@ export function DebriefForm({
           />
         </label>
         <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
-          <span className="text-xs font-medium tracking-wide text-muted">
-            Did you use the free plan or a paid plan?
-          </span>
+          <span className="text-xs font-medium tracking-wide text-muted">Which plan did you use?</span>
           <select
             value={answers.plan}
             disabled={readOnly}
-            onChange={(event) => patch({ plan: event.target.value === "paid" || event.target.value === "free" ? event.target.value : "" })}
+            onChange={(event) => {
+              const value = event.target.value;
+              const plan: BetaPlan = BETA_PLANS.some((row) => row.id === value) ? (value as BetaPlan) : "";
+              patch({ plan });
+            }}
             className="h-11 w-full min-w-0 rounded-lg border border-border bg-elevated px-3 text-sm text-fg outline-none disabled:opacity-50"
           >
             <option value="">Select</option>
-            <option value="free">Free plan</option>
-            <option value="paid">Paid plan</option>
+            {answers.plan === "paid" ? <option value="paid">{betaPlanLabel("paid")}</option> : null}
+            {BETA_PLANS.map((row) => (
+              <option key={row.id} value={row.id}>
+                {row.label}
+              </option>
+            ))}
           </select>
         </label>
       </div>
@@ -95,28 +101,31 @@ export function DebriefForm({
             </div>
           ) : null}
           <h3 className="text-base font-semibold text-fg">{section.title}</h3>
-          <ul className="list-disc space-y-1 pl-5 text-sm leading-relaxed text-muted">
-            {section.prompts.map((line) => (
-              <li key={line}>{line}</li>
+          <div className="space-y-5">
+            {section.prompts.map((line, index) => (
+              <div key={line} className="space-y-2">
+                <p className="text-sm leading-relaxed text-fg">{line}</p>
+                <TextArea
+                  value={answers.sections[section.key].replies[index] ?? ""}
+                  disabled={readOnly}
+                  rows={3}
+                  className={wide}
+                  onChange={(event) => {
+                    const replies = section.prompts.map(
+                      (_, replyIndex) => answers.sections[section.key].replies[replyIndex] ?? "",
+                    );
+                    replies[index] = event.target.value;
+                    patchSection(section.key, { replies });
+                  }}
+                />
+              </div>
             ))}
-          </ul>
-          <TextArea
-            value={answers.sections[section.key].notes}
-            disabled={readOnly}
-            rows={6}
-            className={wide}
-            onChange={(event) => patchSection(section.key, { notes: event.target.value })}
-          />
-          <label className="flex items-start gap-2 text-sm text-fg">
-            <input
-              type="checkbox"
-              className="mt-1"
-              checked={answers.sections[section.key].continued}
-              disabled={readOnly}
-              onChange={(event) => patchSection(section.key, { continued: event.target.checked })}
-            />
-            Continued in a separate writeup (attach additional notes)
-          </label>
+          </div>
+          {answers.sections[section.key].notes.trim() ? (
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-fg">
+              {answers.sections[section.key].notes}
+            </p>
+          ) : null}
         </section>
       ))}
 

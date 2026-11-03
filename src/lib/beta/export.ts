@@ -1,4 +1,4 @@
-import { BETA_SECTIONS, type BetaAnswers } from "./form";
+import { BETA_SECTIONS, betaPlanLabel, type BetaAnswers } from "./form";
 
 export type BetaExportRow = {
   name: string;
@@ -23,7 +23,10 @@ const CSV_HEAD = [
   "tested_on",
   "device",
   "plan",
-  ...BETA_SECTIONS.flatMap((section) => [`${section.key}_notes`, `${section.key}_continued`]),
+  ...BETA_SECTIONS.flatMap((section) => [
+    `${section.key}_notes`,
+    ...section.prompts.map((_, index) => `${section.key}_${index + 1}`),
+  ]),
   "hat_full_name",
   "hat_line1",
   "hat_line2",
@@ -46,10 +49,10 @@ export function betaCsv(rows: BetaExportRow[]): string {
       answers.email || row.email,
       answers.testedOn,
       answers.device,
-      answers.plan,
+      betaPlanLabel(answers.plan),
       ...BETA_SECTIONS.flatMap((section) => [
         answers.sections[section.key].notes,
-        yesNo(answers.sections[section.key].continued),
+        ...section.prompts.map((_, index) => answers.sections[section.key].replies[index] ?? ""),
       ]),
       answers.hat.fullName,
       answers.hat.line1,
@@ -78,16 +81,22 @@ export function betaText(row: BetaExportRow): string {
     `Email: ${answers.email || row.email}`,
     `Date of testing: ${answers.testedOn}`,
     `Device / browser: ${answers.device}`,
-    `Plan: ${answers.plan === "paid" ? "Paid plan" : answers.plan === "free" ? "Free plan" : ""}`,
+    `Plan: ${betaPlanLabel(answers.plan)}`,
     "",
   ];
   for (const section of BETA_SECTIONS) {
     const answer = answers.sections[section.key];
     if (section.phase) lines.push(section.phase);
     lines.push(section.title);
-    lines.push(answer.notes);
-    lines.push(`Continued in a separate writeup: ${yesNo(answer.continued)}`);
-    lines.push("");
+    if (answer.notes.trim()) {
+      lines.push(answer.notes);
+      lines.push("");
+    }
+    section.prompts.forEach((prompt, index) => {
+      lines.push(prompt);
+      lines.push(answer.replies[index] ?? "");
+      lines.push("");
+    });
   }
   lines.push("Thank-you gift — mailing address");
   lines.push(`Please do not send a hat: ${yesNo(answers.hat.decline)}`);

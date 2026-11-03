@@ -105,6 +105,7 @@ export type BetaSectionKey = (typeof BETA_SECTIONS)[number]["key"];
 export type BetaSectionAnswer = {
   notes: string;
   continued: boolean;
+  replies: string[];
 };
 
 export type BetaHat = {
@@ -119,12 +120,29 @@ export type BetaHat = {
   decline: boolean;
 };
 
+export const BETA_PLANS = [
+  { id: "free", label: "Free" },
+  { id: "individual", label: "Paid - Individual" },
+  { id: "unlimited", label: "Paid - Individual Unlimited" },
+  { id: "advisor_lite", label: "Paid - Advisor Lite" },
+  { id: "advisor", label: "Paid - Advisor Heavy" },
+] as const;
+
+export type BetaPlan = "" | (typeof BETA_PLANS)[number]["id"] | "paid";
+
+export function betaPlanLabel(plan: string): string {
+  const match = BETA_PLANS.find((row) => row.id === plan);
+  if (match) return match.label;
+  if (plan === "paid") return "Paid";
+  return "";
+}
+
 export type BetaAnswers = {
   name: string;
   email: string;
   testedOn: string;
   device: string;
-  plan: "" | "free" | "paid";
+  plan: BetaPlan;
   sections: Record<BetaSectionKey, BetaSectionAnswer>;
   hat: BetaHat;
 };
@@ -157,13 +175,13 @@ function clip(value: unknown, max: number): string {
 
 function emptySections(): Record<BetaSectionKey, BetaSectionAnswer> {
   return {
-    family: { notes: "", continued: false },
-    assets: { notes: "", continued: false },
-    income: { notes: "", continued: false },
-    contributions: { notes: "", continued: false },
-    takeoff: { notes: "", continued: false },
-    charts: { notes: "", continued: false },
-    overall: { notes: "", continued: false },
+    family: { notes: "", continued: false, replies: BETA_SECTIONS[0].prompts.map(() => "") },
+    assets: { notes: "", continued: false, replies: BETA_SECTIONS[1].prompts.map(() => "") },
+    income: { notes: "", continued: false, replies: BETA_SECTIONS[2].prompts.map(() => "") },
+    contributions: { notes: "", continued: false, replies: BETA_SECTIONS[3].prompts.map(() => "") },
+    takeoff: { notes: "", continued: false, replies: BETA_SECTIONS[4].prompts.map(() => "") },
+    charts: { notes: "", continued: false, replies: BETA_SECTIONS[5].prompts.map(() => "") },
+    overall: { notes: "", continued: false, replies: BETA_SECTIONS[6].prompts.map(() => "") },
   };
 }
 
@@ -198,7 +216,9 @@ export function todayIso(): string {
 
 export function sanitizeAnswers(input: unknown): BetaAnswers {
   const raw = input && typeof input === "object" ? (input as Record<string, unknown>) : {};
-  const plan = raw.plan === "free" || raw.plan === "paid" ? raw.plan : "";
+  const planIds = new Set<string>(BETA_PLANS.map((row) => row.id));
+  const rawPlan = typeof raw.plan === "string" ? raw.plan : "";
+  const plan: BetaPlan = planIds.has(rawPlan) || rawPlan === "paid" ? (rawPlan as BetaPlan) : "";
   const sectionsIn =
     raw.sections && typeof raw.sections === "object"
       ? (raw.sections as Record<string, unknown>)
@@ -209,9 +229,11 @@ export function sanitizeAnswers(input: unknown): BetaAnswers {
       sectionsIn[section.key] && typeof sectionsIn[section.key] === "object"
         ? (sectionsIn[section.key] as Record<string, unknown>)
         : {};
+    const repliesIn = Array.isArray(row.replies) ? row.replies : [];
     sections[section.key] = {
       notes: clip(row.notes, NOTES_MAX),
       continued: row.continued === true,
+      replies: section.prompts.map((_, index) => clip(repliesIn[index], NOTES_MAX)),
     };
   }
   const hatIn = raw.hat && typeof raw.hat === "object" ? (raw.hat as Record<string, unknown>) : {};
