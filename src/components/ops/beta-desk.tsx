@@ -10,6 +10,7 @@ import {
   setBetaLimitFn,
 } from "@/lib/beta/desk-api";
 import { betaText } from "@/lib/beta/export";
+import { downloadBetaPdf } from "@/lib/beta/pdf";
 import type { BetaDeskDetail, BetaDeskRow, BetaInvite } from "@/lib/beta/desk";
 
 function download(filename: string, text: string, type: string) {
@@ -134,9 +135,14 @@ export function BetaDesk() {
     }
   }
 
-  function downloadOne() {
+  function downloadText() {
     if (!open) return;
     download(`mach-run-beta-${open.id}.txt`, betaText(open), "text/plain;charset=utf-8");
+  }
+
+  function downloadPdf() {
+    if (!open) return;
+    void downloadBetaPdf(open);
   }
 
   async function downloadAll() {
@@ -270,7 +276,10 @@ export function BetaDesk() {
             <p className="text-sm font-medium text-fg">
               {open.name || "Debrief"} · pass {open.pass} · {when(open.submittedAt)} UTC
             </p>
-            <GhostButton onClick={downloadOne}>Download this debrief</GhostButton>
+            <div className="flex flex-wrap gap-2">
+              <GhostButton onClick={downloadText}>Download text</GhostButton>
+              <GhostButton onClick={downloadPdf}>Download PDF</GhostButton>
+            </div>
           </div>
           <DebriefForm answers={open.answers} email={open.email} readOnly />
         </section>
