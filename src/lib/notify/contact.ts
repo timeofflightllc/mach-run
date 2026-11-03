@@ -265,7 +265,7 @@ export async function sendBetaInviteMail(input: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: fromAddress(),
+        from: "Cain <cain@machrun.com>",
         to: [input.email],
         subject,
         html,
