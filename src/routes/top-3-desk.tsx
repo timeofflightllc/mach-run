@@ -5,7 +5,7 @@ import { advisorMfaStatusFn, notifyAdvisorMfaChanged } from "@/lib/auth/advisor-
 import { isRealUser } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { SiteCopyDesk } from "@/components/ops/site-copy-desk";
-import { DeskUsers } from "@/components/ops/desk-users";
+import { UserDetail } from "@/components/ops/desk-users";
 import { OpsDeleteAccount } from "@/components/ops/ops-delete-account";
 import { PromoCodesDesk } from "@/components/ops/promo-codes-desk";
 import { DeskMail } from "@/components/ops/desk-mail";
@@ -72,6 +72,46 @@ function intervalLabel(value: OpsRosterRow["interval"]): string {
   return "—";
 }
 
+const DESK_SECTIONS = [
+  {
+    id: "people",
+    label: "People",
+    tabs: [
+      ["roster", "Accounts"],
+      ["beta", "Beta debriefs"],
+    ],
+  },
+  {
+    id: "money",
+    label: "Money",
+    tabs: [
+      ["codes", "Promo codes"],
+      ["referrals", "Referrals"],
+      ["pay", "Retired pay"],
+    ],
+  },
+  {
+    id: "words",
+    label: "Words",
+    tabs: [
+      ["copy", "Site pages"],
+      ["emails", "Email templates"],
+      ["mail", "Send a letter"],
+    ],
+  },
+] as const;
+
+const DESK_BLURB: Record<(typeof DESK_SECTIONS)[number]["tabs"][number][0], string> = {
+  roster: "Accounts. Packages only — no household numbers.",
+  beta: "Beta debriefs. Who can file a debrief, and the debriefs they submitted.",
+  codes: "Promo codes. Create a code, set the window, set the offer, pick packages.",
+  referrals: "Referrals. The credit on a sender's next bill, and campaign links that only count.",
+  pay: "Retired pay. Upload the four official DFAS pages when a new year is published.",
+  copy: "Site pages. Pages and announcements.",
+  emails: "Email templates. Verify, first flight, and the owner alert.",
+  mail: "Send a letter. One template, merged per person. Roster filters choose who.",
+};
+
 function Top3DeskDoor() {
   const { user, isPending } = useCurrentUserState();
   const signedIn = isRealUser(user);
@@ -80,7 +120,8 @@ function Top3DeskDoor() {
   >(null);
   const [proofTick, setProofTick] = useState(0);
   const [gate, setGate] = useState<"wait" | "no" | "yes">("wait");
-  const [tab, setTab] = useState<"roster" | "users" | "copy" | "codes" | "mail" | "emails" | "pay" | "referrals" | "beta">("roster");
+  const [tab, setTab] = useState<"roster" | "copy" | "codes" | "mail" | "emails" | "pay" | "referrals" | "beta">("roster");
+  const [personFace, setPersonFace] = useState<"billing" | "activity">("billing");
   const [q, setQ] = useState("");
   const [plan, setPlan] = useState<OpsPlanFilter>("all");
   const [paid, setPaid] = useState<OpsPaidFilter>("all");
@@ -251,60 +292,51 @@ function Top3DeskDoor() {
       </header>
       <div className="desk-gutter mx-auto w-full max-w-[90rem] space-y-6 py-8">
         <header>
-          <p className="text-sm text-muted">
-            {tab === "pay"
-              ? "Basic pay. Upload the four official DFAS pages when a new year is published."
-              : tab === "beta"
-                ? "Beta. Who can file a debrief, and the debriefs they submitted."
-              : tab === "referrals"
-                ? "Referrals. The credit on a sender's next bill, and campaign links that only count."
-              : tab === "users"
-              ? "Users. Click a person for site use, then delete with your desk password."
-              : tab === "copy"
-                ? "Site copy. Pages and announcements."
-                : tab === "codes"
-                  ? "Referral codes. Create a code, set the window, set the offer, pick packages."
-                  : tab === "mail"
-                    ? "Desk mail. One template, merged per person. Roster filters choose who."
-                    : tab === "emails"
-                      ? "Automated mail. Verify, first flight, and the owner alert."
-                      : "Roster. Packages only — no household numbers."}
-          </p>
+          <p className="text-sm text-muted">{DESK_BLURB[tab]}</p>
           <p className="mt-3 max-w-3xl text-xs text-subtle">
             Vercel Deployment Protection password: Preview deployments only. Never on
             Production. Production lock is a signed-in owner, the same sign-in check as Advisor, plus this page's 404.
           </p>
         </header>
 
-        <div className="flex max-w-[90rem] rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
-          {(
-            [
-              ["roster", "Roster"],
-              ["users", "Users"],
-              ["copy", "Copy"],
-              ["codes", "Codes"],
-              ["mail", "Mail"],
-              ["emails", "Emails"],
-              ["pay", "Pay"],
-              ["referrals", "Referrals"],
-              ["beta", "Beta"],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              className={
-                "h-11 flex-1 rounded-md text-sm font-medium " +
-                (tab === id ? "bg-accent text-accent-fg" : "text-muted")
-              }
-              onClick={() => setTab(id)}
-            >
-              {label}
-            </button>
-          ))}
+        <div className="space-y-2">
+          <div className="flex flex-wrap gap-1 rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+            {DESK_SECTIONS.map((section) => {
+              const open = section.tabs.some((item) => item[0] === tab);
+              return (
+                <button
+                  key={section.id}
+                  type="button"
+                  className={
+                    "h-11 shrink-0 whitespace-nowrap rounded-md px-4 text-sm font-medium " +
+                    (open ? "bg-[#3a8a58] font-semibold text-white" : "text-fg")
+                  }
+                  onClick={() => setTab(section.tabs[0][0])}
+                >
+                  {section.label}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap gap-1 rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+            {DESK_SECTIONS.find((section) => section.tabs.some((item) => item[0] === tab))?.tabs.map(
+              ([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={
+                    "h-11 shrink-0 whitespace-nowrap rounded-md px-4 text-sm font-medium " +
+                    (tab === id ? "bg-[#3a8a58] font-semibold text-white" : "text-fg")
+                  }
+                  onClick={() => setTab(id)}
+                >
+                  {label}
+                </button>
+              ),
+            )}
+          </div>
         </div>
 
-        {tab === "users" ? <DeskUsers /> : null}
         {tab === "copy" ? <SiteCopyDesk /> : null}
         {tab === "codes" ? <PromoCodesDesk /> : null}
         {tab === "emails" ? <EmailCopyDesk /> : null}
@@ -439,7 +471,10 @@ function Top3DeskDoor() {
                       "cursor-pointer border-t border-border/60 hover:bg-elevated/60 " +
                       (openId === row.id ? "bg-elevated" : "")
                     }
-                    onClick={() => setOpenId(row.id === openId ? null : row.id)}
+                    onClick={() => {
+                      if (row.id !== openId) setPersonFace("billing");
+                      setOpenId(row.id === openId ? null : row.id);
+                    }}
                   >
                     <td className="px-3 py-2">
                       <RiskMark grade={row.riskGrade ?? "C"} label={row.riskLabel} />
@@ -490,18 +525,50 @@ function Top3DeskDoor() {
         </div>
 
         {selected ? (
-          <PersonPane
-            row={selected}
-            onDone={() => setTick((n) => n + 1)}
-            onDeleted={() => {
-              setOpenId(null);
-              setTick((n) => n + 1);
-            }}
-            onMail={() => {
-              setMailTarget(selected);
-              setTab("mail");
-            }}
-          />
+          <div className="space-y-3">
+            <div className="flex w-fit flex-wrap gap-1 rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+              {(
+                [
+                  ["billing", "Billing"],
+                  ["activity", "Activity"],
+                ] as const
+              ).map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={
+                    "h-10 shrink-0 whitespace-nowrap rounded-md px-4 text-sm font-medium " +
+                    (personFace === id ? "bg-[#3a8a58] font-semibold text-white" : "text-fg")
+                  }
+                  onClick={() => setPersonFace(id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {personFace === "activity" ? (
+              <UserDetail
+                row={selected}
+                onDeleted={() => {
+                  setOpenId(null);
+                  setTick((n) => n + 1);
+                }}
+              />
+            ) : (
+              <PersonPane
+                row={selected}
+                onDone={() => setTick((n) => n + 1)}
+                onDeleted={() => {
+                  setOpenId(null);
+                  setTick((n) => n + 1);
+                }}
+                onMail={() => {
+                  setMailTarget(selected);
+                  setTab("mail");
+                }}
+              />
+            )}
+          </div>
         ) : null}
 
         <section className="rounded-xl bg-surface p-4 text-sm shadow-[0_0_0_1px_var(--color-border)]">

@@ -161,7 +161,7 @@ export function DeskUsers() {
   );
 }
 
-function UserDetail({
+export function UserDetail({
   row,
   onDeleted,
 }: {
