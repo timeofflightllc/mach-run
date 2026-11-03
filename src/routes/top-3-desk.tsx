@@ -12,6 +12,7 @@ import { DeskMail } from "@/components/ops/desk-mail";
 import { EmailCopyDesk } from "@/components/ops/email-copy-desk";
 import { PayTablesDesk } from "@/components/ops/pay-tables-desk";
 import { ReferralDesk } from "@/components/ops/referral-desk";
+import { BetaDesk } from "@/components/ops/beta-desk";
 import { SavedAt } from "@/components/ops/saved-at";
 import { useEffect, useMemo, useState } from "react";
 import { Field, SelectInput, TextInput } from "@/components/ui/field";
@@ -79,7 +80,7 @@ function Top3DeskDoor() {
   >(null);
   const [proofTick, setProofTick] = useState(0);
   const [gate, setGate] = useState<"wait" | "no" | "yes">("wait");
-  const [tab, setTab] = useState<"roster" | "users" | "copy" | "codes" | "mail" | "emails" | "pay" | "referrals">("roster");
+  const [tab, setTab] = useState<"roster" | "users" | "copy" | "codes" | "mail" | "emails" | "pay" | "referrals" | "beta">("roster");
   const [q, setQ] = useState("");
   const [plan, setPlan] = useState<OpsPlanFilter>("all");
   const [paid, setPaid] = useState<OpsPaidFilter>("all");
@@ -253,6 +254,8 @@ function Top3DeskDoor() {
           <p className="text-sm text-muted">
             {tab === "pay"
               ? "Basic pay. Upload the four official DFAS pages when a new year is published."
+              : tab === "beta"
+                ? "Beta. Who can file a debrief, and the debriefs they submitted."
               : tab === "referrals"
                 ? "Referrals. The credit on a sender's next bill, and campaign links that only count."
               : tab === "users"
@@ -284,6 +287,7 @@ function Top3DeskDoor() {
               ["emails", "Emails"],
               ["pay", "Pay"],
               ["referrals", "Referrals"],
+              ["beta", "Beta"],
             ] as const
           ).map(([id, label]) => (
             <button
@@ -306,6 +310,7 @@ function Top3DeskDoor() {
         {tab === "emails" ? <EmailCopyDesk /> : null}
         {tab === "pay" ? <PayTablesDesk /> : null}
         {tab === "referrals" ? <ReferralDesk /> : null}
+        {tab === "beta" ? <BetaDesk /> : null}
         {tab === "mail" ? (
           <DeskMail
             q={q}

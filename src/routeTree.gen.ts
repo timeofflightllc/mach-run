@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
+import { Route as BetaRouteImport } from './routes/beta'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FaqRouteImport } from './routes/faq'
@@ -51,6 +52,11 @@ const AccountRoute = AccountRouteImport.update({
 const AnnouncementsRoute = AnnouncementsRouteImport.update({
   id: '/announcements',
   path: '/announcements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BetaRoute = BetaRouteImport.update({
+  id: '/beta',
+  path: '/beta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompareRoute = CompareRouteImport.update({
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/announcements': typeof AnnouncementsRoute
+  '/beta': typeof BetaRoute
   '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/announcements': typeof AnnouncementsRoute
+  '/beta': typeof BetaRoute
   '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
@@ -205,6 +213,7 @@ export interface FileRoutesById {
   '/about': typeof AboutRoute
   '/account': typeof AccountRoute
   '/announcements': typeof AnnouncementsRoute
+  '/beta': typeof BetaRoute
   '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
@@ -232,6 +241,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/account'
     | '/announcements'
+    | '/beta'
     | '/compare'
     | '/contact'
     | '/faq'
@@ -257,6 +267,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/account'
     | '/announcements'
+    | '/beta'
     | '/compare'
     | '/contact'
     | '/faq'
@@ -282,6 +293,7 @@ export interface FileRouteTypes {
     | '/about'
     | '/account'
     | '/announcements'
+    | '/beta'
     | '/compare'
     | '/contact'
     | '/faq'
@@ -308,6 +320,7 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute
   AccountRoute: typeof AccountRoute
   AnnouncementsRoute: typeof AnnouncementsRoute
+  BetaRoute: typeof BetaRoute
   CompareRoute: typeof CompareRoute
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
@@ -357,6 +370,13 @@ declare module '@tanstack/react-router' {
       path: '/announcements'
       fullPath: '/announcements'
       preLoaderRoute: typeof AnnouncementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/beta': {
+      id: '/beta'
+      path: '/beta'
+      fullPath: '/beta'
+      preLoaderRoute: typeof BetaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compare': {
@@ -500,6 +520,7 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AccountRoute: AccountRoute,
   AnnouncementsRoute: AnnouncementsRoute,
+  BetaRoute: BetaRoute,
   CompareRoute: CompareRoute,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,

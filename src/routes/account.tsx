@@ -5,6 +5,7 @@ import { DeleteAccountModal } from "@/components/meridian/delete-account-modal";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { IdleLockSettings } from "@/components/meridian/idle-lock-settings";
 import { ReferralAccountCard } from "@/components/meridian/referral-card";
+import { BetaAccountLink } from "@/components/beta/account-link";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import { startBillingPortal } from "@/lib/billing/api";
 import { formatDeskTrialEnd } from "@/lib/billing/desk-trial";
@@ -380,6 +381,7 @@ function Account() {
         </header>
 
         <ReferralAccountCard />
+        <BetaAccountLink />
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
         {msg ? <p className="text-sm text-muted">{msg}</p> : null}
