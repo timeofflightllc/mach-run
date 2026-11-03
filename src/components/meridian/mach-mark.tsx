@@ -86,7 +86,7 @@ export function PageMast() {
           <BrandLockup framed />
         </Link>
         <div className="flex shrink-0 items-center gap-1 md:hidden">
-          <SiteMenu align="right" />
+          <SiteMenu align="right" accountLink />
           <Link
             to="/"
             className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
@@ -99,7 +99,7 @@ export function PageMast() {
         The Supersonic Retirement Calculator
       </p>
       <div className="hidden shrink-0 items-center gap-1 md:flex">
-        <SiteMenu align="right" />
+        <SiteMenu align="right" accountLink />
         <Link
           to="/"
           className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"

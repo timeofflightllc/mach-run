@@ -58,9 +58,11 @@ export function SiteNav({
 export function SiteMenu({
   className,
   align = "left",
+  accountLink = false,
 }: {
   className?: string;
   align?: "left" | "right";
+  accountLink?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -101,7 +103,17 @@ export function SiteMenu({
             align === "right" ? "right-0" : "left-0",
           )}
         >
-          {LINKS.map((link) => (
+          {accountLink ? (
+            <Link
+              to="/account"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className="block whitespace-nowrap px-3 py-2.5 text-sm text-fg hover:bg-surface md:px-5"
+            >
+              My Account
+            </Link>
+          ) : null}
+          {LINKS.filter((link) => !accountLink || link.to !== "/").map((link) => (
             <Link
               key={link.to}
               to={link.to}

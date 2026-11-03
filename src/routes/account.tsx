@@ -375,7 +375,7 @@ function Account() {
         <PageMast />
         <header>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">
-            Account profile
+            My Account
           </p>
           <h1 className="mt-2 font-display text-3xl text-fg">Your MACH Run identity</h1>
         </header>

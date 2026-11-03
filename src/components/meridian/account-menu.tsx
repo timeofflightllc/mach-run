@@ -66,7 +66,7 @@ export function AccountMenu() {
             onClick={() => setOpen(false)}
             className="block px-3 py-2.5 text-sm text-fg hover:bg-surface"
           >
-            Account profile
+            My Account
           </Link>
           <Link
             to="/referrals"
