@@ -145,6 +145,52 @@ export const BETA_PLANS = [
 
 export type BetaPlan = "" | (typeof BETA_PLANS)[number]["id"] | "paid";
 
+export const BETA_DEVICE_KINDS = [
+  { id: "mobile", label: "Mobile" },
+  { id: "desktop", label: "Desktop" },
+] as const;
+
+export type BetaDeviceKind = "" | (typeof BETA_DEVICE_KINDS)[number]["id"];
+
+export const BETA_OS = {
+  mobile: [
+    { id: "ios", label: "iOS / iPadOS" },
+    { id: "android", label: "Android" },
+    { id: "other", label: "Other" },
+  ],
+  desktop: [
+    { id: "macos", label: "macOS" },
+    { id: "windows", label: "Windows" },
+    { id: "chromeos", label: "ChromeOS" },
+    { id: "linux", label: "Linux" },
+    { id: "other", label: "Other" },
+  ],
+} as const;
+
+export const BETA_BROWSERS = {
+  mobile: [
+    { id: "safari", label: "Safari" },
+    { id: "chrome", label: "Chrome" },
+    { id: "firefox", label: "Firefox" },
+    { id: "samsung", label: "Samsung Internet" },
+    { id: "edge", label: "Edge" },
+    { id: "duckduckgo", label: "DuckDuckGo" },
+    { id: "brave", label: "Brave" },
+    { id: "opera", label: "Opera" },
+    { id: "other", label: "Other" },
+  ],
+  desktop: [
+    { id: "chrome", label: "Chrome" },
+    { id: "safari", label: "Safari" },
+    { id: "firefox", label: "Firefox" },
+    { id: "edge", label: "Edge" },
+    { id: "brave", label: "Brave" },
+    { id: "arc", label: "Arc" },
+    { id: "opera", label: "Opera" },
+    { id: "other", label: "Other" },
+  ],
+} as const;
+
 export function betaPlanLabel(plan: string): string {
   const match = BETA_PLANS.find((row) => row.id === plan);
   if (match) return match.label;
@@ -152,11 +198,36 @@ export function betaPlanLabel(plan: string): string {
   return "";
 }
 
+function optionLabel(rows: readonly { id: string; label: string }[], id: string): string {
+  return rows.find((row) => row.id === id)?.label ?? "";
+}
+
+export function betaDeviceLabel(kind: string): string {
+  return optionLabel(BETA_DEVICE_KINDS, kind);
+}
+
+export function betaOsLabel(kind: string, os: string): string {
+  if (kind !== "mobile" && kind !== "desktop") return "";
+  return optionLabel(BETA_OS[kind], os);
+}
+
+export function betaBrowserLabel(kind: string, browser: string): string {
+  if (kind !== "mobile" && kind !== "desktop") return "";
+  return optionLabel(BETA_BROWSERS[kind], browser);
+}
+
+export function betaDeviceLine(kind: string, os: string, browser: string): string {
+  return [betaDeviceLabel(kind), betaOsLabel(kind, os), betaBrowserLabel(kind, browser)].filter(Boolean).join(" / ");
+}
+
 export type BetaAnswers = {
   name: string;
   email: string;
   testedOn: string;
   device: string;
+  deviceKind: BetaDeviceKind;
+  os: string;
+  browser: string;
   plan: BetaPlan;
   sections: Record<BetaSectionKey, BetaSectionAnswer>;
   hat: BetaHat;
@@ -206,6 +277,9 @@ export function emptyAnswers(testedOn = ""): BetaAnswers {
     email: "",
     testedOn,
     device: "",
+    deviceKind: "",
+    os: "",
+    browser: "",
     plan: "",
     sections: emptySections(),
     hat: {
@@ -252,11 +326,20 @@ export function sanitizeAnswers(input: unknown): BetaAnswers {
     };
   }
   const hatIn = raw.hat && typeof raw.hat === "object" ? (raw.hat as Record<string, unknown>) : {};
+  const deviceKind: BetaDeviceKind = raw.deviceKind === "mobile" || raw.deviceKind === "desktop" ? raw.deviceKind : "";
+  const os = betaOsLabel(deviceKind, typeof raw.os === "string" ? raw.os : "") ? String(raw.os) : "";
+  const browser = betaBrowserLabel(deviceKind, typeof raw.browser === "string" ? raw.browser : "")
+    ? String(raw.browser)
+    : "";
+  const legacyDevice = clip(raw.device, SHORT_MAX);
   return {
     name: clip(raw.name, SHORT_MAX),
     email: "",
     testedOn: clip(raw.testedOn, 10),
-    device: clip(raw.device, SHORT_MAX),
+    deviceKind,
+    os,
+    browser,
+    device: deviceKind ? betaDeviceLine(deviceKind, os, browser) : legacyDevice,
     plan,
     sections,
     hat: {

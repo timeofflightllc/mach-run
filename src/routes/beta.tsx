@@ -49,8 +49,10 @@ function BetaPageView() {
   const [busy, setBusy] = useState<"draft" | "submit" | null>(null);
   const busyRef = useRef(false);
 
+  const userId = isRealUser(user) ? user.id : "";
+
   useEffect(() => {
-    if (!isRealUser(user)) return;
+    if (!userId) return;
     let live = true;
     void betaPageFn()
       .then((next) => {
@@ -64,7 +66,7 @@ function BetaPageView() {
     return () => {
       live = false;
     };
-  }, [user]);
+  }, [userId]);
 
   async function reload(nextAnswers?: BetaAnswers) {
     const next = await betaPageFn();

@@ -1,11 +1,13 @@
 import { useRef, useState } from "react";
-import { BETA_PLANS, BETA_SECTIONS, betaPlanLabel, type BetaAnswers, type BetaPlan, type BetaSectionKey } from "@/lib/beta/form";
+import { BETA_BROWSERS, BETA_DEVICE_KINDS, BETA_OS, BETA_PLANS, BETA_SECTIONS, betaBrowserLabel, betaDeviceLine, betaOsLabel, betaPlanLabel, type BetaAnswers, type BetaDeviceKind, type BetaPlan, type BetaSectionKey } from "@/lib/beta/form";
 import { GhostButton, PrimaryButton, TextArea, TextInput } from "@/components/ui/field";
 
 const wide = "w-full min-w-0 max-w-none";
+const selectClass =
+  "h-11 w-full min-w-0 rounded-lg border border-border bg-elevated px-3 text-sm text-fg outline-none disabled:opacity-50";
 
 const STEPS = [
-  { id: "intro", label: "Top section" },
+  { id: "intro", label: "Beta Tester Information" },
   { id: "family", label: "Observe — Family / Assumptions" },
   { id: "assets", label: "Observe — Assets / Liabilities" },
   { id: "income", label: "Orient — Income / Spending" },
@@ -141,14 +143,70 @@ export function DebriefForm({
               />
             </label>
             <label className="flex min-w-0 flex-col gap-1.5 text-sm">
-              <span className="text-xs font-medium tracking-wide text-muted">Device / browser used</span>
-              <TextInput
-                value={answers.device}
+              <span className="text-xs font-medium tracking-wide text-muted">Device</span>
+              <select
+                value={answers.deviceKind}
                 disabled={readOnly}
-                className={wide}
-                onChange={(event) => patch({ device: event.target.value })}
-              />
+                onChange={(event) => {
+                  const kind: BetaDeviceKind = event.target.value === "mobile" || event.target.value === "desktop" ? event.target.value : "";
+                  patch({ deviceKind: kind, os: "", browser: "", device: betaDeviceLine(kind, "", "") });
+                }}
+                className={selectClass}
+              >
+                <option value="">Select</option>
+                {BETA_DEVICE_KINDS.map((row) => (
+                  <option key={row.id} value={row.id}>
+                    {row.label}
+                  </option>
+                ))}
+              </select>
             </label>
+            <label className="flex min-w-0 flex-col gap-1.5 text-sm">
+              <span className="text-xs font-medium tracking-wide text-muted">Operating system</span>
+              <select
+                value={answers.os}
+                disabled={readOnly || !answers.deviceKind}
+                onChange={(event) => {
+                  const os = event.target.value;
+                  const browser = betaBrowserLabel(answers.deviceKind, answers.browser) ? answers.browser : "";
+                  patch({ os, browser, device: betaDeviceLine(answers.deviceKind, os, browser) });
+                }}
+                className={selectClass}
+              >
+                <option value="">{answers.deviceKind ? "Select" : "Select a device first"}</option>
+                {answers.deviceKind
+                  ? BETA_OS[answers.deviceKind].map((row) => (
+                      <option key={row.id} value={row.id}>
+                        {row.label}
+                      </option>
+                    ))
+                  : null}
+              </select>
+            </label>
+            <label className="flex min-w-0 flex-col gap-1.5 text-sm">
+              <span className="text-xs font-medium tracking-wide text-muted">Browser</span>
+              <select
+                value={answers.browser}
+                disabled={readOnly || !answers.os}
+                onChange={(event) => {
+                  const browser = event.target.value;
+                  patch({ browser, device: betaDeviceLine(answers.deviceKind, answers.os, browser) });
+                }}
+                className={selectClass}
+              >
+                <option value="">{answers.os ? "Select" : "Select an operating system first"}</option>
+                {answers.deviceKind
+                  ? BETA_BROWSERS[answers.deviceKind].map((row) => (
+                      <option key={row.id} value={row.id}>
+                        {row.label}
+                      </option>
+                    ))
+                  : null}
+              </select>
+            </label>
+            {!answers.deviceKind && answers.device.trim() ? (
+              <p className="text-sm text-muted sm:col-span-2">Earlier note: {answers.device}</p>
+            ) : null}
             <label className="flex flex-col gap-1.5 text-sm sm:col-span-2">
               <span className="text-xs font-medium tracking-wide text-muted">Which plan did you use?</span>
               <select
@@ -159,7 +217,7 @@ export function DebriefForm({
                   const plan: BetaPlan = BETA_PLANS.some((row) => row.id === value) ? (value as BetaPlan) : "";
                   patch({ plan });
                 }}
-                className="h-11 w-full min-w-0 rounded-lg border border-border bg-elevated px-3 text-sm text-fg outline-none disabled:opacity-50"
+                className={selectClass}
               >
                 <option value="">Select</option>
                 {answers.plan === "paid" ? <option value="paid">{betaPlanLabel("paid")}</option> : null}

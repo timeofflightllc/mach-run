@@ -1,4 +1,4 @@
-import { BETA_SECTIONS, betaPlanLabel, type BetaAnswers } from "./form";
+import { BETA_SECTIONS, betaBrowserLabel, betaDeviceLabel, betaOsLabel, betaPlanLabel, type BetaAnswers } from "./form";
 
 export type BetaExportRow = {
   name: string;
@@ -22,6 +22,8 @@ const CSV_HEAD = [
   "email",
   "tested_on",
   "device",
+  "os",
+  "browser",
   "plan",
   ...BETA_SECTIONS.flatMap((section) => [
     `${section.key}_notes`,
@@ -48,7 +50,9 @@ export function betaCsv(rows: BetaExportRow[]): string {
       answers.name,
       answers.email || row.email,
       answers.testedOn,
-      answers.device,
+      betaDeviceLabel(answers.deviceKind) || answers.device,
+      betaOsLabel(answers.deviceKind, answers.os),
+      betaBrowserLabel(answers.deviceKind, answers.browser),
       betaPlanLabel(answers.plan),
       ...BETA_SECTIONS.flatMap((section) => [
         answers.sections[section.key].notes,
