@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { DebriefForm } from "@/components/beta/debrief-form";
-import { GhostButton, PrimaryButton } from "@/components/ui/field";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { RedirectToSignIn, isRealUser } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
@@ -166,31 +165,15 @@ function BetaPageView() {
               </p>
             ) : (
               <section className="w-full space-y-6 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)] sm:p-6">
-                <div className="space-y-3 text-sm leading-relaxed text-muted">
-                  <p>
-                    Thank you for beta testing MACH RUN — The Supersonic Retirement Calculator.
-                  </p>
-                  <p>
-                    Please walk through the app at machrun.com and record your observations, issues, and suggestions under each OODA section below. Be as specific as you can (what you clicked, what you expected, what happened). Screenshots are welcome if you have them.
-                  </p>
-                  <p>
-                    This is not a test of you — it is a test of the tool. Honest feedback (including things that felt wrong or missing) is the most useful.
-                  </p>
-                </div>
                 <DebriefForm
                   answers={answers}
                   email={page.email}
                   addressOnFile={page.knownHat != null}
                   onChange={setAnswers}
+                  busy={busy}
+                  onDraft={() => void onDraft()}
+                  onSubmit={() => void onSubmit()}
                 />
-                <div className="flex flex-wrap gap-3">
-                  <GhostButton onClick={() => void onDraft()} disabled={busy != null}>
-                    {busy === "draft" ? "Saving…" : "Save draft"}
-                  </GhostButton>
-                  <PrimaryButton onClick={() => void onSubmit()} disabled={busy != null}>
-                    {busy === "submit" ? "Submitting…" : "Submit"}
-                  </PrimaryButton>
-                </div>
               </section>
             )}
 

@@ -41,6 +41,21 @@ export const BETA_SECTIONS = [
     ],
   },
   {
+    key: "goals",
+    phase: "Decide",
+    phaseNote: "Set the target before the contributions. This is the retirement date, the longevity age, and the goal itself.",
+    title: "Goals",
+    prompts: [
+      "Was it clear that Goals is where you set what you are aiming for, before contributions?",
+      "Did the choice between a nest-egg goal and a monthly retirement income goal make sense?",
+      "Was it clear what Still working versus Already retired does to the retirement date?",
+      "Was the longevity age easy to understand, including that a blank goal is not scored?",
+      "Was the as-of date easy to find and change?",
+      "Bugs, errors, or unexpected behavior?",
+      "Suggestions for improvement:",
+    ],
+  },
+  {
     key: "contributions",
     phase: "Decide",
     phaseNote: "Compound by deciding contributions and goals for the accounts.",
@@ -72,7 +87,7 @@ export const BETA_SECTIONS = [
     key: "charts",
     phase: "",
     phaseNote: "",
-    title: "Charts, Ledgers & Monte Carlo",
+    title: "Charts and Ledgers",
     prompts: [
       "Were the charts and graphs clear and useful?",
       "How was the ledger experience?",
@@ -174,15 +189,15 @@ function clip(value: unknown, max: number): string {
 }
 
 function emptySections(): Record<BetaSectionKey, BetaSectionAnswer> {
-  return {
-    family: { notes: "", continued: false, replies: BETA_SECTIONS[0].prompts.map(() => "") },
-    assets: { notes: "", continued: false, replies: BETA_SECTIONS[1].prompts.map(() => "") },
-    income: { notes: "", continued: false, replies: BETA_SECTIONS[2].prompts.map(() => "") },
-    contributions: { notes: "", continued: false, replies: BETA_SECTIONS[3].prompts.map(() => "") },
-    takeoff: { notes: "", continued: false, replies: BETA_SECTIONS[4].prompts.map(() => "") },
-    charts: { notes: "", continued: false, replies: BETA_SECTIONS[5].prompts.map(() => "") },
-    overall: { notes: "", continued: false, replies: BETA_SECTIONS[6].prompts.map(() => "") },
-  };
+  const sections = {} as Record<BetaSectionKey, BetaSectionAnswer>;
+  for (const section of BETA_SECTIONS) {
+    sections[section.key] = {
+      notes: "",
+      continued: false,
+      replies: section.prompts.map(() => ""),
+    };
+  }
+  return sections;
 }
 
 export function emptyAnswers(testedOn = ""): BetaAnswers {
