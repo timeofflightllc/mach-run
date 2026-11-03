@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { DebriefForm } from "@/components/beta/debrief-form";
-import { Field, GhostButton, PrimaryButton, TextInput } from "@/components/ui/field";
+import { Field, GhostButton, PrimaryButton } from "@/components/ui/field";
 import {
   betaDeskCsvFn,
   betaDeskFn,
@@ -11,7 +11,7 @@ import {
 } from "@/lib/beta/desk-api";
 import { betaText } from "@/lib/beta/export";
 import { downloadBetaPdf } from "@/lib/beta/pdf";
-import type { BetaDeskDetail, BetaDeskRow, BetaInvite } from "@/lib/beta/desk";
+import type { BetaAccount, BetaDeskDetail, BetaDeskRow, BetaInvite } from "@/lib/beta/desk";
 
 function download(filename: string, text: string, type: string) {
   const blob = new Blob([text], { type });
@@ -38,6 +38,7 @@ function when(iso: string): string {
 
 export function BetaDesk() {
   const [email, setEmail] = useState("");
+  const [accounts, setAccounts] = useState<BetaAccount[]>([]);
   const [invites, setInvites] = useState<BetaInvite[]>([]);
   const [limits, setLimits] = useState<Record<string, string>>({});
   const [rows, setRows] = useState<BetaDeskRow[]>([]);
@@ -52,6 +53,7 @@ export function BetaDesk() {
       return;
     }
     setInvites(result.invites);
+    setAccounts(result.accounts);
     setLimits(Object.fromEntries(result.invites.map((row) => [row.email, String(row.limit)])));
     setRows(result.rows);
   }
@@ -74,7 +76,11 @@ export function BetaDesk() {
         return;
       }
       setEmail("");
-      setStatus("Invited. They start with 3 submissions.");
+      setStatus(
+        result.mailed
+          ? "Invited. The email is on its way. They start with 3 submissions."
+          : "Invited, but the email did not send. They start with 3 submissions.",
+      );
       await reload();
     } finally {
       setBusy(false);
@@ -164,11 +170,24 @@ export function BetaDesk() {
     <div className="space-y-8">
       <section className="max-w-xl space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
         <p className="font-display text-lg text-fg">Invite</p>
-        <p className="text-sm text-muted">A new invite can submit 3 debriefs. They do not need an account yet.</p>
-        <Field label="Email">
-          <TextInput value={email} onChange={(event) => setEmail(event.target.value)} />
+        <p className="text-sm text-muted">
+          Pick an account that already exists. They start with 3 debriefs, and the invite email goes to that address.
+        </p>
+        <Field label="Account">
+          <select
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            className="h-11 w-full rounded-lg border border-border bg-elevated px-3 text-sm text-fg outline-none"
+          >
+            <option value="">{accounts.length ? "Select an account" : "No accounts waiting"}</option>
+            {accounts.map((account) => (
+              <option key={account.email} value={account.email}>
+                {account.name ? `${account.name} — ${account.email}` : account.email}
+              </option>
+            ))}
+          </select>
         </Field>
-        <PrimaryButton disabled={busy} onClick={() => void grant()}>
+        <PrimaryButton disabled={busy || !email} onClick={() => void grant()}>
           Grant access
         </PrimaryButton>
       </section>

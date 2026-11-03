@@ -6,6 +6,11 @@ export type BetaInvite = {
   limit: number;
 };
 
+export type BetaAccount = {
+  email: string;
+  name: string;
+};
+
 export type BetaDeskRow = {
   id: string;
   name: string;

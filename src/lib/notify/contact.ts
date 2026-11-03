@@ -207,4 +207,76 @@ export async function sendBetaDebriefMail(input: {
   }
 }
 
+export async function sendBetaInviteMail(input: {
+  name: string;
+  email: string;
+}): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const key = env("RESEND_API_KEY");
+  if (!key) return { ok: false, reason: "Mail is not connected yet." };
+  const first = input.name.trim().split(/\s+/)[0] || "";
+  const hello = first ? `Hi ${first},` : "Hi,";
+  const link = "https://machrun.com/beta";
+  const subject = "Your MACH RUN beta debrief is enabled";
+  const text = [
+    hello,
+    "",
+    "I enabled the beta debrief on your MACH RUN account. Each beta tester has 3 times to run through the form. If you need more, let me know -- I can easily open up more.",
+    "",
+    "Sign in, then open My Account. The form is under Referrals: Beta Testing Feedback / Debrief Form.",
+    `Or go straight there once you are signed in: ${link}`,
+    "",
+    "Walk the calculator. Write what you clicked, what you expected, and what happened. You can leave a box blank. Save a draft if you need to come back.",
+    "",
+    "Thank you for testing this with me.",
+    "",
+    "Cain",
+    "MACH RUN",
+    "https://machrun.com",
+  ].join("\n");
+  const html = wrapEmail(
+    "Your beta debrief is enabled",
+    `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#1E2A32;">
+          ${escapeHtml(hello)}
+        </td></tr>
+        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#3D4A54;">
+          I enabled the beta debrief on your MACH RUN account. Each beta tester has 3 times to run through the form. If you need more, let me know -- I can easily open up more.
+        </td></tr>
+        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#3D4A54;">
+          Sign in, then open My Account. The form is under Referrals: Beta Testing Feedback / Debrief Form.
+        </td></tr>
+        <tr><td style="padding:4px 28px 20px;">
+          <a href="${link}" style="display:inline-block;background:#3a8a58;color:#ffffff;text-decoration:none;padding:12px 18px;font-family:Arial,Helvetica,sans-serif;font-size:15px;">Open the debrief</a>
+        </td></tr>
+        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#3D4A54;">
+          Walk the calculator. Write what you clicked, what you expected, and what happened. You can leave a box blank. Save a draft if you need to come back.
+        </td></tr>
+        <tr><td style="padding:0 28px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#1E2A32;">
+          Thank you for testing this with me.<br /><br />
+          Cain<br />
+          MACH RUN
+        </td></tr>`,
+    "Your MACH RUN beta debrief is enabled. You can run the form 3 times.",
+  );
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: fromAddress(),
+        to: [input.email],
+        subject,
+        html,
+        text,
+      }),
+    });
+    if (!res.ok) return { ok: false, reason: "Could not send." };
+    return { ok: true };
+  } catch {
+    return { ok: false, reason: "Could not reach mail." };
+  }
+}
+
 export { TOPIC_LABEL };

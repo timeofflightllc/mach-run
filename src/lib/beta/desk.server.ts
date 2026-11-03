@@ -1,5 +1,5 @@
 import { getSql } from "@/lib/db";
-import type { BetaDeskDetail, BetaDeskRow, BetaInvite } from "./desk";
+import type { BetaAccount, BetaDeskDetail, BetaDeskRow, BetaInvite } from "./desk";
 import { betaCsv, type BetaExportRow } from "./export";
 import { parseAnswers } from "./form";
 
@@ -57,7 +57,7 @@ function asRow(row: Stored): BetaExportRow {
   };
 }
 
-export async function betaDesk(): Promise<{ invites: BetaInvite[]; rows: BetaDeskRow[] }> {
+export async function betaDesk(): Promise<{ invites: BetaInvite[]; rows: BetaDeskRow[]; accounts: BetaAccount[] }> {
   const sql = await getSql();
   const invites = await sql.query<{ email: string; submitted: number; submission_limit: number }>(
     `select a.email,
@@ -72,6 +72,16 @@ export async function betaDesk(): Promise<{ invites: BetaInvite[]; rows: BetaDes
      order by a.granted_at desc`,
   );
   const rows = await sql.query<Stored>(`${SUBMITTED_SQL} order by s.submitted_at desc`);
+  const accounts = await sql.query<{ email: string; name: string | null }>(
+    `select lower(u.email) as email, coalesce(u.name, '') as name
+     from "user" u
+     where u.email is not null
+       and btrim(u.email) <> ''
+       and not exists (
+         select 1 from mach_beta_access a where a.email = lower(u.email)
+       )
+     order by lower(coalesce(nullif(btrim(u.name), ''), u.email))`,
+  );
   return {
     invites: invites.map((row) => ({
       email: row.email,
@@ -88,15 +98,28 @@ export async function betaDesk(): Promise<{ invites: BetaInvite[]; rows: BetaDes
         submittedAt: item.submittedAt,
       };
     }),
+    accounts: accounts
+      .filter((row) => row.email)
+      .map((row) => ({ email: row.email, name: (row.name ?? "").trim() })),
   };
 }
 
-export async function grantBetaEmail(email: string, grantedBy: string): Promise<void> {
+export async function grantBetaEmail(
+  email: string,
+  grantedBy: string,
+): Promise<{ name: string } | null> {
   const sql = await getSql();
+  const users = await sql.query<{ email: string; name: string | null }>(
+    `select lower(email) as email, name from "user" where lower(email) = $1 limit 1`,
+    [email],
+  );
+  const user = users[0];
+  if (!user?.email) return null;
   await sql.query(
     `insert into mach_beta_access (email, granted_by, submission_limit) values ($1, $2, 3)`,
-    [email, grantedBy],
+    [user.email, grantedBy],
   );
+  return { name: (user.name ?? "").trim() };
 }
 
 export async function setBetaLimit(email: string, limit: number): Promise<boolean> {

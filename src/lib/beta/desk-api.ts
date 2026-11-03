@@ -1,5 +1,5 @@
 import { createMiddleware, createServerFn } from "@tanstack/react-start";
-import type { BetaDeskDetail, BetaDeskRow, BetaInvite } from "./desk";
+import type { BetaAccount, BetaDeskDetail, BetaDeskRow, BetaInvite } from "./desk";
 
 const opsSessionMiddleware = createMiddleware({ type: "function" })
   .client(async ({ next }) => {
@@ -17,7 +17,7 @@ async function actor(bearerToken: string | undefined) {
 
 export const betaDeskFn = createServerFn({ method: "GET" })
   .middleware([opsSessionMiddleware])
-  .handler(async ({ context }): Promise<{ allowed: false } | { allowed: true; invites: BetaInvite[]; rows: BetaDeskRow[] }> => {
+  .handler(async ({ context }): Promise<{ allowed: false } | { allowed: true; invites: BetaInvite[]; rows: BetaDeskRow[]; accounts: BetaAccount[] }> => {
     const who = await actor(context.bearerToken);
     if (!who) return { allowed: false };
     const { betaDesk } = await import("./desk.server");
@@ -27,20 +27,23 @@ export const betaDeskFn = createServerFn({ method: "GET" })
 export const grantBetaEmailFn = createServerFn({ method: "POST" })
   .middleware([opsSessionMiddleware])
   .validator((input: { email?: unknown }) => ({ email: input?.email }))
-  .handler(async ({ context, data }): Promise<{ allowed: false } | { allowed: true; ok: false; error: string } | { allowed: true; ok: true }> => {
+  .handler(async ({ context, data }): Promise<{ allowed: false } | { allowed: true; ok: false; error: string } | { allowed: true; ok: true; mailed: boolean }> => {
     const who = await actor(context.bearerToken);
     if (!who) return { allowed: false };
     const { grantBetaEmail, normalizeBetaEmail } = await import("./desk.server");
     const email = normalizeBetaEmail(data.email);
-    if (!email) return { allowed: true, ok: false, error: "Enter an email address." };
+    if (!email) return { allowed: true, ok: false, error: "Pick an account." };
     try {
-      await grantBetaEmail(email, who.id);
+      const account = await grantBetaEmail(email, who.id);
+      if (!account) return { allowed: true, ok: false, error: "That person does not have a MACH RUN account." };
+      const { sendBetaInviteMail } = await import("@/lib/notify/contact");
+      const mailed = await sendBetaInviteMail({ name: account.name, email }).catch(() => ({ ok: false as const }));
+      return { allowed: true, ok: true, mailed: mailed.ok };
     } catch (err) {
       const code = err && typeof err === "object" && "code" in err ? String((err as { code: string }).code) : "";
-      if (code === "23505") return { allowed: true, ok: false, error: "That email is already invited." };
+      if (code === "23505") return { allowed: true, ok: false, error: "That account is already invited." };
       throw err;
     }
-    return { allowed: true, ok: true };
   });
 
 export const setBetaLimitFn = createServerFn({ method: "POST" })
