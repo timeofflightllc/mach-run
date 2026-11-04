@@ -667,11 +667,11 @@ function FounderStory() {
   return (
     <div className="mt-8 flex w-full max-w-[66rem] flex-col items-center gap-6 text-left lg:flex-row lg:items-center lg:gap-8">
       <img
-        src="/brand/about-flightline.jpg?v=1"
-        alt="A pilot standing in front of an F-15 with the canopy open."
-        width={1755}
-        height={1790}
-        className="h-64 w-52 shrink-0 rounded-lg object-cover lg:h-72 lg:w-64"
+        src="/brand/founder-hero.jpg?v=1"
+        alt="A pilot standing beside an F-15 with the canopy open."
+        width={1600}
+        height={1200}
+        className="h-64 w-52 shrink-0 rounded-lg object-cover object-right lg:h-72 lg:w-64"
       />
       <div className="min-w-0 lg:flex-1">
         <h2 className="font-display text-2xl font-semibold leading-tight text-[#1a2330] sm:text-3xl">
