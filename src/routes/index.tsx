@@ -2228,7 +2228,7 @@ function Home() {
                   Get Started Below
                 </span>
                 <p className="max-w-3xl text-base leading-snug text-[#fff3c4] sm:text-lg">
-                  {boydLine}
+                  “{boydLine}”
                 </p>
                 <p className="max-w-3xl text-base leading-snug text-[#fff3c4] sm:text-lg">
                   - John Boyd
