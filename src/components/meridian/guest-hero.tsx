@@ -665,7 +665,7 @@ export function MilitaryHousehold() {
 /** Founder story. Photo, then the text, then the veteran mark. */
 function FounderStory() {
   return (
-    <div className="mt-8 flex w-full flex-col items-center gap-6 text-left lg:-mx-8 lg:w-[calc(100%+4rem)] lg:flex-row lg:items-center lg:gap-8">
+    <div className="mt-8 flex w-full max-w-[66rem] flex-col items-center gap-6 text-left lg:flex-row lg:items-center lg:gap-8">
       <img
         src="/brand/about-flightline.jpg?v=1"
         alt="A pilot standing in front of an F-15 with the canopy open."
