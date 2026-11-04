@@ -848,6 +848,9 @@ function readHeaderCollapsed() {
 function Home() {
   const { actPlace } = Route.useLoaderData();
   const plan = usePlanStore((s) => s.plan);
+  const boydQuotes = useBoydQuotes();
+  const boydPick = useRef(Math.floor(Math.random() * Math.max(boydQuotes.length, 1)));
+  const boydLine = boydQuotes[boydPick.current % Math.max(boydQuotes.length, 1)] ?? "";
   const copy = usePlannerCopy();
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
   const { status: saveStatus, saveNow } = useCloudPlan();
@@ -2225,7 +2228,10 @@ function Home() {
                   Get Started Below
                 </span>
                 <p className="max-w-3xl text-base leading-snug text-[#fff3c4] sm:text-lg">
-                  The Hale Household demo is not your plan. Put your family in MACH RUN and fly your own loop.
+                  {boydLine}
+                </p>
+                <p className="max-w-3xl text-base leading-snug text-[#fff3c4] sm:text-lg">
+                  - John Boyd
                 </p>
               </>
             )}
