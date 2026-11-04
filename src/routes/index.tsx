@@ -2227,10 +2227,10 @@ function Home() {
                 <span className="inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
                   Get Started Below
                 </span>
-                <p className="max-w-3xl text-base leading-snug text-[#fff3c4] sm:text-lg">
+                <p className="w-full max-w-6xl text-base leading-snug text-[#fff3c4] sm:text-lg 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
                   “{boydLine}”
                 </p>
-                <p className="max-w-3xl text-base leading-snug text-[#fff3c4] sm:text-lg">
+                <p className="w-full max-w-6xl text-base leading-snug text-[#fff3c4] sm:text-lg 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
                   - John Boyd
                 </p>
               </>
