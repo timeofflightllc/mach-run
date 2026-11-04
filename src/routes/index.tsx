@@ -45,6 +45,7 @@ import { earliestWorkableRetirement } from "@/lib/plan/earliest-retirement";
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import { usePlanStore } from "@/lib/plan/store";
 import { createDefaultPlan } from "@/lib/plan/defaults";
+import { planHasEntries } from "@/lib/plan/demo-plan";
 import { MACH_PROFILE_REMOVED, useProfileStore } from "@/lib/plan/profile-store";
 import { useCloudPlan } from "@/lib/plan/use-cloud-plan";
 import { quizOpenPending, takeQuizOpen } from "@/lib/plan/quiz-plan";
@@ -2189,32 +2190,45 @@ function Home() {
           </p>
         </section>
       ) : null}
-      {heroOn && run ? (
+      {heroOn ? (
         <div id="master-caution" className="relative z-20 border-t border-[#8a7020] bg-[#2c220e]">
           <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-2 py-4 text-center">
-            <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
-              Master Caution
-            </span>
-            <p className="max-w-3xl text-base leading-snug text-[#fff3c4] sm:text-lg">
-              Your MACH RUN information is not saved until you create an
-              account.
-            </p>
-            <Link
-              to="/login"
-              search={{ mode: "up" }}
-              className="text-base font-semibold text-white underline decoration-[#e8c547] underline-offset-[3px] hover:text-[#fff3c4] sm:text-lg"
-            >
-              Create a free account in 30 seconds.
-            </Link>
-            {demoLoaded ? (
-              <button
-                type="button"
-                onClick={clearDemo}
-                className="mt-1 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#e8c547] px-4 py-2 text-sm font-semibold text-[#1a1408] hover:bg-[#f3d56a] active:scale-[0.98]"
-              >
-                Clear demonstration information from MACH RUN
-              </button>
-            ) : null}
+            {planHasEntries(plan) ? (
+              <>
+                <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
+                  Master Caution
+                </span>
+                <p className="max-w-3xl text-base leading-snug text-[#fff3c4] sm:text-lg">
+                  Your MACH RUN information is not saved until you create an
+                  account.
+                </p>
+                <Link
+                  to="/login"
+                  search={{ mode: "up" }}
+                  className="text-base font-semibold text-white underline decoration-[#e8c547] underline-offset-[3px] hover:text-[#fff3c4] sm:text-lg"
+                >
+                  Create a free account in 30 seconds.
+                </Link>
+                {demoLoaded ? (
+                  <button
+                    type="button"
+                    onClick={clearDemo}
+                    className="mt-1 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#e8c547] px-4 py-2 text-sm font-semibold text-[#1a1408] hover:bg-[#f3d56a] active:scale-[0.98]"
+                  >
+                    Clear demonstration information from MACH RUN
+                  </button>
+                ) : null}
+              </>
+            ) : (
+              <>
+                <span className="inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
+                  Get Started Below
+                </span>
+                <p className="max-w-3xl text-base leading-snug text-[#fff3c4] sm:text-lg">
+                  The Hale Household demo is not your plan. Put your family in MACH RUN and fly your own loop.
+                </p>
+              </>
+            )}
           </div>
         </div>
       ) : null}
