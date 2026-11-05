@@ -129,7 +129,7 @@ function CopyrightLine() {
   return (
     <>
       <p className="mt-1 border-t border-border pt-4 text-center text-[11px] leading-snug text-muted">
-        © 2026 Time of Flight LLC
+        © 2026 Mach Run
       </p>
       <VeteranOwned />
     </>
@@ -233,7 +233,7 @@ export function MachFooter({
                 LinkedIn
               </a>
             </p>
-            <p className="mt-2 w-full text-center text-[11px] leading-snug text-muted">© 2026 Time of Flight LLC</p>
+            <p className="mt-2 w-full text-center text-[11px] leading-snug text-muted">© 2026 Mach Run</p>
             <VeteranOwned />
           </div>
         </div>
@@ -324,7 +324,7 @@ function AuthCheckFooterLines() {
           LinkedIn
         </a>
       </p>
-      <p className="mt-2 w-full text-center text-[11px] leading-snug text-muted">© 2026 Time of Flight LLC</p>
+      <p className="mt-2 w-full text-center text-[11px] leading-snug text-muted">© 2026 Mach Run</p>
       <VeteranOwned />
     </div>
   );
