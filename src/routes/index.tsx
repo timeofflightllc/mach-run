@@ -643,7 +643,7 @@ function PhaseLabel({
     <p
       id={id}
       className={cn(
-        "scroll-mt-40 font-display text-lg font-semibold uppercase tracking-[0.18em] text-muted sm:text-xl",
+        "scroll-mt-40 font-display text-lg font-semibold uppercase tracking-[0.12em] text-[#3a8a58] sm:text-xl",
         className,
       )}
     >
@@ -656,10 +656,43 @@ function ActPhase() {
   return (
     <p
       id="ooda-act"
-      className="scroll-mt-40 font-display text-lg font-semibold tracking-[0.18em] text-muted sm:text-xl"
+      className="scroll-mt-40 font-display text-lg font-semibold uppercase tracking-[0.12em] text-[#3a8a58] sm:text-xl"
     >
       <span className="uppercase">Act</span>
     </p>
+  );
+}
+
+function DollarViewToggle({
+  real,
+  onReal,
+  onNominal,
+}: {
+  real: boolean;
+  onReal: () => void;
+  onNominal: () => void;
+}) {
+  const item =
+    "h-7 rounded px-2 font-display text-sm font-semibold uppercase leading-none tracking-[0.06em]";
+  return (
+    <div className="inline-flex shrink-0 items-center rounded-md bg-white p-0.5 shadow-[0_0_0_1px_#d5d0c6]">
+      <button
+        type="button"
+        aria-pressed={real}
+        onClick={onReal}
+        className={cn(item, real ? "bg-[#3a8a58] text-white" : "text-muted hover:text-fg")}
+      >
+        Today $
+      </button>
+      <button
+        type="button"
+        aria-pressed={!real}
+        onClick={onNominal}
+        className={cn(item, !real ? "bg-[#3a8a58] text-white" : "text-muted hover:text-fg")}
+      >
+        Future $
+      </button>
+    </div>
   );
 }
 
@@ -2060,30 +2093,6 @@ function Home() {
               <BrandLockup showTagline={false} />
             </div>
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1">
-              <div className="hidden rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)] md:flex">
-                <button
-                  type="button"
-                  aria-pressed={real}
-                  onClick={() => patchAssumptions({ dollars: "real" })}
-                  className={cn(
-                    "relative z-30 h-9 rounded-md px-3 text-xs font-medium transition-colors",
-                    real ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
-                  )}
-                >
-                  Today $
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={!real}
-                  onClick={() => patchAssumptions({ dollars: "nominal" })}
-                  className={cn(
-                    "relative z-30 h-9 rounded-md px-3 text-xs font-medium",
-                    !real ? "bg-accent text-accent-fg" : "text-muted hover:text-fg",
-                  )}
-                >
-                  Future $
-                </button>
-              </div>
               <SiteMenu align="right" className="hidden md:block" />
               <ProfileSwitcher ent={ent} />
               <AuthSlot saved={saveStatus} />
@@ -2092,30 +2101,6 @@ function Home() {
               The Supersonic Retirement Calculator
             </p>
             <div className="flex items-center justify-end gap-1 md:hidden">
-              <div className="inline-flex rounded-md bg-surface p-0.5 shadow-[0_0_0_1px_var(--color-border)]">
-                <button
-                  type="button"
-                  aria-pressed={real}
-                  onClick={() => patchAssumptions({ dollars: "real" })}
-                  className={cn(
-                    "h-6 rounded px-1.5 text-[10px] font-medium leading-none",
-                    real ? "bg-accent text-accent-fg" : "text-muted",
-                  )}
-                >
-                  Today $
-                </button>
-                <button
-                  type="button"
-                  aria-pressed={!real}
-                  onClick={() => patchAssumptions({ dollars: "nominal" })}
-                  className={cn(
-                    "h-6 rounded px-1.5 text-[10px] font-medium leading-none",
-                    !real ? "bg-accent text-accent-fg" : "text-muted",
-                  )}
-                >
-                  Future $
-                </button>
-              </div>
               <SiteMenu align="right" className="z-10" />
             </div>
           </div>
@@ -2156,43 +2141,7 @@ function Home() {
       </header>
       {heroOn ? <GuestHero onShowFamily={showFamily} onDemo={showDemo} /> : null}
       <div id={heroOn ? "guest-dock" : undefined}>
-      {heroOn ? <MilitaryHousehold /> : null}
-      {heroOn ? (
-        <section className="bg-bg">
-          <div className="mx-auto w-full max-w-6xl px-4 sm:px-8">
-            <div className="grid gap-3 sm:grid-cols-3">
-              {[
-                "Change the savings rate and contributions.",
-                "Watch that date and FIRE number move.",
-                "Test if your money lasts across 1,000 futures (Individual Unlimited).",
-              ].map((line) => (
-                <p
-                  key={line}
-                  className="rounded-lg bg-white px-3 py-4 text-center text-sm leading-snug text-[#1a2330] shadow-[0_0_0_1px_var(--color-border)] [text-wrap:wrap] xl:text-base"
-                >
-                  {line}
-                </p>
-              ))}
-            </div>
-          </div>
-          <div className="mx-auto mt-3 w-full max-w-4xl px-4 sm:px-8">
-            <div className="rounded-lg bg-white px-4 py-4 text-center shadow-[0_0_0_1px_var(--color-border)]">
-              <p className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-[#3a8a58]">
-                Sample, from the pre-filled demo. Not your plan.
-              </p>
-              <p className="mt-2 text-sm font-semibold leading-snug text-[#1a2330] sm:text-base">
-                In 100 of 100 futures like this one, your money lasts through your longevity age (95).
-              </p>
-            </div>
-          </div>
-          <p className="mx-auto mt-7 mb-7 w-full max-w-6xl px-4 text-center text-[calc(0.667rem-1pt)] leading-relaxed text-muted sm:mt-9 sm:mb-9 sm:px-8 sm:text-[calc(1.125rem-1pt)]">
-            Spreadsheets take time you'll never get back, and FIRECalc isn't built for TSP, military,
-            and veterans. MACH RUN saves that time and is built for those paychecks. Use the fighter
-            pilot's OODA Loop to inform your financial path quickly and
-            efficiently, <span className="font-bold">giving you time back</span>. Monte Carlo is on Individual Unlimited.
-          </p>
-        </section>
-      ) : null}
+      {heroOn ? <MilitaryHousehold onShowFamily={showFamily} onUseDemo={showDemo} /> : null}
       {heroOn ? (
         <div id="master-caution" className="relative z-20 border-t border-[#8a7020] bg-[#2c220e]">
           <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-2 py-4 text-center">
@@ -2566,7 +2515,14 @@ function Home() {
                           "flex min-w-0 flex-col gap-3",
                           simulatorFull && "@min-[56rem]/act:h-full",
                         )}>
-                          <ActPhase />
+                          <div className="flex items-center justify-between gap-3">
+                            <ActPhase />
+                            <DollarViewToggle
+                              real={real}
+                              onReal={() => patchAssumptions({ dollars: "real" })}
+                              onNominal={() => patchAssumptions({ dollars: "nominal" })}
+                            />
+                          </div>
                           <div className={cn("flex flex-col gap-3", simulatorFull && "@min-[56rem]/act:flex-1")}>
                             <Verdict
                               plan={displayPlan}
@@ -2689,8 +2645,13 @@ function Home() {
             <div className="min-h-[40svh]" />
           ) : (
             <div className="flex flex-col gap-4">
-              <div className="relative flex min-h-11 items-center">
+              <div className="relative flex min-h-11 items-center justify-between gap-3">
                 <ActPhase />
+                <DollarViewToggle
+                  real={real}
+                  onReal={() => patchAssumptions({ dollars: "real" })}
+                  onNominal={() => patchAssumptions({ dollars: "nominal" })}
+                />
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
                   <div className="pointer-events-auto">
                     <CalculateButton

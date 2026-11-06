@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type TransitionEvent } from "react";
 import { Link } from "@tanstack/react-router";
+import { Compass, Eye, Flag, GitBranch } from "lucide-react";
 import { OodaLoop } from "@/components/meridian/how-it-works";
 import { PrimaryButton } from "@/components/ui/field";
 import { demoPlan, planHasEntries } from "@/lib/plan/demo-plan";
@@ -277,7 +278,7 @@ export function GuestHero({
         className="hero-sky"
       />
       <div className="page-gutter mx-auto flex max-w-none flex-col items-center pt-[calc(0.5rem+0.25in)] sm:pt-[calc(1.75rem+0.25in)]">
-        <h1 className="hero-backlight max-w-4xl text-center font-display text-[1.25rem] font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
+        <h1 className="hero-backlight w-full max-w-6xl text-center font-display text-[1.25rem] font-semibold leading-[1.15] text-[#1a2330] sm:text-4xl">
           <HeroLines text={hero.headline} />
         </h1>
         <div className="relative z-10 mt-1.5 max-w-3xl text-center text-[0.667rem] leading-relaxed text-[#3d4a54] sm:mt-4 sm:text-lg">
@@ -285,17 +286,17 @@ export function GuestHero({
             <HeroLines text={hero.text} />
           </p>
         </div>
+        <p className="relative z-10 mt-3 max-w-3xl px-4 text-center text-base font-medium leading-snug text-[#1a2330] sm:mt-5 sm:text-lg">
+          Six questions. One account. About a minute. See what it pays you each month.
+        </p>
         <Link
           to="/start"
-          className="mt-3 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-5 text-base font-medium text-accent-fg hover:opacity-90 sm:mt-6"
+          className="mt-3 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-5 text-base font-medium text-accent-fg hover:opacity-90 sm:mt-4"
         >
           Start with just six questions
         </Link>
         <p className="mt-3 max-w-3xl px-4 text-center text-sm leading-snug text-[#1a2330] sm:text-base">
           Free includes 2 incomes and 2 accounts — enough to start; upgrade for the full household stack.
-        </p>
-        <p className="mt-4 max-w-3xl px-4 text-center text-base font-medium leading-snug text-[#1a2330] sm:text-lg">
-          Six questions. One account. About a minute. See what it pays you each month.
         </p>
         <p className="mt-2 text-center text-sm text-[#3d4a54]">No credit card needed.</p>
         <div className="mt-3 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
@@ -312,12 +313,10 @@ export function GuestHero({
             </span>
           </PrimaryButton>
           <PrimaryButton
-            className="h-auto min-h-11 whitespace-normal border border-[#1a2330] bg-white px-4 py-2.5 text-center leading-snug text-[#1a2330] hover:bg-[#f3faf6] sm:max-w-xs"
+            className="h-auto min-h-11 whitespace-normal border border-[#1a2330] bg-white px-4 py-2.5 text-center leading-snug text-[#1a2330] hover:bg-[#f3faf6]"
             onClick={prefill}
           >
-            Use Pre-Filled Demo for
-            <br />
-            an example MACH RUN
+            Use Pre-Filled Hale Demo
           </PrimaryButton>
         </div>
         {confirming ? (
@@ -504,11 +503,11 @@ const MILITARY_SAMPLE = [
 ] as const;
 
 /** One row of white stars on Old Glory blue. Decorative. */
-function FlagStripe() {
+function FlagStripe({ end = false }: { end?: boolean }) {
   return (
     <div
       aria-hidden="true"
-      className="my-4 h-8 w-screen sm:my-5"
+      className={end ? "mt-4 mb-0 h-8 w-screen sm:mt-5" : "my-4 h-8 w-screen sm:my-5"}
     >
       <svg className="h-full w-full" preserveAspectRatio="xMidYMid slice">
         <defs>
@@ -526,11 +525,28 @@ function FlagStripe() {
   );
 }
 
-/** Guest homepage only. Names the three military incomes and a sample blend. */
-export function MilitaryHousehold() {
-  const [open, setOpen] = useState<(typeof MILITARY_SAMPLE)[number]["id"] | null>(null);
+/** Guest homepage only. The journey sits around the military sample. Buttons stay the same actions. */
+export function MilitaryHousehold({
+  onShowFamily,
+  onUseDemo,
+}: {
+  onShowFamily: () => void;
+  onUseDemo: () => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [sampleHover, setSampleHover] = useState<(typeof MILITARY_SAMPLE)[number]["id"] | null>(null);
+  const [samplePin, setSamplePin] = useState<(typeof MILITARY_SAMPLE)[number]["id"] | null>(null);
+  const [stepHover, setStepHover] = useState<(typeof PROCESS_STEPS)[number]["id"] | null>(null);
+  const [stepPin, setStepPin] = useState<(typeof PROCESS_STEPS)[number]["id"] | null>(null);
+  const [haleHover, setHaleHover] = useState<"base" | "save" | "later" | null>(null);
+  const [halePin, setHalePin] = useState<"base" | "save" | "later" | null>(null);
   const [finePointer, setFinePointer] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
+  const processRef = useRef<HTMLDivElement>(null);
+  const outcomeRef = useRef<HTMLDivElement>(null);
+  const open = sampleHover ?? samplePin;
+  const step = stepHover ?? stepPin;
+  const haleView = haleHover ?? halePin ?? "base";
   const active = MILITARY_SAMPLE.find((row) => row.id === open);
 
   useEffect(() => {
@@ -542,52 +558,66 @@ export function MilitaryHousehold() {
   }, []);
 
   useEffect(() => {
-    if (!open || finePointer) return;
     function close(event: PointerEvent) {
       const target = event.target;
-      if (target instanceof Node && gridRef.current?.contains(target)) return;
-      setOpen(null);
+      if (!(target instanceof Node)) return;
+      if (gridRef.current?.contains(target)) return;
+      if (processRef.current?.contains(target)) return;
+      if (outcomeRef.current?.contains(target)) return;
+      setSampleHover(null);
+      setSamplePin(null);
+      setStepHover(null);
+      setStepPin(null);
+      setHaleHover(null);
+      setHalePin(null);
     }
     document.addEventListener("pointerdown", close);
     return () => document.removeEventListener("pointerdown", close);
-  }, [open, finePointer]);
+  }, []);
+
+  function fillDemo() {
+    usePlanStore.getState().setPlan(demoPlan());
+    setConfirming(false);
+    onUseDemo();
+  }
+
+  function prefillDemo() {
+    if (planHasEntries(usePlanStore.getState().plan)) {
+      setConfirming(true);
+      return;
+    }
+    fillDemo();
+  }
 
   return (
     <section className="overflow-x-clip bg-bg">
       <div className="mx-auto w-full max-w-3xl px-2" aria-hidden="true">
         <div style={{ paddingTop: "calc(12.5% + 3.375rem)" }} />
       </div>
-      <div className="page-gutter relative mx-auto flex w-full max-w-none flex-col items-center pt-4 pb-3 text-center sm:pt-6 sm:pb-4">
-        <p className="mb-3 max-w-3xl text-center text-xs leading-snug text-muted sm:text-sm">
-          The Hale sample starts with two paychecks, three kids, and a $2,500,000 nest-egg goal. With
-          MACH RUN, they iterate and build a household that is on track for more than $2,500,000,
-          with their money lasting at least through age 95.
-        </p>
-        <p className="mt-4 max-w-3xl px-4 text-center text-lg font-medium italic leading-snug text-[#1a2330] sm:text-2xl">
-          Households that plan for retirement end up with roughly three times the wealth of those that don't (
-          <a
-            href="https://www.nber.org/papers/w17078"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline underline-offset-4 hover:text-fg"
-          >
-            Lusardi & Mitchell, NBER Working Paper 17078, 2011
-          </a>
-          ).
-        </p>
+      <div className="page-gutter relative mx-auto flex w-full max-w-none flex-col items-center pt-4 pb-1 text-center sm:pt-6 sm:pb-1">
+        <JourneyBlock kicker="1 · The problem" title="Retirement is complicated.">
+          Military retired pay, VA compensation, TSP, Social Security, spouse income, and expenses
+          all operate on different timelines.
+        </JourneyBlock>
+        <JourneyBlock kicker="2 · The frustration" title="Most calculators only show pieces of the puzzle.">
+          Spreadsheets require considerable effort to maintain.
+        </JourneyBlock>
+        <JourneyBlock kicker="3 · The solution" title="One household picture.">
+          MACH RUN brings the entire household financial picture together — a promotion, a new
+          job, TSP, military retired pay, VA, and your nest-egg goal — in one place.
+        </JourneyBlock>
         <FlagStripe />
         <p className="font-display text-lg font-semibold uppercase tracking-[0.14em] text-[#3a8a58] sm:text-2xl">
           For military and veteran households
         </p>
         <h2 className="mt-2 max-w-3xl font-display text-2xl font-semibold leading-tight text-[#1a2330] sm:text-4xl">
-          TSP, military retired pay, and VA on one strip
+          Promotions, TSP, retired pay, and VA on one strip
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-          MACH RUN blends them with the rest of the household, and with nominal rates of returns,
-          the Monte Carlo engine, and a few moments of your time, shows what that mix can pay in
-          retirement.
+          Pay steps up at promotion, then retired pay and VA take over, all on the same strip. MACH
+          RUN blends that with the rest of the household and shows what the mix can pay in retirement.
         </p>
-        <div className="mt-6 w-full max-w-3xl rounded-lg bg-[#1a2330] px-4 py-4 text-white">
+        <div className="mt-6 w-full max-w-3xl rounded-lg bg-[#1a2330] px-4 py-5 text-white">
           <div className="grid">
             <div className={active ? "invisible col-start-1 row-start-1" : "col-start-1 row-start-1"}>
               <p className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-[#e8c547]">
@@ -612,6 +642,18 @@ export function MilitaryHousehold() {
                 </p>
                 <p className="mt-1 font-display text-3xl font-semibold">{row.value}</p>
                 <p className="mt-1 text-sm leading-relaxed text-white/80">{row.note}</p>
+                {row.id === "military" ? (
+                  <p className="mt-2 text-xs leading-snug text-white/70">
+                    MACH RUN can also estimate what your military retired pay and VA are worth today
+                    — the lump sum a zero-risk annuity would need to pay the same checks.
+                  </p>
+                ) : null}
+                {row.id === "va" ? (
+                  <p className="mt-2 text-xs leading-snug text-white/70">
+                    MACH RUN can also estimate what your VA compensation is worth today — the lump
+                    sum a zero-risk annuity would need to pay the same checks.
+                  </p>
+                ) : null}
               </div>
             ))}
           </div>
@@ -622,17 +664,19 @@ export function MilitaryHousehold() {
               key={row.id}
               onPointerEnter={(event) => {
                 if (event.pointerType !== "mouse") return;
-                setOpen(row.id);
+                setSampleHover(row.id);
               }}
               onPointerLeave={(event) => {
                 if (event.pointerType !== "mouse") return;
-                setOpen(null);
+                setSampleHover(null);
               }}
-              onClick={() => {
-                if (finePointer) return;
-                setOpen((current) => (current === row.id ? null : row.id));
-              }}
-              className="touch-pan-y rounded-lg bg-white px-4 py-4 shadow-[0_0_0_1px_var(--color-border)]"
+              onClick={() => setSamplePin((current) => (current === row.id ? null : row.id))}
+              className={
+                "cursor-pointer touch-pan-y rounded-lg bg-white px-4 py-4 " +
+                (open === row.id
+                  ? "shadow-[0_0_0_2px_#3a8a58]"
+                  : "shadow-[0_0_0_1px_var(--color-border)]")
+              }
             >
               <p className="text-sm text-muted">{row.label}</p>
               <p className="mt-1 font-display text-2xl font-semibold text-[#1a2330] underline decoration-[#3a8a58] decoration-2 underline-offset-4">{row.amount}</p>
@@ -640,25 +684,287 @@ export function MilitaryHousehold() {
             </div>
           ))}
         </div>
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-          MACH RUN can also estimate what your military retired pay and VA are worth today — the
-          lump sum a zero-risk annuity would need to pay the same checks.
-        </p>
-        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted">
+        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted">
           {finePointer
-            ? "Mouse over a payment above. Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at the required-withdrawal age, 75."
-            : "Tap a payment above. Tap it again, or tap outside the cards, to return to the sample. Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at the required-withdrawal age, 75."}
+            ? "Mouse over a payment. Click it to keep that view. Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at the required-withdrawal age, 75."
+            : "Tap a payment to keep that view. Tap it again, or tap outside the cards, to return to the sample. Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at the required-withdrawal age, 75."}
         </p>
-        <Link
-          to="/start"
-          className="mt-6 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-5 text-base font-medium text-accent-fg hover:opacity-90"
-        >
-          Start with just six questions
-        </Link>
+        <p className="mt-6 w-full max-w-3xl text-left font-display text-lg font-semibold uppercase tracking-[0.12em] text-[#3a8a58] sm:text-xl">
+          4 · The process
+        </p>
+        <div ref={processRef} className="mt-4 grid w-full max-w-4xl grid-cols-2 gap-3 lg:grid-cols-4">
+          {PROCESS_STEPS.map((item) => (
+            <div
+              key={item.id}
+              onPointerEnter={(event) => {
+                if (event.pointerType !== "mouse") return;
+                setStepHover(item.id);
+              }}
+              onPointerLeave={(event) => {
+                if (event.pointerType !== "mouse") return;
+                setStepHover(null);
+              }}
+              onClick={() => setStepPin((current) => (current === item.id ? null : item.id))}
+              className={
+                step === item.id
+                  ? "cursor-pointer rounded-lg bg-white px-4 py-4 text-left shadow-[0_0_0_2px_#3a8a58]"
+                  : "cursor-pointer rounded-lg bg-white px-4 py-4 text-left shadow-[0_0_0_1px_var(--color-border)]"
+              }
+            >
+              <item.icon className="h-5 w-5 text-[#3a8a58]" strokeWidth={1.75} aria-hidden="true" />
+              <p className="mt-3 font-display text-lg font-semibold text-[#1a2330]">{item.title}</p>
+              <p className="mt-1 text-sm leading-snug text-[#3d4a54]">{item.body}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 grid w-full max-w-4xl text-left text-sm leading-relaxed text-[#1a2330] sm:text-base">
+          <p className={step ? "invisible col-start-1 row-start-1" : "col-start-1 row-start-1"}>
+            {finePointer
+              ? "Mouse over a step. Click it to keep that line. Each one is the Hale household at that point in the loop."
+              : "Tap a step to keep that line. Tap it again, or tap outside the cards, to clear it."}
+          </p>
+          {PROCESS_STEPS.map((item) => (
+            <p
+              key={item.id}
+              className={
+                step === item.id ? "col-start-1 row-start-1" : "invisible col-start-1 row-start-1"
+              }
+            >
+              {item.line}
+            </p>
+          ))}
+        </div>
+        <JourneyBlock kicker="5 · The outcome" title="See the trajectory, then test a change.">
+          Understand where retirement is headed, see a shortfall if there is one, and try a change
+          that could improve the position. A test across 1,000 futures is on Individual Unlimited.
+        </JourneyBlock>
+        <div className="mt-2 w-full max-w-3xl text-left">
+          <h3 className="font-display text-2xl font-semibold leading-tight text-[#1a2330] sm:text-3xl">
+            The Hale Family Demo
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed text-[#1a2330] sm:text-base">
+            Jordan Hale is 29 and an Air Force captain, O-3 with 8 years in. Riley Hale is 28 and
+            teaches school. They have three children. Jordan’s basic pay is $8,126 a month, plus BAH
+            and BAS. Riley earns $4,200. He pins on O-5 at 16 years and leaves the military in June
+            2038, at 20 years and age 41, with about $265,000 in the TSP and Roth accounts. Retired
+            pay is about $4,643 a month, 40% of his O-5 high-3. A second career follows. They plan to
+            retire at 60, in June 2057. The nest-egg goal is $1.8 million in today's dollars. On this
+            savings rate they are short of it.
+          </p>
+          <div ref={outcomeRef} className="mt-4 grid gap-3 text-left sm:grid-cols-3">
+            <ScenarioCard
+              title="Original plan"
+              body="About $1.57 million at age 60, short of the $1.8 million goal."
+              active={haleView === "base" && (haleHover !== null || halePin !== null)}
+              onEnter={() => setHaleHover("base")}
+              onLeave={() => setHaleHover(null)}
+              onTap={() => setHalePin((current) => (current === "base" ? null : "base"))}
+            />
+            <ScenarioCard
+              title="Higher savings rate"
+              body="Save about $800 more a month, starting now. Same retirement age, and the goal is met with room to spare."
+              active={haleView === "save"}
+              onEnter={() => setHaleHover("save")}
+              onLeave={() => setHaleHover(null)}
+              onTap={() => setHalePin((current) => (current === "save" ? null : "save"))}
+            />
+            <ScenarioCard
+              title="Retire at 65"
+              body="Same savings rate. Five more working years, and the goal is met."
+              active={haleView === "later"}
+              onEnter={() => setHaleHover("later")}
+              onLeave={() => setHaleHover(null)}
+              onTap={() => setHalePin((current) => (current === "later" ? null : "later"))}
+            />
+          </div>
+          <div className="mt-3 grid rounded-lg bg-white px-5 py-4 text-left shadow-[0_0_0_1px_var(--color-border)]">
+            {(Object.keys(HALE_BLUF) as (keyof typeof HALE_BLUF)[]).map((key) => (
+              <div
+                key={key}
+                className={
+                  haleView === key ? "col-start-1 row-start-1" : "invisible col-start-1 row-start-1"
+                }
+              >
+                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-[#3d4a54]">
+                  BLUF (Bottom Line Up Front)
+                </p>
+                <p className="mt-2 text-base font-medium leading-snug text-[#1a2330] sm:text-lg">
+                  {HALE_BLUF[key].headline}
+                </p>
+                <p className="mt-2 text-sm leading-snug text-[#1a2330]">{HALE_BLUF[key].body}</p>
+                <p className="mt-3 text-xs leading-snug text-[#3d4a54]">
+                  Sample, from the pre-filled Hale demo. Not your plan.
+                </p>
+              </div>
+            ))}
+          </div>
+          {confirming ? (
+            <div className="mt-4 rounded-lg bg-surface px-4 py-3 text-center shadow-[0_0_0_1px_var(--color-border)]">
+              <p className="text-sm text-fg">
+                This replaces the household already entered. That cannot be undone from here.
+              </p>
+              <div className="mt-3 flex flex-col items-stretch justify-center gap-2 sm:flex-row">
+                <PrimaryButton className="h-auto min-h-11 px-4" onClick={fillDemo}>
+                  Replace with the demo
+                </PrimaryButton>
+                <button
+                  type="button"
+                  className="inline-flex h-11 items-center justify-center rounded-lg px-4 text-sm font-medium text-muted hover:text-fg"
+                  onClick={() => setConfirming(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </div>
+        <p className="mt-4 max-w-3xl px-4 text-center text-lg font-medium italic leading-snug text-[#1a2330] sm:text-2xl">
+          Households that plan for retirement end up with roughly three times the wealth of those that don't.
+          <sup className="ml-0.5 text-[0.65em] font-semibold not-italic">1</sup>
+        </p>
+        <p className="mt-1 max-w-3xl px-4 text-center text-xs leading-snug text-[#3d4a54] sm:text-sm">
+          <sup className="mr-0.5">1</sup>
+          <a
+            href="https://www.nber.org/papers/w17078"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-4 hover:text-fg"
+          >
+            Lusardi & Mitchell, NBER Working Paper 17078, 2011
+          </a>
+        </p>
+        <JourneyBlock kicker="6 · The invitation" title="Start with your own numbers, or open the Hale plan.">
+          Six questions is free and does not ask for a credit card. Free includes 2 incomes and 2
+          accounts — enough to start; upgrade for the full household stack.
+        </JourneyBlock>
+        <div className="mt-4 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
+          <Link
+            to="/start"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-accent px-5 text-center text-base font-medium text-accent-fg hover:opacity-90"
+          >
+            Start with just six questions
+          </Link>
+          <PrimaryButton
+            className="h-auto min-h-11 whitespace-normal border border-[#1a2330] bg-white px-4 py-2.5 text-center leading-snug text-[#1a2330] hover:bg-[#f3faf6]"
+            onClick={prefillDemo}
+          >
+            Use Pre-Filled Hale Demo
+          </PrimaryButton>
+          <PrimaryButton
+            className="h-auto min-h-11 whitespace-normal border border-[#3a8a58] bg-white px-4 py-2.5 text-center leading-snug text-[#3a8a58] hover:bg-[#f3faf6]"
+            onClick={onShowFamily}
+          >
+            I have my numbers. Start a MACH RUN.
+          </PrimaryButton>
+        </div>
+        <p className="mt-2 text-center text-sm text-[#3d4a54]">No credit card needed.</p>
         <FounderStory />
-        <FlagStripe />
+        <FlagStripe end />
       </div>
     </section>
+  );
+}
+
+const PROCESS_STEPS = [
+  {
+    id: "observe",
+    title: "Observe",
+    body: "Family, accounts, and the household as it stands.",
+    line: "Jordan is 29, an O-3 over 8. The TSP and Roth accounts are about $44,500.",
+    icon: Eye,
+  },
+  {
+    id: "orient",
+    title: "Orient",
+    body: "Income and spending — where the dollars actually go.",
+    line: "Pay steps from O-3 to O-4, then to O-5 at 16 years. Military retired pay at 41 is about $4,643. Spending is $8,600 a month.",
+    icon: Compass,
+  },
+  {
+    id: "decide",
+    title: "Decide",
+    body: "Contributions and the nest-egg goal, one change at a time.",
+    line: "The goal is $1.8 million at 60. Five percent to the TSP, then $200 a month to the 401(k), does not reach it. One change is $800 more a month.",
+    icon: GitBranch,
+  },
+  {
+    id: "act",
+    title: "Act",
+    body: "Run it. Read the result. Change one assumption. Run it again.",
+    line: "At 60 they have about $1.57 million. Short of $1.8 million. Save the $800, or retire at 65, and the goal is met.",
+    icon: Flag,
+  },
+] as const;
+
+function JourneyBlock({
+  kicker,
+  title,
+  children,
+}: {
+  kicker: string;
+  title: string;
+  children: string;
+}) {
+  return (
+    <div className="mt-6 w-full max-w-3xl text-left first:mt-0">
+      <p className="font-display text-lg font-semibold uppercase tracking-[0.12em] text-[#3a8a58] sm:text-xl">{kicker}</p>
+      <h2 className="mt-1 font-display text-2xl font-semibold leading-tight text-[#1a2330] sm:text-3xl">{title}</h2>
+      <p className="mt-2 text-sm leading-relaxed text-[#1a2330] sm:text-base">{children}</p>
+    </div>
+  );
+}
+
+const HALE_BLUF = {
+  base: {
+    headline: "At 60 the Hales have about $1.57 million, short of the $1.8 million goal.",
+    body: "The TSP and Roth accounts are about $265,000 when Jordan leaves as an O-5 at 41. Retired pay is about $4,643 a month. Growth from there to 60 is modest on this savings rate.",
+  },
+  save: {
+    headline: "Saving about $800 more a month, starting now, leaves about $2.1 million at 60.",
+    body: "Same retirement date, June 2057. The $800 comes out of spending. It goes into the Roth TSP while he is in uniform, then into the second-career 401(k). New TSP contributions stop at military retirement. The balance keeps compounding. In today's dollars it adds about $530,000.",
+  },
+  later: {
+    headline: "Retiring at 65 instead of 60 meets the $1.8 million goal.",
+    body: "Same savings rate. Five more working years. About $1.9 million in today's dollars.",
+  },
+} as const;
+
+function ScenarioCard({
+  title,
+  body,
+  active,
+  onEnter,
+  onLeave,
+  onTap,
+}: {
+  title: string;
+  body: string;
+  active?: boolean;
+  onEnter?: () => void;
+  onLeave?: () => void;
+  onTap?: () => void;
+}) {
+  return (
+    <div
+      onPointerEnter={(event) => {
+        if (event.pointerType !== "mouse") return;
+        onEnter?.();
+      }}
+      onPointerLeave={(event) => {
+        if (event.pointerType !== "mouse") return;
+        onLeave?.();
+      }}
+      onClick={onTap}
+      className={
+        "flex h-full cursor-pointer flex-col rounded-lg px-4 py-4 text-left " +
+        (active
+          ? "bg-white shadow-[0_0_0_2px_#3a8a58]"
+          : "bg-white shadow-[0_0_0_1px_var(--color-border)]")
+      }
+    >
+      <p className="font-display text-base font-semibold text-[#1a2330]">{title}</p>
+      <p className="mt-2 text-sm leading-relaxed text-[#3d4a54]">{body}</p>
+    </div>
   );
 }
 

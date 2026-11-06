@@ -8,11 +8,14 @@ export type HeroCopy = {
 
 export const DEFAULT_HERO_COPY: HeroCopy = {
   headline:
-    "One place to see your whole household's retirement - income, TSP, military retired pay, VA, and your nest-egg goal.",
+    "One place to see your whole household's retirement. Pay steps up with a promotion and a COLA, plus TSP, military retired pay, VA, and your nest-egg goal.",
   text: "Change the savings rate and contributions, and watch that date and FIRE number move. Free to start. $4 a month gets you more.",
 };
 
-const STALE_HEADLINE = "Years to your FIRE number, with TSP, military retired pay, and VA.";
+const STALE_HEADLINES = new Set([
+  "Years to your FIRE number, with TSP, military retired pay, and VA.",
+  "One place to see your whole household's retirement - income, TSP, military retired pay, VA, and your nest-egg goal.",
+]);
 const STALE_TEXT = [
   "See your whole household's retirement in one place - income, investments, and your nest-egg goal, with unlimited what-if runs. Free to start. $4 a month unlocks incredible features.",
   "Change the savings rate and watch that date move. Free to start. $4 a month.",
@@ -31,7 +34,7 @@ export function parseHeroCopy(raw: string): HeroCopy {
   }
   const src = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
   const headline =
-    typeof src.headline === "string" && src.headline.trim() !== STALE_HEADLINE
+    typeof src.headline === "string" && !STALE_HEADLINES.has(src.headline.trim())
       ? src.headline
       : DEFAULT_HERO_COPY.headline;
   const text =

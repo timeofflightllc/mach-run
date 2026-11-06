@@ -8,16 +8,18 @@ import { remainingMortgage } from "./mortgage.ts";
 
 test("demo household is a diligent Hale couple and does not overspend the paycheck", () => {
   const plan = demoPlan();
-  assert.equal(plan.primary.birthDate, "1986-04-12");
-  assert.equal(plan.spouse.birthDate, "1991-04-12");
+  assert.equal(plan.primary.birthDate, "1997-06-12");
+  assert.equal(plan.spouse.birthDate, "1998-04-08");
   assert.equal(plan.children.length, 3);
-  assert.equal(plan.assumptions.retirementGoalDate, "2051-04-01");
-  assert.equal(plan.assumptions.nestEggGoal, 2_500_000);
-  const jordanPay = plan.incomes.find((row) => row.id === "demo-jordan-pay");
-  assert.ok(jordanPay?.endDate);
-  assert.equal(jordanPay.startDate.slice(0, 7), "2016-04");
-  assert.equal(jordanPay.endDate.slice(0, 7), "2051-03");
-  assert.ok(plan.incomes.some((row) => row.kind === "pension"));
+  assert.equal(plan.assumptions.retirementGoalDate, "2057-06-01");
+  assert.equal(plan.assumptions.militaryRetireDate, "2038-06-01");
+  assert.equal(plan.assumptions.nestEggGoal, 1_800_000);
+  const basic = plan.incomes.find((row) => row.id === "demo-o3");
+  assert.ok(basic?.endDate);
+  assert.equal(basic.monthlyAmount, 8126);
+  assert.equal(basic.startDate.slice(0, 7), "2018-06");
+  assert.equal(basic.endDate.slice(0, 7), "2028-05");
+  assert.ok(plan.incomes.some((row) => row.kind === "military" && row.name.includes("retired")));
   assert.ok(plan.incomes.some((row) => row.kind === "ss"));
   assert.ok(plan.incomes.filter((row) => row.kind === "salary").every((row) => row.endDate));
   const result = simulate(plan);
