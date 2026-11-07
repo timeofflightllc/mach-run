@@ -3,7 +3,7 @@ import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { PieceCrumbs, RelatedPieces } from "@/components/meridian/piece-links";
 import { pageHead } from "@/lib/seo";
 
-const TITLE = "What a military pension is worth";
+const TITLE = "What a Military Pension Is Worth: Present Value and FIRE";
 const DESCRIPTION =
   "An O-5 retiring at 20 under High-3 holds retired pay worth about $2.35 million today. How to value it, and what it means for the nest egg.";
 
@@ -69,7 +69,7 @@ function PensionPresentValue() {
           <PieceCrumbs path="/military-pension-present-value" />
           <header className="mt-6">
             <h1 className="font-display text-4xl leading-none text-fg sm:text-5xl">
-              What a military pension is worth
+              What a military pension is worth, and what it means for your FIRE number
             </h1>
             <p className="mt-4 text-sm text-muted">
               <Link to="/about" className="underline underline-offset-4 hover:text-fg">
