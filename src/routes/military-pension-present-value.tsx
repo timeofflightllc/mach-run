@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { PieceCrumbs, RelatedPieces } from "@/components/meridian/piece-links";
+import { contentPageSchema } from "@/lib/content-page-schema";
 import { pageHead } from "@/lib/seo";
 
-const TITLE = "What a military pension is worth";
+const TITLE = "What a Military Pension Is Worth: Present Value and FIRE";
 const DESCRIPTION =
   "An O-5 retiring at 20 under High-3 holds retired pay worth about $2.35 million today. How to value it, and what it means for the nest egg.";
 
@@ -32,13 +33,25 @@ const ROWS = [
 ] as const;
 
 export const Route = createFileRoute("/military-pension-present-value")({
-  head: () =>
-    pageHead({
+  head: () => {
+    const article = contentPageSchema(TITLE, "/military-pension-present-value");
+    const faq = {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: FAQ.map((item) => ({
+        "@type": "Question",
+        name: item.question,
+        acceptedAnswer: { "@type": "Answer", text: item.answer },
+      })),
+    };
+    return pageHead({
       title: TITLE,
       description: DESCRIPTION,
       path: "/military-pension-present-value",
       noindex: true,
-    }),
+      jsonLd: [article, faq].filter((block): block is Record<string, unknown> => block != null),
+    });
+  },
   component: PensionPresentValue,
 });
 
@@ -70,7 +83,7 @@ function PensionPresentValue() {
           <PieceCrumbs path="/military-pension-present-value" />
           <header className="mt-6">
             <h1 className="font-display text-4xl leading-none text-fg sm:text-5xl">
-              What a military pension is worth
+              What a military pension is actually worth, and what it means for your FIRE number
             </h1>
             <p className="mt-4 text-sm text-muted">
               <Link to="/about" className="underline underline-offset-4 hover:text-fg">

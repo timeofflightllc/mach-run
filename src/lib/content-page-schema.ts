@@ -14,6 +14,7 @@ const CONTENT_DATES: Record<string, { published: string; modified: string }> = {
   "/tools": { published: "2026-10-24", modified: "2026-10-24" },
   "/legal": { published: "2026-08-27", modified: "2026-10-24" },
   "/privacy": { published: "2026-08-27", modified: "2026-10-10" },
+  "/military-pension-present-value": { published: "2026-11-07", modified: "2026-11-07" },
 };
 
 /** One block per content page. headline is the document title passed in. */
