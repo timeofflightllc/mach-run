@@ -33,6 +33,7 @@ export const Route = createFileRoute("/start")({
       description: "Six questions. One account. About a minute. See what it pays you each month.",
       path: "/start",
       noindex: true,
+      follow: true,
     }),
   component: StartQuiz,
 });
@@ -441,6 +442,11 @@ function StartQuiz() {
         <p className="mt-2 text-center text-sm font-bold leading-snug tracking-[0.12em] text-white">
           The Supersonic Retirement Calculator
         </p>
+        {step < 6 ? (
+          <p className="mt-1 px-4 text-center text-xs leading-snug text-white/80">
+            An estimate, not a DFAS or VA determination.
+          </p>
+        ) : null}
       </header>
       <div className="mx-auto flex w-full max-w-lg flex-col px-4 pb-8 pt-3 sm:px-6 sm:pt-4">
         {step < 6 ? (

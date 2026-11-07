@@ -4,6 +4,8 @@ Disallow: /account
 Disallow: /login
 Disallow: /verify-email
 Disallow: /top-3-desk
+Disallow: /beta
+Disallow: /referrals
 Disallow: /api/
 
 Sitemap: https://machrun.com/sitemap.xml

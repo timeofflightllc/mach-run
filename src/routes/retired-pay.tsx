@@ -379,6 +379,9 @@ function RetiredPayQuiz() {
         <h1 className="mt-2 text-center text-sm font-bold leading-snug tracking-[0.12em] text-white">
           Free Military Retirement Pay Calculator
         </h1>
+        <p className="mt-1 px-4 text-center text-xs leading-snug text-white/80">
+          An estimate, not a DFAS or VA determination.
+        </p>
       </header>
       <div className="mx-auto flex w-full max-w-lg flex-col px-4 pb-10 pt-3 sm:px-6">
         {step !== "result" ? (

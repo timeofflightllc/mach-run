@@ -26,8 +26,6 @@ analytics.init({
   },
 });
 
-const APP_NAME = "The Supersonic Retirement Calculator";
-
 export const Route = createRootRoute({
   // Painted once per document. A later refetch must not flip a name back to
   // Sign In while the browser session check is still pending.
@@ -56,32 +54,13 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: APP_NAME },
-      {
-        name: "description",
-        content:
-          "The Supersonic Retirement Calculator. Measure, Allocate, Compound, Harvest.",
-      },
       { name: "theme-color", content: "#1A2330" },
       { property: "og:type", content: "website" },
-      { property: "og:url", content: "https://machrun.com/" },
-      { property: "og:title", content: "MACH RUN" },
-      {
-        property: "og:description",
-        content:
-          "The Supersonic Retirement Calculator. Measure, Allocate, Compound, Harvest.",
-      },
       { property: "og:image", content: "https://machrun.com/og-v25.jpg" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { property: "og:image:alt", content: "MACH RUN — The Supersonic Retirement Calculator" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "MACH RUN" },
-      {
-        name: "twitter:description",
-        content:
-          "The Supersonic Retirement Calculator. Measure, Allocate, Compound, Harvest.",
-      },
       { name: "twitter:image", content: "https://machrun.com/og-v25.jpg" },
     ],
     links: [

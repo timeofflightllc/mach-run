@@ -1,7 +1,7 @@
 import { getSql } from "@/lib/db";
 import { pathsForSlug, pingIndexNow } from "@/lib/seo/sitemap";
 import { parsePricingCopy, serializePricingCopy, withLivePricingLines } from "./pricing-copy";
-import { DEFAULT_PAGES, defaultAnnouncements, byAnnouncementDateDesc, PINNED_ANNOUNCEMENTS, REFUND_FAQ_BLOCK, REFUND_LEGAL_BLOCK, FREE_CALCULATORS_BLOCK } from "./defaults";
+import { DEFAULT_PAGES, defaultAnnouncements, byAnnouncementDateDesc, PINNED_ANNOUNCEMENTS, REFUND_FAQ_BLOCK, REFUND_LEGAL_BLOCK, FREE_CALCULATORS_BLOCK, METHOD_SOURCES_BLOCK, RETIRED_PAY_TERMS_BLOCK } from "./defaults";
 import {
   SITE_PAGE_SLUGS,
   type SiteAnnouncement,
@@ -304,6 +304,31 @@ function freshenStoredCopy(body: string): string {
     .replaceAll(
       "Figures are estimates, not official SSA, DFAS, or VA determinations.\n\n# Does MACH RUN force RMDs?",
       "Figures are estimates, not official SSA, DFAS, or VA determinations. Together, those checks are the part of retirement that does not depend on the market. The run shows what is left for the investments to cover.\n\n# Does MACH RUN force RMDs?",
+    )
+    .replaceAll(
+      "Free: register in about 30 seconds, save one household, with a limit of 2 accounts, 2 contributions, and 2 incomes.",
+      "Free includes 2 incomes, 2 accounts, and 2 contributions. Register in about 30 seconds and save one household.",
+    )
+    .replaceAll(
+      "Free includes 2 incomes and 2 accounts",
+      "Free includes 2 incomes, 2 accounts, and 2 contributions",
+    )
+    .replaceAll(
+      "Limit 2 accounts · 2 contributions · 2 incomes",
+      "Free includes 2 incomes, 2 accounts, and 2 contributions.",
+    )
+    .replaceAll(
+      "MACH Run is a household calculator. You type in names",
+      "MACH Run is a household calculator operated by Time of Flight LLC. You type in names",
+    )
+    .replaceAll(
+      `# Still being built
+These are not live. There is no page to open yet.
+
+BAH calculator
+OHA calculator
+Other military pay calculators`,
+      "BAH, OHA, and the other pay calculators are not available yet.",
     );
   return ensureFreeCalculators(ensureRefundCopy(next));
 }
@@ -353,11 +378,22 @@ function ensureFreeCalculators(body: string): string {
   if (next.includes(oldClose) && !next.includes("While we do care about your financial success")) {
     next = next.replaceAll(oldClose, newClose);
   }
-  if (!next.includes("Florida law governs") || next.includes("# Free calculators")) return next;
+  if (!next.includes("Florida law governs") || next.includes("# Free calculators")) {
+    return withRetiredPayTerms(next);
+  }
   const marker = "# Acceptable use";
   const at = next.indexOf(marker);
-  if (at === -1) return `${next.trimEnd()}\n\n${FREE_CALCULATORS_BLOCK}\n`;
-  return `${next.slice(0, at).trimEnd()}\n\n${FREE_CALCULATORS_BLOCK}\n\n${next.slice(at)}`;
+  if (at === -1) return withRetiredPayTerms(`${next.trimEnd()}\n\n${FREE_CALCULATORS_BLOCK}\n`);
+  return withRetiredPayTerms(`${next.slice(0, at).trimEnd()}\n\n${FREE_CALCULATORS_BLOCK}\n\n${next.slice(at)}`);
+}
+
+function withRetiredPayTerms(body: string): string {
+  if (body.includes("# Military retirement pay calculator")) return body;
+  if (!body.includes("# Free calculators") && !body.includes("Florida law governs")) return body;
+  const marker = "\n# Acceptable use";
+  const at = body.indexOf(marker);
+  if (at === -1) return `${body.trimEnd()}\n\n${RETIRED_PAY_TERMS_BLOCK}\n`;
+  return `${body.slice(0, at).trimEnd()}\n\n${RETIRED_PAY_TERMS_BLOCK}\n${body.slice(at)}`;
 }
 
 function presentTerms(page: SitePage): SitePage {
@@ -397,6 +433,11 @@ function freshenKicker(page: SitePage): SitePage {
   return page;
 }
 
+function withMethodSources(page: SitePage): SitePage {
+  if (page.slug !== "method" || page.body.includes("# Tables and rules used")) return page;
+  return { ...page, body: `${page.body.trimEnd()}\n\n${METHOD_SOURCES_BLOCK}\n` };
+}
+
 function mapPage(row: {
   slug: string;
   title: string;
@@ -404,13 +445,15 @@ function mapPage(row: {
   body: string;
 }): SitePage | null {
   if (!isSlug(row.slug)) return null;
-  return presentTerms(
-    preferCurrentLegal({
-      slug: row.slug,
-      title: row.title,
-      kicker: row.kicker ?? "",
-      body: freshenStoredCopy(row.body ?? ""),
-    }),
+  return withMethodSources(
+    presentTerms(
+      preferCurrentLegal({
+        slug: row.slug,
+        title: row.title,
+        kicker: row.kicker ?? "",
+        body: freshenStoredCopy(row.body ?? ""),
+      }),
+    ),
   );
 }
 

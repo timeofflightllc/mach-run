@@ -56,12 +56,15 @@ export function pageHead({
   description,
   path,
   noindex = false,
+  follow = false,
   jsonLd = [],
 }: {
   title: string;
   description: string;
   path: string;
   noindex?: boolean;
+  /** With noindex, follow lets a crawler use the links. Default is nofollow. */
+  follow?: boolean;
   jsonLd?: JsonLd[];
 }) {
   const url = `${SITE}${path}`;
@@ -71,7 +74,9 @@ export function pageHead({
     meta: [
       { title },
       { name: "description", content: description },
-      ...(noindex ? [{ name: "robots", content: "noindex, nofollow" }] : []),
+      ...(noindex
+        ? [{ name: "robots", content: follow ? "noindex, follow" : "noindex, nofollow" }]
+        : []),
       { property: "og:title", content: title },
       { property: "og:description", content: description },
       { property: "og:url", content: url },

@@ -295,29 +295,42 @@ export function GuestHero({
         >
           Start with just six questions
         </Link>
+        <p className="mt-1 max-w-xs text-center text-xs leading-snug text-[#3d4a54]">
+          About a minute. The monthly sketch shows before you save it.
+        </p>
         <p className="mt-3 max-w-3xl px-4 text-center text-sm leading-snug text-[#1a2330] sm:text-base">
-          Free includes 2 incomes and 2 accounts — enough to start; upgrade for the full household stack.
+          Free includes 2 incomes, 2 accounts, and 2 contributions — enough to start; upgrade for the full household stack.
         </p>
         <p className="mt-2 text-center text-sm text-[#3d4a54]">No credit card needed.</p>
-        <div className="mt-3 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
-          <PrimaryButton
-            className="h-auto min-h-11 whitespace-normal border border-[#3a8a58] bg-white px-4 py-2.5 text-center leading-snug text-[#3a8a58] hover:bg-[#f3faf6]"
-            onClick={() => {
-              setConfirming(false);
-              onShowFamily();
-            }}
-          >
-            <span>
-              I have my numbers.
-              <br className="sm:hidden" /> Start a MACH RUN.
-            </span>
-          </PrimaryButton>
-          <PrimaryButton
-            className="h-auto min-h-11 whitespace-normal border border-[#1a2330] bg-white px-4 py-2.5 text-center leading-snug text-[#1a2330] hover:bg-[#f3faf6]"
-            onClick={prefill}
-          >
-            Use Pre-Filled Hale Demo
-          </PrimaryButton>
+        <div className="mt-3 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:flex-row sm:flex-wrap sm:items-start sm:gap-3">
+          <div className="flex flex-col items-center gap-1">
+            <PrimaryButton
+              className="h-auto min-h-11 whitespace-normal border border-[#3a8a58] bg-white px-4 py-2.5 text-center leading-snug text-[#3a8a58] hover:bg-[#f3faf6]"
+              onClick={() => {
+                setConfirming(false);
+                onShowFamily();
+              }}
+            >
+              <span>
+                I have my numbers.
+                <br className="sm:hidden" /> Start a MACH RUN.
+              </span>
+            </PrimaryButton>
+            <p className="max-w-[16rem] text-center text-xs leading-snug text-[#3d4a54]">
+              Jump right in, you type the household.
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <PrimaryButton
+              className="h-auto min-h-11 whitespace-normal border border-[#1a2330] bg-white px-4 py-2.5 text-center leading-snug text-[#1a2330] hover:bg-[#f3faf6]"
+              onClick={prefill}
+            >
+              Use Pre-Filled Hale Demo
+            </PrimaryButton>
+            <p className="max-w-[16rem] text-center text-xs leading-snug text-[#3d4a54]">
+              Opens the Hale demo. You can change any number, or clear the demo.
+            </p>
+          </div>
         </div>
         {confirming ? (
           <div className="mt-4 w-full max-w-xl rounded-lg bg-surface px-4 py-3 text-center shadow-[0_0_0_1px_var(--color-border)]">
@@ -481,7 +494,7 @@ const MILITARY_SAMPLE = [
     label: "Military retired pay",
     amount: "$3,200",
     value: "$1,280,125",
-    kicker: "Zero-risk annuity",
+    kicker: "Present value of a federal annuity",
     note: "Military retired pay at age 50, paid through age 95. Discounted at 4% with a 2.5% COLA.",
   },
   {
@@ -489,7 +502,7 @@ const MILITARY_SAMPLE = [
     label: "VA",
     amount: "$1,800",
     value: "$720,070",
-    kicker: "Zero-risk annuity",
+    kicker: "Present value of a federal annuity",
     note: "VA at age 50, paid through age 95. Discounted at 4% with a 2.5% COLA.",
   },
   {
@@ -618,13 +631,13 @@ export function MilitaryHousehold({
                 {row.id === "military" ? (
                   <p className="mt-2 text-xs leading-snug text-white/70">
                     MACH RUN can also estimate what your military retired pay and VA are worth today
-                    — the lump sum a zero-risk annuity would need to pay the same checks.
+                    — the present value of a federal annuity that would pay the same checks.
                   </p>
                 ) : null}
                 {row.id === "va" ? (
                   <p className="mt-2 text-xs leading-snug text-white/70">
-                    MACH RUN can also estimate what your VA compensation is worth today — the lump
-                    sum a zero-risk annuity would need to pay the same checks.
+                    MACH RUN can also estimate what your VA compensation is worth today
+                    — the present value of a federal annuity that would pay the same checks.
                   </p>
                 ) : null}
               </div>
@@ -654,7 +667,7 @@ export function MilitaryHousehold({
           ))}
         </div>
         <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted">
-          Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at
+          Military retired pay and VA show the present value of a federal annuity at age 50. TSP shows the balance at
           the required-withdrawal age, 75.
         </p>
         <FlagStripe />
@@ -802,28 +815,42 @@ export function MilitaryHousehold({
           </a>
         </p>
         <JourneyBlock kicker="6 · The invitation" title="Start with your own numbers, or open the Hale plan.">
-          Six questions is free and does not ask for a credit card. Free includes 2 incomes and 2
-          accounts — enough to start; upgrade for the full household stack.
+          Six questions is free and does not ask for a credit card. Free includes 2 incomes, 2 accounts, and 2 contributions — enough to start; upgrade for the full household stack.
         </JourneyBlock>
-        <div className="mt-4 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:flex-row sm:flex-wrap sm:gap-3">
-          <Link
-            to="/start"
-            className="inline-flex min-h-11 items-center justify-center rounded-lg bg-accent px-5 text-center text-base font-medium text-accent-fg hover:opacity-90"
-          >
-            Start with just six questions
-          </Link>
-          <PrimaryButton
-            className="h-auto min-h-11 whitespace-normal border border-[#1a2330] bg-white px-4 py-2.5 text-center leading-snug text-[#1a2330] hover:bg-[#f3faf6]"
-            onClick={prefillDemo}
-          >
-            Use Pre-Filled Hale Demo
-          </PrimaryButton>
-          <PrimaryButton
-            className="h-auto min-h-11 whitespace-normal border border-[#3a8a58] bg-white px-4 py-2.5 text-center leading-snug text-[#3a8a58] hover:bg-[#f3faf6]"
-            onClick={onShowFamily}
-          >
-            I have my numbers. Start a MACH RUN.
-          </PrimaryButton>
+        <div className="mt-4 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:flex-row sm:flex-wrap sm:items-start sm:gap-3">
+          <div className="flex flex-col items-center gap-1">
+            <Link
+              to="/start"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-accent px-5 text-center text-base font-medium text-accent-fg hover:opacity-90"
+            >
+              Start with just six questions
+            </Link>
+            <p className="max-w-[16rem] text-center text-xs leading-snug text-[#3d4a54]">
+              About a minute. The monthly sketch shows before you save it.
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <PrimaryButton
+              className="h-auto min-h-11 whitespace-normal border border-[#1a2330] bg-white px-4 py-2.5 text-center leading-snug text-[#1a2330] hover:bg-[#f3faf6]"
+              onClick={prefillDemo}
+            >
+              Use Pre-Filled Hale Demo
+            </PrimaryButton>
+            <p className="max-w-[16rem] text-center text-xs leading-snug text-[#3d4a54]">
+              Opens the Hale demo. You can change any number, or clear the demo.
+            </p>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <PrimaryButton
+              className="h-auto min-h-11 whitespace-normal border border-[#3a8a58] bg-white px-4 py-2.5 text-center leading-snug text-[#3a8a58] hover:bg-[#f3faf6]"
+              onClick={onShowFamily}
+            >
+              I have my numbers. Start a MACH RUN.
+            </PrimaryButton>
+            <p className="max-w-[16rem] text-center text-xs leading-snug text-[#3d4a54]">
+              Jump right in, you type the household.
+            </p>
+          </div>
         </div>
         <p className="mt-2 text-center text-sm text-[#3d4a54]">No credit card needed.</p>
         <FounderStory />

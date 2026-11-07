@@ -64,6 +64,15 @@ function Learn() {
           </li>
           <li>
             <Link
+              to="/retired-pay"
+              className="font-display text-2xl text-fg underline underline-offset-4 hover:text-accent"
+            >
+              Free Military Retirement Pay Calculator
+            </Link>
+            <p className="mt-1 text-muted">It is the free military retirement pay calculator.</p>
+          </li>
+          <li>
+            <Link
               to="/tools"
               className="font-display text-2xl text-fg underline underline-offset-4 hover:text-accent"
             >

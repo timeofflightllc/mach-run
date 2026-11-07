@@ -92,6 +92,30 @@ Check the source document before you act. For military pay and retired pay, that
 
 Never make a financial decision without a professional fiduciary. A fiduciary has to put your interest first. While we do care about your financial success, MACH RUN is not a fiduciary, and these calculators are not advice.`;
 
+export const RETIRED_PAY_TERMS_BLOCK = `# Military retirement pay calculator
+The [military retirement pay calculator](/retired-pay) estimates the pre-tax retired paycheck DFAS would start. It does not add housing, subsistence, or drill pay. An estimate, not a DFAS or VA determination.
+
+High-3 averages the highest 36 months of basic pay and multiplies by 2.5 percent for each year of service.
+
+BRS multiplies by 2 percent for each year of service. Choosing a lump sum lowers the monthly check.
+
+REDUX pays 2 percent a year through 20 years, then adds 3.5 percentage points for each year past 20.
+
+Final Pay uses the basic pay in effect the month before retirement, times 2.5 percent for each year of service.
+
+The newest scale stored here is the DFAS basic-pay table effective January 1, 2026. Your retirement month uses the official scale in effect that month. Earlier months go back to the June 1958 scale. The current charts are on the [DFAS military pay tables](https://www.dfas.mil/MilitaryMembers/payentitlements/Pay-Tables/).`;
+
+export const METHOD_SOURCES_BLOCK = `# Tables and rules used
+These are the tables this calculator reads. Each date is the table on file, not a promise that the agency will not change it.
+
+[DFAS military pay tables](https://www.dfas.mil/MilitaryMembers/payentitlements/Pay-Tables/). Basic pay, effective January 1, 2026. Posted January 2026. A retirement month uses the official scale in effect that month.
+
+[VA disability compensation rates](https://www.va.gov/disability/compensation-rates/veteran-rates/). 2026 schedular rates, effective December 1, 2025. Special monthly compensation is not in the table.
+
+[SSA early or late retirement](https://www.ssa.gov/oact/quickcalc/early_late.html). Early reduction and delayed retirement credits. [Full retirement age by year of birth](https://www.ssa.gov/benefits/retirement/planner/ageincrease.html). This engine uses full retirement age 67, the age for someone born in 1960 or later.
+
+[IRS required minimum distributions](https://www.irs.gov/retirement-plans/plan-participant-employee/retirement-topics-required-minimum-distributions-rmds). SECURE 2.0, signed December 29, 2022. This engine starts them at 73 if born 1951 through 1959, and at 75 if born in 1960 or later.`;
+
 export const DEFAULT_PAGES: SitePage[] = [
   {
     slug: "about",
@@ -150,7 +174,9 @@ Required minimum distributions are modeled in the background when the account ki
 # OODA AI
 OODA AI reads this MACH RUN — the Act output you just calculated. It does not predict markets. It does not guarantee outcomes. It is entertainment and illustration on the numbers you typed.
 
-Fill Observe, Orient, and Decide. Hit Calculate. That is the method.`,
+Fill Observe, Orient, and Decide. Hit Calculate. That is the method.
+
+${METHOD_SOURCES_BLOCK}`,
   },
   {
     slug: "faq",
@@ -172,7 +198,7 @@ Observe, Orient, Decide, Act. It comes from U.S. Air Force Col. John Boyd (Ret.)
 No. MACH RUN is a hypothetical planning tool. It is not financial, tax, or legal advice. The full disclaimer and Terms of Service live on [Terms of Service](/legal).
 
 # What is free, and what do I pay for?
-Free: register in about 30 seconds, save one household, with a limit of 2 accounts, 2 contributions, and 2 incomes. The OODA analysis is shortened.
+Free includes 2 incomes, 2 accounts, and 2 contributions. Register in about 30 seconds and save one household. The OODA analysis is shortened.
 
 Individual ($4/month or $40/year) is one household with unlimited accounts, contributions, and incomes. It adds the full MACH OODA Financial Analysis and OODA AI on that MACH RUN. Net Worth stays locked.
 
@@ -230,12 +256,7 @@ What shipped recently on the MACH RUN retirement calculator.`,
 
 Live. High-3, BRS, REDUX, and Final Pay. The pre-tax retired paycheck DFAS would start, from the official basic-pay tables.
 
-# Still being built
-These are not live. There is no page to open yet.
-
-BAH calculator
-OHA calculator
-Other military pay calculators
+BAH, OHA, and the other pay calculators are not available yet.
 
 A calculator result is not a decision. The rule is in the [Terms of Service](/legal#free-calculators).`,
   },
@@ -270,6 +291,8 @@ MACH RUN does not provide financial, tax, legal, or investment advice. Projectio
 
 ${FREE_CALCULATORS_BLOCK}
 
+${RETIRED_PAY_TERMS_BLOCK}
+
 # Acceptable use
 Do not break the law, attack the service, scrape other people’s data, or overload the site. We may suspend or close accounts that abuse the service.
 
@@ -300,7 +323,7 @@ Observe, Orient, Decide, Act (OODA) comes from the late, great U.S. Air Force Co
     slug: "privacy",
     title: "Privacy policy",
     kicker: "Last updated: October 3, 2026",
-    body: `MACH Run is a household calculator. You type in names, dates, balances, income, and spending so the engine can project a MACH Run. That is personal financial information. We treat it that way.
+    body: `MACH Run is a household calculator operated by Time of Flight LLC. You type in names, dates, balances, income, and spending so the engine can project a MACH Run. That is personal financial information. We treat it that way.
 
 # What we collect
 If you create an account: name, email address, password (stored hashed — we cannot read the password), and optional profile image if you sign in with Google, X, or Apple.

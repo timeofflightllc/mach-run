@@ -19,7 +19,7 @@ export const DEFAULT_PRICING_COPY: PricingCopy = {
     tag: "Register in 30 seconds",
     bullets: [
       "One household.",
-      "Limit 2 accounts · 2 contributions · 2 incomes",
+      "Free includes 2 incomes, 2 accounts, and 2 contributions.",
       "Limited OODA analysis, a paragraph or two",
       "Net Worth stays locked until Individual Unlimited",
     ],
@@ -102,6 +102,17 @@ function card(value: unknown, fallback: PricingCardCopy): PricingCardCopy {
   };
 }
 
+const FREE_LIMIT_SENTENCE = "Free includes 2 incomes, 2 accounts, and 2 contributions.";
+
+function freeLimitCard(value: PricingCardCopy): PricingCardCopy {
+  return {
+    ...value,
+    bullets: value.bullets.map((line) =>
+      /2 accounts\s*[·,]\s*2 contributions\s*[·,]\s*2 incomes/i.test(line) ? FREE_LIMIT_SENTENCE : line,
+    ),
+  };
+}
+
 export function mergePricingCopy(raw: unknown): PricingCopy {
   const src = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   const d = DEFAULT_PRICING_COPY;
@@ -122,7 +133,7 @@ export function mergePricingCopy(raw: unknown): PricingCopy {
     freeAdvisorBullet: str(src.freeAdvisorBullet, d.freeAdvisorBullet),
     advisorLiteTagYear: str(src.advisorLiteTagYear, d.advisorLiteTagYear),
     advisorUnlimitedTagYear: str(src.advisorUnlimitedTagYear, d.advisorUnlimitedTagYear),
-    free: card(src.free, d.free),
+    free: freeLimitCard(card(src.free, d.free)),
     individual: card(src.individual, d.individual),
     unlimited: card(src.unlimited, d.unlimited),
     advisorLite: card(src.advisorLite, d.advisorLite),

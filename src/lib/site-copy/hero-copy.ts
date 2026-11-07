@@ -9,7 +9,7 @@ export type HeroCopy = {
 export const DEFAULT_HERO_COPY: HeroCopy = {
   headline:
     "See your entire household's retirement on one page, from active duty, spouse pay and TSP contributions to VA benefits, retirement date and the nest-egg goal.",
-  text: "Plan for pay increases at a promotion and with a planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move. Free to start. $4 a month gets you more.",
+  text: "Plan for pay increases at a promotion, yearly NDAA's, and planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move.\nFree to start. $4 a month gets you more.",
 };
 
 const STALE_HEADLINES = new Set([
@@ -23,6 +23,8 @@ const STALE_TEXT = [
   "See your whole household's retirement in one place - income, investments, and your nest-egg goal, with unlimited what-if runs. Free to start. $4 a month unlocks incredible features.",
   "Change the savings rate and watch that date move. Free to start. $4 a month.",
   "Change the savings rate and contributions, and watch that date and FIRE number move. Free to start. $4 a month gets you more.",
+  "Plan for pay increases at a promotion and with a planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move. Free to start. $4 a month gets you more.",
+  "Plan for pay increases at a promotion, yearly NDAA's, and planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move. Free to start. $4 a month gets you more.",
 ];
 
 export function serializeHeroCopy(copy: HeroCopy): string {
