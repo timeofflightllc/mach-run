@@ -24,7 +24,7 @@ const FAQ = [
   {
     question: "Should the pension be counted in net worth?",
     answer:
-      "No. It should not be counted in net worth calculations. It should be counted in your monthly retirement income, when you decide your FIRE number and what you need each month and each year in retirement.",
+      "No. Do not include it in net worth. A pension is income, not an asset you can sell, spend down, or leave to someone else. Do include the monthly check in retirement income, when you set the FIRE number and decide what you still need each month and each year.",
   },
   {
     question: "What discount rate should be used?",
