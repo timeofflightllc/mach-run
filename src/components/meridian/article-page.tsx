@@ -5,14 +5,15 @@ import { PieceCrumbs, RelatedPieces } from "@/components/meridian/piece-links";
 import {
   articleDateLabel,
   parseArticle,
+  type ArticleBlock,
   type Inline,
 } from "@/lib/articles/body";
 import type { ArticleRecord } from "@/lib/articles/types";
 
 const ARTICLE_BTN =
-  "inline-flex h-11 items-center justify-center rounded-lg border border-[#1a2330] bg-white px-4 text-sm font-medium text-[#1a2330] no-underline hover:bg-[#f3faf6]";
+  "inline-flex h-14 items-center justify-center rounded-lg border border-[#1a2330] bg-white px-7 text-lg font-medium text-[#1a2330] no-underline hover:bg-[#f3faf6]";
 const ARTICLE_BTN_PRIMARY =
-  "inline-flex h-11 items-center justify-center rounded-lg bg-[#3a8a58] px-4 text-sm font-medium text-white no-underline hover:opacity-90";
+  "inline-flex h-14 items-center justify-center rounded-lg bg-[#3a8a58] px-7 text-lg font-medium text-white no-underline hover:opacity-90";
 const ARTICLE_ICON_BTN =
   "inline-flex h-10 w-10 items-center justify-center rounded-full text-white no-underline hover:opacity-90";
 
@@ -78,46 +79,25 @@ function ArticleShare({ url, title }: { url: string; title: string }) {
     }
   }
 
-  async function share() {
-    if (typeof navigator.share === "function") {
-      try {
-        await navigator.share({ title, url });
-        return;
-      } catch {
-        return;
-      }
-    }
-    await copy();
-  }
-
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex items-center gap-3">
       <button
         type="button"
-        className={`${linkClass} sm:hidden ${copied ? "bg-[#3a8a58]" : "bg-[#1a2330]"}`}
-        aria-label={copied ? "Link copied" : "Share"}
-        title={copied ? "Link copied" : "Share"}
-        onClick={() => void share()}
-      >
-        {copied ? <CheckMark /> : <ShareMark />}
-      </button>
-      <button
-        type="button"
-        className={`${linkClass} hidden sm:inline-flex ${copied ? "bg-[#3a8a58]" : "bg-[#1a2330]"}`}
+        className={`${linkClass} ${copied ? "bg-[#3a8a58]" : "bg-[#1a2330]"}`}
         aria-label={copied ? "Link copied" : "Copy link"}
         title={copied ? "Link copied" : "Copy link"}
         onClick={() => void copy()}
       >
         {copied ? <CheckMark /> : <LinkMark />}
       </button>
-      <a href={mail} className={`${linkClass} hidden bg-[#1a2330] sm:inline-flex`} aria-label="Email" title="Email">
+      <a href={mail} className={`${linkClass} bg-[#1a2330]`} aria-label="Email" title="Email">
         <MailMark />
       </a>
       <a
         href={linkedIn}
         target="_blank"
         rel="noopener noreferrer"
-        className={`${linkClass} hidden bg-[#0A66C2] sm:inline-flex`}
+        className={`${linkClass} bg-[#0A66C2]`}
         aria-label="LinkedIn"
         title="LinkedIn"
       >
@@ -153,16 +133,6 @@ function LinkedInMark() {
   );
 }
 
-function ShareMark() {
-  return (
-    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M12 15V3" />
-      <path d="m8 7 4-4 4 4" />
-      <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
-    </svg>
-  );
-}
-
 function CheckMark() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -171,10 +141,9 @@ function CheckMark() {
   );
 }
 
-function ArticleBody({ body }: { body: string }) {
-  const blocks = parseArticle(body);
+function ArticleBlocks({ blocks }: { blocks: ArticleBlock[] }) {
   return (
-    <article className="mt-8 space-y-5 text-lg leading-relaxed text-muted">
+    <>
       {blocks.map((block, index) => {
         if (block.type === "h2") {
           return (
@@ -239,8 +208,14 @@ function ArticleBody({ body }: { body: string }) {
           </p>
         );
       })}
-    </article>
+    </>
   );
+}
+
+function splitAtSources(blocks: ArticleBlock[]): { main: ArticleBlock[]; sources: ArticleBlock[] } {
+  const index = blocks.findIndex((block) => block.type === "h2" && block.text === "Sources");
+  if (index < 0) return { main: blocks, sources: [] };
+  return { main: blocks.slice(0, index), sources: blocks.slice(index) };
 }
 
 const CAIN_LINKEDIN = "https://www.linkedin.com/in/cainf-15advanced/";
@@ -284,6 +259,7 @@ function ArticleAuthor() {
 export function ArticlePage({ article }: { article: ArticleRecord }) {
   const url = `https://machrun.com/learn/${article.slug}`;
   const date = articleDateLabel(article.createdAt);
+  const { main, sources } = splitAtSources(parseArticle(article.body));
   return (
     <main className="min-h-screen bg-bg py-10 text-fg">
       <div className="static-gutter mx-auto w-full">
@@ -293,21 +269,25 @@ export function ArticlePage({ article }: { article: ArticleRecord }) {
         <PieceCrumbs path="/learn" current={article.h1} />
         <header className="mt-6">
           <h1 className="font-display text-4xl leading-none text-fg sm:text-5xl">{article.h1}</h1>
-          <p className="mt-4 text-sm text-muted">
-            <Link to="/about" className="underline underline-offset-4 hover:text-fg">
-              Matthew "Cain" Olde
-            </Link>
-            {date ? (
-              <>
-                <span aria-hidden="true"> · </span>
-                <time dateTime={article.createdAt.slice(0, 10)}>{date}</time>
-              </>
-            ) : null}
-          </p>
+          <div className="mt-4 flex items-center justify-between gap-4">
+            <p className="min-w-0 text-sm text-muted">
+              <Link to="/about" className="underline underline-offset-4 hover:text-fg">
+                Matthew "Cain" Olde
+              </Link>
+              {date ? (
+                <>
+                  <span aria-hidden="true"> · </span>
+                  <time dateTime={article.createdAt.slice(0, 10)}>{date}</time>
+                </>
+              ) : null}
+            </p>
+            <ArticleShare url={url} title={article.h1} />
+          </div>
         </header>
-        <ArticleBody body={article.body} />
-        <ArticleAuthor />
-        <div className="mt-8 flex flex-wrap items-center gap-3">
+        <article className="mt-8 space-y-5 text-lg leading-relaxed text-muted">
+          <ArticleBlocks blocks={main} />
+        </article>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <Link to="/retired-pay" className={ARTICLE_BTN}>
             Estimate your retired pay
           </Link>
@@ -315,9 +295,15 @@ export function ArticlePage({ article }: { article: ArticleRecord }) {
             Start a MACH RUN
           </Link>
         </div>
-        <div className="mt-6">
+        <div className="mt-4 flex justify-center">
           <ArticleShare url={url} title={article.h1} />
         </div>
+        <ArticleAuthor />
+        {sources.length ? (
+          <article className="mt-10 space-y-5 text-lg leading-relaxed text-muted">
+            <ArticleBlocks blocks={sources} />
+          </article>
+        ) : null}
         <RelatedPieces path="/military-pension-present-value" />
       </div>
       <MachFooter staticInset />
