@@ -6,6 +6,7 @@ Disallow: /verify-email
 Disallow: /top-3-desk
 Disallow: /beta
 Disallow: /referrals
+Disallow: /pension-present-value
 Disallow: /api/
 
 Sitemap: https://machrun.com/sitemap.xml
