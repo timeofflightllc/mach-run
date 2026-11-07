@@ -19,17 +19,17 @@ const FAQ = [
   {
     question: "Is a military pension worth a million dollars?",
     answer:
-      "Usually, and often more. An E-7 retiring at 20 in 2026 has a pension worth about $850,000 to $1.3 million, depending on the discount rate. An O-5 at 20 under High-3 is about $1.6 million to $2.4 million. The same O-5 career under BRS is closer to $1.3 million to $1.9 million, because the multiplier is 2% a year, or 40% at 20, instead of 2.5% a year, or 50%. The smaller pension is the trade for a TSP match. Contribute 5% of basic pay and the service adds 5% of basic pay: an automatic 1%, plus a match of up to 4% on the first 5% you put in. You can contribute Traditional or Roth, and both are matched, but the service's money always goes into the Traditional balance. The automatic 1% starts about 60 days in, and the match starts after two years of service and continues through a 20-year career.",
+      "For a 20-year retirement in 2026, yes, and often more than a million. An E-7 has a pension worth about $850,000 to $1.3 million, depending on the discount rate. An O-5 at 20 under High-3 is about $1.6 million to $2.4 million. The same O-5 career under BRS is closer to $1.3 million to $1.9 million, because the multiplier is 2% a year, or 40% at 20, instead of 2.5% a year, or 50%. The smaller pension is the trade for a TSP match. Contribute 5% of basic pay and the service adds 5% of basic pay: an automatic 1%, plus a match of up to 4% on the first 5% you put in. You can contribute Traditional or Roth, and both are matched, but the service's money always goes into the Traditional balance. The automatic 1% starts about 60 days in, and the match starts after two years of service and continues through a 20-year career.",
   },
   {
-    question: "Should the pension be counted in net worth?",
+    question: "Should you include your military pension in your net worth?",
     answer:
-      "No. Leave it out of net worth. A pension is income, not an asset you can sell, spend down, or leave to someone else, so count the monthly check as retirement income when you set the FIRE number and decide what you still need each month and each year.",
+      "I wouldn't. It has real economic value, but you can't sell it, move it into another account, or pass the pension itself to your children. I treat it as retirement income, and I count the monthly check when I set the FIRE number and decide what the investments still have to produce.",
   },
   {
     question: "What discount rate should be used?",
     answer:
-      "I use 4% when I am pricing the pension as the safe, inflation-protected paycheck it is. Then I run the plan again at 6%. If the plan only holds together at 4%, the pension is being asked to do more work than it should.",
+      "I use 4% when I'm pricing the pension as the safe, inflation-protected paycheck it is. Then I run the plan again at 6%. If the plan only holds together at 4%, you're asking the pension to do more work than it should.",
   },
 ] as const;
 
@@ -227,12 +227,14 @@ function PensionPresentValue() {
           </header>
           <article className="mt-8 space-y-5 text-lg leading-relaxed text-muted">
             <p>
-              An O-5 who retires at 20 years in 2026, under the legacy High-3 system, starts at
-              about $5,444 a month. The check is paid for life, increases with inflation, and is
-              backed by the federal government. If those checks are carried to age 95, at a 4%
-              discount rate and a 2.5% cost-of-living adjustment, that stream is worth about $2.35
-              million in today's dollars. Most of us never write that number down, and the 25-times
-              rule gets used without it. Both are wrong once the check is in the plan.
+              Let's put a real number on something that often gets overlooked when military families
+              start planning for retirement. An O-5 retiring after 20 years under the High-3 system
+              in 2026 receives about $5,444 a month. That's a paycheck that continues for life,
+              rises with inflation, and is backed by the federal government, whether the stock
+              market had a good year or not. Carry those checks to age 95, at a 4% discount rate
+              and a 2.5% cost-of-living adjustment, and that stream is worth about $2.35 million in
+              today's dollars. Most of us never write that number down, and the 25-times rule gets
+              used without it.
             </p>
 
             <h2 className="pt-4 text-xl font-medium text-fg">Why most FIRE math misses it</h2>
@@ -245,24 +247,35 @@ function PensionPresentValue() {
             <p>
               Military retired pay does not come out of a portfolio. It shows up on the first of
               the month whether the market had a bad year or not, and the COLA is applied whether
-              anyone rebalanced. I've seen the check left out of the plan, and I've seen it
-              used as a reason to stop saving. If it is left out, the nest egg gets sized for bills
-              the pension was already going to pay. If the saving is stopped, you're left with the
-              pension and nothing on top of it.
+              anyone rebalanced. I've seen families leave the check out of the plan. The nest egg
+              then gets sized for bills the pension was already going to pay, so the goal looks
+              bigger than the gap really is. I've also seen the check used as a reason to stop
+              saving. Then you have the pension, and nothing built on top of it.
             </p>
             <p>
               I built MACH RUN so the pension, VA pay, the TSP, and a spouse's income would
-              sit on one page instead of in four different spreadsheets. The pension covers a set
-              of bills for life, so the savings have to cover what is left, which might be the
-              surviving spouse or the years after a second career. You can't tell how big that pile needs to be until you know what
-              the pension is already paying.
+              sit on one page instead of in four different spreadsheets. Think about what that
+              pension actually does for a household. It might cover the mortgage, utilities,
+              groceries, or some mix of the everyday bills. Whatever it covers, the investments
+              only have to produce the rest. That rest might be a surviving spouse, or the years
+              after a second career. You can't tell how big that pile needs to be until you know
+              what the pension is already paying.
+            </p>
+            <p>
+              I've always thought one of the biggest mistakes in military retirement planning is
+              treating retired pay as an afterthought. A family might spend years trying to figure
+              out whether they need $2 million or $3 million saved, without first accounting for
+              the income one of them will receive every month for the rest of their life. That's a
+              pretty important piece of the puzzle to leave out.
             </p>
 
             <h2 className="pt-4 text-xl font-medium text-fg">How the number is built</h2>
             <p>
-              A pension is a string of checks paid until death. Present value is the lump that
-              would have to be set aside today, earning a chosen rate, to write those same checks.
-              The monthly amount, the length, and the discount rate move the number.
+              Here's the basic idea behind present value. If you wanted to replace your military
+              pension with your own pile of money, how much would you need sitting in an account
+              today to write those same monthly checks? That's what this number is. The monthly
+              amount, how long the checks last, and the rate you use to discount them are what
+              move it.
             </p>
             <p>
               <strong className="font-semibold text-fg">The monthly amount.</strong> Gross retired
@@ -284,9 +297,12 @@ function PensionPresentValue() {
             <p>
               <strong className="font-semibold text-fg">The discount rate.</strong> This one is a
               judgment, not a fact you can look up. A low rate treats the pension as close to cash,
-              so the value comes out high. A high rate assumes you would rather have the money now. I used 4% for the headline, which is about what a very safe inflation-protected
-              bond is priced at. The 5% and 6% columns are there because 4% is a choice, and the
-              choice moves the number by hundreds of thousands of dollars.
+              so the value comes out high. A high rate assumes you would rather have the money now.
+              I chose 4% for the headline, about what a very safe inflation-protected bond is priced
+              at, but I don't want anyone to mistake that for a universally correct answer. There
+              isn't one. The discount rate is an assumption, and changing it can move the final
+              number by hundreds of thousands of dollars. That's why the 5% and 6% columns are in
+              the table, rather than pretending one number tells the entire story.
             </p>
             <p>
               COLA is assumed at 2.5% a year. Retiree COLA follows the CPI-W, and the increase that
@@ -354,27 +370,33 @@ function PensionPresentValue() {
             6%.
           </p>
           <p>
-            An E-7 pension does not get talked about as wealth, and it is still worth somewhere
-            between $850,000 and $1.3 million depending on the rate. The last column is the
-            bar napkin check. Twenty-five times the annual pension is what the 4% rule would
-            require in a portfolio if you had to replace the check with withdrawals. The 4%
-            present-value column sits higher than that, because the pension grows with COLA and a
-            flat 4% withdrawal does not. The government backing is already in the 4% rate, so I did
-            not add a second bump for it. At 6% the value falls under the 25-times column, because
-            that rate prices the pension as if you would rather hold the cash. The band is wide, so
-            both ends are in the table.
+            Take a moment to look at the E-7 row. Someone retiring after 20 years might not think
+            of that pension as a million-dollar asset. Depending on the assumptions, the checks are
+            worth somewhere between $850,000 and $1.3 million. The same idea applies to the officer
+            rows, and the numbers get considerably larger. This is why I think military retirement
+            deserves a much bigger place in the household financial conversation.
+          </p>
+          <p>
+            The last column is the bar napkin check. Twenty-five times the annual pension is what
+            the 4% rule would require in a portfolio if you had to replace the check with
+            withdrawals. The 4% present-value column sits higher than that, because the pension
+            grows with COLA and a flat 4% withdrawal does not. The government backing is already in
+            the 4% rate, so I did not add a second bump for it. At 6% the value falls under the
+            25-times column, because that rate prices the pension as if you would rather hold the
+            cash. The band is wide, so both ends are in the table.
           </p>
 
           <h2 className="pt-4 text-xl font-medium text-fg">The FIRE number</h2>
           <p>
-            Jordan Hale is the sample household on the MACH RUN home page. He is 29, leaves the
-            military at 41 after 20 years, and the household plans to retire at 60. Spending is
-            $8,600 a month. Retired pay in this plan is about $4,643 a month. That check is higher
-            than the $4,355 BRS row because the Hale plan retires in 2038 and includes the raises
-            between now and then. The table is a June 2026 retirement on the 2026 pay scale. The
-            nest-egg goal is $1.8 million in today's dollars. They keep saving in every version of
-            this plan. On the savings rate in the demo, the nest egg is still short of $1.8 million
-            at 60.
+            Let's bring this down to the household level. Jordan Hale is the example household on
+            the MACH RUN home page. He's 29, plans to leave the military at 41 after 20 years, and
+            the household is targeting retirement at 60. Spending is $8,600 a month. Now you can
+            see what the pension changes. Retired pay in this plan is about $4,643 a month. That
+            check is higher than the $4,355 BRS row because the Hale plan retires in 2038 and
+            includes the raises between now and then. The table above is a June 2026 retirement on
+            the 2026 pay scale. The nest-egg goal is $1.8 million in today's dollars. They keep
+            saving in every version of this plan. On the savings rate in the demo, the nest egg is
+            still short of $1.8 million at 60.
           </p>
           <p>
             The household spends $103,200 a year. Twenty-five times that is a $2.58 million
@@ -385,8 +407,9 @@ function PensionPresentValue() {
             $1.66 million at 5%, and $1.37 million at 6%.
           </p>
           <p>
-            That is not a reason to save less. The second career covers the years after you leave,
-            and the nest egg covers what the pension does not.
+            I don't read any of that as a reason to save less. The second career still has to cover
+            the years after you leave, and the nest egg still has to cover what the pension does
+            not.
           </p>
           <p>
             VA compensation runs through the same math and is tax-free, though it is not in the Hale
@@ -398,11 +421,13 @@ function PensionPresentValue() {
             Before you write a seven-figure number next to the pension
           </h2>
           <p>
-            The $2.35 million is not a bank account. The monthly check is what gets spent, and you
-            can't hand that lump to anyone else. When the retiree dies, the checks stop. SBP is life insurance
-            for the surviving spouse. It does not continue the retiree's pay. SBP has a premium, so talk with a CFP before
-            retirement and make the best decision you can for yourself, your surviving spouse, and
-            your family.
+            It's worth being clear about what that $2.35 million actually represents. It isn't money
+            sitting in an account that you can withdraw, transfer, or leave to your children. It's
+            an estimate of what those future pension payments are worth. That distinction matters
+            when you're thinking about a surviving spouse. When the retiree dies, the checks stop.
+            SBP is life insurance for the surviving spouse. It does not continue the retiree's pay.
+            SBP has a premium, so talk with a CFP before retirement and make the best decision you
+            can for yourself, your surviving spouse, and your family.
           </p>
           <p>
             Retired pay is taxed as federal income, and many states exempt some or all of it. For a
@@ -427,9 +452,22 @@ function PensionPresentValue() {
 
           <h2 className="pt-4 text-xl font-medium text-fg">Run your own numbers</h2>
           <p>
-            Gross retired pay under High-3, BRS, REDUX, or Final Pay is on the free calculator,
-            from the 2026 basic-pay tables. A MACH RUN puts that paycheck on the same page as VA
-            compensation, the TSP, and a spouse's income. Each one keeps its own COLA.
+            I built MACH RUN because I wanted the whole picture on one page. Military retired pay,
+            VA compensation, the TSP, Social Security, a civilian paycheck, the investments, and
+            the spending all hit the same household. Looking at any one of them by itself only
+            tells part of the story.
+          </p>
+          <p>
+            A pension can be a real advantage. It does not mean the household is ready for
+            everything after the service. The surviving spouse, a second career, health care, and
+            the years between leaving the military and actually stopping work all still have to be
+            thought through.
+          </p>
+          <p>
+            The point of MACH RUN is to see how those pieces fit, where the household stands, and
+            what to change next. Gross retired pay under High-3, BRS, REDUX, or Final Pay is on
+            the free calculator, from the 2026 basic-pay tables. Each paycheck in a full run keeps
+            its own COLA.
           </p>
           <div className="flex flex-wrap items-center gap-3">
             <Link to="/retired-pay" className={ARTICLE_BTN}>
