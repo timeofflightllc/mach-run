@@ -854,7 +854,7 @@ const PROCESS_STEPS = [
   {
     id: "act",
     title: "Act",
-    body: "Run it. Read the result. Change one assumption. Run it again.",
+    body: "Run it. Read the result. Change one assumption. Start the loop again at Observe.",
     line: "At 60 they have about $1.57 million. Short of $1.8 million. Save the $800, or retire at 65, and the goal is met.",
     icon: Flag,
   },
