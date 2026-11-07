@@ -19,12 +19,12 @@ const FAQ = [
   {
     question: "Is a military pension worth a million dollars?",
     answer:
-      "Usually, and often more. An E-7 retiring at 20 in 2026 has a pension worth about $850,000 to $1.3 million, depending on the discount rate. An O-5 at 20 under High-3 is about $1.6 million to $2.4 million. The same O-5 career under BRS is closer to $1.3 million to $1.9 million, because the multiplier is 2% a year, or 40% at 20, instead of 2.5% a year, or 50%. The smaller pension is the trade for a TSP match. Contribute 5% of basic pay and the service adds 5% of basic pay: an automatic 1%, plus a match of up to 4% on the first 5% you put in. You can contribute Traditional or Roth. Both are matched. The service's money always goes into the Traditional balance. The automatic 1% starts about 60 days in. The match starts after two years of service and continues through a 20-year career.",
+      "Usually, and often more. An E-7 retiring at 20 in 2026 has a pension worth about $850,000 to $1.3 million, depending on the discount rate. An O-5 at 20 under High-3 is about $1.6 million to $2.4 million. The same O-5 career under BRS is closer to $1.3 million to $1.9 million, because the multiplier is 2% a year, or 40% at 20, instead of 2.5% a year, or 50%. The smaller pension is the trade for a TSP match. Contribute 5% of basic pay and the service adds 5% of basic pay: an automatic 1%, plus a match of up to 4% on the first 5% you put in. You can contribute Traditional or Roth, and both are matched, but the service's money always goes into the Traditional balance. The automatic 1% starts about 60 days in, and the match starts after two years of service and continues through a 20-year career.",
   },
   {
     question: "Should the pension be counted in net worth?",
     answer:
-      "No. Do not include it in net worth. A pension is income, not an asset you can sell, spend down, or leave to someone else. Do include the monthly check in retirement income, when you set the FIRE number and decide what you still need each month and each year.",
+      "No. Leave it out of net worth. A pension is income, not an asset you can sell, spend down, or leave to someone else, so count the monthly check as retirement income when you set the FIRE number and decide what you still need each month and each year.",
   },
   {
     question: "What discount rate should be used?",
@@ -229,15 +229,15 @@ function PensionPresentValue() {
             <p>
               An O-5 who retires at 20 years in 2026, under the legacy High-3 system, starts at
               about $5,444 a month. The check is paid for life, increases with inflation, and is
-              backed by the federal government. Run to age 95, at a 4% discount rate and a 2.5%
-              cost-of-living adjustment, that stream is worth about $2.35 million in today's
-              dollars. Most of us never write that number down. The 25-times rule gets used
-              without it. Both are wrong once the check is in the plan.
+              backed by the federal government. If those checks are carried to age 95, at a 4%
+              discount rate and a 2.5% cost-of-living adjustment, that stream is worth about $2.35
+              million in today's dollars. Most of us never write that number down, and the 25-times
+              rule gets used without it. Both are wrong once the check is in the plan.
             </p>
 
             <h2 className="pt-4 text-xl font-medium text-fg">Why most FIRE math misses it</h2>
             <p>
-              The rule people pass around is 25 times spending. Spend $100,000 a year and you are
+              The rule that gets passed around is 25 times spending. Spend $100,000 a year and you're
               told you need $2.5 million invested, so a 4% withdrawal covers the bills. That rule
               was written for a portfolio, where every dollar of spending has to come out of an
               account that can fall 40% in a bad year.
@@ -247,14 +247,14 @@ function PensionPresentValue() {
               the month whether the market had a bad year or not, and the COLA is applied whether
               anyone rebalanced. I've seen the check left out of the plan, and I've seen it
               used as a reason to stop saving. If it is left out, the nest egg gets sized for bills
-              the pension was already going to pay. If the saving stops, you have the pension and
-              nothing built on top of it.
+              the pension was already going to pay. If the saving is stopped, you're left with the
+              pension and nothing on top of it.
             </p>
             <p>
               I built MACH RUN so the pension, VA pay, the TSP, and a spouse's income would
               sit on one page instead of in four different spreadsheets. The pension covers a set
-              of bills for life. The savings have to cover what is left. That might be the surviving
-              spouse, or the years after a second career. You cannot tell how big that pile needs to be until you know what
+              of bills for life, so the savings have to cover what is left, which might be the
+              surviving spouse or the years after a second career. You can't tell how big that pile needs to be until you know what
               the pension is already paying.
             </p>
 
@@ -300,10 +300,10 @@ function PensionPresentValue() {
             </p>
             <Formula />
             <p>
-              The table treats each year's check as paid at mid-year, then rounds to the
+              The table treats each year's check as paid at mid-year, then it is rounded to the
               nearest $10,000. If you drop the same inputs in as an end-of-year annuity, the result
-              comes out about 2 percent lower. The MACH RUN engine runs the math month by month and
-              lands in that same neighborhood. Both are estimates, and neither is a DFAS determination.
+              comes out about 2 percent lower. When the same math is run month by month, it lands
+              in that same neighborhood. Both are estimates, and neither is a DFAS determination.
             </p>
 
             <h2 className="pt-4 text-xl font-medium text-fg">What the 2026 calculator says</h2>
@@ -311,7 +311,7 @@ function PensionPresentValue() {
               Retired pay in the table is from the MACH RUN calculator for a June 2026 retirement.
               The retiring grade was held for all 36 months. The O-6 figure is 75% of basic pay, not
               the amount that hits the account. The ages are assumptions I picked so
-              the stream has a length. They are not a rule that comes with the rank. Present value
+              the stream has a length, not a rule that comes with the rank. Present value
               runs to age 95, with a 2.5% COLA.
             </p>
           </article>
@@ -359,10 +359,10 @@ function PensionPresentValue() {
             bar napkin check. Twenty-five times the annual pension is what the 4% rule would
             require in a portfolio if you had to replace the check with withdrawals. The 4%
             present-value column sits higher than that, because the pension grows with COLA and a
-            flat 4% withdrawal does not. The government backing is already in the 4% rate. I did
-            not add a second bump for it. At 6% the value falls under the 25-times column. That
-            rate prices the pension as if you would rather hold the cash. The band is wide, which
-            is why both ends are in the table.
+            flat 4% withdrawal does not. The government backing is already in the 4% rate, so I did
+            not add a second bump for it. At 6% the value falls under the 25-times column, because
+            that rate prices the pension as if you would rather hold the cash. The band is wide, so
+            both ends are in the table.
           </p>
 
           <h2 className="pt-4 text-xl font-medium text-fg">The FIRE number</h2>
@@ -385,11 +385,11 @@ function PensionPresentValue() {
             $1.66 million at 5%, and $1.37 million at 6%.
           </p>
           <p>
-            That is not a reason to save less. The second career covers the years after you leave.
-            The nest egg covers what the pension does not.
+            That is not a reason to save less. The second career covers the years after you leave,
+            and the nest egg covers what the pension does not.
           </p>
           <p>
-            VA compensation runs through the same math, and it is tax-free. It is not in the Hale
+            VA compensation runs through the same math and is tax-free, though it is not in the Hale
             demo. A 50% rating with a spouse is about $1,242 a month on the 2026 rates, worth about
             $551,000 at 4% from age 41 to 95.
           </p>
@@ -398,18 +398,18 @@ function PensionPresentValue() {
             Before you write a seven-figure number next to the pension
           </h2>
           <p>
-            The $2.35 million is not a bank account. You spend the monthly check. You cannot hand
-            that lump to anyone else. When the retiree dies, the checks stop. SBP is a form of life
-            insurance. It kicks in for the surviving spouse. It does not continue the retiree's pay. SBP has a premium, so talk with a CFP before
+            The $2.35 million is not a bank account. The monthly check is what gets spent, and you
+            can't hand that lump to anyone else. When the retiree dies, the checks stop. SBP is life insurance
+            for the surviving spouse. It does not continue the retiree's pay. SBP has a premium, so talk with a CFP before
             retirement and make the best decision you can for yourself, your surviving spouse, and
             your family.
           </p>
           <p>
             Retired pay is taxed as federal income, and many states exempt some or all of it. For a
             regular active-duty retirement, the whole thing is also worth nothing at 19 years and 11
-            months. Staying to 20 is the most valuable money decision most of us make in uniform. A
-            medical retirement uses a different formula, so leaving before 20 does not make it worth
-            nothing.
+            months. Staying to 20 is the most valuable money decision most of us make in uniform,
+            though a medical retirement uses a different formula, so leaving before 20 does not
+            make it worth nothing.
           </p>
           <p>
             VA compensation reduces retired pay for some people. Below a 50% rating, or without a
