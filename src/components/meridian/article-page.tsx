@@ -298,12 +298,14 @@ export function ArticlePage({ article }: { article: ArticleRecord }) {
         <div className="mt-4 flex justify-center">
           <ArticleShare url={url} title={article.h1} />
         </div>
-        <ArticleAuthor />
         {sources.length ? (
           <article className="mt-10 space-y-5 text-lg leading-relaxed text-muted">
             <ArticleBlocks blocks={sources} />
           </article>
         ) : null}
+        <ArticleAuthor />
+      </div>
+      <div className="static-gutter mx-auto w-full">
         <RelatedPieces path="/military-pension-present-value" />
       </div>
       <MachFooter staticInset />
