@@ -147,7 +147,7 @@ function ArticleBlocks({ blocks }: { blocks: ArticleBlock[] }) {
       {blocks.map((block, index) => {
         if (block.type === "h2") {
           return (
-            <h2 key={index} className="pt-4 text-2xl font-medium text-fg">
+            <h2 key={index} className="pt-4 text-3xl font-medium text-fg">
               {block.text}
             </h2>
           );
