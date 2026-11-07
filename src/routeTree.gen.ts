@@ -21,7 +21,7 @@ import { Route as LearnRouteImport } from './routes/learn'
 import { Route as LegalRouteImport } from './routes/legal'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MethodRouteImport } from './routes/method'
-import { Route as PensionPresentValueRouteImport } from './routes/pension-present-value'
+import { Route as MilitaryPensionPresentValueRouteImport } from './routes/military-pension-present-value'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ReferralsRouteImport } from './routes/referrals'
@@ -95,11 +95,12 @@ const MethodRoute = MethodRouteImport.update({
   path: '/method',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PensionPresentValueRoute = PensionPresentValueRouteImport.update({
-  id: '/pension-present-value',
-  path: '/pension-present-value',
-  getParentRoute: () => rootRouteImport,
-} as any)
+const MilitaryPensionPresentValueRoute =
+  MilitaryPensionPresentValueRouteImport.update({
+    id: '/military-pension-present-value',
+    path: '/military-pension-present-value',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
@@ -174,7 +175,7 @@ export interface FileRoutesByFullPath {
   '/legal': typeof LegalRoute
   '/login': typeof LoginRoute
   '/method': typeof MethodRoute
-  '/pension-present-value': typeof PensionPresentValueRoute
+  '/military-pension-present-value': typeof MilitaryPensionPresentValueRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/referrals': typeof ReferralsRoute
@@ -201,7 +202,7 @@ export interface FileRoutesByTo {
   '/legal': typeof LegalRoute
   '/login': typeof LoginRoute
   '/method': typeof MethodRoute
-  '/pension-present-value': typeof PensionPresentValueRoute
+  '/military-pension-present-value': typeof MilitaryPensionPresentValueRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/referrals': typeof ReferralsRoute
@@ -229,7 +230,7 @@ export interface FileRoutesById {
   '/legal': typeof LegalRoute
   '/login': typeof LoginRoute
   '/method': typeof MethodRoute
-  '/pension-present-value': typeof PensionPresentValueRoute
+  '/military-pension-present-value': typeof MilitaryPensionPresentValueRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/referrals': typeof ReferralsRoute
@@ -258,7 +259,7 @@ export interface FileRouteTypes {
     | '/legal'
     | '/login'
     | '/method'
-    | '/pension-present-value'
+    | '/military-pension-present-value'
     | '/pricing'
     | '/privacy'
     | '/referrals'
@@ -285,7 +286,7 @@ export interface FileRouteTypes {
     | '/legal'
     | '/login'
     | '/method'
-    | '/pension-present-value'
+    | '/military-pension-present-value'
     | '/pricing'
     | '/privacy'
     | '/referrals'
@@ -312,7 +313,7 @@ export interface FileRouteTypes {
     | '/legal'
     | '/login'
     | '/method'
-    | '/pension-present-value'
+    | '/military-pension-present-value'
     | '/pricing'
     | '/privacy'
     | '/referrals'
@@ -340,7 +341,7 @@ export interface RootRouteChildren {
   LegalRoute: typeof LegalRoute
   LoginRoute: typeof LoginRoute
   MethodRoute: typeof MethodRoute
-  PensionPresentValueRoute: typeof PensionPresentValueRoute
+  MilitaryPensionPresentValueRoute: typeof MilitaryPensionPresentValueRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ReferralsRoute: typeof ReferralsRoute
@@ -441,11 +442,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MethodRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pension-present-value': {
-      id: '/pension-present-value'
-      path: '/pension-present-value'
-      fullPath: '/pension-present-value'
-      preLoaderRoute: typeof PensionPresentValueRouteImport
+    '/military-pension-present-value': {
+      id: '/military-pension-present-value'
+      path: '/military-pension-present-value'
+      fullPath: '/military-pension-present-value'
+      preLoaderRoute: typeof MilitaryPensionPresentValueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pricing': {
@@ -548,7 +549,7 @@ const rootRouteChildren: RootRouteChildren = {
   LegalRoute: LegalRoute,
   LoginRoute: LoginRoute,
   MethodRoute: MethodRoute,
-  PensionPresentValueRoute: PensionPresentValueRoute,
+  MilitaryPensionPresentValueRoute: MilitaryPensionPresentValueRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ReferralsRoute: ReferralsRoute,

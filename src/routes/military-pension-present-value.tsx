@@ -3,7 +3,7 @@ import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { PieceCrumbs, RelatedPieces } from "@/components/meridian/piece-links";
 import { pageHead } from "@/lib/seo";
 
-const TITLE = "What a Military Pension Is Worth: Present Value and FIRE";
+const TITLE = "What a military pension is worth";
 const DESCRIPTION =
   "An O-5 retiring at 20 under High-3 holds retired pay worth about $2.35 million today. How to value it, and what it means for the nest egg.";
 
@@ -31,12 +31,12 @@ const ROWS = [
   ["O-6, 30 years, High-3, retiring at 52", "$10,682", "$128,184", "$4,050,000", "$3,390,000", "$2,880,000", "$3,204,600"],
 ] as const;
 
-export const Route = createFileRoute("/pension-present-value")({
+export const Route = createFileRoute("/military-pension-present-value")({
   head: () =>
     pageHead({
       title: TITLE,
       description: DESCRIPTION,
-      path: "/pension-present-value",
+      path: "/military-pension-present-value",
       noindex: true,
     }),
   component: PensionPresentValue,
@@ -66,10 +66,10 @@ function PensionPresentValue() {
       <div className="static-gutter mx-auto w-full">
         <PageMast />
         <div className="mt-8 max-w-[42rem]">
-          <PieceCrumbs path="/pension-present-value" />
+          <PieceCrumbs path="/military-pension-present-value" />
           <header className="mt-6">
             <h1 className="font-display text-4xl leading-none text-fg sm:text-5xl">
-              What a military pension is actually worth, and what it means for your FIRE number
+              What a military pension is worth
             </h1>
             <p className="mt-4 text-sm text-muted">
               <Link to="/about" className="underline underline-offset-4 hover:text-fg">
@@ -371,7 +371,7 @@ function PensionPresentValue() {
           </p>
         </article>
         <div className="max-w-[42rem]">
-          <RelatedPieces path="/pension-present-value" />
+          <RelatedPieces path="/military-pension-present-value" />
         </div>
       </div>
       <MachFooter staticInset />
