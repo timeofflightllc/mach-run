@@ -235,8 +235,7 @@ function PensionPresentValue() {
               making career decisions in the service.
             </p>
             <p>
-              The rest of this page is how that number gets built, and what changes once you can
-              see it sitting next to the nest egg you are still saving.
+              Career decisions get made without that number. So does the 25-times rule. Both are wrong once the check is in the plan.
             </p>
 
             <h2 className="pt-4 text-xl font-medium text-fg">Why most FIRE math misses it</h2>
