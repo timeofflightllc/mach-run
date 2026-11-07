@@ -49,8 +49,8 @@ function Inlines({ nodes }: { nodes: Inline[] }) {
 
 function Formula() {
   return (
-    <figure className="my-2 overflow-x-auto text-fg">
-      <p className="flex w-max items-center gap-2 text-lg">
+    <figure className="my-2 overflow-x-auto text-center text-fg">
+      <p className="mx-auto flex w-max items-center gap-2 text-lg">
         <span>PV = A ×</span>
         <span className="inline-flex flex-col items-center text-center leading-none">
           <span className="border-b border-current px-3 pb-1.5">
