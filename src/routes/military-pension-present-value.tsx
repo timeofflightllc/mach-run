@@ -3,7 +3,7 @@ import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { PieceCrumbs, RelatedPieces } from "@/components/meridian/piece-links";
 import { pageHead } from "@/lib/seo";
 
-const TITLE = "What a Military Pension Is Worth: Present Value and FIRE";
+const TITLE = "What a military pension is worth";
 const DESCRIPTION =
   "An O-5 retiring at 20 under High-3 holds retired pay worth about $2.35 million today. How to value it, and what it means for the nest egg.";
 
@@ -65,11 +65,12 @@ function PensionPresentValue() {
     <main className="min-h-screen bg-bg py-10 text-fg">
       <div className="static-gutter mx-auto w-full">
         <PageMast />
-        <div className="mx-auto mt-8 w-full max-w-[56rem]">
+      </div>
+      <div className="mx-auto mt-8 w-full max-w-[70rem] px-5 sm:px-8">
           <PieceCrumbs path="/military-pension-present-value" />
           <header className="mt-6">
             <h1 className="font-display text-4xl leading-none text-fg sm:text-5xl">
-              What a military pension is worth, and what it means for your FIRE number
+              What a military pension is worth
             </h1>
             <p className="mt-4 text-sm text-muted">
               <Link to="/about" className="underline underline-offset-4 hover:text-fg">
@@ -176,7 +177,7 @@ function PensionPresentValue() {
           </article>
 
         <div className="mt-6 overflow-x-auto">
-          <table className="w-full min-w-[52rem] border-collapse text-left text-sm text-fg">
+          <table className="w-full border-collapse text-left text-sm text-fg">
             <caption className="sr-only">
               Present value of three June 2026 military retirements to age 95
             </caption>
@@ -370,7 +371,6 @@ function PensionPresentValue() {
           </p>
         </article>
           <RelatedPieces path="/military-pension-present-value" />
-        </div>
       </div>
       <MachFooter staticInset />
     </main>
