@@ -239,27 +239,27 @@ function PensionPresentValue() {
 
             <h2 className="pt-4 text-xl font-medium text-fg">Why most FIRE math misses it</h2>
             <p>
-              The rule that gets passed around is 25 times spending. Spend $100,000 a year and you're
+              A common rule of thumb is 25 times spending. Spend $100,000 a year and you're
               told you need $2.5 million invested, so a 4% withdrawal covers the bills. That rule
               was written for a portfolio, where every dollar of spending has to come out of an
               account that can fall 40% in a bad year.
             </p>
             <p>
               Military retired pay does not come out of a portfolio. It shows up on the first of
-              the month whether the market had a bad year or not, and the COLA is applied whether
-              anyone rebalanced. I've seen families leave the check out of the plan. The nest egg
+              the month whether the market had a bad year or not. I've seen families leave the check out of the plan. The nest egg
               then gets sized for bills the pension was already going to pay, so the goal looks
               bigger than the gap really is. I've also seen the check used as a reason to stop
-              saving. Then you have the pension, and nothing built on top of it.
+              saving. Then you have the pension, and nothing built on top of it. Sadly, this is
+              more common than people likely would believe.
             </p>
             <p>
               I built MACH RUN so the pension, VA pay, the TSP, and a spouse's income would
-              sit on one page instead of in four different spreadsheets. Think about what that
-              pension actually does for a household. It might cover the mortgage, utilities,
-              groceries, or some mix of the everyday bills. Whatever it covers, the investments
-              only have to produce the rest. That rest might be a surviving spouse, or the years
-              after a second career. You can't tell how big that pile needs to be until you know
-              what the pension is already paying.
+              sit on one page instead of in four different spreadsheets. The military pension could
+              be used to continue funding investments, cover the mortgage, utilities, or a mix of
+              every day bills. Whatever it covers, an investment portfolio, second career or
+              spouses income would only need to cover any spending gap. In order to fully bake in
+              this important financial decision, a complete knowledge of the value of the pension
+              is important.
             </p>
             <p>
               I've always thought one of the biggest mistakes in military retirement planning is
@@ -285,12 +285,11 @@ function PensionPresentValue() {
               <Link to="/retired-pay" className="text-fg underline underline-offset-4 hover:text-accent">
                 free calculator
               </Link>{" "}
-              runs that arithmetic on the 2026 pay tables.
+              runs that arithmetic on the 2026 pay tables. Enjoy it, and share it with your friends.
             </p>
             <p>
               <strong className="font-semibold text-fg">How long it pays.</strong> The stream is
-              counted from retirement age out to a planning age. I used 95 on purpose, because it
-              is a long life and I would rather the number be a little high than run out of runway at
+              counted from retirement age out to a planning age. I prefer to use age 95 in order to ensure financial stability well past average lifespan — I would rather the number be a little high than run out of runway at
               82. If the same pension is stopped at 85, someone retiring around 40 gives up about
               15 percent of the value. The cut is a little deeper when retirement comes later.
             </p>
