@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Check, Copy, Linkedin, Mail, Share2 } from "lucide-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { PieceCrumbs, RelatedPieces } from "@/components/meridian/piece-links";
@@ -9,6 +10,8 @@ const ARTICLE_BTN =
   "inline-flex h-11 items-center justify-center rounded-lg border border-[#1a2330] bg-white px-4 text-sm font-medium text-[#1a2330] no-underline hover:bg-[#f3faf6]";
 const ARTICLE_BTN_PRIMARY =
   "inline-flex h-11 items-center justify-center rounded-lg bg-[#3a8a58] px-4 text-sm font-medium text-white no-underline hover:opacity-90";
+const ARTICLE_ICON_BTN =
+  "inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#1a2330] bg-white text-[#1a2330] no-underline hover:bg-[#f3faf6]";
 const TITLE = "What a Military Pension Is Worth: Present Value and FIRE";
 const DESCRIPTION =
   "An O-5 retiring at 20 under High-3 holds retired pay worth about $2.35 million today. How to value it, and what it means for the nest egg.";
@@ -80,7 +83,7 @@ function ArticleShare() {
     "What a military pension is actually worth, and what it means for your FIRE number";
   const mail = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`${title}\n\n${url}`)}`;
   const linkedIn = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
-  const linkClass = ARTICLE_BTN;
+  const linkClass = ARTICLE_ICON_BTN;
 
   async function copy() {
     try {
@@ -106,17 +109,41 @@ function ArticleShare() {
 
   return (
     <div className="flex flex-wrap items-center gap-3 text-fg">
-      <button type="button" className={`${linkClass} sm:hidden`} onClick={() => void share()}>
-        {copied ? "Link copied" : "Share"}
+      <button
+        type="button"
+        className={`${linkClass} sm:hidden`}
+        aria-label={copied ? "Link copied" : "Share"}
+        title={copied ? "Link copied" : "Share"}
+        onClick={() => void share()}
+      >
+        {copied ? <Check className="h-4 w-4" aria-hidden /> : <Share2 className="h-4 w-4" aria-hidden />}
       </button>
-      <button type="button" className={`${linkClass} hidden sm:inline-flex`} onClick={() => void copy()}>
-        {copied ? "Link copied" : "Copy link"}
+      <button
+        type="button"
+        className={`${linkClass} hidden sm:inline-flex`}
+        aria-label={copied ? "Link copied" : "Copy link"}
+        title={copied ? "Link copied" : "Copy link"}
+        onClick={() => void copy()}
+      >
+        {copied ? <Check className="h-4 w-4" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
       </button>
-      <a href={mail} className={`${linkClass} hidden sm:inline-flex`}>
-        Email
+      <a
+        href={mail}
+        className={`${linkClass} hidden sm:inline-flex`}
+        aria-label="Email"
+        title="Email"
+      >
+        <Mail className="h-4 w-4" aria-hidden />
       </a>
-      <a href={linkedIn} target="_blank" rel="noopener noreferrer" className={`${linkClass} hidden sm:inline-flex`}>
-        LinkedIn
+      <a
+        href={linkedIn}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${linkClass} hidden sm:inline-flex`}
+        aria-label="LinkedIn"
+        title="LinkedIn"
+      >
+        <Linkedin className="h-4 w-4" aria-hidden />
       </a>
     </div>
   );
