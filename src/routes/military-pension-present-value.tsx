@@ -5,6 +5,10 @@ import { PieceCrumbs, RelatedPieces } from "@/components/meridian/piece-links";
 import { contentPageSchema } from "@/lib/content-page-schema";
 import { pageHead } from "@/lib/seo";
 
+const ARTICLE_BTN =
+  "inline-flex h-11 items-center justify-center rounded-lg border border-[#1a2330] bg-white px-4 text-sm font-medium text-[#1a2330] no-underline hover:bg-[#f3faf6]";
+const ARTICLE_BTN_PRIMARY =
+  "inline-flex h-11 items-center justify-center rounded-lg bg-[#3a8a58] px-4 text-sm font-medium text-white no-underline hover:opacity-90";
 const TITLE = "What a Military Pension Is Worth: Present Value and FIRE";
 const DESCRIPTION =
   "An O-5 retiring at 20 under High-3 holds retired pay worth about $2.35 million today. How to value it, and what it means for the nest egg.";
@@ -76,7 +80,7 @@ function ArticleShare() {
     "What a military pension is actually worth, and what it means for your FIRE number";
   const mail = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`${title}\n\n${url}`)}`;
   const linkedIn = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
-  const linkClass = "underline underline-offset-4 hover:text-accent";
+  const linkClass = ARTICLE_BTN;
 
   async function copy() {
     try {
@@ -101,17 +105,17 @@ function ArticleShare() {
   }
 
   return (
-    <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 text-base text-fg">
+    <div className="flex flex-wrap items-center gap-3 text-fg">
       <button type="button" className={`${linkClass} sm:hidden`} onClick={() => void share()}>
         {copied ? "Link copied" : "Share"}
       </button>
-      <button type="button" className={`${linkClass} hidden sm:inline`} onClick={() => void copy()}>
+      <button type="button" className={`${linkClass} hidden sm:inline-flex`} onClick={() => void copy()}>
         {copied ? "Link copied" : "Copy link"}
       </button>
-      <a href={mail} className={`${linkClass} hidden sm:inline`}>
+      <a href={mail} className={`${linkClass} hidden sm:inline-flex`}>
         Email
       </a>
-      <a href={linkedIn} target="_blank" rel="noopener noreferrer" className={`${linkClass} hidden sm:inline`}>
+      <a href={linkedIn} target="_blank" rel="noopener noreferrer" className={`${linkClass} hidden sm:inline-flex`}>
         LinkedIn
       </a>
     </div>
@@ -370,14 +374,14 @@ function PensionPresentValue() {
             A full MACH RUN then carries that paycheck, along with VA compensation, the TSP, and a
             spouse's income, into one household projection, and each one keeps its own COLA.
           </p>
-          <p className="flex flex-wrap gap-x-6 gap-y-2">
-            <Link to="/retired-pay" className="text-fg underline underline-offset-4 hover:text-accent">
+          <div className="flex flex-wrap items-center gap-3">
+            <Link to="/retired-pay" className={ARTICLE_BTN}>
               Estimate your retired pay
             </Link>
-            <Link to="/" className="text-fg underline underline-offset-4 hover:text-accent">
+            <Link to="/" className={ARTICLE_BTN_PRIMARY}>
               Start a MACH RUN
             </Link>
-          </p>
+          </div>
           <ArticleShare />
 
           <h2 className="pt-6 text-base font-medium text-fg">Sources</h2>
