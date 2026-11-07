@@ -28,7 +28,7 @@ export function contentPageSchema(title: string, path: string): JsonLd | null {
     headline: title,
     url,
     mainEntityOfPage: url,
-    image: `${SITE}/brand/mach-run-logo.jpg?v=23`,
+    image: `${SITE}/og.jpg?v=26`,
     author: {
       "@type": "Person",
       "@id": `${SITE}/about#matthew-cain-olde`,
