@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { PieceCrumbs, RelatedPieces } from "@/components/meridian/piece-links";
@@ -67,6 +68,55 @@ export const Route = createFileRoute("/military-pension-present-value")({
   },
   component: PensionPresentValue,
 });
+
+function ArticleShare() {
+  const [copied, setCopied] = useState(false);
+  const url = "https://machrun.com/military-pension-present-value";
+  const title =
+    "What a military pension is actually worth, and what it means for your FIRE number";
+  const mail = `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(`${title}\n\n${url}`)}`;
+  const linkedIn = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
+  const linkClass = "underline underline-offset-4 hover:text-accent";
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  async function share() {
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({ title, url });
+        return;
+      } catch {
+        return;
+      }
+    }
+    await copy();
+  }
+
+  return (
+    <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 text-base text-fg">
+      <button type="button" className={`${linkClass} sm:hidden`} onClick={() => void share()}>
+        {copied ? "Link copied" : "Share"}
+      </button>
+      <button type="button" className={`${linkClass} hidden sm:inline`} onClick={() => void copy()}>
+        {copied ? "Link copied" : "Copy link"}
+      </button>
+      <a href={mail} className={`${linkClass} hidden sm:inline`}>
+        Email
+      </a>
+      <a href={linkedIn} target="_blank" rel="noopener noreferrer" className={`${linkClass} hidden sm:inline`}>
+        LinkedIn
+      </a>
+    </div>
+  );
+}
 
 function Formula() {
   return (
@@ -328,6 +378,7 @@ function PensionPresentValue() {
               Start a MACH RUN
             </Link>
           </p>
+          <ArticleShare />
 
           <h2 className="pt-6 text-base font-medium text-fg">Sources</h2>
           <ul className="list-disc space-y-2 pl-5 text-base">
