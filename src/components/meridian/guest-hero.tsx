@@ -840,7 +840,7 @@ const PROCESS_STEPS = [
   {
     id: "orient",
     title: "Orient",
-    body: "Income and spending — where the dollars actually go.",
+    body: "Current and future income and spending — where the dollars come from, and where they go.",
     line: "Pay steps from O-3 to O-4, then to O-5 at 16 years. Military retired pay at 41 is about $4,643. Spending is $8,600 a month.",
     icon: Compass,
   },
