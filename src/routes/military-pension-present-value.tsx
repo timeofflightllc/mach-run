@@ -65,7 +65,7 @@ function PensionPresentValue() {
     <main className="min-h-screen bg-bg py-10 text-fg">
       <div className="static-gutter mx-auto w-full">
         <PageMast />
-        <div className="mt-8 max-w-[42rem]">
+        <div className="mx-auto mt-8 w-full max-w-[56rem]">
           <PieceCrumbs path="/military-pension-present-value" />
           <header className="mt-6">
             <h1 className="font-display text-4xl leading-none text-fg sm:text-5xl">
@@ -174,9 +174,8 @@ function PensionPresentValue() {
               runs to age 95, with a 2.5% COLA.
             </p>
           </article>
-        </div>
 
-        <div className="mt-6 max-w-full overflow-x-auto">
+        <div className="mt-6 overflow-x-auto">
           <table className="w-full min-w-[52rem] border-collapse text-left text-sm text-fg">
             <caption className="sr-only">
               Present value of three June 2026 military retirements to age 95
@@ -206,7 +205,7 @@ function PensionPresentValue() {
           </table>
         </div>
 
-        <article className="mt-6 max-w-[42rem] space-y-5 text-lg leading-relaxed text-muted">
+        <article className="mt-6 space-y-5 text-lg leading-relaxed text-muted">
           <p>
             The same O-5 career under BRS, full annuity and no lump sum, is $4,355 a month from
             this calculator. The multiplier is 40%, not 50%. If that retirement is at 43, the
@@ -370,7 +369,6 @@ function PensionPresentValue() {
             talk to a fiduciary before acting on a plan.
           </p>
         </article>
-        <div className="max-w-[42rem]">
           <RelatedPieces path="/military-pension-present-value" />
         </div>
       </div>
