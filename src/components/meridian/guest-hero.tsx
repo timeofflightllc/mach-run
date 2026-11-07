@@ -295,12 +295,6 @@ export function GuestHero({
         >
           Start with just six questions
         </Link>
-        <p className="mt-1 max-w-xs text-center text-xs leading-snug text-[#3d4a54]">
-          About a minute. The monthly sketch shows before you save it.
-        </p>
-        <p className="mt-3 max-w-3xl px-4 text-center text-sm leading-snug text-[#1a2330] sm:text-base">
-          Free includes 2 incomes, 2 accounts, and 2 contributions — enough to start; upgrade for the full household stack.
-        </p>
         <p className="mt-2 text-center text-sm text-[#3d4a54]">No credit card needed.</p>
         <div className="mt-3 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:flex-row sm:flex-wrap sm:items-start sm:gap-3">
           <div className="flex flex-col items-center gap-1">
@@ -815,7 +809,7 @@ export function MilitaryHousehold({
           </a>
         </p>
         <JourneyBlock kicker="6 · The invitation" title="Start with your own numbers, or open the Hale plan.">
-          Six questions is free and does not ask for a credit card. Free includes 2 incomes, 2 accounts, and 2 contributions — enough to start; upgrade for the full household stack.
+          Six questions is free and does not ask for a credit card.
         </JourneyBlock>
         <div className="mt-4 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:flex-row sm:flex-wrap sm:items-start sm:gap-3">
           <div className="flex flex-col items-center gap-1">
@@ -825,9 +819,6 @@ export function MilitaryHousehold({
             >
               Start with just six questions
             </Link>
-            <p className="max-w-[16rem] text-center text-xs leading-snug text-[#3d4a54]">
-              About a minute. The monthly sketch shows before you save it.
-            </p>
           </div>
           <div className="flex flex-col items-center gap-1">
             <PrimaryButton

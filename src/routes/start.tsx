@@ -25,6 +25,7 @@ import { useProfileStore } from "@/lib/plan/profile-store";
 import { usePlanStore } from "@/lib/plan/store";
 import { vaSchedularPay } from "@/lib/plan/va";
 import { pageHead } from "@/lib/seo";
+import { noteVisitor } from "@/lib/conversions/api";
 
 export const Route = createFileRoute("/start")({
   head: () =>
@@ -235,6 +236,7 @@ function StartQuiz() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [built, setBuilt] = useState<{ asked: number; canPay: number; nest: number; plan: ReturnType<typeof quizPlan> } | null>(null);
+  const quizNoted = useRef(false);
   const [praise, setPraise] = useState<string | null>(null);
   const [praiseId, setPraiseId] = useState(0);
   const [waitMs, setWaitMs] = useState(7000);
@@ -381,6 +383,10 @@ function StartQuiz() {
         setBuilt(pricePlan(named));
         setError(null);
         setStep(6);
+        if (!quizNoted.current) {
+          quizNoted.current = true;
+          void noteVisitor({ data: { event: "quiz_finished" } }).catch(() => undefined);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Could not price that account.");
       }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router";
+import { createRootRoute, HeadContent, Outlet, Scripts, useRouterState } from "@tanstack/react-router";
 import { analytics } from "@heycatch/sdk";
 import { Analytics } from "@vercel/analytics/react";
 import { AuthProvider } from "@/lib/auth/provider";
@@ -13,6 +13,7 @@ import { PreviewHostBridge } from "@/components/preview-host-bridge";
 import { IdleLockGate } from "@/components/meridian/idle-lock";
 import { loadPublicSiteCopy } from "@/lib/site-copy/api";
 import { recordCampaignClickFn } from "@/lib/referrals/api";
+import { attachVisitor, noteVisitor } from "@/lib/conversions/api";
 import { DEFAULT_FOOTER_COPY, footerFromSiteCopy } from "@/lib/site-copy/footer-copy";
 import type { FooterCopy } from "@/lib/site-copy/types";
 import appCss from "../styles.css?url";
@@ -103,6 +104,55 @@ function HeyCatchPerson() {
   return null;
 }
 
+let visitNoted: Promise<void> | null = null;
+
+function sessionNoted(key: string): boolean {
+  try {
+    return sessionStorage.getItem(key) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function sessionMark(key: string) {
+  try {
+    sessionStorage.setItem(key, "1");
+  } catch {
+    /* private mode still sends once per mount */
+  }
+}
+
+/** One visit per browser session, then link the cookie once a real account is on screen. */
+function VisitorCount() {
+  const { user, isPending } = useCurrentUserState();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const visitSent = useRef(false);
+  const attachSent = useRef(false);
+
+  useEffect(() => {
+    if (visitSent.current) return;
+    if (pathname.startsWith("/top-3-desk")) return;
+    visitSent.current = true;
+    if (sessionNoted("mach-visit-noted")) return;
+    sessionMark("mach-visit-noted");
+    visitNoted = noteVisitor({ data: { event: "visit" } })
+      .then(() => undefined)
+      .catch(() => undefined);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (attachSent.current || isPending) return;
+    if (!user || user.isDevFallback) return;
+    attachSent.current = true;
+    if (sessionNoted("mach-visitor-attached")) return;
+    sessionMark("mach-visitor-attached");
+    const pending = visitNoted ?? Promise.resolve();
+    void pending.then(() => attachVisitor()).catch(() => undefined);
+  }, [user, isPending]);
+
+  return null;
+}
+
 function RootShell() {
   const { sessionUser } = Route.useLoaderData();
   const [snapshot] = useState(sessionUser);
@@ -126,6 +176,7 @@ function RootShell() {
         <SessionSnapshotProvider value={snapshot}>
           <AuthProvider>
             <HeyCatchPerson />
+            <VisitorCount />
             <IdleLockGate />
             <Outlet />
           </AuthProvider>

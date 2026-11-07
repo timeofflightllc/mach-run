@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { loadOfficialBasicPayTables } from "@/lib/retired-pay/dfas-api";
 import {
   entryIso,
@@ -28,6 +28,7 @@ import { clearAllStoredRuns } from "@/lib/plan/last-run";
 import { armQuizOpen, holdQuizPlan, militaryIncomePlan } from "@/lib/plan/quiz-plan";
 import { usePlanStore } from "@/lib/plan/store";
 import { useProfileStore } from "@/lib/plan/profile-store";
+import { noteVisitor } from "@/lib/conversions/api";
 
 export const Route = createFileRoute("/retired-pay")({
   head: () =>
@@ -115,6 +116,7 @@ function RetiredPayQuiz() {
   const [lump, setLump] = useState<LumpSum>("full");
   const [step, setStep] = useState<StepId>("component");
   const [table, setTable] = useState<PayTable[] | null | undefined>(undefined);
+  const payNoted = useRef(false);
 
   const activePath = component === "active" || duty === "agr";
   const entry = entryYear && entryMonth && entryDay ? entryIso(entryYear, entryMonth, entryDay) : "";
@@ -284,6 +286,13 @@ function RetiredPayQuiz() {
   }
 
   const result = buildResult();
+
+  useEffect(() => {
+    if (payNoted.current) return;
+    if (result?.monthly == null || !Number.isFinite(result.monthly)) return;
+    payNoted.current = true;
+    void noteVisitor({ data: { event: "retired_pay" } }).catch(() => undefined);
+  }, [result]);
 
   function buildResult(): RetiredPayResult | null {
     if (!system || !table) return null;

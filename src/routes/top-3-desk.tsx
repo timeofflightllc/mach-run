@@ -12,6 +12,7 @@ import { DeskMail } from "@/components/ops/desk-mail";
 import { EmailCopyDesk } from "@/components/ops/email-copy-desk";
 import { PayTablesDesk } from "@/components/ops/pay-tables-desk";
 import { ReferralDesk } from "@/components/ops/referral-desk";
+import { ConversionsDesk } from "@/components/ops/conversions-desk";
 import { BetaDesk } from "@/components/ops/beta-desk";
 import { SavedAt } from "@/components/ops/saved-at";
 import { useEffect, useMemo, useState } from "react";
@@ -87,6 +88,7 @@ const DESK_SECTIONS = [
     tabs: [
       ["codes", "Promo codes"],
       ["referrals", "Referrals"],
+      ["conversions", "Conversions"],
       ["pay", "Retired pay"],
     ],
   },
@@ -110,7 +112,7 @@ function Top3DeskDoor() {
   >(null);
   const [proofTick, setProofTick] = useState(0);
   const [gate, setGate] = useState<"wait" | "no" | "yes">("wait");
-  const [tab, setTab] = useState<"roster" | "copy" | "boyd" | "codes" | "mail" | "emails" | "pay" | "referrals" | "beta">("roster");
+  const [tab, setTab] = useState<"roster" | "copy" | "boyd" | "codes" | "mail" | "emails" | "pay" | "referrals" | "conversions" | "beta">("roster");
   const [personFace, setPersonFace] = useState<"billing" | "activity">("billing");
   const [q, setQ] = useState("");
   const [plan, setPlan] = useState<OpsPlanFilter>("all");
@@ -322,6 +324,7 @@ function Top3DeskDoor() {
         {tab === "emails" ? <EmailCopyDesk /> : null}
         {tab === "pay" ? <PayTablesDesk /> : null}
         {tab === "referrals" ? <ReferralDesk /> : null}
+        {tab === "conversions" ? <ConversionsDesk /> : null}
         {tab === "beta" ? <BetaDesk /> : null}
         {tab === "mail" ? (
           <DeskMail

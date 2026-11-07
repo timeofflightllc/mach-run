@@ -9,7 +9,7 @@ export type HeroCopy = {
 export const DEFAULT_HERO_COPY: HeroCopy = {
   headline:
     "See your entire household's retirement on one page, from active duty, spouse pay and TSP contributions to VA benefits, retirement date and the nest-egg goal.",
-  text: "Plan for pay increases at a promotion, yearly NDAA's, and planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move.\nFree to start. $4 a month gets you more.",
+  text: "Plan for pay increases at a promotion, yearly NDAA's, and planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move.\nFree to start — 2 incomes, 2 accounts, 2 contributions.  $4 a month gets you more.",
 };
 
 const STALE_HEADLINES = new Set([
@@ -43,9 +43,16 @@ export function parseHeroCopy(raw: string): HeroCopy {
     typeof src.headline === "string" && !STALE_HEADLINES.has(src.headline.trim())
       ? src.headline
       : DEFAULT_HERO_COPY.headline;
+  const textRaw = typeof src.text === "string" ? src.text : "";
+  const refreshed = textRaw
+    .replaceAll(
+      "Free to start. $4 a month gets you more.",
+      "Free to start — 2 incomes, 2 accounts, 2 contributions.  $4 a month gets you more.",
+    )
+    .replace(/move\.\s+Free to start/g, "move.\nFree to start");
   const text =
-    typeof src.text === "string" && !STALE_TEXT.includes(src.text.trim())
-      ? src.text
+    refreshed.trim() && !STALE_TEXT.includes(refreshed.trim())
+      ? refreshed
       : DEFAULT_HERO_COPY.text;
   return { headline, text };
 }

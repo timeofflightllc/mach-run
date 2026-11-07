@@ -48,6 +48,7 @@ import { createDefaultPlan } from "@/lib/plan/defaults";
 import { planHasEntries } from "@/lib/plan/demo-plan";
 import { MACH_PROFILE_REMOVED, useProfileStore } from "@/lib/plan/profile-store";
 import { useCloudPlan } from "@/lib/plan/use-cloud-plan";
+import { noteVisitor } from "@/lib/conversions/api";
 import { quizOpenPending, takeQuizOpen } from "@/lib/plan/quiz-plan";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { hasBalanceSheet, isAdvisorPlan } from "@/lib/billing/limits";
@@ -1327,6 +1328,7 @@ function Home() {
     (advisor && advisorProof == null) ||
     advisorNeedsCheck;
   const [demoLoaded, setDemoLoaded] = useState(false);
+  const demoNoted = useRef(false);
   const stepsRef = useRef<HTMLDivElement>(null);
   const engagedRef = useRef(false);
   const [stepsH, setStepsH] = useState<number | null>(null);
@@ -1946,6 +1948,10 @@ function Home() {
   }
 
   function showDemo() {
+    if (!demoNoted.current) {
+      demoNoted.current = true;
+      void noteVisitor({ data: { event: "demo" } }).catch(() => undefined);
+    }
     motionRef.current = null;
     setMotion(null);
     setFrameHeight(null);
