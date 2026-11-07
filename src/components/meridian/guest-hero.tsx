@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type TransitionEvent } from "react";
+import { useEffect, useId, useRef, useState, type TransitionEvent } from "react";
 import { Link } from "@tanstack/react-router";
 import { Compass, Eye, Flag, GitBranch } from "lucide-react";
 import { OodaLoop } from "@/components/meridian/how-it-works";
@@ -504,6 +504,7 @@ const MILITARY_SAMPLE = [
 
 /** One row of white stars on Old Glory blue. Decorative. */
 function FlagStripe({ end = false }: { end?: boolean }) {
+  const id = `mach-flag-stars-${useId().replace(/:/g, "")}`;
   return (
     <div
       aria-hidden="true"
@@ -511,7 +512,7 @@ function FlagStripe({ end = false }: { end?: boolean }) {
     >
       <svg className="h-full w-full" preserveAspectRatio="xMidYMid slice">
         <defs>
-          <pattern id="mach-flag-stars" width="36" height="32" patternUnits="userSpaceOnUse">
+          <pattern id={id} width="36" height="32" patternUnits="userSpaceOnUse">
             <polygon
               fill="#fff"
               points="18,9 19.6,13.7 24.7,13.8 20.7,16.9 22.1,21.7 18,18.8 13.9,21.7 15.3,16.9 11.3,13.8 16.4,13.7"
@@ -519,7 +520,7 @@ function FlagStripe({ end = false }: { end?: boolean }) {
           </pattern>
         </defs>
         <rect width="100%" height="100%" fill="#002868" />
-        <rect width="100%" height="100%" fill="url(#mach-flag-stars)" />
+        <rect width="100%" height="100%" fill={`url(#${id})`} />
       </svg>
     </div>
   );
@@ -564,17 +565,18 @@ export function MilitaryHousehold({
       <div className="mx-auto w-full max-w-3xl px-2" aria-hidden="true">
         <div style={{ paddingTop: "calc(12.5% + 3.375rem)" }} />
       </div>
-      <div className="page-gutter relative mx-auto flex w-full max-w-none flex-col items-center pt-4 pb-1 text-center sm:pt-6 sm:pb-1">
+      <div className="page-gutter relative mx-auto flex w-full max-w-none flex-col items-center pt-4 pb-12 text-center sm:pt-6 sm:pb-16">
         <JourneyBlock kicker="1 · The problem" title="Retirement is complicated.">
           Military retired pay, VA compensation, TSP, Social Security, spouse income, and expenses
           all operate on different timelines.
         </JourneyBlock>
         <JourneyBlock kicker="2 · The frustration" title="Most calculators only show pieces of the puzzle.">
-          Spreadsheets require considerable effort to maintain.
+          Spreadsheets take real work to keep current. Most popular software only tracks investments.
+          A promotion, a COLA, and retired pay rarely make it into the picture.
         </JourneyBlock>
         <JourneyBlock kicker="3 · The solution" title="One household picture.">
           MACH RUN brings the entire household financial picture together — a promotion, a new
-          job, TSP, military retired pay, VA, and your nest-egg goal — in one place.
+          job, a spouse's paycheck, TSP, military retired pay, VA, and the nest-egg goal — in one place.
         </JourneyBlock>
         <FlagStripe />
         <p className="font-display text-lg font-semibold uppercase tracking-[0.14em] text-[#3a8a58] sm:text-2xl">
@@ -584,10 +586,11 @@ export function MilitaryHousehold({
           Promotions, TSP, retired pay, and VA on one strip
         </h2>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-muted sm:text-base">
-          Pay steps up at promotion, then retired pay and VA take over, all on the same strip. MACH
-          RUN blends that with the rest of the household and shows what the mix can pay in retirement.
+          Pay steps up at promotion, then retired pay and VA take over, all on the same strip.
+          <br />
+          MACH RUN blends that with the rest of the household and shows what the mix can pay in retirement.
         </p>
-        <div className="mt-6 w-full max-w-3xl rounded-lg bg-[#1a2330] px-4 py-5 text-white">
+        <div className="mt-6 w-full max-w-4xl rounded-lg bg-[#1a2330] px-4 py-5 text-white">
           <div className="grid">
             <div className={active ? "invisible col-start-1 row-start-1" : "col-start-1 row-start-1"}>
               <p className="font-display text-xs font-semibold uppercase tracking-[0.16em] text-[#e8c547]">
@@ -628,7 +631,7 @@ export function MilitaryHousehold({
             ))}
           </div>
         </div>
-        <div className="mt-3 grid w-full max-w-3xl gap-3 sm:grid-cols-3">
+        <div className="mt-3 grid w-full max-w-4xl gap-3 sm:grid-cols-3">
           {MILITARY_SAMPLE.map((row) => (
             <div
               key={row.id}
@@ -654,6 +657,7 @@ export function MilitaryHousehold({
           Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at
           the required-withdrawal age, 75.
         </p>
+        <FlagStripe />
         <p className="mt-6 w-full max-w-3xl text-left font-display text-lg font-semibold uppercase tracking-[0.12em] text-[#3a8a58] sm:text-xl">
           4 · The process
         </p>
@@ -718,7 +722,8 @@ export function MilitaryHousehold({
             retire at 60, in June 2057. The nest-egg goal is $1.8 million in today's dollars. On this
             savings rate they are short of it.
           </p>
-          <div className="mt-4 grid gap-3 text-left sm:grid-cols-3">
+        </div>
+        <div className="mt-4 grid w-full max-w-4xl gap-3 text-left sm:grid-cols-3">
             <ScenarioCard
               title="Original plan"
               body="About $1.57 million at age 60, short of the $1.8 million goal."
@@ -734,14 +739,14 @@ export function MilitaryHousehold({
               onTap={() => setHalePin("save")}
             />
             <ScenarioCard
-              title="Retire at 65"
+              title="Delay retirement 5 years"
               body="Same savings rate. Five more working years, and the goal is met."
               active={haleView === "later"}
               onEnter={() => setHaleHover("later")}
               onTap={() => setHalePin("later")}
             />
           </div>
-          <div className="mt-3 grid rounded-lg bg-white px-5 py-4 text-left shadow-[0_0_0_1px_var(--color-border)]">
+          <div className="mt-3 grid w-full max-w-4xl rounded-lg bg-white px-5 py-4 text-left shadow-[0_0_0_1px_var(--color-border)]">
             {(Object.keys(HALE_BLUF) as (keyof typeof HALE_BLUF)[]).map((key) => (
               <div
                 key={key}
@@ -763,7 +768,7 @@ export function MilitaryHousehold({
             ))}
           </div>
           {confirming ? (
-            <div className="mt-4 rounded-lg bg-surface px-4 py-3 text-center shadow-[0_0_0_1px_var(--color-border)]">
+            <div className="mt-4 w-full max-w-4xl rounded-lg bg-surface px-4 py-3 text-center shadow-[0_0_0_1px_var(--color-border)]">
               <p className="text-sm text-fg">
                 This replaces the household already entered. That cannot be undone from here.
               </p>
@@ -781,7 +786,6 @@ export function MilitaryHousehold({
               </div>
             </div>
           ) : null}
-        </div>
         <p className="mt-4 max-w-3xl px-4 text-center text-lg font-medium italic leading-snug text-[#1a2330] sm:text-2xl">
           Households that plan for retirement end up with roughly three times the wealth of those that don't.
           <sup className="ml-0.5 text-[0.65em] font-semibold not-italic">1</sup>
@@ -823,7 +827,6 @@ export function MilitaryHousehold({
         </div>
         <p className="mt-2 text-center text-sm text-[#3d4a54]">No credit card needed.</p>
         <FounderStory />
-        <FlagStripe end />
       </div>
     </section>
   );
