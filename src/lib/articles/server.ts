@@ -10,6 +10,8 @@ import { articleFieldsError, articleSlugError, ARTICLE_SLUG_RE } from "./slug";
 import type { ArticleRecord } from "./types";
 
 const PENSION_ARTICLE_FLAG = "article_seeded:military-pension-present-value";
+/** One refresh. Replaces the stored pension article with the current seed, then stops. */
+const PENSION_ARTICLE_REFRESH = "article_refresh:military-pension-present-value:2026-11-07-learn";
 
 type ArticleRow = {
   slug: string;
@@ -26,6 +28,21 @@ function asIso(value: string | Date): string {
   return String(value);
 }
 
+function pensionSeed(): ArticleRecord {
+  return {
+    slug: PENSION_ARTICLE_SLUG,
+    pageTitle: PENSION_ARTICLE_PAGE_TITLE,
+    h1: PENSION_ARTICLE_H1,
+    body: PENSION_ARTICLE_BODY,
+    createdAt: PENSION_ARTICLE_CREATED_AT,
+  };
+}
+
+function withPensionSeed(articles: ArticleRecord[]): ArticleRecord[] {
+  if (articles.some((article) => article.slug === PENSION_ARTICLE_SLUG)) return articles;
+  return [...articles, pensionSeed()];
+}
+
 function mapArticle(row: ArticleRow): ArticleRecord {
   return {
     slug: row.slug,
@@ -37,8 +54,8 @@ function mapArticle(row: ArticleRow): ArticleRecord {
 }
 
 /**
- * Insert the pension article once. The flag is set even when the row is already
- * there, and this never updates a row, so a Top 3 edit is left alone.
+ * Make sure the pension article is the current seed.
+ * The refresh flag runs once, so a later Top 3 edit is left alone.
  * A missing table (migration not applied yet) is ignored.
  */
 export async function ensurePensionArticle(): Promise<void> {
@@ -52,30 +69,27 @@ export async function ensurePensionArticle(): Promise<void> {
     `);
     const flagged = await sql.query<{ key: string }>(
       "select key from mach_copy_flags where key = $1",
-      [PENSION_ARTICLE_FLAG],
+      [PENSION_ARTICLE_REFRESH],
     );
     if (flagged.length) return;
-    const found = await sql.query<{ slug: string }>(
-      "select slug from mach_articles where slug = $1",
-      [PENSION_ARTICLE_SLUG],
-    );
-    if (!found.length) {
-      await sql.query(
-        `insert into mach_articles (slug, page_title, h1, body, created_at)
-         values ($1, $2, $3, $4, $5)
-         on conflict (slug) do nothing`,
-        [
-          PENSION_ARTICLE_SLUG,
-          PENSION_ARTICLE_PAGE_TITLE,
-          PENSION_ARTICLE_H1,
-          PENSION_ARTICLE_BODY,
-          PENSION_ARTICLE_CREATED_AT,
-        ],
-      );
-    }
     await sql.query(
-      `insert into mach_copy_flags (key) values ($1) on conflict (key) do nothing`,
-      [PENSION_ARTICLE_FLAG],
+      `insert into mach_articles (slug, page_title, h1, body, created_at)
+       values ($1, $2, $3, $4, $5)
+       on conflict (slug) do update set
+         page_title = excluded.page_title,
+         h1 = excluded.h1,
+         body = excluded.body`,
+      [
+        PENSION_ARTICLE_SLUG,
+        PENSION_ARTICLE_PAGE_TITLE,
+        PENSION_ARTICLE_H1,
+        PENSION_ARTICLE_BODY,
+        PENSION_ARTICLE_CREATED_AT,
+      ],
+    );
+    await sql.query(
+      `insert into mach_copy_flags (key) values ($1), ($2) on conflict (key) do nothing`,
+      [PENSION_ARTICLE_FLAG, PENSION_ARTICLE_REFRESH],
     );
   } catch {
     // mach_articles is not there yet, or the database is down. Do not block the page.
@@ -91,9 +105,9 @@ export async function listArticles(): Promise<ArticleRecord[]> {
        from mach_articles
        order by created_at desc, slug asc`,
     );
-    return rows.map(mapArticle);
+    return withPensionSeed(rows.map(mapArticle));
   } catch {
-    return [];
+    return [pensionSeed()];
   }
 }
 
