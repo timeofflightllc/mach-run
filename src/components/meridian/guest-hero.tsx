@@ -720,7 +720,7 @@ export function MilitaryHousehold({
           <h3 className="font-display text-2xl font-semibold leading-tight text-[#1a2330] sm:text-3xl">
             The Hale Family Demo
           </h3>
-          <p className="mt-2 text-sm leading-relaxed text-[#1a2330] sm:text-base">
+          <p className="mt-2 px-8 text-sm leading-relaxed text-[#1a2330] sm:px-12 sm:text-base">
             Jordan Hale is 29 and an Air Force captain, O-3 with 8 years in. Riley Hale is 28 and
             teaches school. They have three children. Jordan’s basic pay is $8,126 a month, plus BAH
             and BAS. Riley earns $4,200. He pins on O-5 at 16 years and leaves the military in June
