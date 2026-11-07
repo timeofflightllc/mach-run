@@ -1,4 +1,6 @@
 export const ARTICLE_FORMULA = "PV = A × [1 − ((1+g)÷(1+r))^n] / (r−g)";
+export const ARTICLE_QUESTIONS_HEADING =
+  "Common questions about military retirement pay and calculations";
 
 export type Inline =
   | { type: "text"; text: string }
@@ -80,7 +82,7 @@ export function parseArticle(body: string): ArticleBlock[] {
     const block = source[i] ?? "";
     const h2 = isHeading(block, "##");
     if (h2 != null) {
-      inQuestions = h2 === "Questions";
+      inQuestions = h2 === "Questions" || h2 === ARTICLE_QUESTIONS_HEADING;
       blocks.push({ type: "h2", text: h2 });
       continue;
     }

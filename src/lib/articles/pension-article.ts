@@ -1,4 +1,4 @@
-import { ARTICLE_FORMULA } from "./body.ts";
+import { ARTICLE_FORMULA, ARTICLE_QUESTIONS_HEADING } from "./body.ts";
 
 /** Seed copy for the military pension article. A later Top 3 edit replaces the row, not this file. */
 
@@ -78,7 +78,7 @@ Retired pay is taxed as federal income, and many states exempt some or all of it
 
 VA compensation reduces retired pay for some people. Below a 50% rating, or without a 20-year retirement, VA pay is offset against retired pay dollar for dollar. CRDP and CRSC put some of that back for many retirees. You can receive one or the other, not both.
 
-## Questions
+## ${ARTICLE_QUESTIONS_HEADING}
 
 ### Is a military pension worth a million dollars?
 
