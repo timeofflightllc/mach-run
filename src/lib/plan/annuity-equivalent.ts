@@ -139,7 +139,7 @@ export type AnnuityCopy = {
 };
 
 export function annuityEquivalentCopy(eq: AnnuityEquivalent): AnnuityCopy {
-  const intro = `U.S. guaranteed paychecks (military retired pay, VA, Social Security, pension, other retirement) are not a nest egg you can sell — but they replace what a zero-risk annuity would have to pay. Discounted at ${eq.discountPct}% nominal with your COLA, through age ${eq.throughAge}.`;
+  const intro = `U.S. guaranteed paychecks (military retired pay, VA, Social Security, pension, other retirement) are not a nest egg you can sell. This is the present value of a federal annuity that would pay the same checks. Discounted at ${eq.discountPct}% nominal with your COLA, through age ${eq.throughAge}.`;
   const note =
     "This is a measuring stick, not a product you can buy and not a guarantee. The Treasury and an insurer would price the same check differently.";
   let running = 0;

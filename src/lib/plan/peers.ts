@@ -798,7 +798,7 @@ export function buildPeerBrief(
   if (annuityEquivalent) {
     add(
       "Guaranteed paycheck equivalent",
-      "If you have a U.S. government retirement paycheck, such as military retired pay, VA compensation, Social Security, or a federal civilian pension, it can be useful to see the estimated annuity value of that near-zero-risk income. This is for informational and educational purposes only.",
+      "If you have a U.S. government retirement paycheck, such as military retired pay, VA compensation, Social Security, or a federal civilian pension, this is the present value of a federal annuity that would pay the same checks. This is an estimate for informational and educational purposes only. It is not a guarantee.",
       { variant: "annuity" },
     );
   }

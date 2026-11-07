@@ -438,6 +438,18 @@ function withMethodSources(page: SitePage): SitePage {
   return { ...page, body: `${page.body.trimEnd()}\n\n${METHOD_SOURCES_BLOCK}\n` };
 }
 
+function softenPublicClaims(text: string): string {
+  return text
+    .replace(
+      /I guarantee(?: that)? a human will read it and respond within 24 to 48 hours\.?/gi,
+      "A person reads every note. Replies usually go out within two business days.",
+    )
+    .replace(
+      /I guarantee(?: that)? a human will read (?:it|this)\.?/gi,
+      "A person reads every note.",
+    );
+}
+
 function mapPage(row: {
   slug: string;
   title: string;
@@ -450,8 +462,8 @@ function mapPage(row: {
       preferCurrentLegal({
         slug: row.slug,
         title: row.title,
-        kicker: row.kicker ?? "",
-        body: freshenStoredCopy(row.body ?? ""),
+        kicker: softenPublicClaims(row.kicker ?? ""),
+        body: softenPublicClaims(freshenStoredCopy(row.body ?? "")),
       }),
     ),
   );
