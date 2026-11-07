@@ -243,6 +243,44 @@ function ArticleBody({ body }: { body: string }) {
   );
 }
 
+const CAIN_LINKEDIN = "https://www.linkedin.com/in/cainf-15advanced/";
+
+function ArticleAuthor() {
+  return (
+    <footer className="mt-10 border-t border-border pt-6">
+      <p className="font-display text-2xl leading-none text-fg">Matthew "Cain" Olde</p>
+      <p className="mt-3 text-base leading-relaxed text-fg">
+        Cain is a retired U.S. Air Force F-15 pilot who built MACH RUN so a military or veteran family
+        could see active, Guard, Reserve, or retired pay, VA, the TSP, and the rest of the household
+        on one page, for a fair price.
+      </p>
+      <p className="mt-4 text-sm font-medium sm:text-base">
+        <Link to="/about" className="text-fg underline underline-offset-4 hover:text-accent">
+          Read the full story →
+        </Link>
+        <span aria-hidden="true" className="text-muted">
+          {" "}
+          ·{" "}
+        </span>
+        <a
+          href={CAIN_LINKEDIN}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-fg underline underline-offset-4 hover:text-accent"
+        >
+          LinkedIn
+        </a>
+      </p>
+      <p className="mt-4 text-sm leading-relaxed text-muted">
+        MACH RUN is a household calculator. Figures in these articles are estimates for information
+        and education. They are not a DFAS or VA determination, not a forecast, and not financial,
+        tax, or investment advice. Confirm the figures with DFAS and the VA, and talk to a fiduciary
+        before you act on a plan.
+      </p>
+    </footer>
+  );
+}
+
 export function ArticlePage({ article }: { article: ArticleRecord }) {
   const url = `https://machrun.com/learn/${article.slug}`;
   const date = articleDateLabel(article.createdAt);
@@ -268,6 +306,7 @@ export function ArticlePage({ article }: { article: ArticleRecord }) {
           </p>
         </header>
         <ArticleBody body={article.body} />
+        <ArticleAuthor />
         <div className="mt-8 flex flex-wrap items-center gap-3">
           <Link to="/retired-pay" className={ARTICLE_BTN}>
             Estimate your retired pay

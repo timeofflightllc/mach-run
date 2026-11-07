@@ -107,6 +107,4 @@ The point of MACH RUN is to see how those pieces fit, where the household stands
 - VA compensation rates: [VA.gov, veteran rates](https://www.va.gov/disability/compensation-rates/veteran-rates/), effective 1 December 2025. The 50% rate with a spouse and no children is $1,241.90.
 - Survivor Benefit Plan: [DFAS SBP overview](https://www.dfas.mil/RetiredMilitary/provide/sbp/).
 - Present values on this page are the author's arithmetic from the formula above, with the mid-year adjustment described there, rounded to the nearest $10,000.
-
-MACH RUN is a household calculator. The figures on this page are estimates for information and education. They are not a DFAS or VA determination, not a forecast, and not financial, tax, or investment advice. Confirm the figures with DFAS and the VA, and talk to a fiduciary before acting on a plan.
 `;
