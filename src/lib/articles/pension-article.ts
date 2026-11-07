@@ -94,11 +94,9 @@ I use 4% when I'm pricing the pension as the safe, inflation-protected paycheck 
 
 ## Run your own numbers
 
-I built MACH RUN because I wanted the whole picture on one page. Military retired pay, VA compensation, the TSP, Social Security, a civilian paycheck, the investments, and the spending all hit the same household. Looking at any one of them by itself only tells part of the story.
+You already did the hard years. The moves, the nights you were gone, the bag by the door. What you earned on the other side is a paycheck for life, and most of us still never write the number down. We wait until after the next PCS, the next deployment, the next civilian job. I did that too. A few minutes and a few keystrokes in MACH RUN, and that number gets clear, alongside the rest of the household.
 
-A pension can be a real advantage. It does not mean the household is ready for everything after the service. The surviving spouse, a second career, health care, and the years between leaving the military and actually stopping work all still have to be thought through.
-
-The point of MACH RUN is to see how those pieces fit, where the household stands, and what to change next. Gross retired pay under High-3, BRS, REDUX, or Final Pay is on the free calculator, from the 2026 basic-pay tables. Each paycheck in a full run keeps its own COLA.
+The pension, the VA check, the TSP, a spouse's income, and the spending are all on the same team. They do not sit on the same radar unless you put them there. That is why I built MACH RUN. Not to fly the jet for you, but to give you the picture to build on. If you are still in, start planning well before that final day sneaks up on you. If you are already retired, the check is coming whether you planned around it or not. It's there. See what it covers, and what it does not. Then put your family on the same page and run it. Free to start. Do it for the people who are counting on you long after the dress uniform is in the closet.
 
 ## Sources
 

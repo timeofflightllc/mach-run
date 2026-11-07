@@ -11,7 +11,7 @@ import type { ArticleRecord } from "./types";
 
 const PENSION_ARTICLE_FLAG = "article_seeded:military-pension-present-value";
 /** One refresh. Replaces the stored pension article with the current seed, then stops. */
-const PENSION_ARTICLE_REFRESH = "article_refresh:military-pension-present-value:2026-11-07-learn";
+const PENSION_ARTICLE_REFRESH = "article_refresh:military-pension-present-value:2026-11-07-close";
 
 type ArticleRow = {
   slug: string;
