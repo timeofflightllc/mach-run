@@ -69,7 +69,9 @@ function Learn() {
             >
               Free Military Retirement Pay Calculator
             </Link>
-            <p className="mt-1 text-muted">It is the free military retirement pay calculator.</p>
+            <p className="mt-1 text-muted">
+              High-3, BRS, REDUX, and Final Pay. The pre-tax retired paycheck DFAS would start, from the official basic-pay tables.
+            </p>
           </li>
           <li>
             <Link
@@ -79,7 +81,7 @@ function Learn() {
               Tools
             </Link>
             <p className="mt-1 text-muted">
-              Free calculators. The military retirement pay calculator is live. BAH, OHA, and others are still being built.
+              The free calculators. The military retirement pay calculator is live.
             </p>
           </li>
         </ul>
