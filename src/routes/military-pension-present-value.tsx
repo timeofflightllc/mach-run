@@ -19,12 +19,12 @@ const FAQ = [
   {
     question: "Is a military pension worth a million dollars?",
     answer:
-      "Usually, and often more. An E-7 retiring at 20 in 2026 holds a stream worth about $850,000 to $1.3 million, depending on the discount rate. An O-5 at 20 under High-3 holds about $1.6 million to $2.4 million. The same O-5 career under BRS is closer to $1.3 million to $1.9 million, because the multiplier is 40% instead of 50%.",
+      "Usually, and often more. An E-7 retiring at 20 in 2026 holds a stream worth about $850,000 to $1.3 million, depending on the discount rate. An O-5 at 20 under High-3 holds about $1.6 million to $2.4 million. The same O-5 career under BRS is closer to $1.3 million to $1.9 million, because the multiplier is 2% a year, or 40% at 20, instead of 2.5% a year, or 50%. The smaller pension is the trade for a TSP match. Contribute 5% of basic pay and the service adds 5% of basic pay: an automatic 1%, plus a match of up to 4% on the first 5% you put in. You can contribute Traditional or Roth. Both are matched. The service's money always goes into the Traditional balance. The automatic 1% starts about 60 days in. The match starts after two years of service and continues through a 20-year career.",
   },
   {
     question: "Should the pension be counted in net worth?",
     answer:
-      "I would count it, on its own line, and I would not drop it into the brokerage balance. The check can be spent, the present value cannot, and nobody inherits it unless SBP was elected. Once you can see which bills the pension already covers, you can see what the savings still have to do.",
+      "No. It should not be counted in net worth calculations. It should be counted in your monthly retirement income, when you decide your FIRE number and what you need each month and each year in retirement.",
   },
   {
     question: "What discount rate should be used?",
@@ -264,7 +264,7 @@ function PensionPresentValue() {
 
             <h2 className="pt-4 text-xl font-medium text-fg">How to value an inflation-adjusted pension</h2>
             <p>
-              A pension is a string of checks. Present value is the lump that would have to be set
+              A pension is a string of checks, generally paid out until death. Present value is the lump that would have to be set
               aside today, earning a chosen rate, to write those same checks until they stop. The
               monthly amount, how long the checks last, and the rate you use to discount them are
               what move the number.
@@ -282,7 +282,7 @@ function PensionPresentValue() {
             <p>
               <strong className="font-semibold text-fg">How long it pays.</strong> The stream is
               counted from retirement age out to a planning age. I used 95 on purpose, because it
-              is a long life and I would rather the number be a little high than run out of page at
+              is a long life and I would rather the number be a little high than run out of runway at
               82. If the same pension is stopped at 85, someone retiring around 40 gives up about
               15 percent of the value. The cut is a little deeper when retirement comes later.
             </p>
@@ -405,10 +405,11 @@ function PensionPresentValue() {
           </h2>
           <p>
             The $2.35 million is not a bank account. You spend the monthly check, and you cannot
-            give that number to anyone else. When the retiree dies, the checks stop unless the
-            spouse is covered by the Survivor Benefit Plan. SBP has a premium. Do not skip it
-            because you heard VA might pay the spouse. That VA check is Dependency and Indemnity
-            Compensation, and it is paid only for certain deaths. It does not replace the election.
+            give that number to anyone else. When the retiree dies, the checks stop. They stop
+            regardless. SBP is a form of life insurance. It kicks in for the surviving spouse. It
+            does not continue the retiree's pay. SBP has a premium, so talk with a CFP before
+            retirement and make the best decision you can for yourself, your surviving spouse, and
+            your family.
           </p>
           <p>
             Retired pay is taxed as federal income, and many states exempt some or all of it. For a
