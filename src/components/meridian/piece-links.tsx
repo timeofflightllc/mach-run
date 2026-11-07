@@ -39,9 +39,32 @@ function piece(path: PiecePath) {
   return found;
 }
 
-export function PieceCrumbs({ path }: { path: PiecePath }) {
-  const current = piece(path);
-  const underLearn = current.cluster === "learn" && path !== "/learn";
+export function PieceCrumbs({ path, current }: { path: PiecePath; current?: string }) {
+  if (current) {
+    return (
+      <nav aria-label="Breadcrumb" className="text-sm text-muted">
+        <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <li>
+            <Link to="/" className="underline underline-offset-4 hover:text-fg">
+              Home
+            </Link>
+          </li>
+          <li aria-hidden="true">/</li>
+          <li>
+            <Link to="/learn" className="underline underline-offset-4 hover:text-fg">
+              Learn
+            </Link>
+          </li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" className="text-fg">
+            {current}
+          </li>
+        </ol>
+      </nav>
+    );
+  }
+  const found = piece(path);
+  const underLearn = found.cluster === "learn" && path !== "/learn";
   return (
     <nav aria-label="Breadcrumb" className="text-sm text-muted">
       <ol className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -62,7 +85,7 @@ export function PieceCrumbs({ path }: { path: PiecePath }) {
           </>
         ) : null}
         <li aria-current="page" className="text-fg">
-          {current.title}
+          {found.title}
         </li>
       </ol>
     </nav>

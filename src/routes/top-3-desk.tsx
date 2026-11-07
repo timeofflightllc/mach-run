@@ -5,6 +5,7 @@ import { advisorMfaStatusFn, notifyAdvisorMfaChanged } from "@/lib/auth/advisor-
 import { isRealUser } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { SiteCopyDesk } from "@/components/ops/site-copy-desk";
+import { ArticlesDesk } from "@/components/ops/articles-desk";
 import { UserDetail } from "@/components/ops/desk-users";
 import { OpsDeleteAccount } from "@/components/ops/ops-delete-account";
 import { PromoCodesDesk } from "@/components/ops/promo-codes-desk";
@@ -97,6 +98,7 @@ const DESK_SECTIONS = [
     label: "Words",
     tabs: [
       ["copy", "Site pages"],
+      ["articles", "Articles"],
       ["boyd", "Boyd quotes"],
       ["emails", "Email templates"],
       ["mail", "Communicate with customers"],
@@ -112,7 +114,7 @@ function Top3DeskDoor() {
   >(null);
   const [proofTick, setProofTick] = useState(0);
   const [gate, setGate] = useState<"wait" | "no" | "yes">("wait");
-  const [tab, setTab] = useState<"roster" | "copy" | "boyd" | "codes" | "mail" | "emails" | "pay" | "referrals" | "conversions" | "beta">("roster");
+  const [tab, setTab] = useState<"roster" | "copy" | "articles" | "boyd" | "codes" | "mail" | "emails" | "pay" | "referrals" | "conversions" | "beta">("roster");
   const [personFace, setPersonFace] = useState<"billing" | "activity">("billing");
   const [q, setQ] = useState("");
   const [plan, setPlan] = useState<OpsPlanFilter>("all");
@@ -319,6 +321,7 @@ function Top3DeskDoor() {
         </div>
 
         {tab === "copy" ? <SiteCopyDesk /> : null}
+        {tab === "articles" ? <ArticlesDesk /> : null}
         {tab === "boyd" ? <SiteCopyDesk only="boyd" /> : null}
         {tab === "codes" ? <PromoCodesDesk /> : null}
         {tab === "emails" ? <EmailCopyDesk /> : null}

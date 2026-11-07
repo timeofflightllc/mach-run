@@ -1,6 +1,8 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { PieceCrumbs, RelatedPieces } from "@/components/meridian/piece-links";
+import { firstSentence } from "@/lib/articles/body";
+import type { ArticleRecord } from "@/lib/articles/types";
 import { loadPublicSiteCopy, pageBySlug } from "@/lib/site-copy/api";
 import { DEFAULT_PAGES } from "@/lib/site-copy/defaults";
 import { pageHead } from "@/lib/seo";
@@ -16,19 +18,30 @@ function learnLines(body: string): string[] {
 }
 
 export const Route = createFileRoute("/learn")({
-  head: () =>
-    pageHead({
+  head: ({ match }) => {
+    if (match.pathname !== "/learn") return { meta: [], links: [] };
+    return pageHead({
       title: "Learn | MACH RUN Retirement Calculator",
       description:
         "Learn is the site index for the Method, the FAQ, Compare, Updates, and Tools, including the free military retirement pay calculator.",
       path: "/learn",
-    }),
-  loader: () => loadPublicSiteCopy(),
+    });
+  },
+  loader: async () => {
+    const { listArticles } = await import("@/lib/articles/server");
+    const [copy, articles] = await Promise.all([loadPublicSiteCopy(), listArticles()]);
+    return { copy, articles };
+  },
   component: Learn,
 });
 
 function Learn() {
-  const page = pageBySlug(Route.useLoaderData(), "learn");
+  const pathname = useRouterState({
+    select: (state) => state.location.pathname.replace(/\/$/, "") || "/",
+  });
+  if (pathname !== "/learn") return <Outlet />;
+  const { copy, articles } = Route.useLoaderData();
+  const page = pageBySlug(copy, "learn");
   const lines = learnLines(page.body);
   return (
     <main className="min-h-screen bg-bg py-10 text-fg">
@@ -64,17 +77,6 @@ function Learn() {
           </li>
           <li>
             <Link
-              to="/military-pension-present-value"
-              className="font-display text-2xl text-fg underline underline-offset-4 hover:text-accent"
-            >
-              What a military pension is worth
-            </Link>
-            <p className="mt-1 text-muted">
-              What retired pay is worth today, and what that does to a FIRE number.
-            </p>
-          </li>
-          <li>
-            <Link
               to="/retired-pay"
               className="font-display text-2xl text-fg underline underline-offset-4 hover:text-accent"
             >
@@ -95,10 +97,29 @@ function Learn() {
               The free calculators. The military retirement pay calculator is live.
             </p>
           </li>
+          {articles.map((article) => (
+            <ArticleLink key={article.slug} article={article} />
+          ))}
         </ul>
         <RelatedPieces path="/learn" />
       </div>
       <MachFooter staticInset />
     </main>
+  );
+}
+
+function ArticleLink({ article }: { article: ArticleRecord }) {
+  const line = firstSentence(article.body);
+  return (
+    <li>
+      <Link
+        to="/learn/$slug"
+        params={{ slug: article.slug }}
+        className="font-display text-2xl text-fg underline underline-offset-4 hover:text-accent"
+      >
+        {article.h1}
+      </Link>
+      {line ? <p className="mt-1 text-muted">{line}</p> : null}
+    </li>
   );
 }

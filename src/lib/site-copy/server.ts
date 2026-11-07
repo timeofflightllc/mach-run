@@ -1,4 +1,5 @@
 import { getSql } from "@/lib/db";
+import { ensurePensionArticle } from "@/lib/articles/server";
 import { pathsForSlug, pingIndexNow } from "@/lib/seo/sitemap";
 import { parsePricingCopy, serializePricingCopy, withLivePricingLines } from "./pricing-copy";
 import { DEFAULT_PAGES, defaultAnnouncements, byAnnouncementDateDesc, PINNED_ANNOUNCEMENTS, REFUND_FAQ_BLOCK, REFUND_LEGAL_BLOCK, FREE_CALCULATORS_BLOCK, METHOD_SOURCES_BLOCK, RETIRED_PAY_TERMS_BLOCK } from "./defaults";
@@ -482,6 +483,7 @@ export async function loadSiteCopy(): Promise<SiteCopy> {
     await ensurePricingLiveBullets();
     await ensurePricingTagsCleared();
     await ensurePinnedAnnouncements();
+    await ensurePensionArticle();
     const sql = await getSql();
     const pageRows = await sql.query<{
       slug: string;
