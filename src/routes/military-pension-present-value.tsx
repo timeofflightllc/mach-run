@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Check, Copy, Linkedin, Mail, Share2 } from "lucide-react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { PieceCrumbs, RelatedPieces } from "@/components/meridian/piece-links";
@@ -11,7 +10,7 @@ const ARTICLE_BTN =
 const ARTICLE_BTN_PRIMARY =
   "inline-flex h-11 items-center justify-center rounded-lg bg-[#3a8a58] px-4 text-sm font-medium text-white no-underline hover:opacity-90";
 const ARTICLE_ICON_BTN =
-  "inline-flex h-11 w-11 items-center justify-center rounded-lg border border-[#1a2330] bg-white text-[#1a2330] no-underline hover:bg-[#f3faf6]";
+  "inline-flex h-10 w-10 items-center justify-center rounded-full text-white no-underline hover:opacity-90";
 const TITLE = "What a Military Pension Is Worth: Present Value and FIRE";
 const DESCRIPTION =
   "An O-5 retiring at 20 under High-3 holds retired pay worth about $2.35 million today. How to value it, and what it means for the nest egg.";
@@ -108,44 +107,83 @@ function ArticleShare() {
   }
 
   return (
-    <div className="flex flex-wrap items-center gap-3 text-fg">
+    <div className="flex flex-wrap items-center gap-3">
       <button
         type="button"
-        className={`${linkClass} sm:hidden`}
+        className={`${linkClass} sm:hidden ${copied ? "bg-[#3a8a58]" : "bg-[#1a2330]"}`}
         aria-label={copied ? "Link copied" : "Share"}
         title={copied ? "Link copied" : "Share"}
         onClick={() => void share()}
       >
-        {copied ? <Check className="h-4 w-4" aria-hidden /> : <Share2 className="h-4 w-4" aria-hidden />}
+        {copied ? <CheckMark /> : <ShareMark />}
       </button>
       <button
         type="button"
-        className={`${linkClass} hidden sm:inline-flex`}
+        className={`${linkClass} hidden sm:inline-flex ${copied ? "bg-[#3a8a58]" : "bg-[#1a2330]"}`}
         aria-label={copied ? "Link copied" : "Copy link"}
         title={copied ? "Link copied" : "Copy link"}
         onClick={() => void copy()}
       >
-        {copied ? <Check className="h-4 w-4" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
+        {copied ? <CheckMark /> : <LinkMark />}
       </button>
-      <a
-        href={mail}
-        className={`${linkClass} hidden sm:inline-flex`}
-        aria-label="Email"
-        title="Email"
-      >
-        <Mail className="h-4 w-4" aria-hidden />
+      <a href={mail} className={`${linkClass} hidden bg-[#1a2330] sm:inline-flex`} aria-label="Email" title="Email">
+        <MailMark />
       </a>
       <a
         href={linkedIn}
         target="_blank"
         rel="noopener noreferrer"
-        className={`${linkClass} hidden sm:inline-flex`}
+        className={`${linkClass} hidden bg-[#0A66C2] sm:inline-flex`}
         aria-label="LinkedIn"
         title="LinkedIn"
       >
-        <Linkedin className="h-4 w-4" aria-hidden />
+        <LinkedInMark />
       </a>
     </div>
+  );
+}
+
+function LinkMark() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+    </svg>
+  );
+}
+
+function MailMark() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="m3 7 9 6 9-6" />
+    </svg>
+  );
+}
+
+function LinkedInMark() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor" aria-hidden>
+      <path d="M6.5 9H4v11h2.5V9zM5.2 4.2a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2zM20 20h-2.5v-5.4c0-1.3 0-3-1.8-3s-2.1 1.4-2.1 2.8V20H11V9h2.4v1.5h.1c.4-.7 1.3-1.5 2.7-1.5 2.9 0 3.4 1.9 3.4 4.4V20z" />
+    </svg>
+  );
+}
+
+function ShareMark() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 15V3" />
+      <path d="m8 7 4-4 4 4" />
+      <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7" />
+    </svg>
+  );
+}
+
+function CheckMark() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M5 12.5 10 17l9-10" />
+    </svg>
   );
 }
 
