@@ -44,12 +44,25 @@ export const Route = createFileRoute("/military-pension-present-value")({
         acceptedAnswer: { "@type": "Answer", text: item.answer },
       })),
     };
+    const crumbs = {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: "https://machrun.com/" },
+        { "@type": "ListItem", position: 2, name: "Learn", item: "https://machrun.com/learn" },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: "What a military pension is worth",
+          item: "https://machrun.com/military-pension-present-value",
+        },
+      ],
+    };
     return pageHead({
       title: TITLE,
       description: DESCRIPTION,
       path: "/military-pension-present-value",
-      noindex: true,
-      jsonLd: [article, faq].filter((block): block is Record<string, unknown> => block != null),
+      jsonLd: [article, faq, crumbs].filter((block): block is Record<string, unknown> => block != null),
     });
   },
   component: PensionPresentValue,
@@ -183,7 +196,8 @@ function PensionPresentValue() {
             <h2 className="pt-4 text-xl font-medium text-fg">What the 2026 calculator says</h2>
             <p>
               Retired pay in the table is from the MACH RUN calculator for a June 2026 retirement.
-              The retiring grade was held for all 36 months. The ages are assumptions I picked so
+              The retiring grade was held for all 36 months. The O-6 figure is 75% of basic pay, not
+              the amount that hits the account. The ages are assumptions I picked so
               the stream has a length. They are not a rule that comes with the rank. Present value
               runs to age 95, with a 2.5% COLA.
             </p>
@@ -242,9 +256,12 @@ function PensionPresentValue() {
           <p>
             Jordan Hale is the sample household on the MACH RUN home page. He is 29, leaves the
             military at 41 after 20 years, and the household plans to retire at 60. Spending is
-            $8,600 a month. Retired pay in this plan is about $4,643 a month. The nest-egg goal is
-            $1.8 million in today's dollars. They keep saving in every version of this plan, and on
-            the modest rate they come up short.
+            $8,600 a month. Retired pay in this plan is about $4,643 a month. That check is higher
+            than the $4,355 BRS row because the Hale plan retires in 2038 and includes the raises
+            between now and then. The table is a June 2026 retirement on the 2026 pay scale. The
+            nest-egg goal is $1.8 million in today's dollars. They keep saving in every version of
+            this plan. On the savings rate in the demo, the nest egg is still short of $1.8 million
+            at 60.
           </p>
           <p>
             The household spends $103,200 a year. Twenty-five times that is a $2.58 million
@@ -284,7 +301,7 @@ function PensionPresentValue() {
           <p>
             VA compensation reduces retired pay for some people. Below a 50% rating, or without a
             20-year retirement, VA pay is offset against retired pay dollar for dollar. CRDP and
-            CRSC put some of that back for many retirees, and both are not paid at the same time.
+            CRSC put some of that back for many retirees. You can receive one or the other, not both.
             The offset rules are a different article.
           </p>
 

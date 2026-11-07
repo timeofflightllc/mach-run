@@ -64,6 +64,17 @@ function Learn() {
           </li>
           <li>
             <Link
+              to="/military-pension-present-value"
+              className="font-display text-2xl text-fg underline underline-offset-4 hover:text-accent"
+            >
+              What a military pension is worth
+            </Link>
+            <p className="mt-1 text-muted">
+              What retired pay is worth today, and what that does to a FIRE number.
+            </p>
+          </li>
+          <li>
+            <Link
               to="/retired-pay"
               className="font-display text-2xl text-fg underline underline-offset-4 hover:text-accent"
             >

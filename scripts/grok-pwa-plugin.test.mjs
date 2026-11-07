@@ -362,6 +362,35 @@ test("site.json title wins over the host slug", () => {
   assert.match(out, /property="og:title" content="Pixel Nova"/);
 });
 
+test("a page title and description win over the site card", () => {
+  const html =
+    '<html><head><title>What a Military Pension Is Worth</title>' +
+    '<meta name="description" content="An O-5 retiring at 20.">' +
+    '<meta property="og:title" content="MACH RUN">' +
+    '<meta property="og:description" content="The tagline."></head></html>';
+  const out = injectGrokPwaHead(html, {
+    site: {
+      title: "MACH RUN",
+      description: "The Supersonic Retirement Calculator. Measure, Allocate, Compound, Harvest.",
+    },
+  });
+  assert.match(out, /property="og:title" content="What a Military Pension Is Worth"/);
+  assert.match(out, /name="twitter:title" content="What a Military Pension Is Worth"/);
+  assert.match(out, /property="og:description" content="An O-5 retiring at 20\."/);
+  assert.match(out, /name="twitter:description" content="An O-5 retiring at 20\."/);
+  assert.doesNotMatch(out, /Measure, Allocate/);
+  assert.equal(out.split('property="og:title"').length - 1, 1);
+  assert.equal(out.split('property="og:description"').length - 1, 1);
+});
+
+test("site description stays when the page sets no meta description", () => {
+  const out = injectGrokPwaHead("<html><head><title>Page</title></head></html>", {
+    site: { title: "MACH RUN", description: "The tagline." },
+  });
+  assert.match(out, /property="og:title" content="Page"/);
+  assert.match(out, /property="og:description" content="The tagline\."/);
+});
+
 test("injects into documents with no head element", () => {
   const out = injectGrokPwaHead("<html><body>hi</body></html>", { appName: "Solo" });
   assert.match(out, /<head>/);
