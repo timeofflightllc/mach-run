@@ -124,7 +124,7 @@ Founder, MACHRUN.com`,
     kicker:
       "A MACH RUN is the press of Calculate. Observe is family and accounts. Orient is paychecks and spending. Decide is contributions. Act is the charts, the ledger, and the analysis. The engine runs one month at a time through the longevity age you set. Change an input and Act holds the last run until you calculate again.",
     body: `# How a MACH RUN works
-You fill the household as it stands. Observe is family and accounts. Orient is paychecks and spending. Decide is contributions into those accounts. Charts, the ledger, and the MACH OODA Financial Analysis stay frozen until you hit Calculate. That press is the MACH RUN. Change an input after that and Act holds the last run until you Calculate again.
+You fill the household as it stands. Observe is family and accounts. Orient is paychecks and spending. Decide is contributions into those accounts. Charts, the ledger, and the MACH OODA Financial Analysis stay frozen until you hit Calculate. That press is the MACH RUN. Change an input after that and Act holds the last run until you Calculate again. That run shows how much of the retirement lifestyle is already covered by paychecks that do not depend on the market — military retired pay, VA, a pension, Social Security — and how much the investments still have to cover.
 
 # Rates
 In Family you type a nominal return and a default COLA. Fresh plans start at 7% return and 2.5% COLA. Each account can override the return. Each paycheck can override the COLA. Inflation (also 2.5% on a fresh plan) is the Today $ / Future $ lens on the charts — it is not a second return stacked on the same box. Today $ shows buying power. Future $ shows the dollars the sim actually grew.
@@ -190,7 +190,7 @@ Type amounts in today’s dollars (what the paycheck or balance is now). MACH RU
 On purpose. Fill Observe, Orient, and Decide, then Calculate. That keeps the MACH OODA Financial Analysis honest to a snapshot you chose, not every keystroke.
 
 # What about Social Security, VA, and military retired pay?
-Those are income kinds you name and date. Social Security can follow a family member and a claiming age. VA can use rating, spouse, and children under 18, then step down as kids turn 18. Figures are estimates, not official SSA, DFAS, or VA determinations.
+Those are income kinds you name and date. Social Security can follow a family member and a claiming age. VA can use rating, spouse, and children under 18, then step down as kids turn 18. Figures are estimates, not official SSA, DFAS, or VA determinations. Together, those checks are the part of retirement that does not depend on the market. The run shows what is left for the investments to cover.
 
 # Does MACH RUN force RMDs?
 For tax-qualified accounts, required minimum distributions are modeled when the rules say they apply. The analysis calls them out. Still working and contributing to a 401(k) is treated differently than a retired IRA. Double-check IRS rules for your year.

@@ -8,17 +8,21 @@ export type HeroCopy = {
 
 export const DEFAULT_HERO_COPY: HeroCopy = {
   headline:
-    "One place to see your whole household's retirement. Pay steps up with a promotion and a COLA, plus TSP, military retired pay, VA, and your nest-egg goal.",
-  text: "Change the savings rate and contributions, and watch that date and FIRE number move. Free to start. $4 a month gets you more.",
+    "See your entire household's retirement on one page, from active duty, spouse pay and TSP contributions to VA benefits, retirement date and the nest-egg goal.",
+  text: "Plan for pay increases at a promotion and with a planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move. Free to start. $4 a month gets you more.",
 };
 
 const STALE_HEADLINES = new Set([
   "Years to your FIRE number, with TSP, military retired pay, and VA.",
   "One place to see your whole household's retirement - income, TSP, military retired pay, VA, and your nest-egg goal.",
+  "One place to see your whole household's retirement. Pay steps up with a promotion and a COLA, plus TSP, military retired pay, VA, and your nest-egg goal.",
+  "One place to see your entire household's retirement picture. Pay rises with a promotion and a COLA. TSP, military retired pay, VA, and the nest-egg goal are on the same page.",
+  "One place to see your entire household's finances on one page. Custom income stages for promotion and a COLA. TSP, military retired pay, VA, and the nest-egg goal.",
 ]);
 const STALE_TEXT = [
   "See your whole household's retirement in one place - income, investments, and your nest-egg goal, with unlimited what-if runs. Free to start. $4 a month unlocks incredible features.",
   "Change the savings rate and watch that date move. Free to start. $4 a month.",
+  "Change the savings rate and contributions, and watch that date and FIRE number move. Free to start. $4 a month gets you more.",
 ];
 
 export function serializeHeroCopy(copy: HeroCopy): string {

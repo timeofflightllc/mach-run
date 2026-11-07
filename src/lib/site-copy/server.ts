@@ -296,7 +296,15 @@ function freshenStoredCopy(body: string): string {
       "Advisor Heavy is unlimited profiles. 14-day trial, then $169/month.",
       "Advisor Heavy is 50 named profiles. 14-day trial, then $169/month.",
     )
-    .replaceAll("Unlimited named profiles", "50 named profiles");
+    .replaceAll("Unlimited named profiles", "50 named profiles")
+    .replaceAll(
+      "Change an input after that and Act holds the last run until you Calculate again.\n\n# Rates",
+      "Change an input after that and Act holds the last run until you Calculate again. That run shows how much of the retirement lifestyle is already covered by paychecks that do not depend on the market — military retired pay, VA, a pension, Social Security — and how much the investments still have to cover.\n\n# Rates",
+    )
+    .replaceAll(
+      "Figures are estimates, not official SSA, DFAS, or VA determinations.\n\n# Does MACH RUN force RMDs?",
+      "Figures are estimates, not official SSA, DFAS, or VA determinations. Together, those checks are the part of retirement that does not depend on the market. The run shows what is left for the investments to cover.\n\n# Does MACH RUN force RMDs?",
+    );
   return ensureFreeCalculators(ensureRefundCopy(next));
 }
 

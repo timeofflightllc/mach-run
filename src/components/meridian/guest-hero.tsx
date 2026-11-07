@@ -540,40 +540,10 @@ export function MilitaryHousehold({
   const [stepPin, setStepPin] = useState<(typeof PROCESS_STEPS)[number]["id"] | null>(null);
   const [haleHover, setHaleHover] = useState<"base" | "save" | "later" | null>(null);
   const [halePin, setHalePin] = useState<"base" | "save" | "later" | null>(null);
-  const [finePointer, setFinePointer] = useState(false);
-  const gridRef = useRef<HTMLDivElement>(null);
-  const processRef = useRef<HTMLDivElement>(null);
-  const outcomeRef = useRef<HTMLDivElement>(null);
   const open = sampleHover ?? samplePin;
   const step = stepHover ?? stepPin;
   const haleView = haleHover ?? halePin ?? "base";
   const active = MILITARY_SAMPLE.find((row) => row.id === open);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
-    const apply = () => setFinePointer(mq.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
-
-  useEffect(() => {
-    function close(event: PointerEvent) {
-      const target = event.target;
-      if (!(target instanceof Node)) return;
-      if (gridRef.current?.contains(target)) return;
-      if (processRef.current?.contains(target)) return;
-      if (outcomeRef.current?.contains(target)) return;
-      setSampleHover(null);
-      setSamplePin(null);
-      setStepHover(null);
-      setStepPin(null);
-      setHaleHover(null);
-      setHalePin(null);
-    }
-    document.addEventListener("pointerdown", close);
-    return () => document.removeEventListener("pointerdown", close);
-  }, []);
 
   function fillDemo() {
     usePlanStore.getState().setPlan(demoPlan());
@@ -658,7 +628,7 @@ export function MilitaryHousehold({
             ))}
           </div>
         </div>
-        <div ref={gridRef} className="mt-3 grid w-full max-w-3xl gap-3 sm:grid-cols-3">
+        <div className="mt-3 grid w-full max-w-3xl gap-3 sm:grid-cols-3">
           {MILITARY_SAMPLE.map((row) => (
             <div
               key={row.id}
@@ -666,11 +636,7 @@ export function MilitaryHousehold({
                 if (event.pointerType !== "mouse") return;
                 setSampleHover(row.id);
               }}
-              onPointerLeave={(event) => {
-                if (event.pointerType !== "mouse") return;
-                setSampleHover(null);
-              }}
-              onClick={() => setSamplePin((current) => (current === row.id ? null : row.id))}
+              onClick={() => setSamplePin(row.id)}
               className={
                 "cursor-pointer touch-pan-y rounded-lg bg-white px-4 py-4 " +
                 (open === row.id
@@ -685,14 +651,13 @@ export function MilitaryHousehold({
           ))}
         </div>
         <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted">
-          {finePointer
-            ? "Mouse over a payment. Click it to keep that view. Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at the required-withdrawal age, 75."
-            : "Tap a payment to keep that view. Tap it again, or tap outside the cards, to return to the sample. Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at the required-withdrawal age, 75."}
+          Military retired pay and VA show the zero-risk annuity at age 50. TSP shows the balance at
+          the required-withdrawal age, 75.
         </p>
         <p className="mt-6 w-full max-w-3xl text-left font-display text-lg font-semibold uppercase tracking-[0.12em] text-[#3a8a58] sm:text-xl">
           4 · The process
         </p>
-        <div ref={processRef} className="mt-4 grid w-full max-w-4xl grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="mt-4 grid w-full max-w-4xl grid-cols-2 gap-3 lg:grid-cols-4">
           {PROCESS_STEPS.map((item) => (
             <div
               key={item.id}
@@ -700,11 +665,7 @@ export function MilitaryHousehold({
                 if (event.pointerType !== "mouse") return;
                 setStepHover(item.id);
               }}
-              onPointerLeave={(event) => {
-                if (event.pointerType !== "mouse") return;
-                setStepHover(null);
-              }}
-              onClick={() => setStepPin((current) => (current === item.id ? null : item.id))}
+              onClick={() => setStepPin(item.id)}
               className={
                 step === item.id
                   ? "cursor-pointer rounded-lg bg-white px-4 py-4 text-left shadow-[0_0_0_2px_#3a8a58]"
@@ -717,17 +678,23 @@ export function MilitaryHousehold({
             </div>
           ))}
         </div>
-        <div className="mt-4 grid w-full max-w-4xl text-left text-sm leading-relaxed text-[#1a2330] sm:text-base">
-          <p className={step ? "invisible col-start-1 row-start-1" : "col-start-1 row-start-1"}>
-            {finePointer
-              ? "Mouse over a step. Click it to keep that line. Each one is the Hale household at that point in the loop."
-              : "Tap a step to keep that line. Tap it again, or tap outside the cards, to clear it."}
+        <div className="mt-4 grid w-full max-w-4xl rounded-lg bg-white px-5 py-4 text-center shadow-[0_0_0_1px_var(--color-border)]">
+          <p
+            className={
+              step
+                ? "invisible col-start-1 row-start-1 text-base font-medium leading-snug text-[#1a2330] sm:text-lg"
+                : "col-start-1 row-start-1 text-base font-medium leading-snug text-[#1a2330] sm:text-lg"
+            }
+          >
+            Mouse over a step to see The Process.
           </p>
           {PROCESS_STEPS.map((item) => (
             <p
               key={item.id}
               className={
-                step === item.id ? "col-start-1 row-start-1" : "invisible col-start-1 row-start-1"
+                step === item.id
+                  ? "col-start-1 row-start-1 text-base font-medium leading-snug text-[#1a2330] sm:text-lg"
+                  : "invisible col-start-1 row-start-1 text-base font-medium leading-snug text-[#1a2330] sm:text-lg"
               }
             >
               {item.line}
@@ -751,30 +718,27 @@ export function MilitaryHousehold({
             retire at 60, in June 2057. The nest-egg goal is $1.8 million in today's dollars. On this
             savings rate they are short of it.
           </p>
-          <div ref={outcomeRef} className="mt-4 grid gap-3 text-left sm:grid-cols-3">
+          <div className="mt-4 grid gap-3 text-left sm:grid-cols-3">
             <ScenarioCard
               title="Original plan"
               body="About $1.57 million at age 60, short of the $1.8 million goal."
               active={haleView === "base" && (haleHover !== null || halePin !== null)}
               onEnter={() => setHaleHover("base")}
-              onLeave={() => setHaleHover(null)}
-              onTap={() => setHalePin((current) => (current === "base" ? null : "base"))}
+              onTap={() => setHalePin("base")}
             />
             <ScenarioCard
               title="Higher savings rate"
               body="Save about $800 more a month, starting now. Same retirement age, and the goal is met with room to spare."
               active={haleView === "save"}
               onEnter={() => setHaleHover("save")}
-              onLeave={() => setHaleHover(null)}
-              onTap={() => setHalePin((current) => (current === "save" ? null : "save"))}
+              onTap={() => setHalePin("save")}
             />
             <ScenarioCard
               title="Retire at 65"
               body="Same savings rate. Five more working years, and the goal is met."
               active={haleView === "later"}
               onEnter={() => setHaleHover("later")}
-              onLeave={() => setHaleHover(null)}
-              onTap={() => setHalePin((current) => (current === "later" ? null : "later"))}
+              onTap={() => setHalePin("later")}
             />
           </div>
           <div className="mt-3 grid rounded-lg bg-white px-5 py-4 text-left shadow-[0_0_0_1px_var(--color-border)]">
@@ -884,7 +848,7 @@ const PROCESS_STEPS = [
     id: "decide",
     title: "Decide",
     body: "Contributions and the nest-egg goal, one change at a time.",
-    line: "The goal is $1.8 million at 60. Five percent to the TSP, then $200 a month to the 401(k), does not reach it. One change is $800 more a month.",
+    line: "The goal is $1.8 million at 60. Five percent to the TSP, then $200 a month to the 401(k), does not reach it. MACH RUN shows $800 more a month, or retiring 5 years later covers the gap.",
     icon: GitBranch,
   },
   {
