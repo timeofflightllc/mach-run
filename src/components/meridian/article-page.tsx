@@ -287,12 +287,6 @@ export function ArticlePage({ article }: { article: ArticleRecord }) {
         <article className="mt-8 space-y-5 text-lg leading-relaxed text-muted">
           <ArticleBlocks blocks={main} />
         </article>
-        {sources.length ? (
-          <article className="mt-10 space-y-5 text-lg leading-relaxed text-muted">
-            <ArticleBlocks blocks={sources} />
-          </article>
-        ) : null}
-        <ArticleAuthor />
         <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
           <Link to="/retired-pay" className={ARTICLE_BTN}>
             Estimate your retired pay
@@ -304,6 +298,12 @@ export function ArticlePage({ article }: { article: ArticleRecord }) {
         <div className="mt-4 flex justify-center">
           <ArticleShare url={url} title={article.h1} />
         </div>
+        <ArticleAuthor />
+        {sources.length ? (
+          <article className="mt-10 space-y-5 text-lg leading-relaxed text-muted">
+            <ArticleBlocks blocks={sources} />
+          </article>
+        ) : null}
         <RelatedPieces path="/military-pension-present-value" />
       </div>
       <MachFooter staticInset />
