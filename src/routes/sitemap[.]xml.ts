@@ -30,6 +30,12 @@ export const Route = createFileRoute("/sitemap.xml")({
             add("/announcements", row.created_at);
             add("/announcements", row.at);
           }
+          const articles = await sql.query<{ slug: string; created_at: Date | string }>(
+            "select slug, created_at from mach_articles",
+          );
+          for (const row of articles) {
+            add(`/learn/${row.slug}`, row.created_at);
+          }
         } catch {
           /* Source commit dates still fill lastmod. */
         }

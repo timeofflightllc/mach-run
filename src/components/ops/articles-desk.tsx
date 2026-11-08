@@ -3,6 +3,7 @@ import { SavedAt } from "@/components/ops/saved-at";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import { createOpsArticleFn, listOpsArticlesFn, saveOpsArticleFn } from "@/lib/articles/desk-api";
 import { articleDateLabel } from "@/lib/articles/body";
+import { articleDay, todayUtcDay } from "@/lib/articles/slug";
 import type { ArticleRecord } from "@/lib/articles/types";
 
 const areaClass =
@@ -12,16 +13,20 @@ function ArticleFields({
   pageTitle,
   h1,
   body,
+  date,
   onPageTitle,
   onH1,
   onBody,
+  onDate,
 }: {
   pageTitle: string;
   h1: string;
   body: string;
+  date: string;
   onPageTitle: (value: string) => void;
   onH1: (value: string) => void;
   onBody: (value: string) => void;
+  onDate: (value: string) => void;
 }) {
   return (
     <>
@@ -30,6 +35,9 @@ function ArticleFields({
       </Field>
       <Field label="H1">
         <TextInput value={h1} onChange={(e) => onH1(e.target.value)} />
+      </Field>
+      <Field label="Date">
+        <TextInput type="date" value={date} onChange={(e) => onDate(e.target.value)} />
       </Field>
       <Field label="Body">
         <textarea rows={18} value={body} onChange={(e) => onBody(e.target.value)} className={areaClass} />
@@ -45,8 +53,8 @@ export function ArticlesDesk() {
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState({ pageTitle: "", h1: "", body: "" });
-  const [fresh, setFresh] = useState({ slug: "", pageTitle: "", h1: "", body: "" });
+  const [draft, setDraft] = useState({ pageTitle: "", h1: "", body: "", date: "" });
+  const [fresh, setFresh] = useState({ slug: "", pageTitle: "", h1: "", body: "", date: todayUtcDay() });
 
   async function reload() {
     const result = await listOpsArticlesFn();
@@ -65,7 +73,12 @@ export function ArticlesDesk() {
   function openRow(article: ArticleRecord) {
     setAdding(false);
     setOpen(article.slug);
-    setDraft({ pageTitle: article.pageTitle, h1: article.h1, body: article.body });
+    setDraft({
+      pageTitle: article.pageTitle,
+      h1: article.h1,
+      body: article.body,
+      date: articleDay(article.createdAt),
+    });
     setStatus(null);
     setSavedAt(null);
   }
@@ -99,10 +112,10 @@ export function ArticlesDesk() {
         return;
       }
       setSavedAt(new Date());
-      setFresh({ slug: "", pageTitle: "", h1: "", body: "" });
+      setFresh({ slug: "", pageTitle: "", h1: "", body: "", date: todayUtcDay() });
       setAdding(false);
       setOpen(fresh.slug);
-      setDraft({ pageTitle: fresh.pageTitle, h1: fresh.h1, body: fresh.body });
+      setDraft({ pageTitle: fresh.pageTitle, h1: fresh.h1, body: fresh.body, date: fresh.date });
       await reload();
     } catch {
       setStatus("Could not save.");
@@ -149,6 +162,8 @@ export function ArticlesDesk() {
             onPageTitle={(pageTitle) => setFresh((row) => ({ ...row, pageTitle }))}
             onH1={(h1) => setFresh((row) => ({ ...row, h1 }))}
             onBody={(body) => setFresh((row) => ({ ...row, body }))}
+            date={fresh.date}
+            onDate={(date) => setFresh((row) => ({ ...row, date }))}
           />
           <PrimaryButton type="button" disabled={busy} onClick={() => void create()}>
             Save
@@ -197,6 +212,8 @@ export function ArticlesDesk() {
             onPageTitle={(pageTitle) => setDraft((row) => ({ ...row, pageTitle }))}
             onH1={(h1) => setDraft((row) => ({ ...row, h1 }))}
             onBody={(body) => setDraft((row) => ({ ...row, body }))}
+            date={draft.date}
+            onDate={(date) => setDraft((row) => ({ ...row, date }))}
           />
           <PrimaryButton type="button" disabled={busy} onClick={() => void saveOpen()}>
             Save

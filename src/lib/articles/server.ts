@@ -6,7 +6,7 @@ import {
   PENSION_ARTICLE_PAGE_TITLE,
   PENSION_ARTICLE_SLUG,
 } from "./pension-article";
-import { articleFieldsError, articleSlugError, ARTICLE_SLUG_RE } from "./slug";
+import { articleDateError, articleFieldsError, articleNoonUtc, articleSlugError, ARTICLE_SLUG_RE } from "./slug";
 import type { ArticleRecord } from "./types";
 
 const PENSION_ARTICLE_FLAG = "article_seeded:military-pension-present-value";
@@ -129,23 +129,26 @@ export async function getArticle(slug: string): Promise<ArticleRecord | null> {
   }
 }
 
-/** Three fields only. created_at is not in the update. */
+/** Title, headline, body, and the byline date. A bad date writes nothing. */
 export async function saveArticle(
   slug: string,
   pageTitle: string,
   h1: string,
   body: string,
+  day: string,
 ): Promise<string | null> {
   const fields = articleFieldsError(pageTitle, h1, body);
   if (fields) return fields;
+  const dateError = articleDateError(day);
+  if (dateError) return dateError;
   if (!ARTICLE_SLUG_RE.test(slug)) return "That article is not there.";
   const sql = await getSql();
   const rows = await sql.query<{ slug: string }>(
     `update mach_articles
-     set page_title = $2, h1 = $3, body = $4
+     set page_title = $2, h1 = $3, body = $4, created_at = $5
      where slug = $1
      returning slug`,
-    [slug, pageTitle, h1, body],
+    [slug, pageTitle, h1, body, articleNoonUtc(day)],
   );
   return rows[0] ? null : "That article is not there.";
 }
@@ -156,9 +159,12 @@ export async function createArticle(
   pageTitle: string,
   h1: string,
   body: string,
+  day: string,
 ): Promise<string | null> {
   const fields = articleFieldsError(pageTitle, h1, body);
   if (fields) return fields;
+  const dateError = articleDateError(day);
+  if (dateError) return dateError;
   const sql = await getSql();
   const found = await sql.query<{ slug: string }>(
     "select slug from mach_articles where slug = $1",
@@ -167,11 +173,11 @@ export async function createArticle(
   const slugError = articleSlugError(slug, found.length > 0);
   if (slugError) return slugError;
   const rows = await sql.query<{ slug: string }>(
-    `insert into mach_articles (slug, page_title, h1, body)
-     values ($1, $2, $3, $4)
+    `insert into mach_articles (slug, page_title, h1, body, created_at)
+     values ($1, $2, $3, $4, $5)
      on conflict (slug) do nothing
      returning slug`,
-    [slug, pageTitle, h1, body],
+    [slug, pageTitle, h1, body, articleNoonUtc(day)],
   );
   return rows[0] ? null : "That slug is already used.";
 }
