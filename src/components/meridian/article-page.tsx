@@ -301,6 +301,10 @@ export function ArticlePage({ article }: { article: ArticleRecord }) {
         {sources.length ? (
           <article className="mt-10 space-y-5 text-lg leading-relaxed text-muted">
             <ArticleBlocks blocks={sources} />
+            <p className="text-sm leading-relaxed">
+              In addition to the above sources, AI tools were used for research, grammar, and structure.
+              The author checked the facts, the numbers, and the final wording.
+            </p>
           </article>
         ) : null}
         <ArticleAuthor />
