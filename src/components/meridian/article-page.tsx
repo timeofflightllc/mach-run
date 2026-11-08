@@ -268,20 +268,19 @@ export function ArticlePage({ article }: { article: ArticleRecord }) {
       <div className="mx-auto mt-8 w-full max-w-[70rem] px-5 sm:px-8">
         <PieceCrumbs path="/learn" current={article.h1} />
         <header className="mt-6">
-          <h1 className="font-display text-4xl leading-none text-fg sm:text-5xl">{article.h1}</h1>
+          <h1 className="font-display text-4xl leading-tight text-fg sm:text-5xl">{article.h1}</h1>
           {article.subtitle.trim() ? (
-            <p className="mt-3 text-xl leading-snug text-muted">{article.subtitle}</p>
+            <p className="mt-4 text-xl leading-snug text-muted">{article.subtitle}</p>
           ) : null}
-          <div className="mt-4 flex items-center justify-between gap-4 border-b border-border pb-4 pr-6">
-            <p className="flex min-w-0 items-center text-sm leading-none text-muted">
+          <div className="mt-8 flex items-center justify-between gap-6 border-b border-border pb-6">
+            <p className="flex min-w-0 flex-wrap items-baseline gap-x-3 text-base text-muted">
               <Link to="/about" className="underline underline-offset-4 hover:text-fg">
                 Matthew "Cain" Olde
               </Link>
               {date ? (
-                <>
-                  <span aria-hidden="true"> · </span>
-                  <time dateTime={article.createdAt.slice(0, 10)}>{date}</time>
-                </>
+                <time dateTime={article.createdAt.slice(0, 10)} className="before:mr-3 before:content-['·']">
+                  {date}
+                </time>
               ) : null}
             </p>
             <ArticleShare url={url} title={article.h1} />
