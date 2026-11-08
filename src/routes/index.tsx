@@ -1323,10 +1323,7 @@ function Home() {
     advisor &&
     advisorProof != null &&
     (advisorProof === "fail" || !advisorProof.enrolled || !advisorProof.proven);
-  const advisorPlanHeld =
-    (signedIn && !heroOn && ent.pending) ||
-    (advisor && advisorProof == null) ||
-    advisorNeedsCheck;
+  const advisorPlanHeld = (advisor && advisorProof == null) || advisorNeedsCheck;
   const [demoLoaded, setDemoLoaded] = useState(false);
   const demoNoted = useRef(false);
   const stepsRef = useRef<HTMLDivElement>(null);
@@ -1572,35 +1569,49 @@ function Home() {
 
   useEffect(() => {
     if (!quizOpenPending()) return;
-    let opened = false;
+    let place: "family" | "income" | null = null;
     let tries = 0;
     const timer = window.setInterval(() => {
       tries += 1;
-      const target = document.getElementById("master-caution") ?? document.getElementById("ooda-observe");
-      if (!target) {
-        if (tries > 20) window.clearInterval(timer);
-        return;
-      }
-      if (!opened) {
-        const place = takeQuizOpen();
+      const pageUp = Boolean(
+        document.getElementById("master-caution") ||
+          document.getElementById("ooda-observe") ||
+          document.getElementById("ooda-orient"),
+      );
+      if (!place) {
+        if (!pageUp) {
+          if (tries > 100) window.clearInterval(timer);
+          return;
+        }
+        place = takeQuizOpen();
         if (!place) {
           window.clearInterval(timer);
           return;
         }
-        opened = true;
         setStep(place);
+        return;
       }
-      const header = document.getElementById("mach-header");
-      const headerH = header?.getBoundingClientRect().height ?? 0;
+      const target = document.getElementById(
+        place === "income"
+          ? "ooda-orient"
+          : document.getElementById("master-caution")
+            ? "master-caution"
+            : "ooda-observe",
+      );
+      if (!target || target.getClientRects().length === 0) {
+        if (tries > 100) window.clearInterval(timer);
+        return;
+      }
+      const headerH = document.getElementById("mach-header")?.getBoundingClientRect().height ?? 0;
       const top = target.getBoundingClientRect().top;
       if (Math.abs(top - headerH - 8) > 20) {
         window.scrollTo(0, Math.max(0, window.scrollY + top - headerH - 8));
-        engageSteps();
       }
-      if (tries > 12) window.clearInterval(timer);
+      if (place === "family" && document.getElementById("master-caution")) engageSteps();
+      window.clearInterval(timer);
     }, 120);
     return () => window.clearInterval(timer);
-  }, [heroOn]);
+  }, [heroOn, advisorPlanHeld]);
 
   function onNext() {
     const next = route[shownIndex + 1]?.id;

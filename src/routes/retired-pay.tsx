@@ -362,7 +362,7 @@ function RetiredPayQuiz() {
   function openFull() {
     const startDate = result?.monthly != null ? paycheckStart() : null;
     if (!result || startDate == null) {
-      void navigate({ to: "/" });
+      void navigate({ to: "/", replace: true });
       return;
     }
     const plan = militaryIncomePlan({ monthly: result.monthly, startDate, firstName: first });
@@ -376,7 +376,7 @@ function RetiredPayQuiz() {
     }
     armQuizOpen("income");
     writeActPlace(null);
-    void navigate({ to: "/" });
+    void navigate({ to: "/", replace: true });
   }
 
   return (

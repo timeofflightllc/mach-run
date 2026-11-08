@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import {
@@ -38,6 +38,14 @@ export function useCloudPlan() {
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "guest">("guest");
   const [cloudReady, setCloudReady] = useState(false);
   const userId = user?.id ?? null;
+  const heldQuiz = useRef<ReturnType<typeof consumeHeldQuizPlan> | undefined>(undefined);
+  const appliedHold = useRef(false);
+  function takeHeld() {
+    if (heldQuiz.current === undefined) {
+      heldQuiz.current = quizPlanHeld() ? consumeHeldQuizPlan() : null;
+    }
+    return heldQuiz.current;
+  }
 
   useEffect(() => {
     if (!ent.signedIn || ent.paid) return;
@@ -56,13 +64,11 @@ export function useCloudPlan() {
   useEffect(() => {
     if (isPending) return;
     if (!userId) {
-      if (quizPlanHeld()) {
-        const held = consumeHeldQuizPlan();
-        if (held && !held.add) {
-          setPlan(held.plan);
-          useProfileStore.getState().hydrateFromPlan(held.plan);
-        }
-      } else {
+      const held = takeHeld();
+      if (held && !held.add) {
+        setPlan(held.plan);
+        useProfileStore.getState().hydrateFromPlan(held.plan);
+      } else if (!held) {
         clearLocalMachRunWorkspace();
       }
       setCloudReady(false);
@@ -78,9 +84,15 @@ export function useCloudPlan() {
     ])
       .then(() => loadMachPlan())
       .then((saved) => {
-        if (cancelled) return;
+        if (cancelled || appliedHold.current) {
+          if (!cancelled) {
+            setCloudReady(true);
+            setStatus("saved");
+          }
+          return;
+        }
         const local = usePlanStore.getState().plan;
-        const held = quizPlanHeld() ? consumeHeldQuizPlan() : null;
+        const held = takeHeld();
         const cloudPlan =
           saved && typeof saved === "object" && "plan" in saved ? saved.plan : saved;
         const library =
@@ -101,7 +113,10 @@ export function useCloudPlan() {
             : held
               ? held.plan
               : base;
-        if (held) useProfileStore.getState().hydrateFromPlan(next);
+        if (held) {
+          appliedHold.current = true;
+          useProfileStore.getState().hydrateFromPlan(next);
+        }
         setPlan(next);
         setCloudReady(true);
         setStatus("saved");

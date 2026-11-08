@@ -88,6 +88,13 @@ function formatMoneyDisplay(n: number): string {
   });
 }
 
+function moneyFocusDraft(n: number): string {
+  if (!Number.isFinite(n) || n === 0) return "";
+  const rounded = Math.round(n * 100) / 100;
+  if (Number.isInteger(rounded)) return String(rounded);
+  return rounded.toFixed(2);
+}
+
 function parseMoney(raw: string): number {
   const cleaned = raw.replace(/[^0-9.]/g, "");
   if (!cleaned || cleaned === ".") return 0;
@@ -124,17 +131,19 @@ export function MoneyInput({
         value={shown}
         onFocus={() => {
           setFocused(true);
-          setDraft(formatMoneyDisplay(value));
+          setDraft(moneyFocusDraft(value));
         }}
-        onBlur={() => {
+        onBlur={(e) => {
           setFocused(false);
-          onValue(parseMoney(draft));
+          onValue(parseMoney(e.currentTarget.value));
+        }}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          e.currentTarget.blur();
         }}
         onChange={(e) => {
-          const raw = e.target.value;
-          const n = parseMoney(raw);
-          onValue(n);
-          setDraft(raw.includes(".") ? raw.replace(/[^0-9.]/g, "") : formatMoneyDisplay(n));
+          setDraft(e.target.value);
         }}
         className={cn(controlClass, "pl-7", className)}
       />
