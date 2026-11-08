@@ -5,6 +5,7 @@ import {
   PENSION_ARTICLE_H1,
   PENSION_ARTICLE_PAGE_TITLE,
   PENSION_ARTICLE_SLUG,
+  PENSION_ARTICLE_SUBTITLE,
 } from "./pension-article";
 import { articleDateError, articleFieldsError, articleNoonUtc, articleSlugError, ARTICLE_SLUG_RE } from "./slug";
 import type { ArticleRecord } from "./types";
@@ -17,6 +18,7 @@ type ArticleRow = {
   slug: string;
   page_title: string;
   h1: string;
+  subtitle: string;
   body: string;
   created_at: string | Date;
 };
@@ -33,6 +35,7 @@ function pensionSeed(): ArticleRecord {
     slug: PENSION_ARTICLE_SLUG,
     pageTitle: PENSION_ARTICLE_PAGE_TITLE,
     h1: PENSION_ARTICLE_H1,
+    subtitle: PENSION_ARTICLE_SUBTITLE,
     body: PENSION_ARTICLE_BODY,
     createdAt: PENSION_ARTICLE_CREATED_AT,
   };
@@ -48,6 +51,7 @@ function mapArticle(row: ArticleRow): ArticleRecord {
     slug: row.slug,
     pageTitle: row.page_title,
     h1: row.h1,
+    subtitle: row.subtitle ?? "",
     body: row.body,
     createdAt: asIso(row.created_at),
   };
@@ -73,8 +77,8 @@ export async function ensurePensionArticle(): Promise<void> {
     );
     if (flagged.length) return;
     await sql.query(
-      `insert into mach_articles (slug, page_title, h1, body, created_at)
-       values ($1, $2, $3, $4, $5)
+      `insert into mach_articles (slug, page_title, h1, subtitle, body, created_at)
+       values ($1, $2, $3, $4, $5, $6)
        on conflict (slug) do update set
          page_title = excluded.page_title,
          h1 = excluded.h1,
@@ -83,6 +87,7 @@ export async function ensurePensionArticle(): Promise<void> {
         PENSION_ARTICLE_SLUG,
         PENSION_ARTICLE_PAGE_TITLE,
         PENSION_ARTICLE_H1,
+        PENSION_ARTICLE_SUBTITLE,
         PENSION_ARTICLE_BODY,
         PENSION_ARTICLE_CREATED_AT,
       ],
@@ -101,7 +106,7 @@ export async function listArticles(): Promise<ArticleRecord[]> {
     await ensurePensionArticle();
     const sql = await getSql();
     const rows = await sql.query<ArticleRow>(
-      `select slug, page_title, h1, body, created_at
+      `select slug, page_title, h1, subtitle, body, created_at
        from mach_articles
        order by created_at desc, slug asc`,
     );
@@ -117,7 +122,7 @@ export async function getArticle(slug: string): Promise<ArticleRecord | null> {
     await ensurePensionArticle();
     const sql = await getSql();
     const rows = await sql.query<ArticleRow>(
-      `select slug, page_title, h1, body, created_at
+      `select slug, page_title, h1, subtitle, body, created_at
        from mach_articles
        where slug = $1`,
       [slug],
@@ -129,11 +134,12 @@ export async function getArticle(slug: string): Promise<ArticleRecord | null> {
   }
 }
 
-/** Title, headline, body, and the byline date. A bad date writes nothing. */
+/** Title, headline, subtitle, body, and the byline date. A bad date writes nothing. */
 export async function saveArticle(
   slug: string,
   pageTitle: string,
   h1: string,
+  subtitle: string,
   body: string,
   day: string,
 ): Promise<string | null> {
@@ -145,10 +151,10 @@ export async function saveArticle(
   const sql = await getSql();
   const rows = await sql.query<{ slug: string }>(
     `update mach_articles
-     set page_title = $2, h1 = $3, body = $4, created_at = $5
+     set page_title = $2, h1 = $3, subtitle = $4, body = $5, created_at = $6
      where slug = $1
      returning slug`,
-    [slug, pageTitle, h1, body, articleNoonUtc(day)],
+    [slug, pageTitle, h1, subtitle.trim(), body, articleNoonUtc(day)],
   );
   return rows[0] ? null : "That article is not there.";
 }
@@ -158,6 +164,7 @@ export async function createArticle(
   slug: string,
   pageTitle: string,
   h1: string,
+  subtitle: string,
   body: string,
   day: string,
 ): Promise<string | null> {
@@ -173,11 +180,11 @@ export async function createArticle(
   const slugError = articleSlugError(slug, found.length > 0);
   if (slugError) return slugError;
   const rows = await sql.query<{ slug: string }>(
-    `insert into mach_articles (slug, page_title, h1, body, created_at)
-     values ($1, $2, $3, $4, $5)
+    `insert into mach_articles (slug, page_title, h1, subtitle, body, created_at)
+     values ($1, $2, $3, $4, $5, $6)
      on conflict (slug) do nothing
      returning slug`,
-    [slug, pageTitle, h1, body, articleNoonUtc(day)],
+    [slug, pageTitle, h1, subtitle.trim(), body, articleNoonUtc(day)],
   );
   return rows[0] ? null : "That slug is already used.";
 }

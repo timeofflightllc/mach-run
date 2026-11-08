@@ -10,6 +10,9 @@ export const PENSION_ARTICLE_PAGE_TITLE =
 export const PENSION_ARTICLE_H1 =
   "What a military pension is actually worth, and what it means for your FIRE number";
 
+export const PENSION_ARTICLE_SUBTITLE =
+  "An O-5's 20-year pension is worth about $2.35 million today. Most FIRE math never writes that number down.";
+
 /** Byline date. Not an editor field. */
 export const PENSION_ARTICLE_CREATED_AT = "2026-11-07T12:00:00.000Z";
 

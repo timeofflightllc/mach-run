@@ -269,8 +269,11 @@ export function ArticlePage({ article }: { article: ArticleRecord }) {
         <PieceCrumbs path="/learn" current={article.h1} />
         <header className="mt-6">
           <h1 className="font-display text-4xl leading-none text-fg sm:text-5xl">{article.h1}</h1>
-          <div className="mt-4 flex items-center justify-between gap-4">
-            <p className="min-w-0 text-sm text-muted">
+          {article.subtitle.trim() ? (
+            <p className="mt-3 text-xl leading-snug text-muted">{article.subtitle}</p>
+          ) : null}
+          <div className="mt-4 flex items-center justify-between gap-4 border-b border-border pb-4 pr-6">
+            <p className="flex min-w-0 items-center text-sm leading-none text-muted">
               <Link to="/about" className="underline underline-offset-4 hover:text-fg">
                 Matthew "Cain" Olde
               </Link>

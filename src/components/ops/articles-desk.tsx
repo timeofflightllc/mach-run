@@ -12,19 +12,23 @@ const areaClass =
 function ArticleFields({
   pageTitle,
   h1,
+  subtitle,
   body,
   date,
   onPageTitle,
   onH1,
+  onSubtitle,
   onBody,
   onDate,
 }: {
   pageTitle: string;
   h1: string;
+  subtitle: string;
   body: string;
   date: string;
   onPageTitle: (value: string) => void;
   onH1: (value: string) => void;
+  onSubtitle: (value: string) => void;
   onBody: (value: string) => void;
   onDate: (value: string) => void;
 }) {
@@ -35,6 +39,9 @@ function ArticleFields({
       </Field>
       <Field label="H1">
         <TextInput value={h1} onChange={(e) => onH1(e.target.value)} />
+      </Field>
+      <Field label="Subtitle">
+        <TextInput value={subtitle} onChange={(e) => onSubtitle(e.target.value)} />
       </Field>
       <Field label="Date">
         <TextInput type="date" value={date} onChange={(e) => onDate(e.target.value)} />
@@ -53,8 +60,8 @@ export function ArticlesDesk() {
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [open, setOpen] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
-  const [draft, setDraft] = useState({ pageTitle: "", h1: "", body: "", date: "" });
-  const [fresh, setFresh] = useState({ slug: "", pageTitle: "", h1: "", body: "", date: todayUtcDay() });
+  const [draft, setDraft] = useState({ pageTitle: "", h1: "", subtitle: "", body: "", date: "" });
+  const [fresh, setFresh] = useState({ slug: "", pageTitle: "", h1: "", subtitle: "", body: "", date: todayUtcDay() });
 
   async function reload() {
     const result = await listOpsArticlesFn();
@@ -76,6 +83,7 @@ export function ArticlesDesk() {
     setDraft({
       pageTitle: article.pageTitle,
       h1: article.h1,
+      subtitle: article.subtitle,
       body: article.body,
       date: articleDay(article.createdAt),
     });
@@ -112,10 +120,10 @@ export function ArticlesDesk() {
         return;
       }
       setSavedAt(new Date());
-      setFresh({ slug: "", pageTitle: "", h1: "", body: "", date: todayUtcDay() });
+      setFresh({ slug: "", pageTitle: "", h1: "", subtitle: "", body: "", date: todayUtcDay() });
       setAdding(false);
       setOpen(fresh.slug);
-      setDraft({ pageTitle: fresh.pageTitle, h1: fresh.h1, body: fresh.body, date: fresh.date });
+      setDraft({ pageTitle: fresh.pageTitle, h1: fresh.h1, subtitle: fresh.subtitle, body: fresh.body, date: fresh.date });
       await reload();
     } catch {
       setStatus("Could not save.");
@@ -158,9 +166,11 @@ export function ArticlesDesk() {
           <ArticleFields
             pageTitle={fresh.pageTitle}
             h1={fresh.h1}
+            subtitle={fresh.subtitle}
             body={fresh.body}
             onPageTitle={(pageTitle) => setFresh((row) => ({ ...row, pageTitle }))}
             onH1={(h1) => setFresh((row) => ({ ...row, h1 }))}
+            onSubtitle={(subtitle) => setFresh((row) => ({ ...row, subtitle }))}
             onBody={(body) => setFresh((row) => ({ ...row, body }))}
             date={fresh.date}
             onDate={(date) => setFresh((row) => ({ ...row, date }))}
@@ -208,9 +218,11 @@ export function ArticlesDesk() {
           <ArticleFields
             pageTitle={draft.pageTitle}
             h1={draft.h1}
+            subtitle={draft.subtitle}
             body={draft.body}
             onPageTitle={(pageTitle) => setDraft((row) => ({ ...row, pageTitle }))}
             onH1={(h1) => setDraft((row) => ({ ...row, h1 }))}
+            onSubtitle={(subtitle) => setDraft((row) => ({ ...row, subtitle }))}
             onBody={(body) => setDraft((row) => ({ ...row, body }))}
             date={draft.date}
             onDate={(date) => setDraft((row) => ({ ...row, date }))}

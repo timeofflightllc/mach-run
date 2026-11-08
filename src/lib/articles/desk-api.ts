@@ -22,10 +22,11 @@ export const listOpsArticlesFn = createServerFn({ method: "POST" })
 
 export const saveOpsArticleFn = createServerFn({ method: "POST" })
   .middleware([opsSessionMiddleware])
-  .validator((input: { slug?: string; pageTitle?: string; h1?: string; body?: string; date?: string }) => ({
+  .validator((input: { slug?: string; pageTitle?: string; h1?: string; subtitle?: string; body?: string; date?: string }) => ({
     slug: String(input?.slug ?? ""),
     pageTitle: String(input?.pageTitle ?? ""),
     h1: String(input?.h1 ?? ""),
+    subtitle: String(input?.subtitle ?? ""),
     body: String(input?.body ?? ""),
     date: String(input?.date ?? ""),
   }))
@@ -34,16 +35,17 @@ export const saveOpsArticleFn = createServerFn({ method: "POST" })
     const actor = await getOpsActor(context.bearerToken);
     if (!actor) return { ok: false, error: "Not allowed." };
     const { saveArticle } = await import("./server");
-    const error = await saveArticle(data.slug, data.pageTitle, data.h1, data.body, data.date);
+    const error = await saveArticle(data.slug, data.pageTitle, data.h1, data.subtitle, data.body, data.date);
     return error ? { ok: false, error } : { ok: true };
   });
 
 export const createOpsArticleFn = createServerFn({ method: "POST" })
   .middleware([opsSessionMiddleware])
-  .validator((input: { slug?: string; pageTitle?: string; h1?: string; body?: string; date?: string }) => ({
+  .validator((input: { slug?: string; pageTitle?: string; h1?: string; subtitle?: string; body?: string; date?: string }) => ({
     slug: String(input?.slug ?? "").trim(),
     pageTitle: String(input?.pageTitle ?? ""),
     h1: String(input?.h1 ?? ""),
+    subtitle: String(input?.subtitle ?? ""),
     body: String(input?.body ?? ""),
     date: String(input?.date ?? ""),
   }))
@@ -52,6 +54,6 @@ export const createOpsArticleFn = createServerFn({ method: "POST" })
     const actor = await getOpsActor(context.bearerToken);
     if (!actor) return { ok: false, error: "Not allowed." };
     const { createArticle } = await import("./server");
-    const error = await createArticle(data.slug, data.pageTitle, data.h1, data.body, data.date);
+    const error = await createArticle(data.slug, data.pageTitle, data.h1, data.subtitle, data.body, data.date);
     return error ? { ok: false, error } : { ok: true };
   });

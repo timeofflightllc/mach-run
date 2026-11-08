@@ -5,6 +5,7 @@ import {
   PENSION_ARTICLE_FORMULA,
   PENSION_ARTICLE_H1,
   PENSION_ARTICLE_PAGE_TITLE,
+  PENSION_ARTICLE_SUBTITLE,
 } from "./pension-article.ts";
 
 test("the pension seed is title, headline, and body only", () => {
@@ -15,6 +16,10 @@ test("the pension seed is title, headline, and body only", () => {
   assert.equal(
     PENSION_ARTICLE_H1,
     "What a military pension is actually worth, and what it means for your FIRE number",
+  );
+  assert.equal(
+    PENSION_ARTICLE_SUBTITLE,
+    "An O-5's 20-year pension is worth about $2.35 million today. Most FIRE math never writes that number down.",
   );
   assert.equal(PENSION_ARTICLE_BODY.includes("Matthew"), false);
   assert.equal(PENSION_ARTICLE_BODY.includes("Estimate your retired pay"), false);
