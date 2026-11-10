@@ -1,4 +1,4 @@
-import { inRange, monthStart, yearlyRateToMonthly } from "./dates.ts";
+import { ageYears, inRange, monthStart, yearlyRateToMonthly } from "./dates.ts";
 import {
   assumptionRows,
   csvRow,
@@ -13,9 +13,10 @@ import {
   streamNominalAt,
   streamWindow,
 } from "./engine.ts";
+import { childIdFromOwner } from "./family-owners.ts";
 import { liabilityPaymentDue, remainingLiability } from "./liability.ts";
 import { mortgagePaymentDue, remainingMortgage } from "./mortgage.ts";
-import { ssBenefitFromPia, ssBirthFor } from "./social-security.ts";
+import { ssBenefitFromPia } from "./social-security.ts";
 import type { MonthSnapshot, Plan, SimResult } from "./types.ts";
 import { childrenUnder18, vaHasSpouse, vaPayTodayDollars, vaRatingOf } from "./va.ts";
 
@@ -81,6 +82,8 @@ const DICTIONARY: [string, string][] = [
   ["loan_principal", "Net worth uses principal at the start of the month, before that month's payment. principal_end is the next month's starting principal."],
   ["irs", "irs_limit is the employee cap used that year, including catch-up when catch_up is yes. Blank when the rule is not capped."],
   ["sweep_blank", "When Sweep surplus into is blank, cash left after tax, typed spending, and contributions is held as cash on hand. It earns nothing. It is part of spendable and net worth. It is not spending and it is not deposited in an account. A later short month spends that cash before withdrawing from an account."],
+  ["codes", "A1 is an account, I1 an income, S1 spending, C1 a contribution, L1 a liability, child_1 a child. primary and spouse stay those words. The same household id is the same code everywhere in this file. Names, birth dates, notes, and the household's own ids are not in this file."],
+  ["checks", "difference is the residual already on the trace. tolerance is 0.05, or 0.05 percent of the larger of left and right when that amount is above 1,000. pass is yes when the absolute difference is under tolerance. This table is the only verdict."],
 ];
 
 /**
@@ -90,7 +93,7 @@ const DICTIONARY: [string, string][] = [
 const REVIEW_ORDER: string[] = [
   "You are an independent reviewer of a household cash-flow calculator. You did not write this file. Do not assume the software is correct. Do not give financial advice, do not rewrite the household, and do not praise the plan. The reader will change the TypeScript backend from your bug table.",
   "This file is one MACH RUN. MACH RUN projects one household from asOfDate through the month the primary person reaches projectionEndAge. Each month it grows balances, counts income, spends, taxes at one flat rate, saves only leftover cash, withdraws from spendable accounts when the month is short, and reports spendable wealth and net worth. The rows under this prompt are the engine's own trace of the saved inputs. Recompute from the inputs and the rules below. A residual column is a claim, not proof. Assumption fields use the names in the assumptions section. Month columns use the header row of that section.",
-  "The first column of every row is the section name. Sections follow in this order: review_order (these instructions), dictionary, assumptions, people, accounts, liabilities, incomes, spending, contributions, windows, then month_account, month_income, month_spending, month_contribution, month_rmd, month_annuity, month_loan, and month_household. Amounts are rounded to two decimals. A gap under $0.05, or under 0.05 percent of a balance above $1,000, is rounding, not a bug.",
+  "The first column of every row is the section name. Sections follow in this order: review_order (these instructions), dictionary, assumptions, people, accounts, liabilities, incomes, spending, contributions, windows, then month_account, month_income, month_spending, month_contribution, month_rmd, month_annuity, month_loan, month_household, and checks. Amounts are rounded to two decimals. A gap under $0.05, or under 0.05 percent of a balance above $1,000, is rounding, not a bug. Rows use codes, not names. Accounts are A1, A2 in stored order. Incomes are I1, I2. Spending is S1, S2. Contributions are C1, C2. Liabilities are L1, L2. A child is child_1, child_2. Primary and spouse stay those words.",
   "Month order. 1. Grow every account first. Monthly rate = (1 + annual rate) ^ (1/12) - 1. Annual rate is the percent divided by 100. A blank account return uses defaultReturnPct. 2. Add income inside its resolved window. Nominal = today's dollars times (1 + annual COLA) ^ calendar years since the as-of year. The as-of year does not step. Each later January steps once, then the paycheck stays the same through December. COLA is that income's cola_pct, else defaultColaPct, else inflationPct. A salary, bonus, or allowance with cadence year deposits pay_amount (or monthly times 12 when pay_amount is blank) in the anniversary month only, then COLA. Other incomes stay monthly. 3. Add typed spending inside its window, inflated monthly from the inflation assumption. Add a mortgage or liability payment only when counted_in_spending is yes and principal remains. 4. Plan contributions inside their resolved windows. A percent rule is that percent of the named income's nominal that month. 5. Apply required minimum distributions. 6. Compute tax. 7. Split leftover cash. 8. Then add employer match.",
   "Tax is flat. Ordinary income and taken RMDs are taxed at ordinaryTaxRatePct. Social Security is taxed only on ssTaxablePct of the benefit, then at that same rate. There are no brackets and no standard deduction. Do not flag the missing brackets. Employer match is added to income after tax, so match is not taxed that month. Annuity taxable earnings are listed on month_annuity and are not inside the tax column. The withdrawal is grossed up instead.",
   "Leftover = income after RMDs and before match, minus tax, minus spending. If leftover is more than $0.50, fund employee contributions tax-qualified first, then taxable, until the cash runs out. Inside each of those groups, pay rules in the order they are listed. One rule may be paid in part. Once leftover is down to $0.50 or less, every later rule that month is $0. Do not withdraw from other accounts to fill a contribution, and do not use cash on hand to fill one. If a sweep account is set, deposit the rest there. If sweep is blank, add the rest to cash on hand. Cash on hand earns nothing. Then match = dollars actually invested on that rule times match_pct, and only when employer_match is yes and the destination is a 401(k), Roth 401(k), TSP, or Roth TSP. Match is added to that account and to income. If leftover is under -$0.50, spend cash on hand first, then withdraw from spendable accounts to cover what is still short, and fund no contributions that month.",
@@ -105,9 +108,73 @@ const REVIEW_ORDER: string[] = [
   "Loans. Original principal is implied by the payment, the APR, and the term. Remaining principal uses standard amortization and is measured at the start of the month. A zero APR is straight line. A mortgage payment is counted in spending only when include_in_spending is yes. The same rule applies to a standalone liability.",
   "Windows. resolved_start and resolved_end are what the engine used. A percent-of-income contribution uses that income's window, which can replace the typed dates. end_at_retirement yes means the form stored the Family retirement date as the end. The engine follows the resolved end, not the checkbox. A stage tie replaces the window with the stage. Trust the resolved dates over the typed dates, then check that the resolved dates follow these rules.",
   "Do not flag these. They are the spec. Flat tax. Unindexed 2026 IRS caps. COLA and inflation measured from the as-of month. Institution names, which are labels and are not in the math. Match outside the simple cash identity. Withdrawal tax gross-up inside residual_engine. Rounding under the tolerance above.",
-  "Work this way. Recompute every required month before you call anything a bug. Required months: the first month, the last month, the retirement goal month, the month before it, January and December of the first year a contribution is capped, the first month any RMD status is taken, the month a listed child turns 18 if VA is present, and any month where the absolute value of residual, residual_engine, spendable_residual, or net_worth_residual is greater than $1. If a required month fails, recompute every month of that calendar year. Then stop. Do not boil a 40-year file month by month once the samples and the failing year agree.",
-  "Display the result in this exact order, plain text, with these headings. No introduction. VERDICT: one line, PASS, or FAIL and the count of confirmed bugs. CONFIRMED BUGS: a table with columns number, severity (wrong cash, wrong balance, wrong date, or display only), where (section, date, and id), file says, spec says, suspected code (the idea, not a patch), and what to check next. Write None if there are no bugs. LOOKS WRONG BUT MATCHES THE SPEC: a short list, or None. SAMPLES I RECOMPUTED: a table with columns month, check, file, my result, and difference. Include every required month, including the ones that passed. NOT CHECKED: what you skipped, and why.",
+  "Checks. Read the checks section. Do not compute a second residual. difference is the residual already on that row. tolerance is 0.05, or 0.05 percent of the larger of left and right when that amount is above 1,000. pass is yes when the absolute difference is under tolerance. The checks table is the only verdict.",
+  "Reply. Write nothing before the verdict. VERDICT is PASS if every pass is yes. Otherwise VERDICT is FAIL and the count of no rows. Do not mark a yes row as a bug. Do not add a bug the table does not list. Recompute a no row from the spec before you confirm it. Confirmed means your arithmetic disagrees with the file by more than the tolerance. A no row your arithmetic agrees with is a display of that tolerance miss, still listed, not a new theory. Do not give financial advice. Do not discuss the household. If there is no confirmed bug, write BUGS: none under the verdict. If there is a confirmed bug, write one block per bug: BUG 1, then section, month, code, check, file, spec, diff, and look. look is the file to open, src/lib/plan/engine.ts, not a patch. End there.",
 ];
+
+interface CodeBook {
+  account: Map<string, string>;
+  income: Map<string, string>;
+  spending: Map<string, string>;
+  contribution: Map<string, string>;
+  liability: Map<string, string>;
+  child: Map<string, string>;
+}
+
+function codeBook(plan: Plan): CodeBook {
+  const account = new Map<string, string>();
+  plan.portfolios.forEach((row, index) => account.set(row.id, `A${index + 1}`));
+  const income = new Map<string, string>();
+  plan.incomes.forEach((row, index) => income.set(row.id, `I${index + 1}`));
+  const spending = new Map<string, string>();
+  plan.spending.forEach((row, index) => spending.set(row.id, `S${index + 1}`));
+  const contribution = new Map<string, string>();
+  plan.contributions.forEach((row, index) => contribution.set(row.id, `C${index + 1}`));
+  const liability = new Map<string, string>();
+  (plan.liabilities ?? []).forEach((row, index) => liability.set(row.id, `L${index + 1}`));
+  const child = new Map<string, string>();
+  (plan.children ?? []).forEach((row, index) => child.set(row.id, `child_${index + 1}`));
+  return { account, income, spending, contribution, liability, child };
+}
+
+function codeOf(map: Map<string, string>, id: string | null | undefined): string {
+  if (!id) return "";
+  return map.get(id) ?? "";
+}
+
+function personCode(person: string | null | undefined): string {
+  const value = (person ?? "").trim();
+  if (value === "primary" || value === "spouse" || value === "other") return value;
+  return value ? "other" : "";
+}
+
+function ownerCode(owner: string | null | undefined, children: Map<string, string>): string {
+  const childId = childIdFromOwner(owner);
+  if (childId) return children.get(childId) ?? "";
+  const value = (owner ?? "").trim();
+  if (/^spouse$/i.test(value)) return "spouse";
+  if (/^joint$/i.test(value)) return "joint";
+  if (/^(primary|you)$/i.test(value)) return "primary";
+  return "";
+}
+
+function checkTolerance(left: number, right: number): number {
+  const balance = Math.max(Math.abs(left), Math.abs(right));
+  if (balance > 1000) return Math.max(0.05, balance * 0.0005);
+  return 0.05;
+}
+
+function checkRow(
+  month: string,
+  code: string,
+  check: string,
+  left: number,
+  right: number,
+  difference: number,
+): (string | number | boolean)[] {
+  const tolerance = checkTolerance(left, right);
+  return [month, code, check, left, right, difference, tolerance, Math.abs(difference) < tolerance];
+}
 
 export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   const audit: PlanAudit = sim.audit ?? {
@@ -117,6 +184,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
     annuities: [],
     annuityEarningsByDate: {},
   };
+  const book = codeBook(plan);
   const lines: string[] = [];
   lines.push(
     ...section(
@@ -131,26 +199,32 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
     ...section(
       "assumptions",
       ["field", "value"],
-      assumptionRows(plan).map(([field, value]) => [field, value]),
+      assumptionRows(plan).map(([field, value]) => [
+        field === "sweepPortfolioId" ? "sweep_account" : field,
+        field === "sweepPortfolioId" ? codeOf(book.account, typeof value === "string" ? value : null) : value,
+      ]),
     ),
   );
 
+  const asOf = monthStart(plan.assumptions.asOfDate);
   const people: (string | number | null)[][] = [
-    ["primary", plan.primary.name, plan.primary.birthDate],
-    ["spouse", plan.spouse.name, plan.spouse.birthDate],
-    ...plan.children.map((child) => ["child", child.name, child.birthDate]),
+    ["primary", ageYears(plan.primary.birthDate, asOf)],
+    ["spouse", plan.spouse.birthDate ? ageYears(plan.spouse.birthDate, asOf) : ""],
+    ...(plan.children ?? []).map((child, index) => [
+      `child_${index + 1}`,
+      ageYears(child.birthDate, asOf),
+    ]),
   ];
-  lines.push(...section("people", ["role", "name", "birth_date"], people));
+  lines.push(...section("people", ["role", "age_at_as_of"], people));
 
   lines.push(
     ...section(
       "accounts",
-      ["id", "name", "kind", "owner", "tax_bucket", "current_value", "cost_basis", "return_override_pct", "spendable", "include_in_net_worth", "mortgage_origination", "mortgage_apr_pct", "mortgage_pi", "mortgage_term_years", "mortgage_in_spending"],
+      ["code", "kind", "owner", "tax_bucket", "current_value", "cost_basis", "return_override_pct", "spendable", "include_in_net_worth", "mortgage_origination", "mortgage_apr_pct", "mortgage_pi", "mortgage_term_years", "mortgage_in_spending"],
       plan.portfolios.map((p) => [
-        p.id,
-        p.name,
+        codeOf(book.account, p.id),
         p.kind,
-        p.owner,
+        ownerCode(p.owner, book.child),
         p.taxBucket,
         p.currentValue,
         p.costBasis ?? null,
@@ -169,12 +243,11 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   lines.push(
     ...section(
       "liabilities",
-      ["id", "name", "kind", "owner", "balance", "apr_pct", "monthly_pi", "origination", "term_years", "include_in_spending"],
+      ["code", "kind", "owner", "balance", "apr_pct", "monthly_pi", "origination", "term_years", "include_in_spending"],
       (plan.liabilities ?? []).map((l) => [
-        l.id,
-        l.name,
+        codeOf(book.liability, l.id),
         l.kind,
-        l.owner,
+        ownerCode(l.owner, book.child),
         l.balance,
         l.aprPct,
         l.monthlyPi,
@@ -188,12 +261,11 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   lines.push(
     ...section(
       "incomes",
-      ["id", "name", "kind", "person", "monthly_today", "pay_cadence", "pay_amount", "start", "end", "cola_pct", "tax_treatment", "ss_claim_age", "ss_pia", "va_rating"],
+      ["code", "kind", "person", "monthly_today", "pay_cadence", "pay_amount", "start", "end", "cola_pct", "tax_treatment", "ss_claim_age", "ss_pia", "va_rating"],
       plan.incomes.map((s) => [
-        s.id,
-        s.name,
+        codeOf(book.income, s.id),
         s.kind,
-        s.person,
+        personCode(s.person),
         s.monthlyAmount,
         s.payCadence ?? null,
         s.payAmount ?? null,
@@ -211,28 +283,25 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   lines.push(
     ...section(
       "spending",
-      ["id", "name", "monthly_today", "start", "end"],
-      plan.spending.map((s) => [s.id, s.label, s.monthlyAmount, s.startDate, s.endDate]),
+      ["code", "monthly_today", "start", "end"],
+      plan.spending.map((s) => [codeOf(book.spending, s.id), s.monthlyAmount, s.startDate, s.endDate]),
     ),
   );
 
   lines.push(
     ...section(
       "contributions",
-      ["id", "label", "account_id", "account_name", "mode", "monthly_amount", "pay_cadence", "pay_amount", "percent", "percent_of_income_id", "start", "end", "stop_date", "employer_match", "match_pct", "irs_cap", "end_at_retirement"],
+      ["code", "account", "mode", "monthly_amount", "pay_cadence", "pay_amount", "percent", "percent_of_income", "start", "end", "stop_date", "employer_match", "match_pct", "irs_cap", "end_at_retirement"],
       plan.contributions.map((c) => {
-        const dest = plan.portfolios.find((p) => p.id === c.portfolioId);
         return [
-          c.id,
-          c.label,
-          c.portfolioId,
-          dest?.name ?? "",
+          codeOf(book.contribution, c.id),
+          codeOf(book.account, c.portfolioId),
           c.amountMode === "percent" ? "percent" : "fixed",
           c.amountMode === "percent" ? null : c.monthlyAmount,
           c.amountMode === "percent" ? null : c.payCadence ?? null,
           c.amountMode === "percent" ? null : c.payAmount ?? null,
           c.amountMode === "percent" ? c.percentOfIncome ?? null : null,
-          c.percentOfIncomeId ?? null,
+          codeOf(book.income, c.percentOfIncomeId),
           c.startDate,
           c.endDate,
           c.stopDate ?? null,
@@ -250,8 +319,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
     const resolved = streamWindow(plan, stream);
     windows.push([
       "income",
-      stream.id,
-      stream.name,
+      codeOf(book.income, stream.id),
       stream.startDate,
       stream.endDate,
       resolved.start,
@@ -267,8 +335,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
     const resolved = spendingWindow(plan, phase);
     windows.push([
       "spending",
-      phase.id,
-      phase.label,
+      codeOf(book.spending, phase.id),
       phase.startDate,
       phase.endDate,
       resolved.start,
@@ -283,8 +350,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
     const resolved = contributionWindow(plan, rule);
     windows.push([
       "contribution",
-      rule.id,
-      rule.label,
+      codeOf(book.contribution, rule.id),
       rule.startDate,
       rule.endDate,
       resolved.start,
@@ -298,7 +364,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   lines.push(
     ...section(
       "windows",
-      ["kind", "id", "name", "typed_start", "typed_end", "resolved_start", "resolved_end", "why"],
+      ["kind", "code", "typed_start", "typed_end", "resolved_start", "resolved_end", "why"],
       windows,
     ),
   );
@@ -311,6 +377,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   const spendRows: (string | number | null)[][] = [];
   const loanRows: (string | number | boolean | null)[][] = [];
   const homeRows: (string | number | null)[][] = [];
+  const checkRows: (string | number | boolean)[][] = [];
 
   sim.months.forEach((month, index) => {
     const date = month.date;
@@ -328,8 +395,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
       const factor = ss && pia ? ssBenefitFromPia(pia, stream.ssClaimAge ?? 67, stream.ssFra ?? 67) / pia : null;
       incomeRows.push([
         date,
-        stream.id,
-        stream.name,
+        codeOf(book.income, stream.id),
         stream.kind,
         today,
         ss ? "social_security" : va ? "va_table" : "typed",
@@ -350,7 +416,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
       if (!inRange(at, win.start, win.end)) continue;
       const amount = phase.monthlyAmount * inflationIndex;
       if (amount <= 0.005) continue;
-      spendRows.push([date, phase.id, phase.label, amount]);
+      spendRows.push([date, codeOf(book.spending, phase.id), amount]);
     }
     for (const p of plan.portfolios) {
       if (p.kind !== "real_estate" || !p.mortgage) continue;
@@ -365,39 +431,45 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
       );
       if (!parts) continue;
       const due = mortgagePaymentDue(p.mortgage, date);
-      if (due > 0) spendRows.push([date, p.id, `${p.name} mortgage`, due]);
-      loanRows.push([date, p.id, "mortgage", parts.start, parts.interest, parts.principalPaid, parts.end, parts.inSpending]);
+      if (due > 0) spendRows.push([date, codeOf(book.account, p.id), due]);
+      loanRows.push([date, codeOf(book.account, p.id), "mortgage", parts.start, parts.interest, parts.principalPaid, parts.end, parts.inSpending]);
     }
     for (const l of plan.liabilities ?? []) {
       const parts = loanParts(l.monthlyPi, l.aprPct, l.termYears, l.originationDate, date, l.includeInSpending, true);
       if (!parts) continue;
       const due = liabilityPaymentDue(l, date);
-      if (due > 0) spendRows.push([date, l.id, l.name, due]);
-      loanRows.push([date, l.id, "liability", parts.start, parts.interest, parts.principalPaid, parts.end, parts.inSpending]);
+      if (due > 0) spendRows.push([date, codeOf(book.liability, l.id), due]);
+      loanRows.push([date, codeOf(book.liability, l.id), "liability", parts.start, parts.interest, parts.principalPaid, parts.end, parts.inSpending]);
     }
     const listedSpend = spendRows
       .filter((row) => row[0] === date)
-      .reduce((sum, row) => sum + Number(row[3] ?? 0), 0);
+      .reduce((sum, row) => sum + Number(row[2] ?? 0), 0);
     const unallocated = month.spending - listedSpend;
     if (unallocated > 0.5) {
-      spendRows.push([
-        date,
-        "unallocated",
-        "Unallocated surplus (no sweep account)",
-        unallocated,
-      ]);
+      spendRows.push([date, "unallocated", unallocated]);
     }
-    homeRows.push(householdRow(plan, month, inflationIndex, ssShare, goalKey, audit, date));
+    const home = householdRow(plan, month, inflationIndex, ssShare, goalKey, audit, date);
+    homeRows.push(home.cells);
+    for (const row of audit.accounts) {
+      if (row.date !== date) continue;
+      const expected =
+        row.start + row.growth + row.contribution + row.match + row.sweep - row.withdrawal;
+      checkRows.push(
+        checkRow(date, codeOf(book.account, row.accountId), "account_residual", row.end, expected, row.residual),
+      );
+    }
+    for (const item of home.checks) {
+      checkRows.push(checkRow(date, "", item.check, item.left, item.right, item.difference));
+    }
   });
 
   lines.push(
     ...section(
       "month_account",
-      ["date", "account_id", "account_name", "start_balance", "annual_return_pct", "growth", "contribution", "match", "withdrawal", "sweep", "end_balance", "residual", "spendable", "in_net_worth"],
+      ["date", "code", "start_balance", "annual_return_pct", "growth", "contribution", "match", "withdrawal", "sweep", "end_balance", "residual", "spendable", "in_net_worth"],
       audit.accounts.map((row) => [
         row.date,
-        row.accountId,
-        row.accountName,
+        codeOf(book.account, row.accountId),
         row.start,
         row.annualReturnPct,
         row.growth,
@@ -415,19 +487,19 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   lines.push(
     ...section(
       "month_income",
-      ["date", "income_id", "name", "kind", "today_dollars", "source", "cola_pct_used", "nominal", "pia", "claim_age", "fra", "ss_factor", "va_rating", "va_spouse", "va_children_under_18", "va_table_amount"],
+      ["date", "code", "kind", "today_dollars", "source", "cola_pct_used", "nominal", "pia", "claim_age", "fra", "ss_factor", "va_rating", "va_spouse", "va_children_under_18", "va_table_amount"],
       incomeRows,
     ),
   );
-  lines.push(...section("month_spending", ["date", "source_id", "name", "amount"], spendRows));
+  lines.push(...section("month_spending", ["date", "code", "amount"], spendRows));
   lines.push(
     ...section(
       "month_contribution",
-      ["date", "rule_id", "account_id", "mode", "income_dollars", "planned", "after_irs_cap", "irs_limit", "catch_up", "invested", "match"],
+      ["date", "code", "account", "mode", "income_dollars", "planned", "after_irs_cap", "irs_limit", "catch_up", "invested", "match"],
       audit.contributions.map((row) => [
         row.date,
-        row.ruleId,
-        row.accountId,
+        codeOf(book.contribution, row.ruleId),
+        codeOf(book.account, row.accountId),
         row.mode,
         row.incomeBase,
         row.planned,
@@ -442,10 +514,10 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   lines.push(
     ...section(
       "month_rmd",
-      ["date", "account_id", "owner_age", "rmd_start_age", "uniform_lifetime_factor", "prior_dec_31_balance", "monthly_rmd", "status"],
+      ["date", "code", "owner_age", "rmd_start_age", "uniform_lifetime_factor", "prior_dec_31_balance", "monthly_rmd", "status"],
       audit.rmds.map((row) => [
         row.date,
-        row.accountId,
+        codeOf(book.account, row.accountId),
         row.ownerAge,
         row.startAge,
         row.factor,
@@ -458,10 +530,10 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   lines.push(
     ...section(
       "month_annuity",
-      ["date", "account_id", "basis_start", "basis_added", "taxable_earnings_withdrawn", "tax_free_basis_returned", "basis_end"],
+      ["date", "code", "basis_start", "basis_added", "taxable_earnings_withdrawn", "tax_free_basis_returned", "basis_end"],
       audit.annuities.map((row) => [
         row.date,
-        row.accountId,
+        codeOf(book.account, row.accountId),
         row.basisStart,
         row.basisAdded,
         row.taxableEarnings,
@@ -473,7 +545,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   lines.push(
     ...section(
       "month_loan",
-      ["date", "loan_id", "kind", "principal_start", "interest", "principal_paid", "principal_end", "counted_in_spending"],
+      ["date", "code", "kind", "principal_start", "interest", "principal_paid", "principal_end", "counted_in_spending"],
       loanRows,
     ),
   );
@@ -482,6 +554,13 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
       "month_household",
       ["date", "primary_age", "spouse_age", "income", "tax", "spending", "employee_contributions", "employer_match", "withdrawals", "surplus", "guaranteed", "air", "spendable_end", "spendable_end_today", "net_worth_end", "assets_end", "liabilities_end", "identity_left", "identity_right", "residual", "residual_engine", "inflation_index", "ordinary_taxable", "social_security", "ss_taxable", "annuity_earnings", "tax_rate", "air_guaranteed", "air_withdrawals", "air_total", "spendable_from_accounts", "spendable_residual", "net_worth_from_parts", "net_worth_residual", "cash_parked", "cash_drawn", "cash_on_hand"],
       homeRows,
+    ),
+  );
+  lines.push(
+    ...section(
+      "checks",
+      ["month", "code", "check", "left", "right", "difference", "tolerance", "pass"],
+      checkRows,
     ),
   );
 
@@ -496,7 +575,10 @@ function householdRow(
   goalKey: string,
   audit: PlanAudit,
   date: string,
-): (string | number | null)[] {
+): {
+  cells: (string | number | null)[];
+  checks: { check: string; left: number; right: number; difference: number }[];
+} {
   const ss = month.incomeByKind.ss ?? 0;
   const ssTaxable = ss * ssShare;
   const ordinary = month.incomeTaxable - ssTaxable;
@@ -522,43 +604,53 @@ function householdRow(
   for (const l of plan.liabilities ?? []) netFrom -= remainingLiability(l, date);
   const spendableFromCash = spendableFrom + cashOnHand;
   const netFromCash = netFrom + cashOnHand;
-  return [
-    date,
-    month.primaryAge,
-    month.spouseAge,
-    month.income,
-    month.tax,
-    month.spending,
-    employee,
-    month.employerMatch,
-    month.withdrawals,
-    month.surplus,
-    month.guaranteed,
-    retired ? month.guaranteed + month.withdrawals : null,
-    month.spendableEnd,
-    month.spendableEndReal,
-    month.netWorthEnd,
-    month.assetsEnd,
-    month.liabilitiesEnd,
-    left,
-    right,
-    left - right,
-    engineLeft - engineRight,
-    inflationIndex,
-    ordinary,
-    ss,
-    ssTaxable,
-    annuity,
-    plan.assumptions.ordinaryTaxRatePct,
-    retired ? month.guaranteed : null,
-    retired ? month.withdrawals : null,
-    retired ? month.guaranteed + month.withdrawals : null,
-    spendableFromCash,
-    spendableFromCash - month.spendableEnd,
-    netFromCash,
-    netFromCash - month.netWorthEnd,
-    cashParked,
-    cashDrawn,
-    cashOnHand,
-  ];
+  const spendableDifference = spendableFromCash - month.spendableEnd;
+  const netDifference = netFromCash - month.netWorthEnd;
+  return {
+    cells: [
+      date,
+      month.primaryAge,
+      month.spouseAge,
+      month.income,
+      month.tax,
+      month.spending,
+      employee,
+      month.employerMatch,
+      month.withdrawals,
+      month.surplus,
+      month.guaranteed,
+      retired ? month.guaranteed + month.withdrawals : null,
+      month.spendableEnd,
+      month.spendableEndReal,
+      month.netWorthEnd,
+      month.assetsEnd,
+      month.liabilitiesEnd,
+      left,
+      right,
+      left - right,
+      engineLeft - engineRight,
+      inflationIndex,
+      ordinary,
+      ss,
+      ssTaxable,
+      annuity,
+      plan.assumptions.ordinaryTaxRatePct,
+      retired ? month.guaranteed : null,
+      retired ? month.withdrawals : null,
+      retired ? month.guaranteed + month.withdrawals : null,
+      spendableFromCash,
+      spendableDifference,
+      netFromCash,
+      netDifference,
+      cashParked,
+      cashDrawn,
+      cashOnHand,
+    ],
+    checks: [
+      { check: "household_residual", left, right, difference: left - right },
+      { check: "residual_engine", left: engineLeft, right: engineRight, difference: engineLeft - engineRight },
+      { check: "spendable_residual", left: spendableFromCash, right: month.spendableEnd, difference: spendableDifference },
+      { check: "net_worth_residual", left: netFromCash, right: month.netWorthEnd, difference: netDifference },
+    ],
+  };
 }

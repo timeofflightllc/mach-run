@@ -340,14 +340,60 @@ test("audit H: blank sweep holds leftover as cash instead of spending it", () =>
 
 test("audit CSV opens with a reviewer prompt before the trace", () => {
   const plan = roundPlan();
-  plan.portfolios = [taxable(1_000)];
+  plan.primary = { name: "Jordan Hale", birthDate: "1979-03-15" };
+  plan.spouse = { name: "Sarah Hale", birthDate: "1986-06-01" };
+  plan.children = [{ id: "child-sybil", name: "Sybil Hale", birthDate: "2017-04-02" }];
+  plan.portfolios = [
+    {
+      ...taxable(1_000),
+      id: "acct-jordan-hale-991",
+      name: "Jordan Hale Brokerage",
+      owner: "child:child-sybil",
+    },
+  ];
+  plan.assumptions.sweepPortfolioId = "acct-jordan-hale-991";
   const csv = buildInvestmentAuditCsv(plan, simulate(plan, { audit: true }));
   const lines = csv.split("\n");
   assert.equal(lines[0], "section,step,instruction");
   assert.match(lines[1] ?? "", /^review_order,1,/);
-  assert.ok(csv.includes("CONFIRMED BUGS"));
-  assert.ok(csv.includes("Do not assume the software is correct"));
-  assert.ok(csv.includes("SAMPLES I RECOMPUTED"));
+  assert.ok(csv.includes("VERDICT"));
+  assert.ok(csv.includes("BUGS: none"));
+  assert.equal(csv.includes("ChatGPT"), false);
+  assert.equal(csv.includes("Grok"), false);
+  assert.equal(csv.includes("Claude"), false);
+  for (const secret of [
+    "Jordan Hale",
+    "Sarah Hale",
+    "Sybil Hale",
+    "1979-03-15",
+    "1986-06-01",
+    "2017-04-02",
+    "acct-jordan-hale-991",
+    "Jordan Hale Brokerage",
+    "child-sybil",
+    "child:child-sybil",
+  ]) {
+    assert.equal(csv.includes(secret), false, secret);
+  }
+  const accounts = sectionTable(csv, "accounts");
+  assert.equal(accounts.rows[0]?.[0], "A1");
+  const checks = sectionTable(csv, "checks");
+  assert.deepEqual(checks.header, [
+    "month",
+    "code",
+    "check",
+    "left",
+    "right",
+    "difference",
+    "tolerance",
+    "pass",
+  ]);
+  const inside = checks.rows.find((row) => Math.abs(Number(row[5])) < 0.05);
+  assert.ok(inside);
+  assert.equal(inside?.[7], "yes");
+  const household = checks.rows.find((row) => row[2] === "household_residual");
+  assert.ok(household);
+  assert.equal(household?.[1], "");
   const dictionaryAt = lines.findIndex((line) => line.startsWith("dictionary,"));
   assert.ok(dictionaryAt > 10, "dictionary should follow the review order");
 });
@@ -424,12 +470,14 @@ test("audit income rows show a yearly bonus as one check", () => {
   );
 
   const incomes = sectionTable(csv, "incomes");
-  assert.deepEqual(incomes.header.slice(4, 7), ["monthly_today", "pay_cadence", "pay_amount"]);
-  const bonusIn = incomes.rows.find((row) => row[0] === "bonus");
+  assert.deepEqual(incomes.header.slice(3, 6), ["monthly_today", "pay_cadence", "pay_amount"]);
+  const bonusIn = incomes.rows.find((row) => row[0] === "I1");
   assert.ok(bonusIn);
-  assert.equal(bonusIn[4], "6666.67");
-  assert.equal(bonusIn[5], "year");
-  assert.equal(bonusIn[6], "80000.00");
+  assert.equal(bonusIn[incomes.header.indexOf("monthly_today")], "6666.67");
+  assert.equal(bonusIn[incomes.header.indexOf("pay_cadence")], "year");
+  assert.equal(bonusIn[incomes.header.indexOf("pay_amount")], "80000.00");
+  assert.equal(csv.includes("BGS Bonus"), false);
+  assert.equal(csv.includes("Bonus match"), false);
 
   const contributions = sectionTable(csv, "contributions");
   assert.ok(contributions.header.includes("stop_date"));
@@ -437,19 +485,19 @@ test("audit income rows show a yearly bonus as one check", () => {
   assert.equal(contributions.rows[0]?.[stopAt], "2028-09-01");
 
   const windows = sectionTable(csv, "windows");
-  const matchWindow = windows.rows.find((row) => row[1] === "match");
+  const matchWindow = windows.rows.find((row) => row[1] === "C1");
   assert.ok(matchWindow);
   assert.equal(matchWindow.at(-1), "none");
 
   const income = sectionTable(csv, "month_income");
   const nominalAt = income.header.indexOf("nominal");
-  const idAt = income.header.indexOf("income_id");
+  const idAt = income.header.indexOf("code");
   const dateAt = income.header.indexOf("date");
-  const sep = income.rows.filter((row) => row[dateAt] === "2027-09-01" && row[idAt] === "bonus");
+  const sep = income.rows.filter((row) => row[dateAt] === "2027-09-01" && row[idAt] === "I1");
   assert.equal(sep.length, 1);
   assert.equal(sep[0]?.[nominalAt], "80000.00");
   assert.equal(
-    income.rows.some((row) => row[dateAt] === "2027-10-01" && row[idAt] === "bonus"),
+    income.rows.some((row) => row[dateAt] === "2027-10-01" && row[idAt] === "I1"),
     false,
   );
 
