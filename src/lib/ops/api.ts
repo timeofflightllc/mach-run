@@ -248,6 +248,25 @@ export const clearAdvisorSignInFn = createServerFn({ method: "POST" })
     return clearAdvisorSignInCheck(actor, data);
   });
 
+export const setSuperBetaFn = createServerFn({ method: "POST" })
+  .middleware([opsSessionMiddleware])
+  .validator((input: { userId?: string; on?: boolean }) => {
+    const raw = asRecord(input);
+    const on = input?.on ?? raw.on;
+    if (typeof on !== "boolean") throw new Error("Super beta needs on or off.");
+    return {
+      userId: String(input?.userId ?? raw.userId ?? ""),
+      on,
+    };
+  })
+  .handler(async ({ context, data }) => {
+    const { getOpsActor } = await import("./gate.server");
+    const actor = await getOpsActor(context.bearerToken);
+    if (!actor) return { ok: false as const, error: "Not found." };
+    const { setSuperBeta } = await import("./writes.server");
+    return setSuperBeta(actor, data);
+  });
+
 export const listOpsEventsFn = createServerFn({ method: "POST" })
   .middleware([opsSessionMiddleware])
   .validator((input: { targetUserId?: string }) => ({

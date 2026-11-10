@@ -21,6 +21,7 @@ type UserRow = {
   email: string | null;
   name: string | null;
   createdAt: Date | string | null;
+  superBeta: boolean | null;
 };
 
 type SubRow = {
@@ -108,6 +109,7 @@ function toRow(
     riskLabel: EMPTY_RISK.label,
     riskReasons: EMPTY_RISK.reasons,
     sharedIpUsers: 0,
+    superBeta: user.superBeta === true,
   };
 }
 
@@ -145,8 +147,13 @@ export async function loadOpsRoster(query: OpsRosterQuery): Promise<OpsRosterRes
   const offset = Math.max(0, Number(query.offset) || 0);
   try {
     const sql = await getSql();
+    await sql
+      .query(
+        `alter table "user" add column if not exists "superBeta" boolean not null default false`,
+      )
+      .catch(() => undefined);
     const users = await sql.query<UserRow>(
-      `select id, email, name, "createdAt" as "createdAt" from "user" order by "createdAt" desc nulls last`,
+      `select id, email, name, "createdAt" as "createdAt", "superBeta" as "superBeta" from "user" order by "createdAt" desc nulls last`,
     );
     let subs: SubRow[] = [];
     try {

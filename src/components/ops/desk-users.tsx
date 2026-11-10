@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Field, TextInput } from "@/components/ui/field";
 import { paidFromStatus } from "@/lib/billing/limits";
-import { getOpsUserUsageFn, listOpsRoster, clearAdvisorSignInFn } from "@/lib/ops/api";
+import { getOpsUserUsageFn, listOpsRoster, clearAdvisorSignInFn, setSuperBetaFn } from "@/lib/ops/api";
 import { activityLabel, describeActivity } from "@/lib/ops/activity";
 import { OPS_ROSTER_PAGE, type OpsRosterRow } from "@/lib/ops/roster";
 import { RISK_GRADE_CLASS, scoreBotRisk, type RiskGrade } from "@/lib/ops/risk";
@@ -164,9 +164,11 @@ export function DeskUsers() {
 export function UserDetail({
   row,
   onDeleted,
+  onSuperBeta,
 }: {
   row: OpsRosterRow;
   onDeleted: () => void;
+  onSuperBeta?: (on: boolean) => void;
 }) {
   const [usage, setUsage] = useState<OpsUserUsage>(EMPTY_USER_USAGE);
   const [loading, setLoading] = useState(true);
@@ -355,7 +357,8 @@ export function UserDetail({
         ) : null}
       </div>
 
-      <div className="mt-6 border-t border-border/70 pt-4">
+      <div className="mt-6 grid gap-6 border-t border-border/70 pt-4 sm:grid-cols-2">
+        <SuperBetaSwitch row={row} onChanged={(on) => onSuperBeta?.(on)} />
         <ClearAdvisorSignIn row={row} />
       </div>
 
@@ -363,6 +366,77 @@ export function UserDetail({
         <OpsDeleteAccount row={row} onDeleted={onDeleted} />
       </div>
     </section>
+  );
+}
+
+function SuperBetaSwitch({
+  row,
+  onChanged,
+}: {
+  row: OpsRosterRow;
+  onChanged: (on: boolean) => void;
+}) {
+  const [on, setOn] = useState(row.superBeta);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOn(row.superBeta);
+  }, [row.id, row.superBeta]);
+
+  async function set(next: boolean) {
+    if (busy || next === on) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const result = await setSuperBetaFn({ data: { userId: row.id, on: next } });
+      if (result.ok) {
+        setOn(next);
+        onChanged(next);
+      } else {
+        setErr(result.error ?? "Could not save Super beta.");
+      }
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Could not save Super beta.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium text-fg">Super beta</p>
+      <p className="text-xs leading-relaxed text-muted">
+        {on
+          ? "On. They can download the full audit CSV from the ledger."
+          : "Off. The audit CSV stays hidden."}
+      </p>
+      <div className="flex w-fit overflow-hidden rounded-lg shadow-[0_0_0_1px_var(--color-border)]">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void set(false)}
+          className={
+            "h-9 px-4 text-sm disabled:opacity-40 " +
+            (!on ? "bg-[#1a2330] font-semibold text-white" : "text-fg")
+          }
+        >
+          Off
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => void set(true)}
+          className={
+            "h-9 px-4 text-sm disabled:opacity-40 " +
+            (on ? "bg-[#3a8a58] font-semibold text-white" : "text-fg")
+          }
+        >
+          On
+        </button>
+      </div>
+      {err ? <p className="text-sm text-negative">{err}</p> : null}
+    </div>
   );
 }
 

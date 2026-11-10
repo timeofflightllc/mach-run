@@ -19,5 +19,7 @@ export function actionLabel(action: string): string {
   if (action === "promo_off") return "Promo off";
   if (action === "promo_delete") return "Promo deleted";
   if (action === "mail_send") return "Desk mail";
+  if (action === "super_beta_on") return "Super beta on";
+  if (action === "super_beta_off") return "Super beta off";
   return action;
 }

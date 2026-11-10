@@ -466,7 +466,14 @@ function Top3DeskDoor() {
                       <RiskMark grade={row.riskGrade ?? "C"} label={row.riskLabel} />
                     </td>
                     <td className="px-3 py-2 text-fg">{row.email ?? "—"}</td>
-                    <td className="px-3 py-2 text-muted">{row.name ?? "—"}</td>
+                    <td className="px-3 py-2 text-muted">
+                      {row.name ?? "—"}
+                      {row.superBeta ? (
+                        <span className="ml-2 rounded bg-[#3a8a58] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+                          Super beta
+                        </span>
+                      ) : null}
+                    </td>
                     <td className="px-3 py-2 text-fg">
                       {row.packageLabel}
                       {row.isComp ? (
@@ -538,6 +545,13 @@ function Top3DeskDoor() {
                 onDeleted={() => {
                   setOpenId(null);
                   setTick((n) => n + 1);
+                }}
+                onSuperBeta={(on) => {
+                  setRows((prev) =>
+                    prev.map((row) =>
+                      row.id === selected.id ? { ...row, superBeta: on } : row,
+                    ),
+                  );
                 }}
               />
             ) : (

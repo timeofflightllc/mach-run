@@ -554,3 +554,30 @@ export async function clearAdvisorSignInCheck(
   await log(actor, target.id, "clear_advisor_mfa", { email: target.email });
   return { ok: true, message: "Sign-in check cleared. They can sign in with their password again." };
 }
+
+export async function setSuperBeta(
+  actor: OpsActor,
+  input: { userId: string; on: boolean },
+): Promise<OpsWriteResult> {
+  if (!input.userId) return { ok: false, error: "No person selected." };
+  if (!(await userExists(input.userId))) return { ok: false, error: "No person with that id." };
+  try {
+    const sql = await getSql();
+    await sql.query(`update "user" set "superBeta" = $2 where id = $1`, [
+      input.userId,
+      input.on,
+    ]);
+  } catch (err) {
+    return {
+      ok: false,
+      error: err instanceof Error ? err.message : "Could not save Super beta.",
+    };
+  }
+  await log(actor, input.userId, input.on ? "super_beta_on" : "super_beta_off", {});
+  return {
+    ok: true,
+    message: input.on
+      ? "Super beta is on. They can download the audit CSV."
+      : "Super beta is off.",
+  };
+}
