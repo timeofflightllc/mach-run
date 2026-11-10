@@ -142,6 +142,16 @@ export interface ContributionRule {
   employerMatch?: boolean;
   /** 0–100. Applied to the employee dollars that actually get invested. */
   employerMatchPct?: number | null;
+  /**
+   * Employer money that arrives even when the employee contributes $0.
+   * A percent of one paycheck, not a percent of the employee's deposit.
+   * Absent means the run is unchanged.
+   */
+  employerDirect?: boolean;
+  /** 0–100. Percent of employerDirectIncomeId. Not a percent of his contribution. */
+  employerDirectPct?: number | null;
+  /** Income stream the direct percent is taken from. */
+  employerDirectIncomeId?: string | null;
   /** Stop employee dollars when YTD hits the IRS annual max for this person. */
   capToIrsLimit?: boolean;
   /**

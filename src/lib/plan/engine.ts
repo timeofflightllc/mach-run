@@ -144,6 +144,29 @@ function isWorkplaceMatchAccount(kind: string): boolean {
   return kind === "401k" || kind === "401k_roth" || kind === "tsp" || kind === "tsp_roth";
 }
 
+/** Percent of one paycheck. Not a percent of the employee deposit. $0 when off, missing, or not a workplace account. */
+function employerDirectThisMonth(
+  plan: Plan,
+  rule: Plan["contributions"][number],
+  dest: Plan["portfolios"][number] | undefined,
+  cursor: Date,
+  monthsFromAsOf: number,
+  infA: number,
+  inflationIndex?: number,
+): number {
+  if (!rule.employerDirect) return 0;
+  if (!dest || !isWorkplaceMatchAccount(dest.kind)) return 0;
+  const win = contributionWindow(plan, rule);
+  if (!inRange(cursor, win.start, win.end)) return 0;
+  const pct = rule.employerDirectPct ?? 0;
+  if (!Number.isFinite(pct) || pct <= 0) return 0;
+  const stream = plan.incomes.find((s) => s.id === rule.employerDirectIncomeId);
+  if (!stream) return 0;
+  const base = streamNominalAt(plan, stream, cursor, monthsFromAsOf, infA, inflationIndex);
+  if (base <= 0) return 0;
+  return base * (Math.min(100, pct) / 100);
+}
+
 export function streamColaAnnual(plan: Plan, stream: IncomeStream, infA: number): number {
   if (stream.colaPct != null) return stream.colaPct / 100;
   const d = plan.assumptions.defaultColaPct;
@@ -694,6 +717,7 @@ export function simulate(
       ruleId: string;
       irs: { key: string; limit: number } | null;
     }[] = [];
+    const directs: { portfolioId: string; amount: number; ruleId: string }[] = [];
     const contribDrafts: {
       ruleId: string;
       accountId: string;
@@ -716,10 +740,22 @@ export function simulate(
         infA,
         historyIndex ? inflationIndex : undefined,
       );
-      if (amount <= 0) continue;
       if (!values.has(rule.portfolioId)) continue;
       const dest = plan.portfolios.find((p) => p.id === rule.portfolioId);
       if (dest && five29Ended(plan, dest, monthKey)) continue;
+      const direct = employerDirectThisMonth(
+        plan,
+        rule,
+        dest,
+        cursor,
+        monthsFromAsOf,
+        infA,
+        historyIndex ? inflationIndex : undefined,
+      );
+      if (direct > 0.5) {
+        directs.push({ portfolioId: rule.portfolioId, amount: direct, ruleId: rule.id });
+      }
+      if (amount <= 0) continue;
       const cls = dest ? irsLimitClass(dest.kind) : null;
       const person = dest ? irsCapPerson(plan, dest, rule) : null;
       const asked = amount;
@@ -857,6 +893,7 @@ export function simulate(
     let appliedContrib = 0;
     let withdrawals = 0;
     let employerMatch = 0;
+    let markedThisMonth = false;
     const drawnLines: { id: string; label: string; amount: number }[] = [];
     for (const t of rmdTakes) {
       const v = values.get(t.id) ?? 0;
@@ -1044,11 +1081,39 @@ export function simulate(
           .reduce((s, p) => s + Math.max(0, values.get(p.id) ?? 0), 0);
         if (left < 1) {
           markedDepleted = true;
+          markedThisMonth = true;
           depletedAge = ageYears(plan.primary.birthDate, cursor);
           depletedYear = cursor.getFullYear();
         }
       }
       }
+      }
+    }
+
+    for (const d of directs) {
+      values.set(d.portfolioId, (values.get(d.portfolioId) ?? 0) + d.amount);
+      income += d.amount;
+      incomeByKind.employer_match = (incomeByKind.employer_match ?? 0) + d.amount;
+      appliedContrib += d.amount;
+      planned += d.amount;
+      employerMatch += d.amount;
+      const directFlow = auditFlow?.get(d.portfolioId);
+      if (directFlow) directFlow.match += d.amount;
+      const dest = plan.portfolios.find((row) => row.id === d.portfolioId);
+      matchLines.push({
+        id: `${d.ruleId}:direct`,
+        label: `${dest?.name.trim() || "Account"} employer contribution`,
+        amount: d.amount,
+      });
+    }
+    if (markedThisMonth && directs.length) {
+      const left = plan.portfolios
+        .filter((p) => p.spendable)
+        .reduce((s, p) => s + Math.max(0, values.get(p.id) ?? 0), 0);
+      if (left >= 1) {
+        markedDepleted = false;
+        depletedAge = null;
+        depletedYear = null;
       }
     }
 

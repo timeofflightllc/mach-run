@@ -375,6 +375,13 @@ function contributionFields(rule: ContributionRule) {
     percentOfIncomeId: rule.percentOfIncomeId ?? null,
     employerMatch: Boolean(rule.employerMatch),
     employerMatchPct: rule.employerMatchPct ?? null,
+    ...(rule.employerDirect
+      ? {
+          employerDirect: true,
+          employerDirectPct: rule.employerDirectPct ?? null,
+          employerDirectIncomeId: rule.employerDirectIncomeId ?? null,
+        }
+      : {}),
     capToIrsLimit: Boolean(rule.capToIrsLimit),
     capPerson: rule.capPerson ?? null,
     endAtRetirement: Boolean(rule.endAtRetirement),

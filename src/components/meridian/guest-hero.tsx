@@ -577,11 +577,11 @@ export function MilitaryHousehold({
           Military retired pay, VA compensation, TSP, Social Security, spouse income, and expenses
           all operate on different timelines.
         </JourneyBlock>
-        <JourneyBlock kicker="2 · The frustration" title="Most calculators only show pieces of the puzzle.">
+        <JourneyBlock kicker="2 · The frustration" title="Most calculators only show pieces of the puzzle, and do not allow for unlimited iterations.">
           Spreadsheets take real work to keep current. Most popular software only tracks investments.
           A promotion, a COLA, and retired pay rarely make it into the picture.
         </JourneyBlock>
-        <JourneyBlock kicker="3 · The solution" title="One household picture.">
+        <JourneyBlock kicker="3 · The solution" title="One household picture, unlimited iterations.">
           MACH RUN brings the entire household financial picture together — a promotion, a new
           job, a spouse's paycheck, TSP, military retired pay, VA, and the nest-egg goal — in one place.
         </JourneyBlock>

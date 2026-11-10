@@ -20,8 +20,10 @@ import { AdvisoryNote, useOpenAdvisories } from "@/components/meridian/advisory-
 import { usePlannerCopy } from "@/components/meridian/use-planner-copy";
 import { atContributionCap, useEntitlement } from "@/lib/billing/use-entitlement";
 import {
+  activeEmployerDirectMonthly,
   activeEmployerMatchMonthly,
   employeeMonthlyNow,
+  scheduledEmployerDirectMonthly,
   scheduledEmployerMatchMonthly,
 } from "@/lib/plan/contribution-now";
 import { irsCapPerson, irsEmployeeAnnualLimit, irsOverLimitWarning } from "@/lib/plan/irs-limits";
@@ -165,6 +167,8 @@ export function ContributionForm() {
 
   const activeMonthly = activeEmployerMatchMonthly(plan);
   const scheduledMonthly = scheduledEmployerMatchMonthly(plan);
+  const activeDirect = activeEmployerDirectMonthly(plan);
+  const scheduledDirect = scheduledEmployerDirectMonthly(plan);
 
   const matchLine = (() => {
     if (!plan.portfolios.length) return null;
@@ -175,6 +179,17 @@ export function ContributionForm() {
       return ` This month the match is ${usd(0, true)} because that contribution has not started yet. When it is on, employer match is ${usd(scheduledMonthly, true)}/mo.`;
     }
     return ` Right now this adds up to ${usd(0, true)}/mo in employer match.`;
+  })();
+
+  const directLine = (() => {
+    if (!plan.portfolios.length) return "";
+    if (activeDirect > 0) {
+      return ` Right now this adds up to ${usd(activeDirect, true)}/mo in employer contribution.`;
+    }
+    if (scheduledDirect > 0) {
+      return ` This month the employer contribution is ${usd(0, true)} because that contribution has not started yet. When it is on, employer contribution is ${usd(scheduledDirect, true)}/mo.`;
+    }
+    return "";
   })();
 
   function cancelSort() {
@@ -260,6 +275,7 @@ export function ContributionForm() {
           <p className="whitespace-pre-wrap">
             {copy.contributionsP2}
             {matchLine}
+            {directLine}
           </p>
         ) : null}
         {copy.contributionsP3.trim() ? <p className="whitespace-pre-wrap">{copy.contributionsP3}</p> : null}
@@ -464,6 +480,71 @@ export function ContributionForm() {
                         </SelectInput>
                       </Field>
                     ) : null}
+                    {workplace ? (
+                      <label className="flex items-center justify-center gap-2 text-center text-sm text-[#1a2330]">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(c.employerDirect)}
+                          onChange={(e) =>
+                            updateContribution(c.id, {
+                              employerDirect: e.target.checked,
+                              ...(plan.incomes.length ? {} : { employerDirectIncomeId: null }),
+                            })
+                          }
+                        />
+                        Employer also contributes
+                      </label>
+                    ) : null}
+                    {workplace && c.employerDirect ? (
+                      plan.incomes.length ? (
+                        <>
+                          <Field label="Percent" className={ask}>
+                            <NumberInput
+                              min={0}
+                              max={100}
+                              step={0.5}
+                              value={c.employerDirectPct ?? 0}
+                              onValue={(n) =>
+                                updateContribution(c.id, {
+                                  employerDirectPct: Math.max(0, Math.min(100, Number.isFinite(n) ? n : 0)),
+                                })
+                              }
+                              className={bandControl}
+                            />
+                          </Field>
+                          <Field label="Paycheck" className={ask}>
+                            <SelectInput
+                              value={c.employerDirectIncomeId ?? ""}
+                              onChange={(e) =>
+                                updateContribution(c.id, {
+                                  employerDirectIncomeId: e.target.value || null,
+                                })
+                              }
+                              className={bandControl}
+                            >
+                              <option value="">Select a paycheck</option>
+                              {plan.incomes.map((s, i) => (
+                                <option key={s.id} value={s.id}>
+                                  {s.name.trim() || `Income ${i + 1}`}
+                                </option>
+                              ))}
+                            </SelectInput>
+                          </Field>
+                          <p className="text-center text-sm leading-relaxed text-subtle">
+                            This is a percent of that paycheck. It is added even if you contribute $0. It does not come out of take-home.
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-center text-sm leading-relaxed text-[#5c4a18]">
+                            Add an income in Orient first.
+                          </p>
+                          <p className="text-center text-sm leading-relaxed text-subtle">
+                            This is a percent of that paycheck. It is added even if you contribute $0. It does not come out of take-home.
+                          </p>
+                        </>
+                      )
+                    ) : null}
                     <label className="flex items-center justify-center gap-2 text-center text-sm text-[#1a2330]">
                       <input
                         type="checkbox"
@@ -564,6 +645,9 @@ export function ContributionForm() {
                   percentOfIncomeId: null,
                   employerMatch: false,
                   employerMatchPct: 0,
+                  employerDirect: false,
+                  employerDirectPct: null,
+                  employerDirectIncomeId: null,
                   capToIrsLimit: false,
                   endAtRetirement: false,
                 });

@@ -186,6 +186,50 @@ test("renaming an account does not change the hash, changing the balance does", 
   assert.notEqual(economicHash(plan, "typical"), before);
 });
 
+test("employer direct changes the hash only when it is on", () => {
+  const plan = shortPlan();
+  plan.incomes = [
+    {
+      id: "job",
+      name: "Airline",
+      kind: "salary",
+      monthlyAmount: 10_000,
+      startDate: "2026-01-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c1",
+      label: "Retirement",
+      portfolioId: "port-one",
+      monthlyAmount: 0,
+      startDate: "2026-01-01",
+      endDate: null,
+      employerMatch: false,
+      employerMatchPct: 0,
+    },
+  ];
+  const absent = economicHash(plan, "typical");
+  plan.contributions[0].employerDirect = false;
+  plan.contributions[0].employerDirectPct = null;
+  plan.contributions[0].employerDirectIncomeId = null;
+  assert.equal(economicHash(plan, "typical"), absent);
+  plan.contributions[0].employerDirect = true;
+  plan.contributions[0].employerDirectPct = 18;
+  plan.contributions[0].employerDirectIncomeId = "job";
+  const on = economicHash(plan, "typical");
+  assert.notEqual(on, absent);
+  plan.contributions[0].employerDirectPct = 17;
+  assert.notEqual(economicHash(plan, "typical"), on);
+  plan.contributions[0].employerDirectPct = 18;
+  plan.contributions[0].employerDirectIncomeId = "other";
+  assert.notEqual(economicHash(plan, "typical"), on);
+});
+
 test("calm and typical on the same plan do not share a hash", () => {
   const plan = shortPlan();
   assert.notEqual(economicHash(plan, "calm"), economicHash(plan, "typical"));

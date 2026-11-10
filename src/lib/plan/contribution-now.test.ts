@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { createDefaultPlan } from "./defaults.ts";
-import { activeEmployerMatchMonthly, scheduledEmployerMatchMonthly } from "./contribution-now.ts";
+import { activeEmployerDirectMonthly, activeEmployerMatchMonthly, scheduledEmployerDirectMonthly, scheduledEmployerMatchMonthly } from "./contribution-now.ts";
 import type { ContributionRule, Portfolio } from "./types.ts";
 
 function ira(id: string, extra: Partial<Portfolio> = {}): Portfolio {
@@ -280,4 +280,104 @@ test("end year 0029 is year 2029 — match is not already over", () => {
     }),
   ];
   assert.equal(activeEmployerMatchMonthly(plan), 3000);
+});
+
+test("employer contribution is not folded into the match total", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-08-01";
+  plan.incomes = [
+    {
+      id: "job",
+      name: "Airline",
+      kind: "salary",
+      monthlyAmount: 10000,
+      startDate: "2026-08-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.portfolios = [k401("k-roth")];
+  plan.contributions = [
+    rule({
+      id: "c-k",
+      portfolioId: "k-roth",
+      monthlyAmount: 0,
+      employerMatch: true,
+      employerMatchPct: 100,
+      employerDirect: true,
+      employerDirectPct: 18,
+      employerDirectIncomeId: "job",
+    }),
+  ];
+  assert.equal(activeEmployerMatchMonthly(plan), 0);
+  assert.equal(activeEmployerDirectMonthly(plan), 1800);
+});
+
+test("an IRA does not count as an employer contribution", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-08-01";
+  plan.incomes = [
+    {
+      id: "job",
+      name: "Airline",
+      kind: "salary",
+      monthlyAmount: 10000,
+      startDate: "2026-08-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.portfolios = [ira("ira-me")];
+  plan.contributions = [
+    rule({
+      id: "c-ira",
+      portfolioId: "ira-me",
+      monthlyAmount: 0,
+      employerDirect: true,
+      employerDirectPct: 18,
+      employerDirectIncomeId: "job",
+    }),
+  ];
+  assert.equal(activeEmployerDirectMonthly(plan), 0);
+  assert.equal(scheduledEmployerDirectMonthly(plan), 0);
+});
+
+test("a later paycheck waits, and the employer contribution is not in the match sentence", () => {
+  const plan = createDefaultPlan();
+  plan.assumptions.asOfDate = "2026-08-01";
+  plan.incomes = [
+    {
+      id: "job",
+      name: "Airline",
+      kind: "salary",
+      monthlyAmount: 10000,
+      startDate: "2026-09-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.portfolios = [k401("k-roth")];
+  plan.contributions = [
+    rule({
+      id: "c-k",
+      portfolioId: "k-roth",
+      monthlyAmount: 1000,
+      startDate: "2026-09-01",
+      employerMatch: true,
+      employerMatchPct: 50,
+      employerDirect: true,
+      employerDirectPct: 18,
+      employerDirectIncomeId: "job",
+    }),
+  ];
+  assert.equal(activeEmployerMatchMonthly(plan), 0);
+  assert.equal(scheduledEmployerMatchMonthly(plan), 500);
+  assert.equal(activeEmployerDirectMonthly(plan), 0);
+  assert.equal(scheduledEmployerDirectMonthly(plan), 1800);
 });

@@ -1279,6 +1279,154 @@ test("a lump purchase is spent once, in its start month", () => {
   assert.equal(jul?.spending, 0);
 });
 
+function airlinePlan(kind: "401k" | "ira" | "tsp" = "401k") {
+  const plan = createDefaultPlan();
+  plan.primary = { name: "Alex", birthDate: "1980-06-15" };
+  plan.assumptions.asOfDate = "2026-01-01";
+  plan.assumptions.ordinaryTaxRatePct = 0;
+  plan.assumptions.inflationPct = 0;
+  plan.assumptions.defaultReturnPct = 0;
+  plan.assumptions.retirementGoalDate = null;
+  plan.incomes = [
+    {
+      id: "job",
+      name: "Airline",
+      kind: "salary",
+      monthlyAmount: 10_000,
+      startDate: "2026-01-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.spending = [];
+  plan.portfolios = [
+    {
+      id: "k",
+      name: kind === "ira" ? "IRA" : "401k",
+      kind,
+      owner: "Primary",
+      currentValue: 0,
+      returnPct: 0,
+      taxBucket: "pre_tax",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "c1",
+      label: "Retirement",
+      portfolioId: "k",
+      monthlyAmount: 0,
+      startDate: "2026-01-01",
+      endDate: null,
+      employerMatch: false,
+      employerMatchPct: 0,
+    },
+  ];
+  return plan;
+}
+
+test("employer direct is off when the fields are absent, and the paycheck is unchanged", () => {
+  const off = airlinePlan();
+  const explicit = airlinePlan();
+  explicit.contributions[0].employerDirect = false;
+  explicit.contributions[0].employerDirectPct = null;
+  explicit.contributions[0].employerDirectIncomeId = null;
+  const a = simulate(off);
+  const b = simulate(explicit);
+  const lastA = a.months[a.months.length - 1];
+  const lastB = b.months[b.months.length - 1];
+  assert.ok(lastA && lastB);
+  assert.equal(lastA.spendableEnd, lastB.spendableEnd);
+  const jan = a.months[0];
+  assert.ok(jan);
+  assert.equal(jan.detail?.cashOnHand, 10_000);
+  assert.equal(jan.employerMatch, 0);
+  assert.equal(jan.contributions, 0);
+});
+
+test("18% employer direct on a $10,000 paycheck lands with no employee dollars and no match", () => {
+  const off = simulate(airlinePlan());
+  const plan = airlinePlan();
+  plan.contributions[0].employerDirect = true;
+  plan.contributions[0].employerDirectPct = 18;
+  plan.contributions[0].employerDirectIncomeId = "job";
+  const on = simulate(plan);
+  const janOff = off.months[0];
+  const jan = on.months[0];
+  assert.ok(janOff && jan);
+  assert.equal(jan.detail?.cashOnHand, janOff.detail?.cashOnHand);
+  assert.equal(jan.surplus, janOff.surplus);
+  assert.equal(jan.employerMatch, 1_800);
+  assert.equal(jan.contributions, 1_800);
+  assert.equal(jan.income - jan.employerMatch, janOff.income);
+  const lines = jan.detail?.matchLines ?? [];
+  assert.equal(lines.length, 1);
+  assert.equal(lines[0]?.label, "401k employer contribution");
+  assert.equal(lines[0]?.amount, 1_800);
+  assert.equal(jan.detail?.spendableLines.find((row) => row.id === "k")?.amount, 1_800);
+});
+
+test("employee dollars, match, and employer direct are three separate deposits", () => {
+  const off = simulate(airlinePlan());
+  const plan = airlinePlan();
+  plan.contributions[0].monthlyAmount = 1_000;
+  plan.contributions[0].employerMatch = true;
+  plan.contributions[0].employerMatchPct = 100;
+  plan.contributions[0].employerDirect = true;
+  plan.contributions[0].employerDirectPct = 18;
+  plan.contributions[0].employerDirectIncomeId = "job";
+  const jan = simulate(plan).months[0];
+  const janOff = off.months[0];
+  assert.ok(jan && janOff);
+  assert.equal(jan.detail?.cashOnHand, 9_000);
+  assert.equal((janOff.detail?.cashOnHand ?? 0) - (jan.detail?.cashOnHand ?? 0), 1_000);
+  assert.equal(jan.employerMatch, 2_800);
+  assert.equal(jan.contributions, 3_800);
+  const lines = jan.detail?.matchLines ?? [];
+  const match = lines.find((row) => row.label === "401k employer match");
+  const direct = lines.find((row) => row.label === "401k employer contribution");
+  assert.equal(match?.amount, 1_000);
+  assert.equal(direct?.amount, 1_800);
+  assert.equal(jan.detail?.spendableLines.find((row) => row.id === "k")?.amount, 3_800);
+});
+
+test("the employee IRS cap does not cut the employer direct deposit", () => {
+  const plan = airlinePlan();
+  plan.contributions[0].monthlyAmount = 3_000;
+  plan.contributions[0].capToIrsLimit = true;
+  plan.contributions[0].capPerson = "primary";
+  plan.contributions[0].employerDirect = true;
+  plan.contributions[0].employerDirectPct = 18;
+  plan.contributions[0].employerDirectIncomeId = "job";
+  const sim = simulate(plan);
+  const sep = sim.months.find((row) => row.date.startsWith("2026-09"));
+  const oct = sim.months.find((row) => row.date.startsWith("2026-10"));
+  assert.ok(sep && oct);
+  assert.equal(sep.contributions - sep.employerMatch, 500);
+  assert.equal(sep.employerMatch, 1_800);
+  assert.equal(oct.contributions - oct.employerMatch, 0);
+  assert.equal(oct.employerMatch, 1_800);
+  assert.equal(oct.detail?.matchLines.find((row) => row.id.endsWith(":direct"))?.amount, 1_800);
+});
+
+test("an IRA does not receive an employer direct contribution", () => {
+  const plan = airlinePlan("ira");
+  plan.contributions[0].employerDirect = true;
+  plan.contributions[0].employerDirectPct = 18;
+  plan.contributions[0].employerDirectIncomeId = "job";
+  const jan = simulate(plan).months[0];
+  assert.ok(jan);
+  assert.equal(jan.contributions, 0);
+  assert.equal(jan.employerMatch, 0);
+  assert.equal(jan.detail?.matchLines.length, 0);
+  assert.equal(jan.detail?.spendableLines.find((row) => row.id === "k")?.amount, 0);
+  assert.equal(jan.detail?.cashOnHand, 10_000);
+});
+
 
 
 
