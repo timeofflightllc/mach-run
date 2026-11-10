@@ -311,7 +311,7 @@ export function GuestHero({
               </span>
             </PrimaryButton>
             <p className="max-w-[16rem] text-center text-xs leading-snug text-[#3d4a54]">
-              Jump right in, you type the household.
+              Opens a blank MACH RUN, you type your household.
             </p>
           </div>
           <div className="flex flex-col items-center gap-1">
@@ -813,12 +813,15 @@ export function MilitaryHousehold({
         </JourneyBlock>
         <div className="mt-4 flex w-full max-w-3xl flex-col items-stretch justify-center gap-2 sm:flex-row sm:flex-wrap sm:items-start sm:gap-3">
           <div className="flex flex-col items-center gap-1">
-            <Link
-              to="/start"
-              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-accent px-5 text-center text-base font-medium text-accent-fg hover:opacity-90"
+            <PrimaryButton
+              className="h-auto min-h-11 whitespace-normal border border-[#3a8a58] bg-white px-4 py-2.5 text-center leading-snug text-[#3a8a58] hover:bg-[#f3faf6]"
+              onClick={onShowFamily}
             >
-              Start with just six questions
-            </Link>
+              I have my numbers. Start a MACH RUN.
+            </PrimaryButton>
+            <p className="max-w-[16rem] text-center text-xs leading-snug text-[#3d4a54]">
+              Opens a blank MACH RUN, you type your household.
+            </p>
           </div>
           <div className="flex flex-col items-center gap-1">
             <PrimaryButton
@@ -831,18 +834,13 @@ export function MilitaryHousehold({
               Opens the Hale demo. You can change any number, or clear the demo.
             </p>
           </div>
-          <div className="flex flex-col items-center gap-1">
-            <PrimaryButton
-              className="h-auto min-h-11 whitespace-normal border border-[#3a8a58] bg-white px-4 py-2.5 text-center leading-snug text-[#3a8a58] hover:bg-[#f3faf6]"
-              onClick={onShowFamily}
-            >
-              I have my numbers. Start a MACH RUN.
-            </PrimaryButton>
-            <p className="max-w-[16rem] text-center text-xs leading-snug text-[#3d4a54]">
-              Jump right in, you type the household.
-            </p>
-          </div>
         </div>
+        <Link
+          to="/start"
+          className="mt-3 inline-flex min-h-11 items-center justify-center rounded-lg bg-accent px-5 text-center text-base font-medium text-accent-fg hover:opacity-90"
+        >
+          Start with just six questions
+        </Link>
         <p className="mt-2 text-center text-sm text-[#3d4a54]">No credit card needed.</p>
         <FounderStory />
       </div>

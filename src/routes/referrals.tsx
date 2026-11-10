@@ -69,8 +69,8 @@ function ReferralsPage() {
   if (!isPending && !isRealUser(user)) return <RedirectToSignIn />;
 
   return (
-    <main className="box-border min-h-screen w-screen max-w-[100vw] bg-bg py-10 text-fg">
-      <div className="static-gutter mx-auto w-full max-w-3xl space-y-8">
+    <main className="min-h-screen bg-bg py-10 text-fg">
+      <div className="static-gutter mx-auto w-full space-y-8">
         <PageMast />
         <header>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">
@@ -93,8 +93,8 @@ function ReferralsPage() {
           </p>
         </section>
 
-        <section className="w-full overflow-hidden rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
-          <div className="flex items-end justify-between gap-6 px-5 py-5 sm:px-6">
+        <section className="w-full rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
+          <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:px-6">
             <div>
               <h2 className="font-display text-2xl text-fg">People you referred</h2>
               <p className="mt-1 text-sm text-muted">

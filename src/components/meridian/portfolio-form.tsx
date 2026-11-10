@@ -3,9 +3,10 @@ import { ConfirmRemove } from "@/components/meridian/confirm-remove";
 import {
   Field,
   MonthInput,
-  NumberInput,
   MonthYearMoney,
   MoneyInput,
+  NumberInput,
+  ReturnRateInput,
   SelectInput,
   TextInput,
 } from "@/components/ui/field";
@@ -270,7 +271,7 @@ function AccountTile({
   );
   const returns = (
     <Field label="Rate of return (%)" className={slotReturn}>
-      <NumberInput step={0.1} value={rate} className={control} onValue={(n) => onChange({ returnPct: n })} />
+      <ReturnRateInput step={0.1} value={rate} className={control} onValue={(n) => onChange({ returnPct: n })} />
     </Field>
   );
   const value = (

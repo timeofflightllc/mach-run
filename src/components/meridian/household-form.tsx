@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Field, DateInput, MonthInput, MoneyInput, NumberInput, SelectInput, TextInput } from "@/components/ui/field";
+import { Field, DateInput, MonthInput, MoneyInput, NumberInput, ReturnRateInput, SelectInput, TextInput } from "@/components/ui/field";
 import { ConfirmRemove } from "@/components/meridian/confirm-remove";
 import { ageYears, longDate, parseDate } from "@/lib/plan/dates";
 import { newId, usePlanStore } from "@/lib/plan/store";
@@ -382,9 +382,7 @@ export function AssumptionsForm() {
       </p>
       <div className="mt-6 flex flex-col gap-4">
         <Field label="Nominal return, percent a year" className={ask}>
-          <NumberInput
-            min={-5}
-            max={15}
+          <ReturnRateInput
             step={0.1}
             value={plan.assumptions.defaultReturnPct}
             onValue={(n) => patchAssumptions({ defaultReturnPct: n })}
@@ -396,9 +394,7 @@ export function AssumptionsForm() {
           <span className="text-center text-sm text-[#3d4a54]">Real, about {realNow}%</span>
         </Field>
         <Field label="Nominal return in retirement, percent a year" className={ask}>
-          <NumberInput
-            min={-5}
-            max={15}
+          <ReturnRateInput
             step={0.1}
             value={plan.assumptions.retirementReturnPct ?? 5}
             onValue={(n) => patchAssumptions({ retirementReturnPct: n })}

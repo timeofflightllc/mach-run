@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useRef,
   useState,
   type ButtonHTMLAttributes,
   type InputHTMLAttributes,
@@ -8,6 +9,7 @@ import {
   type TextareaHTMLAttributes,
 } from "react";
 import { cn } from "@/lib/utils";
+import { ConfirmChoice } from "@/components/meridian/confirm-remove";
 import { coerceIsoDate } from "@/lib/plan/dates";
 import {
   isPayCadence,
@@ -75,6 +77,104 @@ export function NumberInput({
       onChange={(e) => onValue(e.target.value === "" ? 0 : Number(e.target.value))}
       className={cn(controlClass, props.className)}
     />
+  );
+}
+
+/** Matches the range already on Assumptions. Outside it, the number is usually a typo. */
+export function returnRateNeedsConfirm(pct: number): boolean {
+  return Number.isFinite(pct) && (pct > 15 || pct < -5);
+}
+
+export function formatReturnPct(pct: number): string {
+  const rounded = Math.round(pct * 10) / 10;
+  if (!Number.isFinite(rounded)) return "0";
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+}
+
+/** Holds the typed rate until the field is left, then asks before a wild number is saved. */
+export function ReturnRateInput({
+  value,
+  onValue,
+  onBlur,
+  className,
+  step = 0.1,
+}: {
+  value: number;
+  onValue: (n: number) => void;
+  onBlur?: () => void;
+  className?: string;
+  step?: number;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const [ask, setAsk] = useState<number | null>(null);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  function shown(): string {
+    if (draft != null) return draft;
+    return Number.isFinite(value) && value !== 0 ? String(value) : "";
+  }
+
+  function leave() {
+    const raw = draft;
+    onBlur?.();
+    if (raw == null) return;
+    const n = raw.trim() === "" ? 0 : Number(raw);
+    if (!Number.isFinite(n)) {
+      setDraft(null);
+      return;
+    }
+    if (n === valueRef.current || !returnRateNeedsConfirm(n)) {
+      setDraft(null);
+      if (n !== valueRef.current) onValue(n);
+      return;
+    }
+    setAsk(n);
+  }
+
+  const copy = ask == null ? null : {
+    title: `Confirm ${formatReturnPct(ask)}% rate of return for your investments?`,
+    body: "That is outside what most plans use. A typo here makes the whole projection look wrong.",
+  };
+
+  return (
+    <>
+      <input
+        type="number"
+        inputMode="decimal"
+        step={step}
+        value={shown()}
+        onFocus={() => {
+          if (draft == null) setDraft(Number.isFinite(value) && value !== 0 ? String(value) : "");
+        }}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={leave}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter") return;
+          e.preventDefault();
+          e.currentTarget.blur();
+        }}
+        className={cn(controlClass, className)}
+      />
+      {ask != null && copy ? (
+        <ConfirmChoice
+          title={copy.title}
+          body={copy.body}
+          noLabel="Change it"
+          yesLabel="Keep it"
+          onNo={() => {
+            setAsk(null);
+            setDraft(null);
+          }}
+          onYes={() => {
+            const n = ask;
+            setAsk(null);
+            setDraft(null);
+            onValue(n);
+          }}
+        />
+      ) : null}
+    </>
   );
 }
 

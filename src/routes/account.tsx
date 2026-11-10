@@ -370,7 +370,7 @@ function Account() {
   }
 
   return (
-    <main className="min-h-screen bg-bg py-10 text-fg">
+    <main className="min-h-screen overflow-visible bg-bg pb-16 pt-10 text-fg">
       <div className="static-gutter mx-auto w-full space-y-8">
         <PageMast />
         <header>
@@ -633,10 +633,10 @@ function Account() {
         </div>
         </div>
 
-        <p className="flex justify-center">
+        <p className="flex justify-center overflow-visible py-1">
           <Link
             to="/"
-            className="inline-flex h-11 items-center justify-center rounded-lg px-5 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+            className="inline-flex h-11 items-center justify-center rounded-lg border border-border bg-bg px-5 text-sm font-medium text-fg hover:bg-elevated"
           >
             Back to MACH Run
           </Link>

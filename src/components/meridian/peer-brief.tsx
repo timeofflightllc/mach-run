@@ -12,7 +12,8 @@ import { NestEggHeadline } from "@/components/meridian/verdict";
 import { CashShortNotice } from "@/components/meridian/cash-short-notice";
 import { nestEggTrack } from "@/lib/plan/peers";
 import { annuityEquivalentCopy } from "@/lib/plan/annuity-equivalent";
-import { Field, MoneyInput, MonthInput, NumberInput, PrimaryButton, TextInput } from "@/components/ui/field";
+import { Field, MoneyInput, MonthInput, NumberInput, PrimaryButton, TextInput, formatReturnPct, returnRateNeedsConfirm } from "@/components/ui/field";
+import { ConfirmChoice } from "@/components/meridian/confirm-remove";
 import { paycheckFromMonthly, monthlyFromPay } from "@/lib/plan/pay-cadence";
 import { usePlanStore } from "@/lib/plan/store";
 import { InstitutionMark } from "@/components/meridian/institution-field";
@@ -416,7 +417,9 @@ function AccountTable({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraftState] = useState<AccountDraft | null>(null);
   const draftRef = useRef<AccountDraft | null>(null);
+  const openedRateRef = useRef<{ rate: number; wasDefault: boolean } | null>(null);
   const [ask, setAsk] = useState(false);
+  const [rateAsk, setRateAsk] = useState<number | null>(null);
 
   function setDraft(next: AccountDraft | null) {
     draftRef.current = next;
@@ -437,6 +440,10 @@ function AccountTable({
     const live = usePlanStore.getState().plan.portfolios[index];
     if (!live) return;
     const fallback = usePlanStore.getState().plan.assumptions.defaultReturnPct;
+    openedRateRef.current = {
+      rate: live.returnPct ?? fallback,
+      wasDefault: live.returnPct == null,
+    };
     setEditingId(live.id);
     setDraft({
       name: live.name,
@@ -449,9 +456,10 @@ function AccountTable({
   function close() {
     setEditingId(null);
     setDraft(null);
+    setRateAsk(null);
   }
 
-  function save() {
+  function write() {
     const current = draftRef.current;
     if (!account || !current) return;
     const fallback = usePlanStore.getState().plan.assumptions.defaultReturnPct;
@@ -463,6 +471,16 @@ function AccountTable({
     });
     close();
     setAsk(true);
+  }
+
+  function save() {
+    const current = draftRef.current;
+    if (!account || !current) return;
+    if (returnRateNeedsConfirm(current.rate) && current.rate !== openedRateRef.current?.rate) {
+      setRateAsk(current.rate);
+      return;
+    }
+    write();
   }
 
   return (
@@ -555,6 +573,23 @@ function AccountTable({
             </div>
           </div>
         </div>
+      ) : null}
+      {rateAsk != null ? (
+        <ConfirmChoice
+          title={`Confirm ${formatReturnPct(rateAsk)}% rate of return for your investments?`}
+          body="That is outside what most plans use. A typo here makes the whole projection look wrong."
+          noLabel="Change it"
+          yesLabel="Keep it"
+          onNo={() => {
+            const back = openedRateRef.current;
+            setRateAsk(null);
+            if (back) patchDraft({ rate: back.rate, rateWasDefault: back.wasDefault });
+          }}
+          onYes={() => {
+            setRateAsk(null);
+            write();
+          }}
+        />
       ) : null}
     </div>
   );

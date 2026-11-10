@@ -26,22 +26,20 @@ export function ReferralLinkLine({ code }: { code: string | null }) {
   }
 
   return (
-    <div className="w-full overflow-x-auto">
-      <div className="inline-flex items-center gap-2">
-        <button
-          type="button"
-          disabled={!link}
-          onClick={() => void copy()}
-          aria-label={copied ? "Copied" : "Copy"}
-          className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated disabled:opacity-60"
-        >
-          {copied ? <Check className="h-4 w-4" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
-          {copied ? "Copied" : "Copy"}
-        </button>
-        <span className="whitespace-nowrap font-mono text-sm text-fg">
-          {link || "Preparing your link…"}
-        </span>
-      </div>
+    <div className="flex w-full min-w-0 flex-wrap items-center gap-2 overflow-visible py-1">
+      <button
+        type="button"
+        disabled={!link}
+        onClick={() => void copy()}
+        aria-label={copied ? "Copied" : "Copy"}
+        className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-fg hover:bg-elevated disabled:opacity-60"
+      >
+        {copied ? <Check className="h-4 w-4" aria-hidden /> : <Copy className="h-4 w-4" aria-hidden />}
+        {copied ? "Copied" : "Copy"}
+      </button>
+      <span className="min-w-0 font-mono text-sm break-all text-fg">
+        {link || "Preparing your link…"}
+      </span>
     </div>
   );
 }
