@@ -74,6 +74,19 @@ function intervalLabel(value: OpsRosterRow["interval"]): string {
   return "—";
 }
 
+function NameTag({ className, children }: { className: string; children: string }) {
+  return (
+    <span
+      className={
+        "ml-2 rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white " +
+        className
+      }
+    >
+      {children}
+    </span>
+  );
+}
+
 const DESK_SECTIONS = [
   {
     id: "people",
@@ -468,11 +481,9 @@ function Top3DeskDoor() {
                     <td className="px-3 py-2 text-fg">{row.email ?? "—"}</td>
                     <td className="px-3 py-2 text-muted">
                       {row.name ?? "—"}
-                      {row.superBeta ? (
-                        <span className="ml-2 rounded bg-[#3a8a58] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
-                          Super beta
-                        </span>
-                      ) : null}
+                      {row.superBeta ? <NameTag className="bg-[#3a8a58]">Super beta</NameTag> : null}
+                      {row.beta ? <NameTag className="bg-[#2a6f97]">Beta</NameTag> : null}
+                      {row.admin ? <NameTag className="bg-[#1a2330]">Admin</NameTag> : null}
                     </td>
                     <td className="px-3 py-2 text-fg">
                       {row.packageLabel}

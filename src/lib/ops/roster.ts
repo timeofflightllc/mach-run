@@ -30,6 +30,8 @@ export type OpsRosterRow = {
   riskReasons: string[];
   sharedIpUsers: number;
   superBeta: boolean;
+  beta: boolean;
+  admin: boolean;
 };
 
 export type OpsRosterCounts = {

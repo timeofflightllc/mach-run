@@ -5,6 +5,7 @@ import {
 } from "@/lib/billing/api";
 import { packageLabel, paidFromStatus, type MachPackage } from "@/lib/billing/limits";
 import { getSql } from "@/lib/db";
+import { isOwnerEmail, parseOwnerEmails } from "./gate";
 import { EMPTY_RISK, scoreBotRisk } from "./risk";
 import { loadRiskSignalsByUser } from "./risk.server";
 import {
@@ -110,6 +111,8 @@ function toRow(
     riskReasons: EMPTY_RISK.reasons,
     sharedIpUsers: 0,
     superBeta: user.superBeta === true,
+    beta: false,
+    admin: false,
   };
 }
 
@@ -195,6 +198,19 @@ export async function loadOpsRoster(query: OpsRosterQuery): Promise<OpsRosterRes
     const mapped = users.map((user) =>
       toRow(user, subByUser.get(user.id), providersByUser.get(user.id) ?? []),
     );
+    const owners = parseOwnerEmails(process.env.MACH_OWNER_EMAILS);
+    let betaEmails = new Set<string>();
+    try {
+      const beta = await sql.query<{ email: string }>(`select email from mach_beta_access`);
+      betaEmails = new Set(beta.map((row) => row.email.trim().toLowerCase()).filter(Boolean));
+    } catch {
+      betaEmails = new Set();
+    }
+    for (const row of mapped) {
+      const email = (row.email ?? "").trim().toLowerCase();
+      row.beta = Boolean(email) && betaEmails.has(email);
+      row.admin = isOwnerEmail(row.email, owners);
+    }
     try {
       const signals = await loadRiskSignalsByUser();
       for (const row of mapped) {
