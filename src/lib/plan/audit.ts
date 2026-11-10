@@ -78,12 +78,14 @@ export function windowWhy(input: {
   retirement?: boolean;
   tiedToStage?: boolean;
   socialSecurity?: boolean;
+  college?: boolean;
 }): string {
   const parts: string[] = [];
   if (input.dayAfterPrevious) parts.push("day after previous");
   if (input.retirement) parts.push("retirement");
   if (input.tiedToStage) parts.push("tied to a stage");
   if (input.socialSecurity) parts.push("social security schedule");
+  if (input.college) parts.push("529 sunset");
   return parts.length ? parts.join("; ") : "none";
 }
 

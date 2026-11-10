@@ -514,3 +514,118 @@ test("audit income rows show a yearly bonus as one check", () => {
     near(Number(month[hIncome]), nominals + Number(month[hMatch] || 0));
   }
 });
+
+test("audit checks pass retirement return, a lump, a match, and a 529 sunset", () => {
+  const plan = roundPlan();
+  plan.assumptions.defaultReturnPct = 8;
+  plan.assumptions.retirementReturnPct = 6;
+  plan.assumptions.retirementGoalDate = "2027-01-15";
+  plan.assumptions.projectionEndAge = 55;
+  plan.children = [{ id: "c1", name: "Kid One", birthDate: "2014-06-15" }];
+  plan.portfolios = [
+    taxable(10_000),
+    {
+      id: "five",
+      name: "Kid One 529",
+      kind: "529",
+      owner: "child:c1",
+      currentValue: 1_000,
+      returnPct: null,
+      taxBucket: "none",
+      spendable: false,
+      includeInNetWorth: true,
+      sunsetAge: 18,
+    },
+    {
+      id: "k",
+      name: "Work 401k",
+      kind: "401k",
+      owner: "primary",
+      currentValue: 0,
+      returnPct: null,
+      taxBucket: "pre_tax",
+      spendable: true,
+      includeInNetWorth: true,
+    },
+  ];
+  plan.incomes = [
+    {
+      id: "pay",
+      name: "Pay",
+      kind: "salary",
+      monthlyAmount: 20_000,
+      startDate: "2026-01-01",
+      endDate: null,
+      colaPct: 0,
+      taxTreatment: "ordinary",
+      person: "primary",
+    },
+  ];
+  plan.spending = [
+    {
+      id: "car",
+      label: "New car",
+      monthlyAmount: 0,
+      lumpAmount: 5_000,
+      spendKind: "lump",
+      startDate: "2026-06-01",
+      endDate: null,
+    },
+  ];
+  plan.contributions = [
+    {
+      id: "college",
+      label: "College",
+      portfolioId: "five",
+      monthlyAmount: 100,
+      startDate: "2026-01-01",
+      endDate: "2040-01-01",
+      amountMode: "fixed",
+    },
+    {
+      id: "match",
+      label: "Match",
+      portfolioId: "k",
+      monthlyAmount: 500,
+      startDate: "2026-01-01",
+      endDate: null,
+      amountMode: "fixed",
+      employerMatch: true,
+      employerMatchPct: 100,
+    },
+  ];
+  const csv = buildInvestmentAuditCsv(plan, simulate(plan, { audit: true }));
+  assert.equal(csv.includes("Kid One"), false);
+  assert.equal(csv.includes("2014-06-15"), false);
+
+  const spending = sectionTable(csv, "spending");
+  assert.deepEqual(spending.header.slice(0, 4), ["code", "kind", "monthly_today", "lump_today"]);
+  assert.deepEqual(spending.rows[0]?.slice(0, 4), ["S1", "lump", "", "5000.00"]);
+
+  const accounts = sectionTable(csv, "accounts");
+  const sunsetAt = accounts.header.indexOf("sunset_month");
+  assert.equal(accounts.rows.find((row) => row[0] === "A2")?.[sunsetAt], "2032-06");
+
+  const windows = sectionTable(csv, "windows");
+  const college = windows.rows.find((row) => row[0] === "contribution" && row[1] === "C1");
+  assert.ok(college);
+  assert.equal(college[5], "2032-05-01");
+  assert.match(college[6] ?? "", /529 sunset/);
+
+  const trace = sectionTable(csv, "month_account");
+  const rateAt = trace.header.indexOf("annual_return_pct");
+  const before = trace.rows.find((row) => row[0] === "2026-12-01" && row[1] === "A1");
+  const after = trace.rows.find((row) => row[0] === "2027-01-01" && row[1] === "A1");
+  assert.equal(before?.[rateAt], "8.00");
+  assert.equal(after?.[rateAt], "6.00");
+
+  const checks = sectionTable(csv, "checks");
+  const failed = checks.rows.filter((row) => row[7] === "no");
+  assert.deepEqual(
+    failed.slice(0, 3).map((row) => row.slice(0, 6)),
+    [],
+  );
+  assert.equal(failed.length, 0);
+  assert.ok(checks.rows.some((row) => row[2] === "college_spent" && row[7] === "yes"));
+  assert.ok(checks.rows.some((row) => row[2] === "household_residual" && row[7] === "yes"));
+});

@@ -1,4 +1,5 @@
-import { ageYears, inRange, monthStart, yearlyRateToMonthly } from "./dates.ts";
+import { ageYears, earlierEnd, inRange, monthStart, yearlyRateToMonthly } from "./dates.ts";
+import { portfolio529StopMonth } from "./college-529.ts";
 import {
   assumptionRows,
   csvRow,
@@ -72,7 +73,7 @@ const DICTIONARY: [string, string][] = [
   ["identity", "residual uses left = income + withdrawals and right = tax + spending + employee contributions. Employer match is inside income and is not on the right, so a match month is off by about the match."],
   ["residual_engine", "income + withdrawals + cash_drawn − tax − spending − contributions − cash_parked. Contributions here include employee dollars, sweep, and match. Match is on both sides, so it cancels. Cash parked is leftover held when Sweep surplus into is blank. Cash drawn is that pile used on a short month, before any account. This should be near zero except for a withdrawal-tax gross-up."],
   ["cents", "The engine does not round until this file. Amounts are shown to two decimals. A residual under half a cent is the display, not a broken month."],
-  ["return", "Growth is nominal monthly compound from the annual return. A blank account return uses the default return."],
+  ["return", "Growth is nominal monthly compound from the annual return on month_account. A house, cash, and an annuity use return_override_pct, or defaultReturnPct when that cell is blank. Every other account uses defaultReturnPct until retirementGoalDate, then retirementReturnPct."],
   ["income_nominal", "Income amounts are nominal dollars that month, after COLA from the as-of date."],
   ["today_dollars", "Today's dollars are nominal divided by the inflation index on that month."],
   ["air", "Actual Income Retired. Blank before the Family retirement month. After that, guaranteed income plus withdrawals. It is not the job, and it is not the Spendable balance."],
@@ -83,7 +84,7 @@ const DICTIONARY: [string, string][] = [
   ["irs", "irs_limit is the employee cap used that year, including catch-up when catch_up is yes. Blank when the rule is not capped."],
   ["sweep_blank", "When Sweep surplus into is blank, cash left after tax, typed spending, and contributions is held as cash on hand. It earns nothing. It is part of spendable and net worth. It is not spending and it is not deposited in an account. A later short month spends that cash before withdrawing from an account."],
   ["codes", "A1 is an account, I1 an income, S1 spending, C1 a contribution, L1 a liability, child_1 a child. primary and spouse stay those words. The same household id is the same code everywhere in this file. Names, birth dates, notes, and the household's own ids are not in this file."],
-  ["checks", "difference is the residual already on the trace. tolerance is 0.05, or 0.05 percent of the larger of left and right when that amount is above 1,000. pass is yes when the absolute difference is under tolerance. This table is the only verdict."],
+  ["checks", "Each row compares left to right. difference is left minus right. tolerance is 0.05, or 0.05 percent of the larger of left and right when that amount is above 1,000. pass is yes when the absolute difference is under tolerance. household_residual compares the simple cash gap to employer match plus cash parked minus cash drawn. return_used compares annual_return_pct to the return rule. spending_explained compares the spending column to the spending rows. withdrawal_bridge compares account withdrawals to household withdrawals plus a 529 sunset. college_spent checks that sunset month. This table is the only verdict."],
 ];
 
 /**
@@ -94,7 +95,7 @@ const REVIEW_ORDER: string[] = [
   "You are an independent reviewer of a household cash-flow calculator. You did not write this file. Do not assume the software is correct. Do not give financial advice, do not rewrite the household, and do not praise the plan. The reader will change the TypeScript backend from your bug table.",
   "This file is one MACH RUN. MACH RUN projects one household from asOfDate through the month the primary person reaches projectionEndAge. Each month it grows balances, counts income, spends, taxes at one flat rate, saves only leftover cash, withdraws from spendable accounts when the month is short, and reports spendable wealth and net worth. The rows under this prompt are the engine's own trace of the saved inputs. Recompute from the inputs and the rules below. A residual column is a claim, not proof. Assumption fields use the names in the assumptions section. Month columns use the header row of that section.",
   "The first column of every row is the section name. Sections follow in this order: review_order (these instructions), dictionary, assumptions, people, accounts, liabilities, incomes, spending, contributions, windows, then month_account, month_income, month_spending, month_contribution, month_rmd, month_annuity, month_loan, month_household, and checks. Amounts are rounded to two decimals. A gap under $0.05, or under 0.05 percent of a balance above $1,000, is rounding, not a bug. Rows use codes, not names. Accounts are A1, A2 in stored order. Incomes are I1, I2. Spending is S1, S2. Contributions are C1, C2. Liabilities are L1, L2. A child is child_1, child_2. Primary and spouse stay those words.",
-  "Month order. 1. Grow every account first. Monthly rate = (1 + annual rate) ^ (1/12) - 1. Annual rate is the percent divided by 100. A blank account return uses defaultReturnPct. 2. Add income inside its resolved window. Nominal = today's dollars times (1 + annual COLA) ^ calendar years since the as-of year. The as-of year does not step. Each later January steps once, then the paycheck stays the same through December. COLA is that income's cola_pct, else defaultColaPct, else inflationPct. A salary, bonus, or allowance with cadence year deposits pay_amount (or monthly times 12 when pay_amount is blank) in the anniversary month only, then COLA. Other incomes stay monthly. 3. Add typed spending inside its window, inflated monthly from the inflation assumption. Add a mortgage or liability payment only when counted_in_spending is yes and principal remains. 4. Plan contributions inside their resolved windows. A percent rule is that percent of the named income's nominal that month. 5. Apply required minimum distributions. 6. Compute tax. 7. Split leftover cash. 8. Then add employer match.",
+  "Month order. 1. Grow every account first. Monthly rate = (1 + annual rate) ^ (1/12) - 1. Annual rate is the percent divided by 100. A house, cash, and an annuity use return_override_pct, or defaultReturnPct when that cell is blank. Every other account uses defaultReturnPct until the retirementGoalDate month, then retirementReturnPct. 2. Add income inside its resolved window. Nominal = today's dollars times (1 + annual COLA) ^ calendar years since the as-of year. The as-of year does not step. Each later January steps once, then the paycheck stays the same through December. COLA is that income's cola_pct, else defaultColaPct, else inflationPct. A salary, bonus, or allowance with cadence year deposits pay_amount (or monthly times 12 when pay_amount is blank) in the anniversary month only, then COLA. Other incomes stay monthly. 3. Add typed spending inside its window, inflated monthly from the inflation assumption. kind routine spends monthly_today. kind lump spends lump_today once, on the start month, and ignores monthly_today. Add a mortgage or liability payment only when counted_in_spending is yes and principal remains. 4. Plan contributions inside their resolved windows. A percent rule is that percent of the named income's nominal that month. 5. Apply required minimum distributions. 6. Compute tax. 7. Split leftover cash. 8. Then add employer match.",
   "Tax is flat. Ordinary income and taken RMDs are taxed at ordinaryTaxRatePct. Social Security is taxed only on ssTaxablePct of the benefit, then at that same rate. There are no brackets and no standard deduction. Do not flag the missing brackets. Employer match is added to income after tax, so match is not taxed that month. Annuity taxable earnings are listed on month_annuity and are not inside the tax column. The withdrawal is grossed up instead.",
   "Leftover = income after RMDs and before match, minus tax, minus spending. If leftover is more than $0.50, fund employee contributions tax-qualified first, then taxable, until the cash runs out. Inside each of those groups, pay rules in the order they are listed. One rule may be paid in part. Once leftover is down to $0.50 or less, every later rule that month is $0. Do not withdraw from other accounts to fill a contribution, and do not use cash on hand to fill one. If a sweep account is set, deposit the rest there. If sweep is blank, add the rest to cash on hand. Cash on hand earns nothing. Then match = dollars actually invested on that rule times match_pct, and only when employer_match is yes and the destination is a 401(k), Roth 401(k), TSP, or Roth TSP. Match is added to that account and to income. If leftover is under -$0.50, spend cash on hand first, then withdraw from spendable accounts to cover what is still short, and fund no contributions that month.",
   "Withdrawals come only from spendable accounts, in order: taxable, then pre-tax, then Roth. Pre-tax dollars and non-qualified annuity gains are grossed up by 1 / (1 - tax rate) so the cash after that tax covers the hole. Annuity basis comes out tax-free after the gains. The extra withdrawn to pay tax on the withdrawal is not added to the tax column. That gross-up is allowed to show up in residual_engine. Roth withdrawals are not grossed up.",
@@ -106,9 +107,10 @@ const REVIEW_ORDER: string[] = [
   "Social Security today's dollars = PIA times the claiming factor. Full retirement age is 67 unless the row says otherwise. Early: the first 36 months reduce by 5/9 of 1 percent each, then 5/12 of 1 percent each. Delayed: 2/3 of 1 percent each month, for at most 36 months. Claiming age is clamped from 62 to 70. The resolved start is that person's birthday plus the claiming age. The resolved end is the birthday plus projectionEndAge. Person spouse uses the spouse birthday. Person other uses the birth date stored on that income. A Social Security row ignores the typed start and end.",
   "VA today's dollars come from the 2026 schedular table for the rating, whether a spouse is counted, and how many listed children are under 18 that month. It steps down in the month a child turns 18, until only the veteran and spouse remain. COLA then inflates it like any other income. A VA row with no rating uses the typed monthly amount. Check the step-down dates. You do not have the table in this file, so do not invent a dollar rate. Flag a va_table_amount that fails to change when the child count changes, or that changes in the wrong month.",
   "Loans. Original principal is implied by the payment, the APR, and the term. Remaining principal uses standard amortization and is measured at the start of the month. A zero APR is straight line. A mortgage payment is counted in spending only when include_in_spending is yes. The same rule applies to a standalone liability.",
-  "Windows. resolved_start and resolved_end are what the engine used. A percent-of-income contribution uses that income's window, which can replace the typed dates. end_at_retirement yes means the form stored the Family retirement date as the end. The engine follows the resolved end, not the checkbox. A stage tie replaces the window with the stage. Trust the resolved dates over the typed dates, then check that the resolved dates follow these rules.",
+  "Windows. resolved_start and resolved_end are what the engine used. A percent-of-income contribution uses that income's window, which can replace the typed dates. end_at_retirement yes means the form stored the Family retirement date as the end. The engine follows the resolved end, not the checkbox. A contribution into a 529 stops the month before sunset_month, and that resolved end already says so. A stage tie replaces the window with the stage. Trust the resolved dates over the typed dates, then check that the resolved dates follow these rules.",
   "Do not flag these. They are the spec. Flat tax. Unindexed 2026 IRS caps. COLA and inflation measured from the as-of month. Institution names, which are labels and are not in the math. Match outside the simple cash identity. Withdrawal tax gross-up inside residual_engine. Rounding under the tolerance above.",
-  "Checks. Read the checks section. Do not compute a second residual. difference is the residual already on that row. tolerance is 0.05, or 0.05 percent of the larger of left and right when that amount is above 1,000. pass is yes when the absolute difference is under tolerance. The checks table is the only verdict.",
+  "A 529 with a sunset_month spends the whole balance that month. The end balance is 0. The withdrawal on that account equals the start. It is not income, not a household withdrawal, and not a spending row. It leaves net worth that month and stays out. Contributions into it stop the month before.",
+  "Checks. Read the checks section. Do not compute a second residual. household_residual compares the simple cash gap, income + withdrawals minus tax minus spending minus employee contributions, to employer match + cash_parked − cash_drawn. return_used compares annual_return_pct to the return rule. spending_explained compares the spending column to the spending rows for that month. withdrawal_bridge compares the sum of account withdrawals to household withdrawals plus a 529 sunset withdrawal. college_spent compares that sunset withdrawal to the start balance. The other rows are the account, engine, spendable, and net-worth identities. difference is left minus right. tolerance is 0.05, or 0.05 percent of the larger of left and right when that amount is above 1,000. pass is yes when the absolute difference is under tolerance. The checks table is the only verdict.",
   "Reply. Write nothing before the verdict. VERDICT is PASS if every pass is yes. Otherwise VERDICT is FAIL and the count of no rows. Do not mark a yes row as a bug. Do not add a bug the table does not list. Recompute a no row from the spec before you confirm it. Confirmed means your arithmetic disagrees with the file by more than the tolerance. A no row your arithmetic agrees with is a display of that tolerance miss, still listed, not a new theory. Do not give financial advice. Do not discuss the household. If there is no confirmed bug, write BUGS: none under the verdict. If there is a confirmed bug, write one block per bug: BUG 1, then section, month, code, check, file, spec, diff, and look. look is the file to open, src/lib/plan/engine.ts, not a patch. End there.",
 ];
 
@@ -156,6 +158,23 @@ function ownerCode(owner: string | null | undefined, children: Map<string, strin
   if (/^joint$/i.test(value)) return "joint";
   if (/^(primary|you)$/i.test(value)) return "primary";
   return "";
+}
+
+function monthBefore(yyyyMm: string): string {
+  const [y, m] = yyyyMm.split("-").map(Number);
+  const year = m === 1 ? y - 1 : y;
+  const month = m === 1 ? 12 : m - 1;
+  return `${year}-${String(month).padStart(2, "0")}-01`;
+}
+
+function expectedReturnPct(plan: Plan, portfolio: Plan["portfolios"][number], monthKey: string): number {
+  const goal = plan.assumptions.retirementGoalDate?.slice(0, 7) ?? "";
+  const keepsOwn = portfolio.kind === "real_estate" || portfolio.kind === "cash" || portfolio.kind === "annuity";
+  if (goal && monthKey >= goal && !keepsOwn) {
+    const pct = plan.assumptions.retirementReturnPct;
+    return Number.isFinite(pct) ? pct : 5;
+  }
+  return portfolio.returnPct ?? plan.assumptions.defaultReturnPct;
 }
 
 function checkTolerance(left: number, right: number): number {
@@ -220,7 +239,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   lines.push(
     ...section(
       "accounts",
-      ["code", "kind", "owner", "tax_bucket", "current_value", "cost_basis", "return_override_pct", "spendable", "include_in_net_worth", "mortgage_origination", "mortgage_apr_pct", "mortgage_pi", "mortgage_term_years", "mortgage_in_spending"],
+      ["code", "kind", "owner", "tax_bucket", "current_value", "cost_basis", "return_override_pct", "spendable", "include_in_net_worth", "mortgage_origination", "mortgage_apr_pct", "mortgage_pi", "mortgage_term_years", "mortgage_in_spending", "sunset_month"],
       plan.portfolios.map((p) => [
         codeOf(book.account, p.id),
         p.kind,
@@ -236,6 +255,7 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
         p.mortgage && p.kind === "real_estate" ? p.mortgage.monthlyPi : null,
         p.mortgage && p.kind === "real_estate" ? p.mortgage.termYears : null,
         p.mortgage && p.kind === "real_estate" ? Boolean(p.mortgage.includeInSpending) : null,
+        portfolio529StopMonth(plan, p),
       ]),
     ),
   );
@@ -283,8 +303,15 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
   lines.push(
     ...section(
       "spending",
-      ["code", "monthly_today", "start", "end"],
-      plan.spending.map((s) => [codeOf(book.spending, s.id), s.monthlyAmount, s.startDate, s.endDate]),
+      ["code", "kind", "monthly_today", "lump_today", "start", "end"],
+      plan.spending.map((s) => [
+        codeOf(book.spending, s.id),
+        s.spendKind === "lump" ? "lump" : "routine",
+        s.spendKind === "lump" ? null : s.monthlyAmount,
+        s.spendKind === "lump" ? s.lumpAmount ?? 0 : null,
+        s.startDate,
+        s.endDate,
+      ]),
     ),
   );
 
@@ -347,17 +374,21 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
     ]);
   }
   for (const rule of plan.contributions) {
+    const dest = plan.portfolios.find((row) => row.id === rule.portfolioId);
+    const sunset = dest ? portfolio529StopMonth(plan, dest) : null;
     const resolved = contributionWindow(plan, rule);
+    const capped = sunset ? earlierEnd(resolved.end, monthBefore(sunset)) : resolved.end;
     windows.push([
       "contribution",
       codeOf(book.contribution, rule.id),
       rule.startDate,
       rule.endDate,
       resolved.start,
-      resolved.end,
+      capped,
       windowWhy({
         retirement: Boolean(rule.endAtRetirement),
         tiedToStage: Boolean(rule.endWithStageId),
+        college: Boolean(sunset) && capped !== resolved.end,
       }),
     ]);
   }
@@ -414,7 +445,8 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
     for (const phase of plan.spending) {
       const win = spendingWindow(plan, phase);
       if (!inRange(at, win.start, win.end)) continue;
-      const amount = phase.monthlyAmount * inflationIndex;
+      const today = phase.spendKind === "lump" ? phase.lumpAmount || 0 : phase.monthlyAmount;
+      const amount = phase.liabilityId ? phase.monthlyAmount : today * inflationIndex;
       if (amount <= 0.005) continue;
       spendRows.push([date, codeOf(book.spending, phase.id), amount]);
     }
@@ -450,14 +482,40 @@ export function buildInvestmentAuditCsv(plan: Plan, sim: SimResult): string {
     }
     const home = householdRow(plan, month, inflationIndex, ssShare, goalKey, audit, date);
     homeRows.push(home.cells);
+    let accountWithdrawals = 0;
+    let college = 0;
     for (const row of audit.accounts) {
       if (row.date !== date) continue;
+      const code = codeOf(book.account, row.accountId);
+      const portfolio = plan.portfolios.find((item) => item.id === row.accountId);
       const expected =
         row.start + row.growth + row.contribution + row.match + row.sweep - row.withdrawal;
-      checkRows.push(
-        checkRow(date, codeOf(book.account, row.accountId), "account_residual", row.end, expected, row.residual),
-      );
+      checkRows.push(checkRow(date, code, "account_residual", row.end, expected, row.end - expected));
+      accountWithdrawals += row.withdrawal;
+      if (!portfolio) continue;
+      const rate = expectedReturnPct(plan, portfolio, date.slice(0, 7));
+      checkRows.push(checkRow(date, code, "return_used", row.annualReturnPct, rate, row.annualReturnPct - rate));
+      const sunset = portfolio529StopMonth(plan, portfolio);
+      if (sunset && date.slice(0, 7) === sunset) {
+        college += row.withdrawal;
+        checkRows.push(
+          checkRow(date, code, "college_spent", row.withdrawal, row.start, row.withdrawal - row.start),
+        );
+      }
     }
+    checkRows.push(
+      checkRow(
+        date,
+        "",
+        "withdrawal_bridge",
+        accountWithdrawals,
+        month.withdrawals + college,
+        accountWithdrawals - (month.withdrawals + college),
+      ),
+    );
+    checkRows.push(
+      checkRow(date, "", "spending_explained", month.spending, listedSpend, month.spending - listedSpend),
+    );
     for (const item of home.checks) {
       checkRows.push(checkRow(date, "", item.check, item.left, item.right, item.difference));
     }
@@ -591,6 +649,8 @@ function householdRow(
   const right = month.tax + month.spending + employee;
   const engineLeft = month.income + month.withdrawals + cashDrawn;
   const engineRight = month.tax + month.spending + month.contributions + cashParked;
+  const simpleGap = left - right;
+  const explained = month.employerMatch + cashParked - cashDrawn;
   const retired = Boolean(goalKey) && date.slice(0, 7) >= goalKey;
   const accounts = audit.accounts.filter((row) => row.date === date);
   const spendableFrom = accounts.filter((row) => row.spendable).reduce((s, row) => s + row.end, 0);
@@ -647,7 +707,7 @@ function householdRow(
       cashOnHand,
     ],
     checks: [
-      { check: "household_residual", left, right, difference: left - right },
+      { check: "household_residual", left: simpleGap, right: explained, difference: simpleGap - explained },
       { check: "residual_engine", left: engineLeft, right: engineRight, difference: engineLeft - engineRight },
       { check: "spendable_residual", left: spendableFromCash, right: month.spendableEnd, difference: spendableDifference },
       { check: "net_worth_residual", left: netFromCash, right: month.netWorthEnd, difference: netDifference },
