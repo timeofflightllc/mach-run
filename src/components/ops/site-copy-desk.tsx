@@ -28,6 +28,7 @@ import {
 } from "@/lib/site-copy/planner-copy";
 import {
   DEFAULT_HERO_COPY,
+  HERO_SECTIONS,
   parseHeroCopy,
   serializeHeroCopy,
   type HeroCopy,
@@ -120,6 +121,43 @@ function Area({
       onChange={(e) => onChange(e.target.value)}
       className="w-full min-w-0 rounded-lg border border-border bg-elevated px-3 py-2 text-sm text-fg outline-none"
     />
+  );
+}
+
+function HeroFields({
+  value,
+  onChange,
+}: {
+  value: HeroCopy;
+  onChange: (next: HeroCopy) => void;
+}) {
+  return (
+    <div className="mt-4 space-y-6">
+      <p className="text-sm text-muted">
+        Each box is one line on the homepage. Leave a box blank to hide that line. A new line inside a box becomes a line break.
+      </p>
+      {HERO_SECTIONS.map((section) => (
+        <div key={section.title} className="space-y-3 border-t border-border pt-4">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-subtle">{section.title}</p>
+          {section.fields.map((field) => (
+            <Field key={field.key} label={field.label}>
+              {field.rows && field.rows > 1 ? (
+                <Area
+                  rows={field.rows}
+                  value={value[field.key]}
+                  onChange={(text) => onChange({ ...value, [field.key]: text })}
+                />
+              ) : (
+                <TextInput
+                  value={value[field.key]}
+                  onChange={(e) => onChange({ ...value, [field.key]: e.target.value })}
+                />
+              )}
+            </Field>
+          ))}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -742,14 +780,7 @@ export function SiteCopyDesk({ only }: { only?: "boyd" } = {}) {
           </div>
         ) : draft && heroOpen ? (
           <>
-            <div className="mt-4 space-y-4">
-              <Field label="Hero headline">
-                <Area rows={3} value={hero.headline} onChange={(headline) => onHeroChange({ ...hero, headline })} />
-              </Field>
-              <Field label="Hero text">
-                <Area rows={4} value={hero.text} onChange={(text) => onHeroChange({ ...hero, text })} />
-              </Field>
-            </div>
+            <HeroFields value={hero} onChange={onHeroChange} />
             <div className="mt-4 flex flex-wrap items-center gap-3">
               <PrimaryButton type="button" disabled={busy} onClick={() => void savePage()}>
                 Save Hero

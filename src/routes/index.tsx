@@ -68,6 +68,7 @@ import { WelcomeEmailPreviewOverlay } from "@/components/meridian/welcome-email-
 import { EmailVerifyBanner } from "@/components/meridian/email-verify-banner";
 import { PasswordLaterBanner } from "@/components/meridian/password-later-banner";
 import { GuestHero, MilitaryHousehold } from "@/components/meridian/guest-hero";
+import { useHeroCopy } from "@/components/meridian/use-hero-copy";
 import { homeJsonLd, pageHead } from "@/lib/seo";
 import { GhostButton, PrimaryButton } from "@/components/ui/field";
 
@@ -883,6 +884,7 @@ function Home() {
   const { actPlace } = Route.useLoaderData();
   const plan = usePlanStore((s) => s.plan);
   const boydQuotes = useBoydQuotes();
+  const heroCopy = useHeroCopy();
   const boydPick = useRef(Math.floor(Math.random() * Math.max(boydQuotes.length, 1)));
   const boydLine = boydQuotes[boydPick.current % Math.max(boydQuotes.length, 1)] ?? "";
   const copy = usePlannerCopy();
@@ -2165,33 +2167,36 @@ function Home() {
             {planHasEntries(plan) ? (
               <>
                 <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
-                  Master Caution
+                  {heroCopy.cautionLabel}
                 </span>
-                <p className="max-w-3xl text-base leading-snug text-[#fff3c4] sm:text-lg">
-                  Your MACH RUN information is not saved until you create an
-                  account.
-                </p>
-                <Link
-                  to="/login"
-                  search={{ mode: "up" }}
-                  className="text-base font-semibold text-white underline decoration-[#e8c547] underline-offset-[3px] hover:text-[#fff3c4] sm:text-lg"
-                >
-                  Create a free account in 30 seconds.
-                </Link>
-                {demoLoaded ? (
+                {heroCopy.cautionBody.trim() ? (
+                  <p className="max-w-3xl text-base leading-snug text-[#fff3c4] sm:text-lg">
+                    {heroCopy.cautionBody}
+                  </p>
+                ) : null}
+                {heroCopy.cautionLink.trim() ? (
+                  <Link
+                    to="/login"
+                    search={{ mode: "up" }}
+                    className="text-base font-semibold text-white underline decoration-[#e8c547] underline-offset-[3px] hover:text-[#fff3c4] sm:text-lg"
+                  >
+                    {heroCopy.cautionLink}
+                  </Link>
+                ) : null}
+                {demoLoaded && heroCopy.clearDemo.trim() ? (
                   <button
                     type="button"
                     onClick={clearDemo}
                     className="mt-1 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#e8c547] px-4 py-2 text-sm font-semibold text-[#1a1408] hover:bg-[#f3d56a] active:scale-[0.98]"
                   >
-                    Clear demonstration information from MACH RUN
+                    {heroCopy.clearDemo}
                   </button>
                 ) : null}
               </>
             ) : (
               <>
                 <span className="inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
-                  Get Started Below
+                  {heroCopy.startLabel}
                 </span>
                 <p className="w-full max-w-6xl text-base leading-snug text-[#fff3c4] sm:text-lg 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
                   “{boydLine}”
@@ -2681,12 +2686,12 @@ function Home() {
               </div>
               {heroOn ? null : (
               <div className="rounded-xl bg-surface px-5 py-8 shadow-[0_0_0_1px_var(--color-border)]">
-                <p className="text-left font-display text-3xl text-fg">No MACH RUN yet.</p>
+                <p className="text-left font-display text-3xl text-fg">{heroCopy.emptyTitle}</p>
                 <p className="mt-1 text-left font-display text-lg text-fg">
-                  You need to kick the tires and light the fires!
+                  {heroCopy.emptyLine}
                 </p>
                 <p className="mt-2 max-w-xl text-left text-sm text-muted">
-                  Finish Observe, Orient, and Decide, then come to Act and execute the MACH RUN.
+                  {heroCopy.emptyBody}
                 </p>
               </div>
               )}
