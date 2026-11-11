@@ -129,13 +129,13 @@ function firstParagraph(body: string): string {
   return inlineText(parseInline(block)).replace(/\s+/g, " ").trim();
 }
 
-/** Meta description. The first paragraph, markup stripped, cut near 160 characters. */
+/** Meta description. The first full sentence. A longer one stops at the last word that fits. */
 export function articleDescription(body: string): string {
-  const text = firstParagraph(body);
-  if (text.length <= 160) return text;
-  const cut = text.slice(0, 160);
+  const sentence = firstSentence(body);
+  if (sentence.length <= 160) return sentence;
+  const cut = sentence.slice(0, 160);
   const space = cut.lastIndexOf(" ");
-  return (space > 80 ? cut.slice(0, space) : cut).trim();
+  return (space > 0 ? cut.slice(0, space) : cut).trim();
 }
 
 /** The line under an article on Learn. */

@@ -34,11 +34,20 @@ test("the pension body uses the template rules", () => {
   assert.ok(calc);
 });
 
-test("the description is the first paragraph, cut near 160 characters", () => {
+test("the description is the first sentence, and it is finished", () => {
   const description = articleDescription(PENSION_ARTICLE_BODY);
   assert.ok(description.length <= 160);
-  assert.match(description, /^Let's put a real number/);
-  assert.equal(description.endsWith(" "), false);
+  assert.equal(
+    description,
+    "Let's put a real number on something that often gets overlooked when military families start planning for retirement.",
+  );
+});
+
+test("a long first sentence stops on the last word that fits", () => {
+  const description = articleDescription(`${"planning ".repeat(30)}done. The next sentence stays out.`);
+  assert.ok(description.length <= 160);
+  assert.equal(description.endsWith("planning"), true);
+  assert.equal(description.includes("done"), false);
 });
 
 test("Learn uses the first sentence", () => {

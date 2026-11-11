@@ -18,4 +18,8 @@ test("Article headline is the page title, and private paths get nothing", () => 
   assert.deepEqual(author.sameAs, ["https://www.linkedin.com/in/cainf-15advanced/"]);
   assert.equal(contentPageSchema("MACH RUN", "/top-3-desk"), null);
   assert.equal(contentPageSchema("Home", "/"), null);
+  for (const path of ["/contact", "/tools", "/learn", "/legal", "/privacy"]) {
+    assert.equal(contentPageSchema("Page", path)?.["@type"], "WebPage");
+  }
+  assert.equal(contentPageSchema("Method", "/method")?.["@type"], "Article");
 });

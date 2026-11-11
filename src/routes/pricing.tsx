@@ -69,11 +69,11 @@ function AboutPerDay({
   return (
     <div className="mt-3">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="inline-flex items-baseline gap-1.5 rounded-full bg-[#e7f4ec] px-3 py-1">
+        <p className="inline-flex items-baseline rounded-full bg-[#e7f4ec] px-3 py-1">
           <span className="font-display text-lg font-semibold tabular-nums leading-none text-[#1f6b40]">
             About {amount}
           </span>
-          <span className="text-xs font-medium text-[#2f6b4a]">a day</span>
+          <span className="text-xs font-medium text-[#2f6b4a]"> a day</span>
         </p>
         <p className="text-xs text-muted">
           {interval === "year" ? "Paid yearly." : "Paid monthly."}

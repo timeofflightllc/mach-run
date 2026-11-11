@@ -18,13 +18,15 @@ const CONTENT_DATES: Record<string, { published: string; modified: string }> = {
 };
 
 /** One block per content page. headline is the document title passed in. */
+const WEBPAGE_PATHS = new Set(["/contact", "/tools", "/learn", "/legal", "/privacy"]);
+
 export function contentPageSchema(title: string, path: string): JsonLd | null {
   const dates = CONTENT_DATES[path];
   if (!dates) return null;
   const url = `${SITE}${path}`;
   return {
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": WEBPAGE_PATHS.has(path) ? "WebPage" : "Article",
     headline: title,
     url,
     mainEntityOfPage: url,

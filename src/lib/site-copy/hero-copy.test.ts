@@ -13,6 +13,20 @@ test("a saved headline stays, and a missing homepage line uses the current wordi
   assert.equal(copy.founderTitle, DEFAULT_HERO_COPY.founderTitle);
 });
 
+test("the old homepage headline and the NDAA line pick up the current wording", () => {
+  const raw = JSON.stringify({
+    headline:
+      "See your entire household's retirement on one page, from active duty, spouse pay and TSP contributions to VA benefits, retirement date and the nest-egg goal.",
+    text: "Plan for pay increases at a promotion, yearly NDAA's, and a COLA you already rewrote.",
+  });
+  const copy = parseHeroCopy(raw);
+  assert.equal(copy.headline, "Your household retirement, on one page.");
+  assert.equal(
+    copy.text,
+    "Plan for pay increases at a promotion, the yearly NDAA, and a COLA you already rewrote.",
+  );
+});
+
 test("a blank line stays blank, and the rest of the page is saved", () => {
   const next = { ...DEFAULT_HERO_COPY, pitch: "" };
   const copy = parseHeroCopy(serializeHeroCopy(next));

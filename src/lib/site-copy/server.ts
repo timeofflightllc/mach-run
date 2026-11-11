@@ -219,6 +219,11 @@ function freshenStoredCopy(body: string): string {
     .replaceAll("Spreadsheets are bandaids", "Spreadsheets are band-aids")
     .replaceAll("Who it is not for?", "Who is it not for?")
     .replaceAll("Who it is for?", "Who is it for?")
+    .replaceAll("xAI (thank you Elon)", "xAI")
+    .replaceAll(" We hate that, and we won’t do it.", "")
+    .replaceAll(" We hate that, and we won't do it.", "")
+    .replaceAll("We hate that, and we won’t do it.", "")
+    .replaceAll("We hate that, and we won't do it.", "")
     .replaceAll("MachRun", "MACH RUN")
     .replaceAll("Supersonic Financial Calculator", "Supersonic Retirement Calculator")
     .replaceAll("Project through primary age", "Project through longevity age")
@@ -431,7 +436,24 @@ function freshenKicker(page: SitePage): SitePage {
   if (page.slug === "faq" && page.kicker === "Kick the tires. Then light the fires.") {
     return { ...page, kicker: fresh.kicker };
   }
+  if (page.slug === "announcements" && page.kicker.includes("Last ships, newest first.")) {
+    return { ...page, kicker: page.kicker.replace("Last ships, newest first.", "Newest first.") };
+  }
   return page;
+}
+
+const FRESH_TITLES: Record<string, { from: string; to: string }> = {
+  about: { from: "About", to: "About MACH RUN" },
+  learn: { from: "Learn", to: "Learn MACH RUN" },
+  tools: { from: "Tools", to: "MACH RUN tools" },
+  method: { from: "The Method", to: "The MACH RUN method" },
+  contact: { from: "Contact", to: "Contact MACH RUN" },
+};
+
+function freshenTitle(page: SitePage): SitePage {
+  const rule = FRESH_TITLES[page.slug];
+  if (!rule || page.title !== rule.from) return page;
+  return { ...page, title: rule.to };
 }
 
 function withMethodSources(page: SitePage): SitePage {
@@ -458,14 +480,16 @@ function mapPage(row: {
   body: string;
 }): SitePage | null {
   if (!isSlug(row.slug)) return null;
-  return withMethodSources(
-    presentTerms(
-      preferCurrentLegal({
-        slug: row.slug,
-        title: row.title,
-        kicker: softenPublicClaims(row.kicker ?? ""),
-        body: softenPublicClaims(freshenStoredCopy(row.body ?? "")),
-      }),
+  return freshenTitle(
+    withMethodSources(
+      presentTerms(
+        preferCurrentLegal({
+          slug: row.slug,
+          title: row.title,
+          kicker: softenPublicClaims(row.kicker ?? ""),
+          body: softenPublicClaims(freshenStoredCopy(row.body ?? "")),
+        }),
+      ),
     ),
   );
 }

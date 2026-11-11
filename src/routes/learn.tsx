@@ -18,12 +18,13 @@ function learnLines(body: string): string[] {
 }
 
 export const Route = createFileRoute("/learn")({
-  head: ({ match }) => {
-    if (match.pathname !== "/learn") return { meta: [], links: [] };
+  head: ({ matches }) => {
+    const path = matches.at(-1)?.pathname.replace(/\/$/, "") || "/";
+    if (path !== "/learn") return { meta: [], links: [] };
     return pageHead({
       title: "Learn | MACH RUN Retirement Calculator",
       description:
-        "Learn is the site index for the Method, the FAQ, Compare, Updates, and Tools, including the free military retirement pay calculator.",
+        "How a MACH RUN turns pay, TSP, military retired pay, VA, and a nest-egg goal into one projection.",
       path: "/learn",
     });
   },

@@ -38,7 +38,7 @@ const DEFAULT_ROWS: CompareRow[] = [
     marks: [true, true, false, true],
   },
   {
-    feature: "Near-instant review of 1,000 possible plan futures w/ MACH RUN's Monte Carlo Plan Survival",
+    feature: "1,000 possible futures (Individual Unlimited and Advisor plans)",
     marks: [true, false, false, false],
   },
   {
@@ -89,7 +89,7 @@ const DEFAULT_ROWS: CompareRow[] = [
 ];
 
 export const DEFAULT_COMPARE_COPY: CompareCopy = {
-  title: "Compare",
+  title: "Compare retirement calculators",
   kicker: "How does MACH RUN compare to other common retirement calculators?",
   intro:
     "MACH RUN is the only column with a monthly projection from the numbers you type, 1,000 futures, and COLA on military retired pay, VA, and Social Security. FIRECalc is free and runs what-ifs. A spreadsheet has only the rows you build, and lacks Monte Carlo and a seamless user interface. Quicken Classic can hold some of the same pay, but is not focused on retirement planning and is not made by veterans for veterans. Please see the table below for a robust comparison of MACH RUN to the other common products.",
@@ -101,6 +101,15 @@ export const DEFAULT_COMPARE_COPY: CompareCopy = {
     "Quicken means the Lifetime Planner in Quicken Classic. The price is Classic Deluxe, billed yearly. A spreadsheet can be made to do any row if you build it. The check is what is already there. MACH RUN is not affiliated with FIRECalc or Quicken. [The Method](/method) shows how a run is built. [Pricing](/pricing) starts free. Individual is $4 a month.",
   button: "Get Started with MACH RUN - no credit card required",
 };
+
+const OLD_FUTURES =
+  "Near-instant review of 1,000 possible plan futures w/ MACH RUN's Monte Carlo Plan Survival";
+
+function featureName(value: string): string {
+  return value === OLD_FUTURES
+    ? "1,000 possible futures (Individual Unlimited and Advisor plans)"
+    : value;
+}
 
 function str(value: unknown, fallback: string): string {
   return typeof value === "string" && value.trim() ? value : fallback;
@@ -127,12 +136,13 @@ export function mergeCompareCopy(raw: unknown): CompareCopy {
     ? src.rows.flatMap((row) => {
         if (!row || typeof row !== "object") return [];
         const item = row as Record<string, unknown>;
-        const feature = typeof item.feature === "string" ? item.feature : "";
+        const feature = featureName(typeof item.feature === "string" ? item.feature : "");
         return [{ feature, marks: marks(item.marks, [false, false, false, false]) }];
       })
     : d.rows;
+  const titleRaw = typeof src.title === "string" ? src.title.trim() : "";
   return {
-    title: str(src.title, d.title),
+    title: !titleRaw || titleRaw === "Compare" ? d.title : titleRaw,
     kicker: str(src.kicker, d.kicker),
     intro: typeof src.intro === "string" ? src.intro : d.intro,
     rows: rows.length ? rows : d.rows,

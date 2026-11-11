@@ -261,9 +261,8 @@ export const HERO_SECTIONS: {
 ];
 
 export const DEFAULT_HERO_COPY: HeroCopy = {
-  headline:
-    "See your entire household's retirement on one page, from active duty, spouse pay and TSP contributions to VA benefits, retirement date and the nest-egg goal.",
-  text: "Plan for pay increases at a promotion, yearly NDAA's, and planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move.\nFree to start — 2 incomes, 2 accounts, 2 contributions.  $4 a month gets you more.",
+  headline: "Your household retirement, on one page.",
+  text: "Plan for pay increases at a promotion, the yearly NDAA, and planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move.\nFree to start — 2 incomes, 2 accounts, 2 contributions.  $4 a month gets you more.",
   pitch: "Six questions. One account. About a minute. See what it pays you each month.",
   startButton: "Start with just six questions",
   noCard: "No credit card needed.",
@@ -384,6 +383,7 @@ const STALE_HEADLINES = new Set([
   "One place to see your whole household's retirement. Pay steps up with a promotion and a COLA, plus TSP, military retired pay, VA, and your nest-egg goal.",
   "One place to see your entire household's retirement picture. Pay rises with a promotion and a COLA. TSP, military retired pay, VA, and the nest-egg goal are on the same page.",
   "One place to see your entire household's finances on one page. Custom income stages for promotion and a COLA. TSP, military retired pay, VA, and the nest-egg goal.",
+  "See your entire household's retirement on one page, from active duty, spouse pay and TSP contributions to VA benefits, retirement date and the nest-egg goal.",
 ]);
 const STALE_TEXT = [
   "See your whole household's retirement in one place - income, investments, and your nest-egg goal, with unlimited what-if runs. Free to start. $4 a month unlocks incredible features.",
@@ -391,6 +391,7 @@ const STALE_TEXT = [
   "Change the savings rate and contributions, and watch that date and FIRE number move. Free to start. $4 a month gets you more.",
   "Plan for pay increases at a promotion and with a planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move. Free to start. $4 a month gets you more.",
   "Plan for pay increases at a promotion, yearly NDAA's, and planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move. Free to start. $4 a month gets you more.",
+  "Plan for pay increases at a promotion, yearly NDAA's, and planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move.\nFree to start — 2 incomes, 2 accounts, 2 contributions.  $4 a month gets you more.",
 ];
 
 const HERO_KEYS = Object.keys(DEFAULT_HERO_COPY) as (keyof HeroCopy)[];
@@ -419,10 +420,11 @@ export function parseHeroCopy(raw: string): HeroCopy {
       "Free to start — 2 incomes, 2 accounts, 2 contributions.  $4 a month gets you more.",
     )
     .replace(/move\.\s+Free to start/g, "move.\nFree to start");
-  const text =
+  const chosen =
     refreshed.trim() && !STALE_TEXT.includes(refreshed.trim())
       ? refreshed
       : DEFAULT_HERO_COPY.text;
+  const text = chosen.replaceAll("yearly NDAA's", "the yearly NDAA");
   next.headline = headline;
   next.text = text;
   for (const key of HERO_KEYS) {

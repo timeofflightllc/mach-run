@@ -119,7 +119,7 @@ These are the tables this calculator reads. Each date is the table on file, not 
 export const DEFAULT_PAGES: SitePage[] = [
   {
     slug: "about",
-    title: "About",
+    title: "About MACH RUN",
     kicker: "",
     body: `FIGHTS ON!
 
@@ -144,7 +144,7 @@ Founder, MACHRUN.com`,
   },
   {
     slug: "method",
-    title: "The Method",
+    title: "The MACH RUN method",
     kicker:
       "A MACH RUN is the press of Calculate. Observe is family and accounts. Orient is paychecks and spending. Decide is contributions. Act is the charts, the ledger, and the analysis. The engine runs one month at a time through the longevity age you set. Change an input and Act holds the last run until you calculate again.",
     body: `# How a MACH RUN works
@@ -240,7 +240,7 @@ Matthew 'Cain' Olde, a retired U.S. Air Force F-15 pilot, who wanted one strip f
   },
   {
     slug: "learn",
-    title: "Learn",
+    title: "Learn MACH RUN",
     kicker: "The pages that explain a MACH RUN. Fill Observe, Orient, and Decide. Hit Calculate.",
     body: `How a MACH RUN turns family, accounts, paychecks, spending, and contributions into a monthly retirement projection.
 
@@ -250,7 +250,7 @@ What shipped recently on the MACH RUN retirement calculator.`,
   },
   {
     slug: "tools",
-    title: "Tools",
+    title: "MACH RUN tools",
     kicker: "Free calculators. One is live. The rest are still being built.",
     body: `[Free Military Retirement Pay Calculator](/retired-pay)
 
@@ -268,7 +268,7 @@ A calculator result is not a decision. The rule is in the [Terms of Service](/le
   },
   {
     slug: "contact",
-    title: "Contact",
+    title: "Contact MACH RUN",
     kicker: "Pick a lane. It goes to the MACH RUN inbox. Reply-to is the email you type below.",
     body: "",
   },
