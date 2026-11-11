@@ -394,6 +394,15 @@ const STALE_TEXT = [
   "Plan for pay increases at a promotion, yearly NDAA's, and planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move.\nFree to start — 2 incomes, 2 accounts, 2 contributions.  $4 a month gets you more.",
 ];
 
+function isStaleHeadline(value: string): boolean {
+  const key = value.trim().replace(/\s+[—–-]{1,2}\s+/g, ", ").replace(/\s+/g, " ");
+  for (const stale of STALE_HEADLINES) {
+    const other = stale.trim().replace(/\s+[—–-]{1,2}\s+/g, ", ").replace(/\s+/g, " ");
+    if (key === other) return true;
+  }
+  return false;
+}
+
 const HERO_KEYS = Object.keys(DEFAULT_HERO_COPY) as (keyof HeroCopy)[];
 
 export function serializeHeroCopy(copy: HeroCopy): string {
@@ -410,7 +419,7 @@ export function parseHeroCopy(raw: string): HeroCopy {
   const src = data && typeof data === "object" ? (data as Record<string, unknown>) : {};
   const next: HeroCopy = { ...DEFAULT_HERO_COPY };
   const headline =
-    typeof src.headline === "string" && !STALE_HEADLINES.has(src.headline.trim())
+    typeof src.headline === "string" && src.headline.trim() && !isStaleHeadline(src.headline)
       ? src.headline
       : DEFAULT_HERO_COPY.headline;
   const textRaw = typeof src.text === "string" ? src.text : "";

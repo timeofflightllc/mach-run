@@ -106,7 +106,8 @@ const OLD_FUTURES =
   "Near-instant review of 1,000 possible plan futures w/ MACH RUN's Monte Carlo Plan Survival";
 
 function featureName(value: string): string {
-  return value === OLD_FUTURES
+  const bare = value.trim().replace(/\*+\s*$/, "").trim();
+  return bare === OLD_FUTURES
     ? "1,000 possible futures (Individual Unlimited and Advisor plans)"
     : value;
 }

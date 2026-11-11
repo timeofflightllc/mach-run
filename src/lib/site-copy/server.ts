@@ -2,6 +2,8 @@ import { getSql } from "@/lib/db";
 import { ensurePensionArticle } from "@/lib/articles/server";
 import { pathsForSlug, pingIndexNow } from "@/lib/seo/sitemap";
 import { parsePricingCopy, serializePricingCopy, withLivePricingLines } from "./pricing-copy";
+import { parseHeroCopy } from "./hero-copy";
+import { parseCompareCopy } from "./compare-copy";
 import { DEFAULT_PAGES, defaultAnnouncements, byAnnouncementDateDesc, PINNED_ANNOUNCEMENTS, REFUND_FAQ_BLOCK, REFUND_LEGAL_BLOCK, FREE_CALCULATORS_BLOCK, METHOD_SOURCES_BLOCK, RETIRED_PAY_TERMS_BLOCK } from "./defaults";
 import {
   SITE_PAGE_SLUGS,
@@ -494,6 +496,93 @@ function mapPage(row: {
   );
 }
 
+function heroDeskBody(body: string): string | null {
+  let data: unknown;
+  try {
+    data = JSON.parse(body);
+  } catch {
+    return null;
+  }
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  const src = { ...(data as Record<string, unknown>) };
+  const parsed = parseHeroCopy(body);
+  const headline = typeof src.headline === "string" ? src.headline : "";
+  const text = typeof src.text === "string" ? src.text : "";
+  if (headline === parsed.headline && text === parsed.text) return null;
+  src.headline = parsed.headline;
+  src.text = parsed.text;
+  return JSON.stringify(src);
+}
+
+function compareDeskBody(body: string): string | null {
+  let data: unknown;
+  try {
+    data = JSON.parse(body);
+  } catch {
+    return null;
+  }
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null;
+  const src = { ...(data as Record<string, unknown>) };
+  const parsed = parseCompareCopy(body);
+  let changed = false;
+  const title = typeof src.title === "string" ? src.title.trim() : "";
+  if (!title || title === "Compare") {
+    src.title = parsed.title;
+    changed = true;
+  }
+  if (Array.isArray(src.rows)) {
+    src.rows = src.rows.map((row, index) => {
+      if (!row || typeof row !== "object") return row;
+      const item = row as Record<string, unknown>;
+      const nextFeature = parsed.rows[index]?.feature;
+      if (typeof item.feature === "string" && nextFeature && item.feature !== nextFeature) {
+        changed = true;
+        return { ...item, feature: nextFeature };
+      }
+      return row;
+    });
+  }
+  return changed ? JSON.stringify(src) : null;
+}
+
+/** Once. Writes the current headline, Compare row, and page titles into the desk. A later edit sticks. */
+async function ensureSeoTextOverwrite(): Promise<void> {
+  const sql = await getSql();
+  const flagged = await sql.query<{ key: string }>(
+    "select key from mach_copy_flags where key = 'seo_text_overwrite_2026_11_11'",
+  );
+  if (flagged.length) return;
+  const hero = await sql.query<{ body: string }>(
+    "select body from mach_site_pages where slug = 'hero'",
+  );
+  const heroBody = heroDeskBody(hero[0]?.body ?? "");
+  if (heroBody) {
+    await sql.query("update mach_site_pages set body = $1, updated_at = now() where slug = 'hero'", [
+      heroBody,
+    ]);
+  }
+  const compare = await sql.query<{ body: string }>(
+    "select body from mach_site_pages where slug = 'compare'",
+  );
+  const compareBody = compareDeskBody(compare[0]?.body ?? "");
+  if (compareBody) {
+    await sql.query(
+      "update mach_site_pages set body = $1, updated_at = now() where slug = 'compare'",
+      [compareBody],
+    );
+  }
+  for (const [slug, rule] of Object.entries(FRESH_TITLES)) {
+    await sql.query(
+      "update mach_site_pages set title = $1, updated_at = now() where slug = $2 and title = $3",
+      [rule.to, slug, rule.from],
+    );
+  }
+  await sql.query(
+    `insert into mach_copy_flags (key) values ('seo_text_overwrite_2026_11_11')
+     on conflict (key) do nothing`,
+  );
+}
+
 export async function loadSiteCopy(): Promise<SiteCopy> {
   const fallback: SiteCopy = {
     pages: DEFAULT_PAGES,
@@ -508,6 +597,7 @@ export async function loadSiteCopy(): Promise<SiteCopy> {
     await ensurePricingTagsCleared();
     await ensurePinnedAnnouncements();
     await ensurePensionArticle();
+    await ensureSeoTextOverwrite();
     const sql = await getSql();
     const pageRows = await sql.query<{
       slug: string;
