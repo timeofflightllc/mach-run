@@ -14,8 +14,7 @@ import { IdleLockGate } from "@/components/meridian/idle-lock";
 import { loadPublicSiteCopy } from "@/lib/site-copy/api";
 import { recordCampaignClickFn } from "@/lib/referrals/api";
 import { attachVisitor, noteVisitor } from "@/lib/conversions/api";
-import { DEFAULT_FOOTER_COPY, footerFromSiteCopy } from "@/lib/site-copy/footer-copy";
-import type { FooterCopy } from "@/lib/site-copy/types";
+import { footerFromSiteCopy } from "@/lib/site-copy/footer-copy";
 import appCss from "../styles.css?url";
 
 analytics.init({
@@ -40,15 +39,14 @@ export const Route = createRootRoute({
         /* a missed click must not blank the page */
       }
     }
-    const [sessionUser, footer] = await Promise.all([
+    const [sessionUser, site] = await Promise.all([
       loadSessionSnapshot().catch(() => null),
-      loadPublicSiteCopy()
-        .then((site) => footerFromSiteCopy(site))
-        .catch(() => DEFAULT_FOOTER_COPY),
+      loadPublicSiteCopy(),
     ]);
     return {
       sessionUser: (sessionUser ?? null) as SessionSnapshot | null,
-      footer: footer as FooterCopy,
+      footer: footerFromSiteCopy(site),
+      site,
     };
   },
   head: () => ({

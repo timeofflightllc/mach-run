@@ -1,38 +1,9 @@
-import { useEffect, useState } from "react";
-import { loadPublicSiteCopy } from "@/lib/site-copy/api";
-import {
-  boydQuotesFromSiteCopy,
-  DEFAULT_BOYD_QUOTES,
-} from "@/lib/site-copy/boyd-quotes";
+import { getRouteApi } from "@tanstack/react-router";
+import { boydQuotesFromSiteCopy } from "@/lib/site-copy/boyd-quotes";
 
-let cache: string[] | null = null;
-let inflight: Promise<string[]> | null = null;
+const rootRoute = getRouteApi("__root__");
 
-function loadQuotes(): Promise<string[]> {
-  if (!inflight) {
-    inflight = loadPublicSiteCopy()
-      .then((site) => {
-        cache = boydQuotesFromSiteCopy(site);
-        return cache;
-      })
-      .catch(() => {
-        inflight = null;
-        return cache ?? DEFAULT_BOYD_QUOTES;
-      });
-  }
-  return inflight;
-}
-
+/** The saved Boyd quotes, already loaded with the page. */
 export function useBoydQuotes(): string[] {
-  const [quotes, setQuotes] = useState<string[]>(cache ?? DEFAULT_BOYD_QUOTES);
-  useEffect(() => {
-    let live = true;
-    void loadQuotes().then((next) => {
-      if (live) setQuotes(next);
-    });
-    return () => {
-      live = false;
-    };
-  }, []);
-  return quotes;
+  return boydQuotesFromSiteCopy(rootRoute.useLoaderData().site);
 }
