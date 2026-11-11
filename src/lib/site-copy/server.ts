@@ -549,7 +549,7 @@ function compareDeskBody(body: string): string | null {
 async function ensureSeoTextOverwrite(): Promise<void> {
   const sql = await getSql();
   const flagged = await sql.query<{ key: string }>(
-    "select key from mach_copy_flags where key = 'seo_text_overwrite_2026_11_11'",
+    "select key from mach_copy_flags where key = 'seo_text_overwrite_2026_11_11b'",
   );
   if (flagged.length) return;
   const hero = await sql.query<{ body: string }>(
@@ -578,7 +578,7 @@ async function ensureSeoTextOverwrite(): Promise<void> {
     );
   }
   await sql.query(
-    `insert into mach_copy_flags (key) values ('seo_text_overwrite_2026_11_11')
+    `insert into mach_copy_flags (key) values ('seo_text_overwrite_2026_11_11b')
      on conflict (key) do nothing`,
   );
 }

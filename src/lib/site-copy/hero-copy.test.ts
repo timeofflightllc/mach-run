@@ -20,7 +20,7 @@ test("the old homepage headline and the NDAA line pick up the current wording", 
     text: "Plan for pay increases at a promotion, yearly NDAA's, and a COLA you already rewrote.",
   });
   const copy = parseHeroCopy(raw);
-  assert.equal(copy.headline, "Your household retirement, on one page.");
+  assert.equal(copy.headline, "Military pay, retired pay, VA, and TSP. One page.");
   assert.equal(
     copy.text,
     "Plan for pay increases at a promotion, the yearly NDAA, and a COLA you already rewrote.",
@@ -34,7 +34,7 @@ test("a dash in the old homepage headline still picks up the current wording", (
     text: "Plan for pay increases at a promotion, the yearly NDAA, and planned COLA.",
   });
   const copy = parseHeroCopy(raw);
-  assert.equal(copy.headline, "Your household retirement, on one page.");
+  assert.equal(copy.headline, "Military pay, retired pay, VA, and TSP. One page.");
   assert.match(copy.text, /the yearly NDAA/);
 });
 

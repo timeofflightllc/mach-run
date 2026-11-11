@@ -261,7 +261,7 @@ export const HERO_SECTIONS: {
 ];
 
 export const DEFAULT_HERO_COPY: HeroCopy = {
-  headline: "Your household retirement, on one page.",
+  headline: "Military pay, retired pay, VA, and TSP. One page.",
   text: "Plan for pay increases at a promotion, the yearly NDAA, and planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move.\nFree to start — 2 incomes, 2 accounts, 2 contributions.  $4 a month gets you more.",
   pitch: "Six questions. One account. About a minute. See what it pays you each month.",
   startButton: "Start with just six questions",
@@ -384,6 +384,7 @@ const STALE_HEADLINES = new Set([
   "One place to see your entire household's retirement picture. Pay rises with a promotion and a COLA. TSP, military retired pay, VA, and the nest-egg goal are on the same page.",
   "One place to see your entire household's finances on one page. Custom income stages for promotion and a COLA. TSP, military retired pay, VA, and the nest-egg goal.",
   "See your entire household's retirement on one page, from active duty, spouse pay and TSP contributions to VA benefits, retirement date and the nest-egg goal.",
+  "Your household retirement, on one page.",
 ]);
 const STALE_TEXT = [
   "See your whole household's retirement in one place - income, investments, and your nest-egg goal, with unlimited what-if runs. Free to start. $4 a month unlocks incredible features.",
