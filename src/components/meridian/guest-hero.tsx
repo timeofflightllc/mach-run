@@ -285,7 +285,7 @@ export function GuestHero({
         {hero.text.trim() ? (
           <div className="relative z-10 mt-1.5 w-full max-w-4xl text-center text-[0.667rem] leading-relaxed text-[#3d4a54] sm:mt-4 sm:text-lg">
             <p>
-              <HeroDeck text={hero.text} />
+              <HeroLines text={hero.text} />
             </p>
           </div>
         ) : null}
@@ -436,22 +436,6 @@ export function GuestHero({
         </div>
       </div>
     </section>
-  );
-}
-
-function HeroDeck({ text }: { text: string }) {
-  const mark = ", and watch ";
-  const at = text.indexOf(mark);
-  if (at < 0) return <HeroLines text={text} />;
-  const lead = text.slice(0, at + ", and".length);
-  const rest = text.slice(at + mark.length);
-  return (
-    <>
-      {lead}
-      <span className="lg:hidden"> </span>
-      <br className="hidden lg:block" />
-      <HeroLines text={rest} />
-    </>
   );
 }
 
