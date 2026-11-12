@@ -283,12 +283,15 @@ export function ArticlePage({ article }: { article: ArticleRecord }) {
             <p className="mt-4 text-base leading-snug text-muted sm:text-xl">{article.subtitle}</p>
           ) : null}
           <div className="mt-8 flex items-center justify-between gap-6 border-b border-border pb-6">
-            <p className="flex min-w-0 flex-wrap items-baseline gap-x-3 text-sm text-muted sm:text-base">
+            <p className="flex min-w-0 flex-col items-start text-left text-sm text-muted sm:flex-row sm:flex-wrap sm:items-baseline sm:gap-x-3 sm:text-base">
               <Link to="/about" className="underline underline-offset-4 hover:text-fg">
                 Matthew "Cain" Olde
               </Link>
               {date ? (
-                <time dateTime={article.createdAt.slice(0, 10)} className="before:mr-3 before:content-['·']">
+                <time
+                  dateTime={article.createdAt.slice(0, 10)}
+                  className="sm:before:mr-3 sm:before:content-['·']"
+                >
                   {date}
                 </time>
               ) : null}
