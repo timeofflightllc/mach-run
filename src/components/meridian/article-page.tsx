@@ -256,6 +256,12 @@ function ArticleAuthor() {
   );
 }
 
+function articleCrumb(h1: string) {
+  const cut = h1.indexOf(",");
+  if (cut > 0) return `${h1.slice(0, cut)}...`;
+  return h1;
+}
+
 export function ArticlePage({ article }: { article: ArticleRecord }) {
   const url = `https://machrun.com/learn/${article.slug}`;
   const date = articleDateLabel(article.createdAt);
@@ -266,14 +272,18 @@ export function ArticlePage({ article }: { article: ArticleRecord }) {
         <PageMast />
       </div>
       <div className="mx-auto mt-8 w-full max-w-[70rem] px-5 sm:px-8">
-        <PieceCrumbs path="/learn" current={article.h1} />
+        <PieceCrumbs
+          path="/learn"
+          current={articleCrumb(article.h1)}
+          className="text-xs leading-snug text-muted sm:text-sm"
+        />
         <header className="mt-6">
-          <h1 className="font-display text-4xl leading-tight text-fg sm:text-5xl">{article.h1}</h1>
+          <h1 className="font-display text-3xl leading-tight text-fg sm:text-5xl">{article.h1}</h1>
           {article.subtitle.trim() ? (
-            <p className="mt-4 text-xl leading-snug text-muted">{article.subtitle}</p>
+            <p className="mt-4 text-base leading-snug text-muted sm:text-xl">{article.subtitle}</p>
           ) : null}
           <div className="mt-8 flex items-center justify-between gap-6 border-b border-border pb-6">
-            <p className="flex min-w-0 flex-wrap items-baseline gap-x-3 text-base text-muted">
+            <p className="flex min-w-0 flex-wrap items-baseline gap-x-3 text-sm text-muted sm:text-base">
               <Link to="/about" className="underline underline-offset-4 hover:text-fg">
                 Matthew "Cain" Olde
               </Link>
