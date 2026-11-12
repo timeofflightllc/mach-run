@@ -262,7 +262,7 @@ export const HERO_SECTIONS: {
 
 export const DEFAULT_HERO_COPY: HeroCopy = {
   headline: "Military pay, retired pay, VA, and TSP. One page.",
-  text: "Plan for pay increases at a promotion, the yearly NDAA, and planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move.\nFree to start — 2 incomes, 2 accounts, 2 contributions.  $4 a month gets you more.",
+  text: "Plan for pay increases at a promotion, the yearly NDAA, and planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move.\n\nFree to start — 2 incomes, 2 accounts, 2 contributions.  $4 a month gets you more.",
   pitch: "Six questions. One account. About a minute. See what it pays you each month.",
   startButton: "Start with just six questions",
   noCard: "No credit card needed.",
@@ -424,12 +424,10 @@ export function parseHeroCopy(raw: string): HeroCopy {
       ? src.headline
       : DEFAULT_HERO_COPY.headline;
   const textRaw = typeof src.text === "string" ? src.text : "";
-  const refreshed = textRaw
-    .replaceAll(
-      "Free to start. $4 a month gets you more.",
-      "Free to start — 2 incomes, 2 accounts, 2 contributions.  $4 a month gets you more.",
-    )
-    .replace(/move\.\s+Free to start/g, "move.\nFree to start");
+  const refreshed = textRaw.replaceAll(
+    "Free to start. $4 a month gets you more.",
+    "Free to start — 2 incomes, 2 accounts, 2 contributions.  $4 a month gets you more.",
+  );
   const chosen =
     refreshed.trim() && !STALE_TEXT.includes(refreshed.trim())
       ? refreshed
@@ -443,6 +441,20 @@ export function parseHeroCopy(raw: string): HeroCopy {
     if (typeof value === "string") next[key] = value;
   }
   return next;
+}
+
+const DECK_BEFORE_FREE =
+  "Plan for pay increases at a promotion, the yearly NDAA, and planned COLA. Change the savings rate and contributions, and watch that date and FIRE number move.";
+const DECK_FREE =
+  "Free to start — 2 incomes, 2 accounts, 2 contributions.  $4 a month gets you more.";
+
+/** The current deck, once. A later line break in Top 3 is left alone. */
+export function openHeroDeckBreak(text: string): string {
+  const opened = `${DECK_BEFORE_FREE}\n\n${DECK_FREE}`;
+  if (text === `${DECK_BEFORE_FREE}\n${DECK_FREE}` || text === `${DECK_BEFORE_FREE} ${DECK_FREE}`) {
+    return opened;
+  }
+  return text;
 }
 
 export function heroFromSiteCopy(site: SiteCopy): HeroCopy {

@@ -2,7 +2,7 @@ import { getSql } from "@/lib/db";
 import { ensurePensionArticle } from "@/lib/articles/server";
 import { pathsForSlug, pingIndexNow } from "@/lib/seo/sitemap";
 import { parsePricingCopy, serializePricingCopy, withLivePricingLines } from "./pricing-copy";
-import { parseHeroCopy } from "./hero-copy";
+import { parseHeroCopy, openHeroDeckBreak } from "./hero-copy";
 import { parseCompareCopy } from "./compare-copy";
 import { DEFAULT_PAGES, defaultAnnouncements, byAnnouncementDateDesc, PINNED_ANNOUNCEMENTS, REFUND_FAQ_BLOCK, REFUND_LEGAL_BLOCK, FREE_CALCULATORS_BLOCK, METHOD_SOURCES_BLOCK, RETIRED_PAY_TERMS_BLOCK } from "./defaults";
 import {
@@ -583,6 +583,30 @@ async function ensureSeoTextOverwrite(): Promise<void> {
   );
 }
 
+async function ensureHeroDeckBreak(): Promise<void> {
+  const sql = await getSql();
+  const rows = await sql.query<{ body: string }>(
+    "select body from mach_site_pages where slug = 'hero'",
+  );
+  const body = rows[0]?.body;
+  if (!body) return;
+  let data: unknown;
+  try {
+    data = JSON.parse(body);
+  } catch {
+    return;
+  }
+  if (!data || typeof data !== "object" || Array.isArray(data)) return;
+  const src = data as Record<string, unknown>;
+  if (typeof src.text !== "string") return;
+  const opened = openHeroDeckBreak(src.text.replace(/\r\n/g, "\n"));
+  if (opened === src.text) return;
+  src.text = opened;
+  await sql.query("update mach_site_pages set body = $1, updated_at = now() where slug = 'hero'", [
+    JSON.stringify(src),
+  ]);
+}
+
 export async function loadSiteCopy(): Promise<SiteCopy> {
   const fallback: SiteCopy = {
     pages: DEFAULT_PAGES,
@@ -598,6 +622,7 @@ export async function loadSiteCopy(): Promise<SiteCopy> {
     await ensurePinnedAnnouncements();
     await ensurePensionArticle();
     await ensureSeoTextOverwrite();
+    await ensureHeroDeckBreak();
     const sql = await getSql();
     const pageRows = await sql.query<{
       slug: string;
