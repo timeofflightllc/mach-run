@@ -112,6 +112,7 @@
 .canopy-bar {
   background-color: var(--color-canopy);
   color: #d7dde4;
+  padding-top: env(safe-area-inset-top, 0px);
   --color-fg: #e8edf1;
   --color-muted: #b8c3cd;
   --color-subtle: #9aa7b3;
@@ -233,6 +234,15 @@
 
 .master-caution-lamp {
   animation: master-caution-flash 1.8s ease-in-out infinite;
+}
+
+.master-caution-lamp.is-punched {
+  animation: none;
+  background-color: #8d8678;
+  color: #2a261f;
+  opacity: 1;
+  filter: none;
+  cursor: default;
 }
 
 @keyframes mach-run-pulse {

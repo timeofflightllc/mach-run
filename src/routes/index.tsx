@@ -1910,7 +1910,7 @@ function Home() {
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-bg text-fg">
+    <div className="flex h-dvh flex-col overflow-hidden bg-bg pb-[env(safe-area-inset-bottom)] text-fg">
       <WelcomeEmailPreviewOverlay />
       <header
         id="mach-header"
@@ -2073,16 +2073,16 @@ function Home() {
               <button
                 type="button"
                 onClick={() => setCautionAck(true)}
+                disabled={cautionAck}
                 className={cn(
                   "master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408] max-sm:px-2.5 max-sm:py-0.5 max-sm:text-[11px] max-sm:tracking-[0.14em]",
-                  cautionAck && "invisible pointer-events-none",
+                  cautionAck && "is-punched",
                 )}
-                tabIndex={cautionAck ? -1 : undefined}
               >
                 {heroCopy.cautionLabel}
               </button>
               {heroCopy.cautionBody.trim() ? (
-                <p className="max-w-3xl text-[11px] leading-snug text-[#fff3c4] sm:text-[15px]">
+                <p className="max-w-3xl text-[11px] leading-snug text-[#fff3c4] sm:text-lg">
                   {heroCopy.cautionBody}
                 </p>
               ) : null}
@@ -2090,7 +2090,7 @@ function Home() {
                 <Link
                   to="/login"
                   search={{ mode: "up" }}
-                  className="text-[11px] font-semibold text-white underline decoration-[#e8c547] underline-offset-[3px] hover:text-[#fff3c4] sm:text-[15px]"
+                  className="text-[11px] font-semibold text-white underline decoration-[#e8c547] underline-offset-[3px] hover:text-[#fff3c4] sm:text-lg"
                 >
                   {heroCopy.cautionLink}
                 </Link>
