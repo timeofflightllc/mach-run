@@ -18,16 +18,16 @@ function env(key: string): string {
 
 function escapeHtml(value: string): string {
   return value
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, """);
+    .replace(/&/g, "&" + "amp;")
+    .replace(/</g, "&" + "lt;")
+    .replace(/>/g, "&" + "gt;")
+    .replace(/"/g, "&" + "quot;");
 }
 
 const KIND_LABEL: Record<SiteErrorReport["kind"], string> = {
-  route: "A page failed to render",
-  error: "An uncaught script error",
-  rejection: "An unhandled promise rejection",
+  route: "A page failed to load",
+  error: "A script stopped the page",
+  rejection: "A background task failed",
   blank: "A page stayed blank",
 };
 
