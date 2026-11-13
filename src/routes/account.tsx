@@ -58,6 +58,7 @@ function Account() {
   const [confirmEmail, setConfirmEmail] = useState("");
   const [emailPassword, setEmailPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
   const [laterNeeded, setLaterNeeded] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
