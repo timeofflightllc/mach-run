@@ -32,6 +32,7 @@ import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as Top3DeskRouteImport } from './routes/top-3-desk'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
 import { Route as ApiContactRouteImport } from './routes/api/contact'
+import { Route as ApiSiteErrorRouteImport } from './routes/api/site-error'
 import { Route as LearnSlugRouteImport } from './routes/learn.$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
@@ -152,6 +153,11 @@ const ApiContactRoute = ApiContactRouteImport.update({
   path: '/api/contact',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiSiteErrorRoute = ApiSiteErrorRouteImport.update({
+  id: '/api/site-error',
+  path: '/api/site-error',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LearnSlugRoute = LearnSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/top-3-desk': typeof Top3DeskRoute
   '/verify-email': typeof VerifyEmailRoute
   '/api/contact': typeof ApiContactRoute
+  '/api/site-error': typeof ApiSiteErrorRoute
   '/learn/$slug': typeof LearnSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -220,6 +227,7 @@ export interface FileRoutesByTo {
   '/top-3-desk': typeof Top3DeskRoute
   '/verify-email': typeof VerifyEmailRoute
   '/api/contact': typeof ApiContactRoute
+  '/api/site-error': typeof ApiSiteErrorRoute
   '/learn/$slug': typeof LearnSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -249,6 +257,7 @@ export interface FileRoutesById {
   '/top-3-desk': typeof Top3DeskRoute
   '/verify-email': typeof VerifyEmailRoute
   '/api/contact': typeof ApiContactRoute
+  '/api/site-error': typeof ApiSiteErrorRoute
   '/learn/$slug': typeof LearnSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
@@ -279,6 +288,7 @@ export interface FileRouteTypes {
     | '/top-3-desk'
     | '/verify-email'
     | '/api/contact'
+    | '/api/site-error'
     | '/learn/$slug'
     | '/api/auth/$'
     | '/api/stripe/webhook'
@@ -307,6 +317,7 @@ export interface FileRouteTypes {
     | '/top-3-desk'
     | '/verify-email'
     | '/api/contact'
+    | '/api/site-error'
     | '/learn/$slug'
     | '/api/auth/$'
     | '/api/stripe/webhook'
@@ -335,6 +346,7 @@ export interface FileRouteTypes {
     | '/top-3-desk'
     | '/verify-email'
     | '/api/contact'
+    | '/api/site-error'
     | '/learn/$slug'
     | '/api/auth/$'
     | '/api/stripe/webhook'
@@ -364,6 +376,7 @@ export interface RootRouteChildren {
   Top3DeskRoute: typeof Top3DeskRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   ApiContactRoute: typeof ApiContactRoute
+  ApiSiteErrorRoute: typeof ApiSiteErrorRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
@@ -531,6 +544,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiContactRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/site-error': {
+      id: '/api/site-error'
+      path: '/api/site-error'
+      fullPath: '/api/site-error'
+      preLoaderRoute: typeof ApiSiteErrorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/learn/$slug': {
       id: '/learn/$slug'
       path: '/$slug'
@@ -589,6 +609,7 @@ const rootRouteChildren: RootRouteChildren = {
   Top3DeskRoute: Top3DeskRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   ApiContactRoute: ApiContactRoute,
+  ApiSiteErrorRoute: ApiSiteErrorRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }

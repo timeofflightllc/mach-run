@@ -170,6 +170,12 @@ function RootShell() {
               '(function(){try{var p=new URLSearchParams(location.search).get("ref");if(!p)return;p=p.trim().toLowerCase();if(!/^[a-z0-9]{4,32}$/.test(p))return;if(/(?:^|; )mach_ref=/.test(document.cookie))return;var s=location.protocol==="https:"?"; Secure":"";document.cookie="mach_ref="+p+"; Max-Age=2592000; Path=/; SameSite=Lax"+s;}catch(e){}})();',
           }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              '(function(){try{if(location.hostname==="localhost"||location.hostname==="127.0.0.1")return;function send(kind,message,stack){try{var msg=String(message||"").replace(/\\s+/g," ").trim().slice(0,500);if(!msg)return;fetch("/api/site-error",{method:"POST",headers:{"Content-Type":"application/json"},keepalive:true,body:JSON.stringify({kind:kind,message:msg,stack:String(stack||"").slice(0,4000),path:location.pathname||"/",href:location.href.slice(0,300)})}).catch(function(){});}catch(e){}}window.addEventListener("error",function(event){var err=event.error;send("error",event.message||(err&&err.message)||"Script error",err&&err.stack);});window.addEventListener("unhandledrejection",function(event){var reason=event.reason;send("rejection",reason&&reason.message?reason.message:String(reason||"Unhandled rejection"),reason&&reason.stack);});window.setTimeout(function(){var text=((document.body&&document.body.innerText)||"").replace(/\\s+/g," ").trim();if(text.length<8)send("blank","The page stayed blank.","");},12000);}catch(e){}})();',
+          }}
+        />
         <PreviewHostBridge />
         <SessionSnapshotProvider value={snapshot}>
           <AuthProvider>

@@ -1,7 +1,17 @@
+import { useEffect } from "react";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import { TriangleAlert } from "lucide-react";
+import { reportSiteError } from "@/lib/notify/report-site-error";
 
 export function AppErrorComponent({ error }: ErrorComponentProps) {
+  useEffect(() => {
+    reportSiteError({
+      kind: "route",
+      message: error?.message || "A page failed to render.",
+      stack: error instanceof Error ? error.stack : "",
+    });
+  }, [error]);
+
   return (
     <main
       className={
