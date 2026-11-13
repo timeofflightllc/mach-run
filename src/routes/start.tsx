@@ -245,7 +245,7 @@ function StartQuiz() {
   const nextStep = useRef(0);
   const praiseTimer = useRef<number | null>(null);
   const nameForPlan = useRef<string | null>(null);
-  if (!boydPick.current || boydPick.current.step !== step || boydPick.current.quotes !== quotes) {
+  if (!boydPick.current || boydPick.current.step !== step) {
     boydPick.current = {
       step,
       quotes,
