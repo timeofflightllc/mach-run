@@ -5,10 +5,10 @@ import { DeleteAccountModal } from "@/components/meridian/delete-account-modal";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { IdleLockSettings } from "@/components/meridian/idle-lock-settings";
 import { ReferralAccountCard } from "@/components/meridian/referral-card";
+import { BillingCard } from "@/components/meridian/billing-card";
 import { BetaAccountLink } from "@/components/beta/account-link";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
 import { startBillingPortal } from "@/lib/billing/api";
-import { formatDeskTrialEnd } from "@/lib/billing/desk-trial";
 import { canDownloadBackup } from "@/lib/billing/limits";
 import { useEntitlement } from "@/lib/billing/use-entitlement";
 import { sendTestSignupAlert, signupAlertStatus, emailPrefsStatus, setOptionalEmails } from "@/lib/notify/api";
@@ -430,36 +430,13 @@ function Account() {
           </section>
         ) : null}
 
-        <div className="space-y-2">
-          <button
-            type="button"
-            disabled={busy !== null}
-            onClick={() => void openBilling()}
-            className="inline-flex h-11 w-full items-center justify-center rounded-lg bg-accent px-4 text-sm font-medium text-accent-fg hover:opacity-90 disabled:opacity-60 md:w-auto md:min-w-56"
-          >
-            {busy === "billing" ? "Opening…" : "Manage billing"}
-          </button>
-          {ent.status === "trialing" && ent.billed === "unlimited" ? (
-            <p className="text-sm text-muted">
-              Unlimited trial ends {formatDeskTrialEnd(ent.periodEnd)}.{" "}
-              <button
-                type="button"
-                disabled={busy !== null}
-                onClick={() => void addCard()}
-                className="underline underline-offset-4 hover:text-fg disabled:opacity-60"
-              >
-                {busy === "card" ? "Opening…" : "Add a card"}
-              </button>{" "}
-              to keep it.
-            </p>
-          ) : null}
-          <p className="text-sm text-muted">
-            Card, invoices, and cancel.{" "}
-            <Link to="/pricing" className="underline underline-offset-4 hover:text-fg">
-              Change plan
-            </Link>
-          </p>
-        </div>
+        <BillingCard
+          busy={busy !== null}
+          opening={busy === "billing"}
+          addingCard={busy === "card"}
+          onManage={() => void openBilling()}
+          onAddCard={() => void addCard()}
+        />
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:items-stretch">
         <form

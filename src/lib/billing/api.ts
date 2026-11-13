@@ -380,6 +380,126 @@ export const peekPromoCode = createServerFn({ method: "POST" })
     return resolvePromo(data.code, data.package);
   });
 
+export type BillingCharge = {
+  at: string;
+  amountCents: number;
+  currency: string;
+};
+
+export type BillingReceipt = BillingCharge & {
+  url: string | null;
+};
+
+export type BillingSummary =
+  | { ok: true; hasCustomer: false }
+  | {
+      ok: true;
+      hasCustomer: true;
+      last: BillingCharge | null;
+      next: BillingCharge | null;
+      upcoming: "ready" | "none" | "unavailable";
+      canceling: boolean;
+      receipts: BillingReceipt[];
+    }
+  | { ok: false };
+
+function chargeFromInvoice(inv: {
+  amount_paid?: number;
+  amount_due?: number;
+  currency?: string | null;
+  created?: number;
+  status_transitions?: { paid_at?: number | null };
+  hosted_invoice_url?: string | null;
+  invoice_pdf?: string | null;
+}, which: "paid" | "due"): BillingCharge & { url: string | null } | null {
+  const cents = which === "paid" ? inv.amount_paid ?? 0 : inv.amount_due ?? 0;
+  if (which === "paid" && cents <= 0) return null;
+  const atSec = which === "paid" ? inv.status_transitions?.paid_at || inv.created : null;
+  if (which === "paid" && !atSec) return null;
+  return {
+    at: atSec ? new Date(atSec * 1000).toISOString() : "",
+    amountCents: cents,
+    currency: (inv.currency || "usd").toLowerCase(),
+    url: inv.hosted_invoice_url || inv.invoice_pdf || null,
+  };
+}
+
+/** Plan price, last payment, next bill, and receipt links. Read from Stripe. Not stored. */
+export const getBillingSummary = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<BillingSummary> => {
+    const none: BillingSummary = { ok: true, hasCustomer: false };
+    try {
+      const row = await loadSubscription(context.userId);
+      if (!row?.stripe_customer_id || !stripeReady()) return none;
+      const { getStripe } = await import("./stripe.server");
+      const stripe = await getStripe();
+      const listed = await stripe.invoices.list({
+        customer: row.stripe_customer_id,
+        status: "paid",
+        limit: 24,
+      });
+      const receipts: BillingReceipt[] = [];
+      for (const inv of listed.data) {
+        const charge = chargeFromInvoice(inv, "paid");
+        if (!charge?.at) continue;
+        receipts.push(charge);
+      }
+      receipts.sort((a, b) => (a.at < b.at ? 1 : a.at > b.at ? -1 : 0));
+      const last = receipts[0]
+        ? { at: receipts[0].at, amountCents: receipts[0].amountCents, currency: receipts[0].currency }
+        : null;
+
+      let next: BillingCharge | null = null;
+      let upcoming: "ready" | "none" | "unavailable" = "none";
+      let canceling = false;
+      const live = row.status === "active" || row.status === "trialing" || row.status === "past_due";
+      if (live && row.stripe_subscription_id) {
+        try {
+          const sub = await stripe.subscriptions.retrieve(row.stripe_subscription_id);
+          canceling = sub.cancel_at_period_end === true;
+          if (canceling) {
+            upcoming = "none";
+          } else {
+            const preview = await stripe.invoices.createPreview({
+              customer: row.stripe_customer_id,
+              subscription: row.stripe_subscription_id,
+            });
+            const atSec =
+              sub.items.data[0]?.current_period_end ??
+              sub.current_period_end ??
+              preview.next_payment_attempt ??
+              preview.period_end;
+            if (!atSec) {
+              upcoming = "unavailable";
+            } else {
+              upcoming = "ready";
+              next = {
+                at: new Date(atSec * 1000).toISOString(),
+                amountCents: preview.amount_due ?? 0,
+                currency: (preview.currency || "usd").toLowerCase(),
+              };
+            }
+          }
+        } catch {
+          upcoming = "unavailable";
+        }
+      }
+
+      return {
+        ok: true,
+        hasCustomer: true,
+        last,
+        next,
+        upcoming,
+        canceling,
+        receipts,
+      };
+    } catch {
+      return { ok: false };
+    }
+  });
+
 export const startBillingPortal = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .validator((input: { origin: string; updatePaymentMethod?: boolean }) => ({

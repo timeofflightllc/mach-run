@@ -30,6 +30,14 @@ type StripeClient = {
       options?: { idempotencyKey?: string },
     ) => Promise<StripeSubscription>;
   };
+  invoices: {
+    list: (params: {
+      customer: string;
+      status?: "paid";
+      limit?: number;
+    }) => Promise<{ data: StripeInvoice[] }>;
+    createPreview: (params: { customer: string; subscription: string }) => Promise<StripeInvoice>;
+  };
 };
 
 type StripeEvent = { type: string; data: { object: Record<string, unknown> } };
@@ -39,9 +47,23 @@ type StripeSubscription = {
   status: string;
   customer: string | { id: string };
   metadata?: Record<string, string>;
+  cancel_at_period_end?: boolean;
   current_period_end?: number;
   trial_end?: number | null;
   items: { data: Array<{ id?: string; price: { id: string }; current_period_end?: number }> };
+};
+
+type StripeInvoice = {
+  id?: string;
+  amount_due?: number;
+  amount_paid?: number;
+  currency?: string | null;
+  created?: number;
+  period_end?: number;
+  next_payment_attempt?: number | null;
+  hosted_invoice_url?: string | null;
+  invoice_pdf?: string | null;
+  status_transitions?: { paid_at?: number | null };
 };
 
 type StripeCheckoutSession = {
