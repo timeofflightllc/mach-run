@@ -803,6 +803,7 @@ function WhiteStep({
           <div className="flex shrink-0 items-center gap-2">{nav}</div>
         </div>
         {narrow ? <div className="mx-auto w-full max-w-lg">{children}</div> : children}
+        <div className="mt-6 flex items-center justify-end gap-2 border-t border-[#e7e1d6] pt-4">{nav}</div>
       </section>
     </>
   );
