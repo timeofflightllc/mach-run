@@ -1385,7 +1385,7 @@ function Home() {
     const steps = stepsRef.current;
     if (!steps) return;
     const scroller: HTMLDivElement = steps;
-    const mq = window.matchMedia("(max-width: 767px)");
+    const mq = window.matchMedia("(max-width: 1400px)");
     let last = scroller.scrollTop;
     let fingerDown = false;
     let idleTimer: number | null = null;
@@ -1418,16 +1418,21 @@ function Home() {
       if (idleTimer != null) window.clearTimeout(idleTimer);
       idleTimer = window.setTimeout(expandIfAtTop, 180);
     }
+    function onRange(event: MediaQueryListEvent) {
+      if (!event.matches) commitHeader(false);
+    }
 
     scroller.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("pointerdown", onPointerDown, { passive: true });
     window.addEventListener("pointerup", onPointerUp, { passive: true });
     window.addEventListener("pointercancel", onPointerUp, { passive: true });
+    mq.addEventListener("change", onRange);
     return () => {
       scroller.removeEventListener("scroll", onScroll);
       window.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("pointerup", onPointerUp);
       window.removeEventListener("pointercancel", onPointerUp);
+      mq.removeEventListener("change", onRange);
       if (idleTimer != null) window.clearTimeout(idleTimer);
     };
   }, [advisorNeedsCheck]);
@@ -2082,7 +2087,7 @@ function Home() {
                 {heroCopy.cautionLabel}
               </button>
               {heroCopy.cautionBody.trim() ? (
-                <p className="max-w-3xl text-[11px] leading-snug text-[#fff3c4] sm:text-lg">
+                <p className="max-w-3xl text-[11px] leading-snug text-[#fff3c4] sm:text-[16px] xl:text-lg">
                   {heroCopy.cautionBody}
                 </p>
               ) : null}
@@ -2090,7 +2095,7 @@ function Home() {
                 <Link
                   to="/login"
                   search={{ mode: "up" }}
-                  className="text-[11px] font-semibold text-white underline decoration-[#e8c547] underline-offset-[3px] hover:text-[#fff3c4] sm:text-lg"
+                  className="text-[11px] font-semibold text-white underline decoration-[#e8c547] underline-offset-[3px] hover:text-[#fff3c4] sm:text-[16px] xl:text-lg"
                 >
                   {heroCopy.cautionLink}
                 </Link>
@@ -2115,10 +2120,10 @@ function Home() {
               <span className="inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
                 {heroCopy.startLabel}
               </span>
-              <p className="w-full max-w-6xl text-[11px] leading-snug text-[#fff3c4] sm:text-lg 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
+              <p className="w-full max-w-6xl text-[11px] leading-snug text-[#fff3c4] sm:text-[16px] xl:text-lg 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
                 “{boydLine}”
               </p>
-              <p className="w-full max-w-6xl text-[11px] leading-snug text-[#fff3c4] sm:text-lg 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
+              <p className="w-full max-w-6xl text-[11px] leading-snug text-[#fff3c4] sm:text-[16px] xl:text-lg 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
                 - John Boyd
               </p>
             </div>
