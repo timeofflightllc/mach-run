@@ -389,7 +389,7 @@ function RetiredPayQuiz() {
           Free Military Retirement Pay Calculator
         </h1>
         <p className="mt-1 px-4 text-center text-xs leading-snug text-white/80">
-          An estimate, not a DFAS or VA determination.
+          Current DOW pay tables: 2026
         </p>
       </header>
       <div className="mx-auto flex w-full max-w-lg flex-col px-4 pb-10 pt-3 sm:px-6">
