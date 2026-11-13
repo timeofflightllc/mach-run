@@ -42,7 +42,7 @@ export function MachWordmark({
         height={271}
         className={cn(
           "block w-auto shrink-0 object-contain object-left",
-          large ? "h-16 sm:h-20" : "h-12 sm:h-14 md:h-16",
+          large ? "h-16 sm:h-20" : "h-[2.55rem] sm:h-14 md:h-16",
         )}
       />
     </span>

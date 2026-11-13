@@ -368,7 +368,7 @@ export const DEFAULT_HERO_COPY: HeroCopy = {
     'Matthew "Cain" Olde flew F-15s for the U.S. Air Force and retired into the same problem every military household has: active duty, guard/reserve, or retired pay, VA, TSP, a spouse\'s paycheck, and Social Security all land in different places, and nothing shows them together. His father was a USAF fighter pilot who became a Certified Financial Planner, so he grew up with a love of fighter jets and personal finances. MACH RUN is the tool Matt wished existed, built after he hung up the G-suit.',
   founderLink: "Read the full story →",
   cautionLabel: "Master Caution",
-  cautionBody: "Your MACH RUN information is not saved until you create an account.",
+  cautionBody: "MACH RUN is not saved until you create an account.",
   cautionLink: "Create a free account in 30 seconds.",
   clearDemo: "Clear demonstration information from MACH RUN",
   startLabel: "Get Started Below",
@@ -439,6 +439,12 @@ export function parseHeroCopy(raw: string): HeroCopy {
     if (key === "headline" || key === "text") continue;
     const value = src[key];
     if (typeof value === "string") next[key] = value;
+  }
+  if (
+    next.cautionBody.trim() === "Your MACH RUN information is not saved until you create an account." ||
+    next.cautionBody.trim() === "Your MACH RUN is not saved until you create an account."
+  ) {
+    next.cautionBody = DEFAULT_HERO_COPY.cautionBody;
   }
   return next;
 }

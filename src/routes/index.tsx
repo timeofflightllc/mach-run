@@ -893,10 +893,15 @@ function Home() {
   const { user, isPending } = useCurrentUserState();
   const signedIn = Boolean(user?.id);
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const [cautionAck, setCautionAck] = useState(false);
   const [headerSettled, setHeaderSettled] = useState(true);
   const headerCollapsedRef = useRef(false);
   const headerSettleTimer = useRef<number | null>(null);
   const headerHoldUntil = useRef(0);
+  const collapsedHeaderRef = useRef<HTMLDivElement>(null);
+  const expandedHeaderRef = useRef<HTMLDivElement>(null);
+  const [headerBox, setHeaderBox] = useState<number | null>(null);
+  const headerBoxReady = useRef(false);
   useEffect(() => {
     const stored = readHeaderCollapsed();
     headerCollapsedRef.current = stored;
@@ -1210,25 +1215,6 @@ function Home() {
     };
   }, []);
 
-  useEffect(() => {
-    const header = document.getElementById("mach-header");
-    if (!header || typeof ResizeObserver === "undefined") return;
-    const sync = () => {
-      try {
-        const h = Math.ceil(header.getBoundingClientRect().height);
-        const prev = document.documentElement.style.getPropertyValue("--mach-header-h");
-        if (prev === `${h}px`) return;
-        document.documentElement.style.setProperty("--mach-header-h", `${h}px`);
-      } catch {
-        /* ignore */
-      }
-    };
-    sync();
-    const ro = new ResizeObserver(sync);
-    ro.observe(header);
-    return () => ro.disconnect();
-  }, []);
-
   const displayPlan = run
     ? {
         ...run.plan,
@@ -1329,244 +1315,140 @@ function Home() {
   const [demoLoaded, setDemoLoaded] = useState(false);
   const demoNoted = useRef(false);
   const stepsRef = useRef<HTMLDivElement>(null);
-  const engagedRef = useRef(false);
-  const [stepsH, setStepsH] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    if (advisorNeedsCheck) return;
+    const el = headerCollapsed ? collapsedHeaderRef.current : expandedHeaderRef.current;
+    if (!el) return;
+    const next = el.offsetHeight;
+    if (!headerBoxReady.current) {
+      headerBoxReady.current = true;
+      setHeaderBox(next);
+      return;
+    }
+    const id = window.requestAnimationFrame(() => setHeaderBox(next));
+    return () => window.cancelAnimationFrame(id);
+  }, [headerCollapsed, advisorNeedsCheck, signedIn, advisorPlanHeld]);
+  useEffect(() => {
+    if (advisorNeedsCheck) return;
+    const html = document.documentElement;
+    const body = document.body;
+    const prevHtml = html.style.overflow;
+    const prevBody = body.style.overflow;
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    return () => {
+      html.style.overflow = prevHtml;
+      body.style.overflow = prevBody;
+    };
+  }, [advisorNeedsCheck]);
 
   useEffect(() => {
+    if (advisorNeedsCheck) return;
+    const header = document.getElementById("mach-header");
+    if (!header || typeof ResizeObserver === "undefined") return;
+    const sync = () => {
+      try {
+        const caution = document.getElementById("master-caution");
+        const headerPx = Math.ceil(header.getBoundingClientRect().height);
+        const chrome = headerPx + Math.ceil(caution?.getBoundingClientRect().height ?? 0);
+        const root = document.documentElement.style;
+        const chromeValue = `${chrome}px`;
+        const headerValue = `${headerPx}px`;
+        if (root.getPropertyValue("--mach-header-h") !== chromeValue) {
+          root.setProperty("--mach-header-h", chromeValue);
+        }
+        if (root.getPropertyValue("--header-h") !== headerValue) root.setProperty("--header-h", headerValue);
+      } catch {
+        /* ignore */
+      }
+    };
+    const ro = new ResizeObserver(sync);
+    const seen = new Set<Element>();
+    const watch = (node: Element | null) => {
+      if (!node || seen.has(node)) return;
+      seen.add(node);
+      ro.observe(node);
+    };
+    watch(header);
+    watch(document.getElementById("master-caution"));
+    const mo = new MutationObserver(() => watch(document.getElementById("master-caution")));
+    if (header.parentElement) mo.observe(header.parentElement, { childList: true });
+    sync();
+    return () => {
+      ro.disconnect();
+      mo.disconnect();
+    };
+  }, [advisorNeedsCheck]);
+
+  useEffect(() => {
+    if (advisorNeedsCheck) return;
+    const steps = stepsRef.current;
+    if (!steps) return;
+    const scroller: HTMLDivElement = steps;
     const mq = window.matchMedia("(max-width: 767px)");
-    let last = window.scrollY;
-    function topOf(event: Event) {
-      const steps = stepsRef.current;
-      if (event.currentTarget === steps && steps) return steps.scrollTop;
-      return window.scrollY;
+    let last = scroller.scrollTop;
+    let fingerDown = false;
+    let idleTimer: number | null = null;
+
+    function onPointerDown() {
+      fingerDown = true;
     }
-    function onScroll(event: Event) {
+    function onPointerUp() {
+      fingerDown = false;
+      if (idleTimer != null) window.clearTimeout(idleTimer);
+      idleTimer = window.setTimeout(expandIfAtTop, 180);
+    }
+    function expandIfAtTop() {
+      idleTimer = null;
+      if (fingerDown) return;
       if (!mq.matches) return;
-      const y = topOf(event);
+      if (performance.now() < headerHoldUntil.current) return;
+      if (scroller.scrollTop <= 1) commitHeader(false);
+    }
+    function onScroll() {
+      const y = scroller.scrollTop;
       if (performance.now() < headerHoldUntil.current) {
         last = y;
         return;
       }
       const delta = y - last;
       last = y;
+      if (!mq.matches) return;
       if (delta > 12 && y > 48) commitHeader(true);
-      else if (delta < -1 && y <= 4) commitHeader(false);
+      if (idleTimer != null) window.clearTimeout(idleTimer);
+      idleTimer = window.setTimeout(expandIfAtTop, 180);
     }
-    const steps = stepsRef.current;
-    window.addEventListener("scroll", onScroll, { passive: true });
-    steps?.addEventListener("scroll", onScroll, { passive: true });
+
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("pointerdown", onPointerDown, { passive: true });
+    window.addEventListener("pointerup", onPointerUp, { passive: true });
+    window.addEventListener("pointercancel", onPointerUp, { passive: true });
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      steps?.removeEventListener("scroll", onScroll);
+      scroller.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+      if (idleTimer != null) window.clearTimeout(idleTimer);
     };
-  }, [stepsH]);
+  }, [advisorNeedsCheck]);
 
-  function stepsHeight() {
-    const header = document.getElementById("mach-header");
-    const caution = document.getElementById("master-caution");
-    if (!header || !caution) return null;
-    return Math.max(
-      120,
-      window.innerHeight - header.getBoundingClientRect().height - caution.getBoundingClientRect().height,
-    );
-  }
-
-  function engageSteps() {
-    const steps = stepsRef.current;
-    const h = stepsHeight();
-    if (h == null || !steps) return;
-    engagedRef.current = true;
-    steps.style.height = `${h}px`;
-    steps.style.overflowY = "auto";
-    steps.style.overscrollBehavior = "contain";
-    steps.style.overflowAnchor = "none";
-    setStepsH(h);
-  }
-
-  function releaseSteps() {
-    if (!engagedRef.current && stepsH == null) return;
-    engagedRef.current = false;
-    const steps = stepsRef.current;
-    if (steps) {
-      steps.style.height = "";
-      steps.style.overflowY = "";
-      steps.style.overscrollBehavior = "";
-    }
-    setStepsH(null);
-  }
+  const cautionLive = heroOn && planHasEntries(plan);
 
   useEffect(() => {
-    if (!heroOn) {
-      engagedRef.current = false;
-      setStepsH(null);
-      return;
-    }
-
-    function pair() {
-      const header = document.getElementById("mach-header");
-      const caution = document.getElementById("master-caution");
-      const steps = stepsRef.current;
-      if (!header || !caution || !steps) return null;
-      return { header, caution, steps };
-    }
-
-    function pixels(event: WheelEvent) {
-      if (event.deltaMode === 1) return event.deltaY * 16;
-      if (event.deltaMode === 2) return event.deltaY * window.innerHeight;
-      return event.deltaY;
-    }
-
-    function nested(target: EventTarget | null, steps: HTMLElement) {
-      let node = target instanceof Element ? target : null;
-      while (node && node !== steps) {
-        if (node instanceof HTMLElement) {
-          const oy = getComputedStyle(node).overflowY;
-          if ((oy === "auto" || oy === "scroll") && node.scrollHeight > node.clientHeight + 1) return node;
-        }
-        node = node.parentElement;
-      }
-      return null;
-    }
-
-    const onWheel = (event: WheelEvent) => {
-      const found = pair();
-      if (!found) return;
-      const { header, caution, steps } = found;
-      const dy = pixels(event);
-      if (dy === 0) return;
-      const line = header.getBoundingClientRect().bottom;
-      const top = caution.getBoundingClientRect().top;
-      const inner = nested(event.target, steps);
-      if (inner) {
-        const up = dy < 0;
-        const atTop = inner.scrollTop <= 0;
-        const atBottom = inner.scrollTop + inner.clientHeight >= inner.scrollHeight - 1;
-        if ((up && !atTop) || (!up && !atBottom)) return;
-      }
-      const atLine = top <= line + 1;
-      const wouldCross = dy > 0 && top - dy <= line + 1;
-      if (!engagedRef.current && dy < 0) return;
-      if (!engagedRef.current && !atLine && !wouldCross) return;
-      if (dy < 0 && steps.scrollTop <= 0) {
-        releaseSteps();
-        return;
-      }
-      event.preventDefault();
-      if (!engagedRef.current) engageSteps();
-      steps.scrollTop += dy;
-    };
-
-    let touchY = 0;
-    const onTouchStart = (event: TouchEvent) => {
-      touchY = event.touches[0]?.clientY ?? 0;
-    };
-    const onTouchMove = (event: TouchEvent) => {
-      const found = pair();
-      if (!found) return;
-      const y = event.touches[0]?.clientY ?? touchY;
-      const dy = touchY - y;
-      touchY = y;
-      if (Math.abs(dy) < 1) return;
-      const { header, caution, steps } = found;
-      const line = header.getBoundingClientRect().bottom;
-      const top = caution.getBoundingClientRect().top;
-      const atLine = top <= line + 1;
-      const wouldCross = dy > 0 && top - dy <= line + 1;
-      if (!engagedRef.current && dy < 0) return;
-      if (!engagedRef.current && !atLine && !wouldCross) return;
-      if (dy < 0 && steps.scrollTop <= 0) {
-        releaseSteps();
-        return;
-      }
-      event.preventDefault();
-      if (!engagedRef.current) engageSteps();
-      steps.scrollTop += dy;
-    };
-
-    const onKey = (event: KeyboardEvent) => {
-      if (!engagedRef.current) return;
-      const target = event.target;
-      if (target instanceof HTMLElement) {
-        const tag = target.tagName;
-        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable) return;
-      }
-      const steps = stepsRef.current;
-      if (!steps) return;
-      const up = event.key === "ArrowUp" || event.key === "PageUp" || event.key === "Home";
-      const down = event.key === "ArrowDown" || event.key === "PageDown" || event.key === " ";
-      if (!up && !down) return;
-      if (up && steps.scrollTop <= 0) {
-        releaseSteps();
-        return;
-      }
-      event.preventDefault();
-      if (event.key === "Home") steps.scrollTop = 0;
-      else if (event.key === "ArrowUp") steps.scrollTop -= 48;
-      else if (event.key === "ArrowDown") steps.scrollTop += 48;
-      else if (event.key === "PageUp") steps.scrollTop -= steps.clientHeight * 0.85;
-      else steps.scrollTop += steps.clientHeight * 0.85;
-    };
-
-    const onScroll = () => {
-      if (!engagedRef.current) return;
-      const found = pair();
-      if (!found) return;
-      const top = found.caution.getBoundingClientRect().top;
-      const line = found.header.getBoundingClientRect().bottom;
-      if (top > line + 24) releaseSteps();
-    };
-
-    const onResize = () => {
-      if (!engagedRef.current) return;
-      const h = stepsHeight();
-      if (h == null) {
-        releaseSteps();
-        return;
-      }
-      setStepsH(h);
-    };
-
-    window.addEventListener("wheel", onWheel, { passive: false });
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: false });
-    window.addEventListener("keydown", onKey);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onResize);
-    return () => {
-      window.removeEventListener("wheel", onWheel);
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("keydown", onKey);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onResize);
-      engagedRef.current = false;
-    };
-  }, [heroOn]);
+    if (!cautionLive) setCautionAck(false);
+  }, [cautionLive]);
 
   function scrollStepToTop() {
-    if (!heroOn) {
-      window.scrollTo(0, 0);
-      return;
-    }
-    const header = document.getElementById("mach-header");
-    const caution = document.getElementById("master-caution");
-    if (header && caution) {
-      const y =
-        window.scrollY + caution.getBoundingClientRect().top - header.getBoundingClientRect().bottom;
-      window.scrollTo(0, Math.max(0, y));
-      engageSteps();
-      window.requestAnimationFrame(() => {
-        if (stepsRef.current) stepsRef.current.scrollTop = 0;
-      });
-      return;
-    }
-    releaseSteps();
+    headerHoldUntil.current = performance.now() + 500;
     const steps = stepsRef.current;
-    const headerH = header?.getBoundingClientRect().height ?? 0;
-    if (steps) {
-      const y = window.scrollY + steps.getBoundingClientRect().top - headerH;
-      window.scrollTo(0, Math.max(0, y));
+    if (!steps) return;
+    const main = steps.querySelector("main");
+    if (heroOn && main) {
+      const top = main.getBoundingClientRect().top - steps.getBoundingClientRect().top + steps.scrollTop;
+      steps.scrollTo(0, Math.max(0, top));
+      return;
     }
+    steps.scrollTo(0, 0);
   }
 
   useEffect(() => {
@@ -1593,23 +1475,17 @@ function Home() {
         setStep(place);
         return;
       }
-      const target = document.getElementById(
-        place === "income"
-          ? "ooda-orient"
-          : document.getElementById("master-caution")
-            ? "master-caution"
-            : "ooda-observe",
-      );
-      if (!target || target.getClientRects().length === 0) {
+      const target = document.getElementById(place === "income" ? "ooda-orient" : "ooda-observe");
+      const scroller = stepsRef.current;
+      if (!target || !scroller || target.getClientRects().length === 0) {
         if (tries > 100) window.clearInterval(timer);
         return;
       }
-      const headerH = document.getElementById("mach-header")?.getBoundingClientRect().height ?? 0;
-      const top = target.getBoundingClientRect().top;
-      if (Math.abs(top - headerH - 8) > 20) {
-        window.scrollTo(0, Math.max(0, window.scrollY + top - headerH - 8));
+      const top =
+        target.getBoundingClientRect().top - scroller.getBoundingClientRect().top + scroller.scrollTop;
+      if (Math.abs(target.getBoundingClientRect().top - scroller.getBoundingClientRect().top) > 20) {
+        scroller.scrollTo(0, Math.max(0, top - 8));
       }
-      if (place === "family" && document.getElementById("master-caution")) engageSteps();
       window.clearInterval(timer);
     }, 120);
     return () => window.clearInterval(timer);
@@ -2034,186 +1910,221 @@ function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-bg text-fg">
+    <div className="flex h-dvh flex-col overflow-hidden bg-bg text-fg">
       <WelcomeEmailPreviewOverlay />
       <header
         id="mach-header"
-        className="canopy-bar sticky top-0 z-30 border-b border-border"
+        className="canopy-bar relative z-30 shrink-0 border-b border-border"
       >
-        <div>
         <div
           className={cn(
-            "overflow-hidden transition-[max-height,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-            headerCollapsed ? "max-h-44 opacity-100" : "pointer-events-none max-h-0 opacity-0",
-            headerCollapsed && headerSettled && "overflow-visible",
+            "relative transition-[height] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+            headerSettled ? "overflow-visible" : "overflow-hidden",
           )}
-          inert={!headerCollapsed}
+          style={headerBox != null ? { height: headerBox } : undefined}
         >
-        <div className="page-gutter mx-auto flex max-w-none flex-col gap-1.5 py-1.5 sm:flex-row sm:items-center sm:gap-2">
-          <div className="flex min-w-0 items-center gap-1 sm:contents">
-            <Link to="/" className="shrink-0 [&_img]:!h-7 sm:[&_img]:!h-8" aria-label="MACH RUN">
-              <BrandLockup showTagline={false} />
-            </Link>
-            <div className="ml-auto flex min-w-0 items-center gap-0.5 sm:order-3 sm:ml-0">
-              <SiteMenu align="right" />
-              {signedIn ? (
-                <AuthSlot saved={saveStatus} />
-              ) : (
-                <>
-                  <a href="/pricing" className="px-1 text-[11px] font-medium text-muted hover:text-fg">
-                    Pricing
-                  </a>
-                  <a href="/login" className="px-1 text-[11px] font-medium text-muted hover:text-fg">
-                    Sign In
-                  </a>
-                  <a href="/login?mode=up" className="px-1 text-[11px] font-medium text-muted hover:text-fg">
-                    Create Account
-                  </a>
-                </>
-              )}
-            </div>
-          </div>
-          <nav aria-label="OODA loop" className="min-w-0 sm:order-2 sm:flex sm:flex-1 sm:justify-center">
-            <div className="flex w-full items-center rounded-md bg-surface p-0.5 shadow-[0_0_0_1px_var(--color-border)] sm:max-w-md">
-              <OodaPhaseBar
-                compact
-                shown={shown}
-                shownPhase={shownPhase}
-                shownIndex={shownIndex}
-                onPick={goStep}
-                plan={plan}
-                hasRun={Boolean(run)}
-              />
-              <button
-                type="button"
-                onClick={toggleHeader}
-                aria-pressed
-                aria-label="Show header"
-                title="Show header"
-                className="inline-flex h-8 w-7 shrink-0 items-center justify-center rounded-md text-fg hover:bg-elevated"
-              >
-                <span aria-hidden="true" className="text-sm leading-none">▾</span>
-              </button>
-            </div>
-          </nav>
-        </div>
-        </div>
-        <div
-          className={cn(
-            "overflow-hidden transition-[max-height,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
-            headerCollapsed ? "pointer-events-none max-h-0 opacity-0" : "max-h-[22rem] opacity-100",
-            !headerCollapsed && headerSettled && "overflow-visible",
-          )}
-          inert={headerCollapsed}
-        >
-        <div className="page-gutter relative z-50 mx-auto max-w-none py-2.5">
-          <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
-            <div className="flex min-w-0 items-center gap-0">
-              <BrandLockup showTagline={false} />
-            </div>
-            <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1">
-              <SiteMenu align="right" className="hidden md:block" />
-              <ProfileSwitcher ent={ent} />
-              <AuthSlot saved={saveStatus} />
-            </div>
-            <p className="mt-[0.8px] w-[9.8rem] min-w-0 whitespace-normal text-left text-[11px] font-bold leading-snug tracking-[0.04em] text-muted sm:w-[11.5rem] sm:text-xs sm:tracking-[0.08em] md:w-auto md:whitespace-nowrap md:text-[13px] md:tracking-[0.12em]">
-              The Supersonic Retirement Calculator
-            </p>
-            <div className="flex items-center justify-end gap-1 md:hidden">
-              <SiteMenu align="right" className="z-10" />
-            </div>
-          </div>
-        </div>
-        <nav
-          aria-label="OODA loop"
-          className={cn(
-            "page-gutter mx-auto flex max-w-none items-center gap-2 pb-3",
-            advisorPlanHeld && "hidden",
-          )}
-        >
-          <div className="mx-auto flex min-w-0 max-w-3xl flex-1 rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
-            <OodaPhaseBar
-              shown={shown}
-              shownPhase={shownPhase}
-              shownIndex={shownIndex}
-              onPick={goStep}
-              plan={plan}
-              hasRun={Boolean(run)}
-            />
-          </div>
-          <button
-            type="button"
-            onClick={toggleHeader}
-            aria-pressed={false}
-            aria-label="Hide header"
-            title="Hide header"
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1 rounded-lg bg-surface text-[10px] font-medium uppercase tracking-[0.08em] text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated sm:w-auto sm:px-2.5"
+          <div
+            ref={collapsedHeaderRef}
+            className={cn(headerCollapsed ? "relative" : "pointer-events-none absolute inset-x-0 top-0")}
+            inert={!headerCollapsed}
           >
-            <span className="hidden sm:inline">Collapse</span>
-            <span aria-hidden="true" className="text-base leading-none">▴</span>
-          </button>
-        </nav>
-        </div>
+            <div
+              className={cn(
+                "transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+                headerCollapsed ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-1 opacity-0",
+              )}
+            >
+              <div className="page-gutter mx-auto flex max-w-none flex-col gap-1.5 py-1.5 sm:flex-row sm:items-center sm:gap-2">
+                <div className="flex min-w-0 items-center gap-1 sm:contents">
+                  <Link to="/" className="shrink-0 [&_img]:!h-7 sm:[&_img]:!h-8" aria-label="MACH RUN">
+                    <BrandLockup showTagline={false} />
+                  </Link>
+                  <div className="ml-auto flex shrink-0 items-center gap-0.5 sm:order-3 sm:ml-0">
+                    <SiteMenu align="right" />
+                    {signedIn ? (
+                      <AuthSlot saved={saveStatus} />
+                    ) : (
+                      <>
+                        <a href="/pricing" className="whitespace-nowrap px-1 text-[11px] font-medium text-muted hover:text-fg">
+                          Pricing
+                        </a>
+                        <a href="/login" className="whitespace-nowrap px-1 text-[11px] font-medium text-muted hover:text-fg">
+                          Sign In
+                        </a>
+                        <a href="/login?mode=up" className="whitespace-nowrap px-1 text-[11px] font-medium text-muted hover:text-fg">
+                          Create Account
+                        </a>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <nav aria-label="OODA loop" className={cn("min-w-0 sm:order-2 sm:flex sm:flex-1 sm:justify-center", advisorPlanHeld && "hidden")}>
+                  <div className="flex w-full items-center rounded-md bg-surface p-0.5 shadow-[0_0_0_1px_var(--color-border)] sm:max-w-md">
+                    <OodaPhaseBar
+                      compact
+                      shown={shown}
+                      shownPhase={shownPhase}
+                      shownIndex={shownIndex}
+                      onPick={goStep}
+                      plan={plan}
+                      hasRun={Boolean(run)}
+                    />
+                    <button
+                      type="button"
+                      onClick={toggleHeader}
+                      aria-pressed
+                      aria-label="Show header"
+                      title="Show header"
+                      className="inline-flex h-8 w-7 shrink-0 items-center justify-center rounded-md text-fg hover:bg-elevated"
+                    >
+                      <span aria-hidden="true" className="text-sm leading-none">▾</span>
+                    </button>
+                  </div>
+                </nav>
+              </div>
+            </div>
+          </div>
+          <div
+            ref={expandedHeaderRef}
+            className={cn(headerCollapsed ? "pointer-events-none absolute inset-x-0 top-0" : "relative")}
+            inert={headerCollapsed}
+          >
+            <div
+              className={cn(
+                "transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+                headerCollapsed ? "pointer-events-none -translate-y-2 opacity-0" : "translate-y-0 opacity-100",
+              )}
+            >
+              <div className="page-gutter relative z-50 mx-auto max-w-none py-2.5">
+                <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 gap-y-1">
+                  <div className="flex min-w-0 items-center gap-0">
+                    <BrandLockup showTagline={false} />
+                  </div>
+                  <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1">
+                    <SiteMenu align="right" className="hidden md:block" />
+                    <ProfileSwitcher ent={ent} />
+                    <AuthSlot saved={saveStatus} />
+                  </div>
+                  <p className="mt-[0.8px] w-[9.8rem] min-w-0 whitespace-normal text-left text-[11px] font-bold leading-snug tracking-[0.04em] text-muted sm:w-[11.5rem] sm:text-xs sm:tracking-[0.08em] md:w-auto md:whitespace-nowrap md:text-[13px] md:tracking-[0.12em]">
+                    The Supersonic Retirement Calculator
+                  </p>
+                  <div className="flex items-center justify-end gap-1 md:hidden">
+                    <SiteMenu align="right" className="z-10" />
+                  </div>
+                </div>
+              </div>
+              <nav
+                aria-label="OODA loop"
+                className={cn(
+                  "page-gutter mx-auto flex max-w-none items-center gap-2 pb-3",
+                  advisorPlanHeld && "hidden",
+                )}
+              >
+                <div className="mx-auto flex min-w-0 max-w-3xl flex-1 rounded-lg bg-surface p-1 shadow-[0_0_0_1px_var(--color-border)]">
+                  <OodaPhaseBar
+                    shown={shown}
+                    shownPhase={shownPhase}
+                    shownIndex={shownIndex}
+                    onPick={goStep}
+                    plan={plan}
+                    hasRun={Boolean(run)}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={toggleHeader}
+                  aria-pressed={false}
+                  aria-label="Hide header"
+                  title="Hide header"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1 rounded-lg bg-surface text-[10px] font-medium uppercase tracking-[0.08em] text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated sm:w-auto sm:px-2.5"
+                >
+                  <span className="hidden sm:inline">Collapse</span>
+                  <span aria-hidden="true" className="text-base leading-none">▴</span>
+                </button>
+              </nav>
+            </div>
+          </div>
         </div>
         <EmailVerifyBanner />
         <PasswordLaterBanner />
       </header>
+      <div
+        id={heroOn ? "guest-dock" : undefined}
+        ref={stepsRef}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-bg"
+        style={{ overflowAnchor: "none" }}
+      >
       {heroOn ? <GuestHero onShowFamily={showFamily} onDemo={showDemo} /> : null}
-      <div id={heroOn ? "guest-dock" : undefined}>
       {heroOn ? <MilitaryHousehold onShowFamily={showFamily} onUseDemo={showDemo} /> : null}
+
       {heroOn ? (
-        <div id="master-caution" className="relative z-20 border-t border-[#8a7020] bg-[#2c220e]">
-          <div className="page-gutter mx-auto flex max-w-none flex-col items-center gap-2 py-4 text-center">
-            {planHasEntries(plan) ? (
-              <>
-                <span className="master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
-                  {heroCopy.cautionLabel}
-                </span>
-                {heroCopy.cautionBody.trim() ? (
-                  <p className="max-w-3xl text-base leading-snug text-[#fff3c4] sm:text-lg">
-                    {heroCopy.cautionBody}
-                  </p>
-                ) : null}
-                {heroCopy.cautionLink.trim() ? (
-                  <Link
-                    to="/login"
-                    search={{ mode: "up" }}
-                    className="text-base font-semibold text-white underline decoration-[#e8c547] underline-offset-[3px] hover:text-[#fff3c4] sm:text-lg"
-                  >
-                    {heroCopy.cautionLink}
-                  </Link>
-                ) : null}
-                {demoLoaded && heroCopy.clearDemo.trim() ? (
-                  <button
-                    type="button"
-                    onClick={clearDemo}
-                    className="mt-1 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#e8c547] px-4 py-2 text-sm font-semibold text-[#1a1408] hover:bg-[#f3d56a] active:scale-[0.98]"
-                  >
-                    {heroCopy.clearDemo}
-                  </button>
-                ) : null}
-              </>
-            ) : (
-              <>
-                <span className="inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
-                  {heroCopy.startLabel}
-                </span>
-                <p className="w-full max-w-6xl text-base leading-snug text-[#fff3c4] sm:text-lg 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
-                  “{boydLine}”
+        <div
+          id="master-caution"
+          className="sticky top-0 z-20 border-t border-[#8a7020] bg-[#2c220e]"
+        >
+          <div className="grid">
+            <div
+              className={cn(
+                "page-gutter col-start-1 row-start-1 mx-auto flex w-full max-w-none flex-col items-center gap-2 py-4 text-center max-sm:gap-1 max-sm:py-2.5",
+                planHasEntries(plan) ? "" : "invisible pointer-events-none max-sm:hidden",
+              )}
+              aria-hidden={!planHasEntries(plan)}
+            >
+              <button
+                type="button"
+                onClick={() => setCautionAck(true)}
+                className={cn(
+                  "master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408] max-sm:px-2.5 max-sm:py-0.5 max-sm:text-[11px] max-sm:tracking-[0.14em]",
+                  cautionAck && "invisible pointer-events-none",
+                )}
+                tabIndex={cautionAck ? -1 : undefined}
+              >
+                {heroCopy.cautionLabel}
+              </button>
+              {heroCopy.cautionBody.trim() ? (
+                <p className="max-w-3xl text-[11px] leading-snug text-[#fff3c4] sm:text-[15px]">
+                  {heroCopy.cautionBody}
                 </p>
-                <p className="w-full max-w-6xl text-base leading-snug text-[#fff3c4] sm:text-lg 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
-                  - John Boyd
-                </p>
-              </>
-            )}
+              ) : null}
+              {heroCopy.cautionLink.trim() ? (
+                <Link
+                  to="/login"
+                  search={{ mode: "up" }}
+                  className="text-[11px] font-semibold text-white underline decoration-[#e8c547] underline-offset-[3px] hover:text-[#fff3c4] sm:text-[15px]"
+                >
+                  {heroCopy.cautionLink}
+                </Link>
+              ) : null}
+              {demoLoaded && heroCopy.clearDemo.trim() ? (
+                <button
+                  type="button"
+                  onClick={clearDemo}
+                  className="mt-1 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#e8c547] px-4 py-2 text-sm font-semibold text-[#1a1408] hover:bg-[#f3d56a] active:scale-[0.98]"
+                >
+                  {heroCopy.clearDemo}
+                </button>
+              ) : null}
+            </div>
+            <div
+              className={cn(
+                "page-gutter col-start-1 row-start-1 mx-auto flex w-full max-w-none flex-col items-center gap-2 py-4 text-center",
+                planHasEntries(plan) ? "invisible pointer-events-none max-sm:hidden" : "",
+              )}
+              aria-hidden={planHasEntries(plan)}
+            >
+              <span className="inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
+                {heroCopy.startLabel}
+              </span>
+              <p className="w-full max-w-6xl text-[11px] leading-snug text-[#fff3c4] sm:text-lg 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
+                “{boydLine}”
+              </p>
+              <p className="w-full max-w-6xl text-[11px] leading-snug text-[#fff3c4] sm:text-lg 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
+                - John Boyd
+              </p>
+            </div>
           </div>
         </div>
       ) : null}
-      <div
-        ref={stepsRef}
-        className={stepsH != null ? "overflow-y-auto overscroll-contain bg-bg" : undefined}
-        style={stepsH != null ? { height: stepsH, overflowAnchor: "none" } : undefined}
-      >
 
       {advisorPlanHeld ? null : (
       <main className="relative z-10 bg-bg page-gutter mx-auto flex max-w-none flex-col gap-5 py-5">
@@ -2478,9 +2389,7 @@ function Home() {
                 <div
                   className={cn(
                     "flex min-w-0 flex-1 flex-row gap-2 overflow-x-auto pr-12 min-[72rem]:sticky min-[72rem]:z-20 min-[72rem]:h-max min-[72rem]:w-14 min-[72rem]:flex-none min-[72rem]:flex-col min-[72rem]:self-start min-[72rem]:overflow-visible min-[72rem]:pr-0",
-                    stepsH != null
-                      ? "min-[72rem]:top-3"
-                      : "min-[72rem]:top-[calc(var(--mach-header-h,7rem)+0.75rem)]",
+                    "min-[72rem]:top-3",
                   )}
                 >
                   <div role="tablist" aria-label="Act" className="contents">
@@ -2504,9 +2413,7 @@ function Home() {
                   <div
                     className={cn(
                       "min-[72rem]:sticky min-[72rem]:z-20 min-[72rem]:h-max min-[72rem]:w-14",
-                      stepsH != null
-                        ? "min-[72rem]:top-3"
-                        : "min-[72rem]:top-[calc(var(--mach-header-h,7rem)+0.75rem)]",
+                      "min-[72rem]:top-3",
                     )}
                   >
                     <OodaRail open={oodaOpen} onToggle={() => setOodaOpen((open) => !open)} />
@@ -2702,7 +2609,6 @@ function Home() {
       </main>
       )}
       <MachFooter disclaimer />
-      </div>
       </div>
       {stalePrompt && !advisorPlanHeld ? (
         <StaleRunPrompt
