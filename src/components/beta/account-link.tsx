@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { betaPageFn } from "@/lib/beta/api";
-import { BETA_SECTIONS, type BetaAnswers, type BetaPage } from "@/lib/beta/form";
+import { downloadBetaPdf } from "@/lib/beta/pdf";
+import type { BetaPage } from "@/lib/beta/form";
 
 type OpenPage = Extract<BetaPage, { open: true }>;
 
@@ -18,57 +19,10 @@ function when(iso: string): string {
   });
 }
 
-function line(label: string, value: string) {
-  return (
-    <p className="text-sm text-fg">
-      <span className="text-muted">{label}: </span>
-      {value.trim() || "—"}
-    </p>
-  );
-}
-
-function ReadOnlyDebrief({ answers }: { answers: BetaAnswers }) {
-  return (
-    <div className="space-y-5 border-t border-border pt-4">
-      {BETA_SECTIONS.map((section) => {
-        const answer = answers.sections[section.key];
-        return (
-          <div key={section.key} className="space-y-1">
-            <p className="text-sm font-semibold text-fg">{section.title}</p>
-            {answer.notes.trim() ? (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-fg">{answer.notes}</p>
-            ) : null}
-            {section.prompts.map((prompt, index) => (
-              <div key={prompt} className="space-y-1">
-                <p className="text-sm text-muted">{prompt}</p>
-                <p className="whitespace-pre-wrap text-sm leading-relaxed text-fg">
-                  {(answer.replies?.[index] ?? "").trim() || "—"}
-                </p>
-              </div>
-            ))}
-          </div>
-        );
-      })}
-      <div className="space-y-1">
-        <p className="text-sm font-semibold text-fg">Thank-you gift</p>
-        <p className="text-sm text-muted">Please do not send a hat: {answers.hat.decline ? "yes" : "no"}</p>
-        {line("Full name", answers.hat.fullName)}
-        {line("Street address (line 1)", answers.hat.line1)}
-        {line("Street address (line 2)", answers.hat.line2)}
-        {line("City", answers.hat.city)}
-        {line("State", answers.hat.state)}
-        {line("ZIP", answers.hat.zip)}
-        {line("Country", answers.hat.country)}
-        {line("Delivery notes", answers.hat.notes)}
-      </div>
-    </div>
-  );
-}
-
 /** Card under Referrals. Hidden unless this email is invited. */
 export function BetaAccountLink() {
   const [page, setPage] = useState<OpenPage | null>(null);
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState<string | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -105,17 +59,26 @@ export function BetaAccountLink() {
         <div className="space-y-2">
           {page.submitted.map((row, index) => {
             const pass = page.submitted.length - index;
-            const open = openId === row.id;
+            const busy = downloading === row.id;
             return (
               <div key={row.id}>
                 <button
                   type="button"
-                  onClick={() => setOpenId(open ? null : row.id)}
-                  className="text-left text-sm text-fg underline underline-offset-4"
+                  disabled={busy}
+                  onClick={() => {
+                    setDownloading(row.id);
+                    void downloadBetaPdf({
+                      name: row.answers.name,
+                      email: row.answers.email || page.email,
+                      pass,
+                      submittedAt: row.submittedAt,
+                      answers: row.answers,
+                    }).finally(() => setDownloading(null));
+                  }}
+                  className="text-left text-sm text-fg underline underline-offset-4 disabled:opacity-60"
                 >
-                  Pass {pass} · {when(row.submittedAt)} UTC
+                  {busy ? "Preparing PDF…" : `Pass ${pass} · ${when(row.submittedAt)} UTC`}
                 </button>
-                {open ? <ReadOnlyDebrief answers={row.answers} /> : null}
               </div>
             );
           })}
