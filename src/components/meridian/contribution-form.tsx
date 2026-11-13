@@ -589,6 +589,7 @@ export function ContributionForm() {
                     <span className="min-w-0 text-left">
                       <span className="block truncate text-sm font-medium text-fg">{c.label.trim() || "Contribution"}</span>
                       <span className="block text-xs text-muted">{accountLabel(plan, c)} · {amount.main}</span>
+                      <span className="block text-xs text-muted">Start: {shortDate(c.startDate) === "ongoing" ? "—" : shortDate(c.startDate)} · End: {c.endDate ? shortDate(c.endDate) : "Ongoing"}</span>
                     </span>
                     <span className="flex shrink-0 items-center gap-3">
                       <button type="button" className="text-xs text-muted hover:text-negative" onClick={() => setPendingRemove(c.id)}>

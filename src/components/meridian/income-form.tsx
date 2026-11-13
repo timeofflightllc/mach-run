@@ -689,6 +689,7 @@ function IncomeRow({
             <span className="min-w-0 text-left">
               <span className="block truncate text-sm font-medium text-fg">{name}</span>
               <span className="block text-xs text-muted">{kindLabel(s.kind)} · {amountLabel(plan, s)}</span>
+              <span className="block text-xs text-muted">Start: {shortDate(s.startDate) === "ongoing" ? "—" : shortDate(s.startDate)} · End: {s.endDate ? shortDate(s.endDate) : "Ongoing"}</span>
             </span>
             <span className="flex shrink-0 items-center gap-3">
               <button type="button" className="text-xs text-muted hover:text-negative" onClick={onRemove}>
