@@ -1,4 +1,5 @@
 import { createHash, randomInt, timingSafeEqual } from "node:crypto";
+import { verifyPassword } from "better-auth/crypto";
 import { getSql } from "@/lib/db";
 
 const TTL_MS = 24 * 60 * 60 * 1000;
@@ -18,6 +19,9 @@ async function ensureTable() {
   `);
   await sql.query(
     `alter table email_verify_codes add column if not exists emailed_at timestamptz`,
+  );
+  await sql.query(
+    `alter table email_verify_codes add column if not exists pending_email text`,
   );
 }
 
@@ -94,7 +98,7 @@ export async function verifyEmailMeta(userId: string): Promise<{
 }
 
 export type VerifyResult =
-  | { ok: true }
+  | { ok: true; changed?: true }
   | { ok: false; reason: string };
 
 export async function consumeVerifyCode(
@@ -155,5 +159,173 @@ export async function deliverVerifyEmail(input: {
   });
   if (!sent.ok) return { ok: false, reason: sent.reason };
   await markCodeEmailed(input.userId);
+  return { ok: true };
+}
+
+/** Password is checked before any row is written. The user email stays the old one. */
+export async function beginEmailChange(input: {
+  userId: string;
+  email: string;
+  password: string;
+}): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const email = input.email.trim().toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { ok: false, reason: "Enter a valid email." };
+  }
+  const sql = await getSql();
+  const accounts = await sql.query<{ password: string | null }>(
+    `select password from "account" where "userId" = $1`,
+    [input.userId],
+  );
+  const hash = accounts.find((row) => row.password && row.password.length > 0)?.password ?? null;
+  if (!hash) {
+    return {
+      ok: false,
+      reason: "Set a password on this page first. Apple, Google, and X do not change this email.",
+    };
+  }
+  if (!input.password || !(await verifyPassword({ hash, password: input.password }))) {
+    return { ok: false, reason: "That password does not match." };
+  }
+
+  const users = await sql.query<{ email: string | null; name: string | null }>(
+    `select email, name from "user" where id = $1 limit 1`,
+    [input.userId],
+  );
+  const current = (users[0]?.email ?? "").trim().toLowerCase();
+  if (!current) return { ok: false, reason: "No email on this account." };
+  if (email === current) return { ok: false, reason: "That is already the email on this account." };
+
+  const taken = await sql.query<{ id: string }>(
+    `select id from "user" where lower(email) = $1 and id <> $2 limit 1`,
+    [email, input.userId],
+  );
+  if (taken[0]) return { ok: false, reason: "That email cannot be used." };
+
+  const code = await issueVerifyCode(input.userId);
+  await sql.query(`update email_verify_codes set pending_email = $2 where user_id = $1`, [
+    input.userId,
+    email,
+  ]);
+  const { sendEmailChangeCode } = await import("../notify/signup");
+  const sent = await sendEmailChangeCode({
+    id: input.userId,
+    name: users[0]?.name ?? null,
+    email,
+    code,
+  });
+  if (!sent.ok) {
+    await sql.query(`delete from email_verify_codes where user_id = $1`, [input.userId]);
+    return { ok: false, reason: "Could not send the code. Nothing was changed." };
+  }
+  await markCodeEmailed(input.userId);
+  return { ok: true };
+}
+
+export async function readPendingEmail(userId: string): Promise<string | null> {
+  await ensureTable();
+  const sql = await getSql();
+  const rows = await sql.query<{ pending_email: string | null }>(
+    `select pending_email from email_verify_codes where user_id = $1 limit 1`,
+    [userId],
+  );
+  const email = (rows[0]?.pending_email ?? "").trim().toLowerCase();
+  return email || null;
+}
+
+async function syncStripeCustomerEmail(userId: string, email: string): Promise<void> {
+  if (!(process.env.STRIPE_SECRET_KEY ?? "").trim()) return;
+  const sql = await getSql();
+  const rows = await sql.query<{ stripe_customer_id: string | null }>(
+    `select stripe_customer_id from mach_subscriptions where user_id = $1 limit 1`,
+    [userId],
+  );
+  const customerId = rows[0]?.stripe_customer_id?.trim();
+  if (!customerId) return;
+  const { getStripe } = await import("../billing/stripe.server");
+  const stripe = await getStripe();
+  await stripe.customers.update(customerId, { email });
+}
+
+/** A correct code writes the pending address. A miss leaves the account email alone. */
+export async function confirmEmailChange(
+  userId: string,
+  rawCode: string,
+): Promise<VerifyResult> {
+  const code = rawCode.replace(/\D/g, "").slice(0, 6);
+  if (code.length !== 6) return { ok: false, reason: "Enter the 6-digit code from the email." };
+  await ensureTable();
+  const sql = await getSql();
+  const rows = await sql.query<{
+    code_hash: string;
+    expires_at: string | Date;
+    attempts: number;
+    pending_email: string | null;
+  }>(
+    `select code_hash, expires_at, attempts, pending_email from email_verify_codes where user_id = $1 limit 1`,
+    [userId],
+  );
+  const row = rows[0];
+  const pending = (row?.pending_email ?? "").trim().toLowerCase();
+  if (!row || !pending) return { ok: false, reason: "No email change is waiting." };
+
+  const expires = new Date(row.expires_at).getTime();
+  if (Number.isFinite(expires) && expires < Date.now()) {
+    return { ok: false, reason: "That code expired. Use Resend code." };
+  }
+  if (row.attempts >= MAX_ATTEMPTS) {
+    return { ok: false, reason: "Too many tries. Use Resend code." };
+  }
+  if (!hashesEqual(row.code_hash, hashCode(userId, code))) {
+    await sql.query(
+      `update email_verify_codes set attempts = attempts + 1 where user_id = $1`,
+      [userId],
+    );
+    return { ok: false, reason: "That code does not match." };
+  }
+
+  const taken = await sql.query<{ id: string }>(
+    `select id from "user" where lower(email) = $1 and id <> $2 limit 1`,
+    [pending, userId],
+  );
+  if (taken[0]) return { ok: false, reason: "That email cannot be used." };
+
+  try {
+    await sql.query(
+      `update "user" set email = $2, "emailVerified" = true, "updatedAt" = now() where id = $1`,
+      [userId, pending],
+    );
+  } catch {
+    return { ok: false, reason: "That email cannot be used." };
+  }
+  await sql.query(`delete from email_verify_codes where user_id = $1`, [userId]);
+  try {
+    await syncStripeCustomerEmail(userId, pending);
+  } catch {
+    /* the address is already on the account */
+  }
+  return { ok: true, changed: true };
+}
+
+export async function resendEmailChange(
+  userId: string,
+): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const pending = await readPendingEmail(userId);
+  if (!pending) return { ok: false, reason: "No email change is waiting." };
+  const sql = await getSql();
+  const users = await sql.query<{ name: string | null }>(
+    `select name from "user" where id = $1 limit 1`,
+    [userId],
+  );
+  const code = await issueVerifyCode(userId);
+  const { sendEmailChangeCode } = await import("../notify/signup");
+  const sent = await sendEmailChangeCode({
+    id: userId,
+    name: users[0]?.name ?? null,
+    email: pending,
+    code,
+  });
+  if (!sent.ok) return { ok: false, reason: "Could not send the code. The old email is unchanged." };
+  await markCodeEmailed(userId);
   return { ok: true };
 }

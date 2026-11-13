@@ -429,6 +429,56 @@ export async function sendWelcomeSignupEmail(notice: SignupNotice): Promise<Noti
   return sendResend({ to: [to], ...mail });
 }
 
+export async function sendEmailChangeCode(notice: SignupNotice): Promise<NotifyResult> {
+  const to = (notice.email ?? "").trim();
+  const code = (notice.code ?? "").replace(/\D/g, "").slice(0, 6);
+  if (!to || code.length !== 6) return { ok: false, skipped: true, reason: "No address or code." };
+  const rawName = (notice.name ?? "").trim();
+  const first = rawName.split(/\s+/)[0] || "";
+  const hello = first ? `Hi ${first},` : "Hi,";
+  const verifyUrl = "https://machrun.com/verify-email";
+  const subject = "Confirm your new MACH RUN email";
+  const text = [
+    hello,
+    "",
+    "This code confirms this new MACH RUN address. It expires in 24 hours.",
+    "",
+    `Your code is ${code}.`,
+    `Open ${verifyUrl} and enter that code.`,
+    "",
+    "— MACH RUN",
+  ].join("\n");
+  const html = wrapEmail(
+    "Confirm this address",
+    `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#3D4A54;">
+          ${escapeHtml(hello)}
+        </td></tr>
+        <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.55;color:#3D4A54;">
+          This code confirms this new MACH RUN address. It expires in 24 hours.
+        </td></tr>
+        <tr><td align="center" style="padding:0 28px 16px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="background-color:#1A2330;">
+            <tr><td style="padding:14px 28px;font-family:Arial,Helvetica,sans-serif;font-size:32px;letter-spacing:0.28em;color:#E8EDF1;">
+              ${escapeHtml(code)}
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td align="center" style="padding:0 28px 24px;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+            <tr>
+              <td align="center" bgcolor="#3A8A58" style="background-color:#3A8A58;">
+                <a href="${verifyUrl}" style="display:inline-block;padding:12px 28px;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#FFF8F4;text-decoration:none;">Enter the code</a>
+              </td>
+            </tr>
+          </table>
+        </td></tr>`,
+    "This code confirms your new MACH RUN address.",
+    "left",
+    false,
+  );
+  return sendResend({ to: [to], subject, html, text });
+}
+
 const FIRST_FLIGHT_STEPS = [
   {
     n: "1",

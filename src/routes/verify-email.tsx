@@ -11,6 +11,7 @@ import {
 import {
   emailVerifyStatus,
   ensureEmailVerifyCode,
+  pendingEmailChange,
   resendEmailVerifyCode,
   submitEmailVerifyCode,
 } from "@/lib/auth/email-verify-api";
@@ -75,6 +76,7 @@ function VerifyEmail() {
   const [pendingPassword, setPendingPassword] = useState("");
   const [ready, setReady] = useState(false);
   const [code, setCode] = useState("");
+  const [changeEmail, setChangeEmail] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState<"check" | "send" | null>(null);
@@ -135,15 +137,39 @@ function VerifyEmail() {
       window.location.href = backToRegister;
       return;
     }
-    void emailVerifyStatus()
-      .then((s) => {
-        if (s.verified) {
-          window.location.href = next;
+    let cancelled = false;
+    void pendingEmailChange()
+      .then((change) => {
+        if (cancelled) return;
+        if (change.email) {
+          setChangeEmail(change.email);
           return;
         }
-        void ensureEmailVerifyCode().catch(() => {});
+        return emailVerifyStatus().then((s) => {
+          if (cancelled) return;
+          if (s.verified) {
+            window.location.href = next;
+            return;
+          }
+          void ensureEmailVerifyCode().catch(() => {});
+        });
       })
-      .catch(() => {});
+      .catch(() => {
+        if (cancelled) return;
+        void emailVerifyStatus()
+          .then((s) => {
+            if (cancelled) return;
+            if (s.verified) {
+              window.location.href = next;
+              return;
+            }
+            void ensureEmailVerifyCode().catch(() => {});
+          })
+          .catch(() => {});
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [ready, isPending, user, pendingEmail, next, backToRegister]);
 
   const waitingOnPending = Boolean(pendingEmail && !user);
@@ -200,6 +226,15 @@ function VerifyEmail() {
         setError(result.reason);
         return;
       }
+      if (result.changed || changeEmail) {
+        try {
+          await authClient.getSession({ query: { disableCookieCache: true } });
+        } catch {
+          /* the row is already updated */
+        }
+        window.location.href = "/account";
+        return;
+      }
       window.location.href = next;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not verify.");
@@ -239,7 +274,11 @@ function VerifyEmail() {
     }
   }
 
-  const inbox = waitingOnPending ? pendingEmail : (user?.primaryEmail ?? "your inbox");
+  const inbox = changeEmail
+    ? changeEmail
+    : waitingOnPending
+      ? pendingEmail
+      : (user?.primaryEmail ?? "your inbox");
 
   return (
     <main className="flex min-h-screen flex-col bg-bg py-10 text-fg">
@@ -276,9 +315,11 @@ function VerifyEmail() {
               )}
             </p>
             <p className="text-sm text-muted">
-              {choosePassword
-                ? "The account is not created until this link is opened. The link lasts 24 hours."
-                : "Your MACH RUN account is not created until this is accepted. That helps us ensure bots don't flood our registration system and website. The link lasts 24 hours."}
+              {changeEmail
+                ? "This code confirms the new address. It expires in 24 hours."
+                : choosePassword
+                  ? "The account is not created until this link is opened. The link lasts 24 hours."
+                  : "Your MACH RUN account is not created until this is accepted. That helps us ensure bots don't flood our registration system and website. The link lasts 24 hours."}
             </p>
             {waitingOnPending ? (
               <a
@@ -308,7 +349,13 @@ function VerifyEmail() {
             <p className="text-sm text-muted">{opening ? "Opening your MACH RUN…" : "This opens the sketch. No password on this screen."}</p>
           ) : null}
           <PrimaryButton type="submit" disabled={busy !== null || opening || (!choosePassword && code.length !== 6)}>
-            {opening || busy === "check" ? "Opening…" : choosePassword ? "Open your MACH RUN" : "Create my account"}
+            {opening || busy === "check"
+              ? "Opening…"
+              : choosePassword
+                ? "Open your MACH RUN"
+                : changeEmail
+                  ? "Confirm this address"
+                  : "Create my account"}
           </PrimaryButton>
           <button
             type="button"

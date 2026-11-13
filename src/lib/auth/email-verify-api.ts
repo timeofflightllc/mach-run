@@ -23,7 +23,11 @@ export const submitEmailVerifyCode = createServerFn({ method: "POST" })
     code: String(input?.code ?? ""),
   }))
   .handler(async ({ context, data }) => {
-    const { consumeVerifyCode } = await import("./email-verify.server");
+    const { consumeVerifyCode, readPendingEmail, confirmEmailChange } = await import(
+      "./email-verify.server"
+    );
+    const pending = await readPendingEmail(context.userId);
+    if (pending) return confirmEmailChange(context.userId, data.code);
     const result = await consumeVerifyCode(context.userId, data.code);
     if (!result.ok) return result;
     try {
@@ -50,6 +54,9 @@ export const submitEmailVerifyCode = createServerFn({ method: "POST" })
 async function sendCodeForSession(userId: string): Promise<
   { ok: true; already?: true } | { ok: false; reason: string }
 > {
+  const { readPendingEmail, resendEmailChange } = await import("./email-verify.server");
+  const pending = await readPendingEmail(userId);
+  if (pending) return resendEmailChange(userId);
   const sql = await getSql();
   const rows = await sql.query<{ email: string | null; name: string | null; verified: boolean }>(
     `select email, name, "emailVerified" as verified from "user" where id = $1 limit 1`,
@@ -68,6 +75,18 @@ async function sendCodeForSession(userId: string): Promise<
   return { ok: false, reason: sent.reason };
 }
 
+export const pendingEmailChange = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }) => {
+    try {
+      const { readPendingEmail } = await import("./email-verify.server");
+      const email = await readPendingEmail(context.userId);
+      return { email };
+    } catch {
+      return { email: null as string | null };
+    }
+  });
+
 export const resendEmailVerifyCode = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => sendCodeForSession(context.userId));
@@ -76,6 +95,9 @@ export const resendEmailVerifyCode = createServerFn({ method: "POST" })
 export const ensureEmailVerifyCode = createServerFn({ method: "POST" })
   .middleware([authMiddleware])
   .handler(async ({ context }) => {
+    const { readPendingEmail } = await import("./email-verify.server");
+    const pending = await readPendingEmail(context.userId);
+    if (pending) return { ok: true as const };
     const sql = await getSql();
     const rows = await sql.query<{ email: string | null; name: string | null; verified: boolean }>(
       `select email, name, "emailVerified" as verified from "user" where id = $1 limit 1`,
@@ -98,4 +120,24 @@ export const ensureEmailVerifyCode = createServerFn({ method: "POST" })
     });
     if (sent.ok) return { ok: true as const };
     return { ok: false as const, reason: sent.reason };
+  });
+
+/** Holds a new address and mails a code. Does not change the account email. */
+export const startEmailChange = createServerFn({ method: "POST" })
+  .middleware([authMiddleware])
+  .validator((input: { email?: string; confirm?: string; password?: string }) => ({
+    email: String(input?.email ?? "").trim().toLowerCase(),
+    confirm: String(input?.confirm ?? "").trim().toLowerCase(),
+    password: String(input?.password ?? ""),
+  }))
+  .handler(async ({ context, data }) => {
+    if (!data.email || data.email !== data.confirm) {
+      return { ok: false as const, reason: "Those two emails do not match." };
+    }
+    const { beginEmailChange } = await import("./email-verify.server");
+    return beginEmailChange({
+      userId: context.userId,
+      email: data.email,
+      password: data.password,
+    });
   });

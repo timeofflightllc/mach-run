@@ -16,6 +16,7 @@ import { authClient, signIn, signInWithApple, signInWithGoogle, signInWithX, sig
 import { PASSWORD_MAX_LENGTH, PASSWORD_MIN_LENGTH } from "@/lib/auth/email-password";
 import { deleteMyAccount, getDeleteOptions } from "@/lib/auth/delete-account-api";
 import { passwordLaterStatus, setLaterPassword } from "@/lib/auth/pending-signup-api";
+import { startEmailChange } from "@/lib/auth/email-verify-api";
 import type { DeleteProvider } from "@/lib/auth/delete-account";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { RedirectToSignIn } from "@/lib/auth/gates";
@@ -54,7 +55,8 @@ function Account() {
   const setPlan = usePlanStore((s) => s.setPlan);
   const [name, setName] = useState(user?.displayName ?? "");
   const [email, setEmail] = useState(user?.primaryEmail ?? "");
-  const [currentPassword, setCurrentPassword] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [emailPassword, setEmailPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [laterNeeded, setLaterNeeded] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -233,21 +235,47 @@ function Account() {
     setBusy("profile");
     setError(null);
     setMsg(null);
+    let held = false;
     try {
       const nextName = name.trim();
-      if (nextName && nextName !== (user?.displayName ?? "")) {
+      const nameChanged = Boolean(nextName) && nextName !== (user?.displayName ?? "");
+      const nextEmail = email.trim();
+      const changingEmail =
+        nextEmail.toLowerCase() !== (user?.primaryEmail ?? "").trim().toLowerCase();
+      if (changingEmail) {
+        if (nextEmail.toLowerCase() !== confirmEmail.trim().toLowerCase()) {
+          throw new Error("Those two emails do not match.");
+        }
+        if (!deleteHasPassword || laterNeeded) {
+          throw new Error(
+            "Set a password on this page first. Apple, Google, and X do not change this email.",
+          );
+        }
+        if (!emailPassword) throw new Error("Type your password.");
+        const heldResult = await startEmailChange({
+          data: {
+            email: nextEmail,
+            confirm: confirmEmail.trim(),
+            password: emailPassword,
+          },
+        });
+        if (!heldResult.ok) throw new Error(heldResult.reason);
+        held = true;
+      }
+      if (nameChanged) {
         const { error: err } = await authClient.updateUser({ name: nextName });
         if (err) throw new Error(err.message ?? "Could not update name.");
       }
-      const nextEmail = email.trim();
-      if (nextEmail && nextEmail !== (user?.primaryEmail ?? "")) {
-        const { error: err } = await authClient.changeEmail({
-          newEmail: nextEmail,
-        });
-        if (err) throw new Error(err.message ?? "Could not update email.");
+      if (held) {
+        window.location.href = "/verify-email";
+        return;
       }
-      setMsg("Profile saved. If you changed email, check that inbox to confirm.");
+      setMsg(nameChanged ? "Name saved." : "Nothing to save.");
     } catch (err) {
+      if (held) {
+        window.location.href = "/verify-email";
+        return;
+      }
       setError(err instanceof Error ? err.message : "Could not save profile.");
     } finally {
       setBusy(null);
@@ -443,6 +471,7 @@ function Account() {
           onSubmit={(e) => void saveProfile(e)}
           className="h-full space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]"
         >
+          <p className="font-display text-lg text-fg">Change name and email</p>
           <Field label="Name">
             <TextInput value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
@@ -453,6 +482,27 @@ function Account() {
               onChange={(e) => setEmail(e.target.value)}
             />
           </Field>
+          {email.trim().toLowerCase() !== (user?.primaryEmail ?? "").trim().toLowerCase() ? (
+            <>
+              <Field label="Confirm email">
+                <TextInput
+                  type="email"
+                  autoComplete="off"
+                  value={confirmEmail}
+                  onChange={(e) => setConfirmEmail(e.target.value)}
+                />
+              </Field>
+              <Field label="Password">
+                <TextInput
+                  type="password"
+                  autoComplete="current-password"
+                  maxLength={PASSWORD_MAX_LENGTH}
+                  value={emailPassword}
+                  onChange={(e) => setEmailPassword(e.target.value)}
+                />
+              </Field>
+            </>
+          ) : null}
           <PrimaryButton disabled={busy !== null}>
             {busy === "profile" ? "Saving…" : "Save profile"}
           </PrimaryButton>

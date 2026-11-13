@@ -20,6 +20,7 @@ type StripeClient = {
       args: { amount: number; currency: string; description: string },
       options?: { idempotencyKey?: string },
     ) => Promise<{ id?: string }>;
+    update: (id: string, args: { email: string }) => Promise<{ id: string }>;
   };
   subscriptions: {
     retrieve: (id: string) => Promise<StripeSubscription>;
