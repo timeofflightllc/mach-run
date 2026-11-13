@@ -1319,14 +1319,16 @@ function Home() {
     if (advisorNeedsCheck) return;
     const el = headerCollapsed ? collapsedHeaderRef.current : expandedHeaderRef.current;
     if (!el) return;
-    const next = el.offsetHeight;
-    if (!headerBoxReady.current) {
-      headerBoxReady.current = true;
-      setHeaderBox(next);
-      return;
-    }
-    const id = window.requestAnimationFrame(() => setHeaderBox(next));
-    return () => window.cancelAnimationFrame(id);
+    const apply = () => {
+      const next = el.offsetHeight;
+      if (next > 0) setHeaderBox(next);
+    };
+    apply();
+    headerBoxReady.current = true;
+    if (typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => apply());
+    ro.observe(el);
+    return () => ro.disconnect();
   }, [headerCollapsed, advisorNeedsCheck, signedIn, advisorPlanHeld]);
   useEffect(() => {
     if (advisorNeedsCheck) return;
