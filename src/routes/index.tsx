@@ -2080,14 +2080,14 @@ function Home() {
                 onClick={() => setCautionAck(true)}
                 disabled={cautionAck}
                 className={cn(
-                  "master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408] max-sm:px-2.5 max-sm:py-0.5 max-sm:text-[11px] max-sm:tracking-[0.14em]",
+                  "master-caution-lamp inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408] max-sm:px-2.5 max-sm:py-0.5 max-sm:text-[11px] max-sm:tracking-[0.14em] sm:text-[12px] sm:tracking-[0.14em] xl:text-sm xl:tracking-[0.18em]",
                   cautionAck && "is-punched",
                 )}
               >
                 {heroCopy.cautionLabel}
               </button>
               {heroCopy.cautionBody.trim() ? (
-                <p className="max-w-3xl text-[11px] leading-snug text-[#fff3c4] sm:text-[16px] xl:text-lg">
+                <p className="max-w-3xl text-[11px] leading-snug text-[#fff3c4] sm:text-[13px] xl:text-lg">
                   {heroCopy.cautionBody}
                 </p>
               ) : null}
@@ -2095,7 +2095,7 @@ function Home() {
                 <Link
                   to="/login"
                   search={{ mode: "up" }}
-                  className="text-[11px] font-semibold text-white underline decoration-[#e8c547] underline-offset-[3px] hover:text-[#fff3c4] sm:text-[16px] xl:text-lg"
+                  className="text-[11px] font-semibold text-white underline decoration-[#e8c547] underline-offset-[3px] hover:text-[#fff3c4] sm:text-[13px] xl:text-lg"
                 >
                   {heroCopy.cautionLink}
                 </Link>
@@ -2104,7 +2104,7 @@ function Home() {
                 <button
                   type="button"
                   onClick={clearDemo}
-                  className="mt-1 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#e8c547] px-4 py-2 text-sm font-semibold text-[#1a1408] hover:bg-[#f3d56a] active:scale-[0.98]"
+                  className="mt-1 inline-flex min-h-11 items-center justify-center rounded-lg bg-[#e8c547] px-4 py-2 text-sm font-semibold text-[#1a1408] hover:bg-[#f3d56a] active:scale-[0.98] sm:text-[13px] xl:text-sm"
                 >
                   {heroCopy.clearDemo}
                 </button>
@@ -2117,13 +2117,13 @@ function Home() {
               )}
               aria-hidden={planHasEntries(plan)}
             >
-              <span className="inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408]">
+              <span className="inline-flex shrink-0 items-center rounded-sm bg-[#e8c547] px-3 py-1 font-display text-sm font-semibold uppercase tracking-[0.18em] text-[#1a1408] sm:text-[12px] sm:tracking-[0.14em] xl:text-sm xl:tracking-[0.18em]">
                 {heroCopy.startLabel}
               </span>
-              <p className="w-full max-w-6xl text-[11px] leading-snug text-[#fff3c4] sm:text-[16px] xl:text-lg 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
+              <p className="w-full max-w-6xl text-[11px] leading-snug text-[#fff3c4] sm:text-[13px] xl:text-lg 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
                 “{boydLine}”
               </p>
-              <p className="w-full max-w-6xl text-[11px] leading-snug text-[#fff3c4] sm:text-[16px] xl:text-lg 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
+              <p className="w-full max-w-6xl text-[11px] leading-snug text-[#fff3c4] sm:text-[13px] xl:text-lg 2xl:max-w-[90rem] min-[2000px]:max-w-[110rem]">
                 - John Boyd
               </p>
             </div>
