@@ -380,8 +380,10 @@ function Account() {
           <h1 className="mt-2 font-display text-3xl text-fg">Your MACH Run identity</h1>
         </header>
 
-        <ReferralAccountCard />
-        <BetaAccountLink />
+        <div className="grid items-start gap-8 lg:[&:has(>:nth-child(2))]:grid-cols-2">
+          <ReferralAccountCard />
+          <BetaAccountLink />
+        </div>
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
         {msg ? <p className="text-sm text-muted">{msg}</p> : null}

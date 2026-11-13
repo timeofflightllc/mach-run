@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { ReferralLinkLine } from "@/components/meridian/referral-card";
@@ -74,7 +74,9 @@ function ReferralsPage() {
         <PageMast />
         <header>
           <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">
-            Account
+            <Link to="/account" className="underline-offset-4 hover:text-fg hover:underline">
+              My Account
+            </Link>
           </p>
           <h1 className="mt-2 font-display text-4xl text-fg">Referrals</h1>
         </header>
