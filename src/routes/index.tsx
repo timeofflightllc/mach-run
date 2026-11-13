@@ -896,6 +896,7 @@ function Home() {
   const [cautionAck, setCautionAck] = useState(false);
   const [headerSettled, setHeaderSettled] = useState(true);
   const headerCollapsedRef = useRef(false);
+  const manualCollapse = useRef(false);
   const headerSettleTimer = useRef<number | null>(null);
   const headerHoldUntil = useRef(0);
   const collapsedHeaderRef = useRef<HTMLDivElement>(null);
@@ -929,7 +930,10 @@ function Home() {
   }
   function toggleHeader() {
     headerHoldUntil.current = performance.now() + 900;
-    commitHeader(!headerCollapsedRef.current);
+    const next = !headerCollapsedRef.current;
+    if (next) manualCollapse.current = true;
+    else manualCollapse.current = false;
+    commitHeader(next);
   }
   const ent = useEntitlement();
   const [step, setStep] = useState<StepId>(actPlace ? "act" : "family");
@@ -1405,6 +1409,7 @@ function Home() {
       if (fingerDown) return;
       if (!mq.matches) return;
       if (performance.now() < headerHoldUntil.current) return;
+      if (manualCollapse.current) return;
       if (scroller.scrollTop <= 1) commitHeader(false);
     }
     function onScroll() {
