@@ -214,6 +214,18 @@ export const auth = betterAuth({
   // local loopback variants, or clients get "Invalid origin".
   trustedOrigins,
 
+  // Rate limit email sign-in and password reset. Signup already has its own gate.
+  rateLimit: {
+    enabled: true,
+    window: 15 * 60, // 15 minutes
+    max: 10,
+    customRules: {
+      "/sign-in/email": { window: 15 * 60, max: 8 },
+      "/forget-password": { window: 15 * 60, max: 5 },
+      "/reset-password": { window: 15 * 60, max: 5 },
+    },
+  },
+
   // Encrypt broker-issued OAuth tokens at rest, and treat the broker's upstreams
   // as trusted first-party identities. The broker owns identity and X emails are
   // synthetic/unverified, so WITHOUT this a login can fail with

@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { sendContactMail, type ContactTopic } from "@/lib/notify/contact";
+import { clientIp, tooManyFormSubmits } from "@/lib/auth/signup-gate.server";
 
 const TOPICS = new Set<ContactTopic>(["general", "bug", "feature"]);
 
@@ -26,6 +27,13 @@ export const Route = createFileRoute("/api/contact")({
         const name = typeof body.name === "string" ? body.name.trim() : "";
         const email = typeof body.email === "string" ? body.email.trim() : "";
         const message = typeof body.message === "string" ? body.message.trim() : "";
+        const ip = clientIp(request);
+        if (await tooManyFormSubmits("contact", ip)) {
+          return Response.json(
+            { ok: false, reason: "Too many messages. Try again in a few minutes." },
+            { status: 429 },
+          );
+        }
         if (!topic) {
           return Response.json({ ok: false, reason: "Pick a topic." }, { status: 400 });
         }

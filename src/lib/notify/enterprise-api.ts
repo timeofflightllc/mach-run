@@ -9,9 +9,15 @@ export const requestEnterprise = createServerFn({ method: "POST" })
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email) || data.email.length > 120) {
       return { ok: false, reason: "Email looks off." };
     }
-    const { verifyTurnstile, turnstileFailureReason } = await import("@/lib/auth/signup-gate.server");
+    const { verifyTurnstile, turnstileFailureReason, clientIp, tooManyFormSubmits } = await import("@/lib/auth/signup-gate.server");
     const turnstile = await verifyTurnstile(data.captcha);
     if (!turnstile.ok) return { ok: false, reason: turnstileFailureReason(turnstile.code) };
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const req = getRequest();
+    const ip = clientIp(req);
+    if (await tooManyFormSubmits("enterprise", ip)) {
+      return { ok: false, reason: "Too many requests. Try again in a few minutes." };
+    }
     const { sendEnterpriseMail } = await import("./contact");
     return sendEnterpriseMail(data.email);
   });

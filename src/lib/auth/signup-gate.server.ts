@@ -106,3 +106,40 @@ export async function gateEmailSignup(request: Request): Promise<Response | null
     { status: 403 },
   );
 }
+
+
+export async function tooManyFormSubmits(kind: "contact" | "enterprise", ip: string): Promise<boolean> {
+  const sql = await getSql();
+  await sql.query(`
+    create table if not exists form_rate (
+      key text primary key,
+      hits integer not null default 0,
+      window_start timestamptz not null default now()
+    )
+  `);
+  const key = `${kind}:${ip}`;
+  const rows = await sql.query<{ hits: number; window_start: string | Date }>(
+    `select hits, window_start from form_rate where key = $1 limit 1`,
+    [key],
+  );
+  const now = Date.now();
+  const row = rows[0];
+  const windowMs = 15 * 60 * 1000;
+  const max = kind === "contact" ? 5 : 3;
+  if (!row) {
+    await sql.query(
+      `insert into form_rate (key, hits, window_start) values ($1, 1, now())
+       on conflict (key) do update set hits = form_rate.hits + 1`,
+      [key],
+    );
+    return false;
+  }
+  const start = new Date(row.window_start).getTime();
+  if (!Number.isFinite(start) || now - start > windowMs) {
+    await sql.query(`update form_rate set hits = 1, window_start = now() where key = $1`, [key]);
+    return false;
+  }
+  if (row.hits >= max) return true;
+  await sql.query(`update form_rate set hits = hits + 1 where key = $1`, [key]);
+  return false;
+}
