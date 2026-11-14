@@ -1988,8 +1988,9 @@ function Home() {
                       aria-pressed
                       aria-label="Show header"
                       title="Show header"
-                      className="inline-flex h-8 w-7 shrink-0 items-center justify-center rounded-md text-fg hover:bg-elevated"
+                      className="inline-flex h-8 w-7 shrink-0 items-center justify-center rounded-md text-fg hover:bg-elevated md:w-auto md:gap-1 md:px-2"
                     >
+                      <span className="hidden text-[10px] font-medium lowercase tracking-[0.08em] md:inline">expand</span>
                       <span aria-hidden="true" className="text-sm leading-none">▾</span>
                     </button>
                   </div>
