@@ -16,12 +16,24 @@ export function UpgradeNudge({
   const noun = COPY[kind];
   return (
     <div className="rounded-lg bg-elevated px-3 py-3 text-sm text-muted shadow-[0_0_0_1px_var(--color-border)]">
-      <p>
-        {kind === "analysis"
-          ? `Free MACH RUN shows two paragraphs of the OODA, then fades. ${noun[0].toUpperCase()}${noun.slice(1)} — RMDs, retirement landing, every stage — is Individual.`
-          : `Free MACH RUN includes 2 accounts, 2 incomes, 2 contributions. Upgrade to Individual to access unlimited accounts, incomes and contributions.`}{" "}
-        ${MACH_MONTHLY_USD}/month or ${MACH_YEARLY_USD}/year — less than a cup of coffee.
-      </p>
+      {kind === "analysis" ? (
+        <p>
+          Free MACH RUN shows two paragraphs of the OODA, then fades. {noun[0].toUpperCase()}
+          {noun.slice(1)} — RMDs, retirement landing, every stage — is Individual. $
+          {MACH_MONTHLY_USD}/month or ${MACH_YEARLY_USD}/year — less than a cup of coffee.
+        </p>
+      ) : (
+        <>
+          <p>Free MACH RUN includes 2 accounts, 2 incomes, 2 contributions.</p>
+          <p className="mt-2">
+            Unlock Individual and access unlimited accounts, incomes and contributions.
+          </p>
+          <p className="mt-2">
+            Get started at ${MACH_MONTHLY_USD}/month or ${MACH_YEARLY_USD}/year — less than a cup of
+            coffee.
+          </p>
+        </>
+      )}
       <Link
         to="/pricing"
         className="mt-2 inline-flex h-11 items-center font-medium text-fg underline decoration-fg/40 underline-offset-4 hover:decoration-fg"
