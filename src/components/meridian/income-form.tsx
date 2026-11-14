@@ -601,6 +601,9 @@ function IncomeRow({
                 onValue={(n) => updateIncome(s.id, { colaPct: n })}
               />
             </Field>
+            <p className="text-center text-sm leading-relaxed text-subtle">
+              COLA starts at the Family default. Type over it for this income only.
+            </p>
             {monthAfterPrevious && s.kind !== "ss" ? (
               <label className="flex items-center justify-center gap-2 text-center text-sm text-[#1a2330]">
                 <input
@@ -673,9 +676,6 @@ function IncomeRow({
                 The plan is using your amount, not the covered-pay estimate.
               </p>
             ) : null}
-            <p className="text-center text-sm leading-relaxed text-subtle">
-              COLA starts at the Family default. Type over it for this income only.
-            </p>
             {s.kind === "va" ? (
               <div>
                 <VaKids stream={s} />
