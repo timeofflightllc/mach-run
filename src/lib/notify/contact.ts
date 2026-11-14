@@ -222,7 +222,7 @@ export async function sendBetaInviteMail(input: {
     "",
     "I enabled the beta debrief on your MACH RUN account. Each beta tester has 3 times to run through the form. If you need more, let me know -- I can easily open up more.",
     "",
-    "Sign in, then open My Account. The form is under Referrals: Beta Testing Feedback / Debrief Form.",
+    "Sign in, then open My Account. The form is under Mach Points: Beta Testing Feedback / Debrief Form.",
     `Or go straight there once you are signed in: ${link}`,
     "",
     "Walk the calculator. Write what you clicked, what you expected, and what happened. You can leave a box blank. Save a draft if you need to come back.",
@@ -242,7 +242,7 @@ export async function sendBetaInviteMail(input: {
           I enabled the beta debrief on your MACH RUN account. Each beta tester has 3 times to run through the form. If you need more, let me know -- I can easily open up more.
         </td></tr>
         <tr><td style="padding:0 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6;color:#3D4A54;">
-          Sign in, then open My Account. The form is under Referrals: Beta Testing Feedback / Debrief Form.
+          Sign in, then open My Account. The form is under Mach Points: Beta Testing Feedback / Debrief Form.
         </td></tr>
         <tr><td style="padding:4px 28px 20px;">
           <a href="${link}" style="display:inline-block;background:#3a8a58;color:#ffffff;text-decoration:none;padding:12px 18px;font-family:Arial,Helvetica,sans-serif;font-size:15px;">Open the debrief</a>

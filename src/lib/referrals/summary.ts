@@ -1,4 +1,6 @@
-import { referralCreditLabel } from "./credit.ts";
+import { pointsFromCents, referralBillLine, referralCreditLabel } from "./credit.ts";
+
+export { referralBillLine, referralCreditLabel };
 
 const YEARLY = new Set(["yearly", "credit"]);
 
@@ -22,9 +24,12 @@ export function referralStatusLabel(status: string, creditCents?: number | null)
   return "Signed up";
 }
 
-export function referralMoney(cents: number): string {
-  const dollars = Math.round((Number(cents) || 0) / 100);
-  return `$${dollars}`;
+export function referralPoints(cents: number): number {
+  return pointsFromCents(cents);
+}
+
+export function referralPointsReceived(cents: number): string {
+  return `Points received: ${referralPoints(cents)}`;
 }
 
 export function referralRate(signedUp: number, yearly: number): string {

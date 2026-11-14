@@ -1,5 +1,5 @@
 import { createMiddleware, createServerFn } from "@tanstack/react-start";
-import { parseCreditDollars } from "./credit";
+import { parseCreditPoints } from "./credit";
 import type { CampaignStat } from "./desk";
 
 const opsSessionMiddleware = createMiddleware({ type: "function" })
@@ -13,7 +13,7 @@ const opsSessionMiddleware = createMiddleware({ type: "function" })
 
 export const referralDeskFn = createServerFn({ method: "GET" })
   .middleware([opsSessionMiddleware])
-  .handler(async ({ context }): Promise<{ allowed: false } | { allowed: true; dollars: number; campaigns: CampaignStat[] }> => {
+  .handler(async ({ context }): Promise<{ allowed: false } | { allowed: true; points: number; campaigns: CampaignStat[] }> => {
     const { getOpsActor } = await import("@/lib/ops/gate.server");
     const actor = await getOpsActor(context.bearerToken);
     if (!actor) return { allowed: false };
@@ -23,16 +23,16 @@ export const referralDeskFn = createServerFn({ method: "GET" })
 
 export const saveReferralCreditFn = createServerFn({ method: "POST" })
   .middleware([opsSessionMiddleware])
-  .validator((input: { dollars?: unknown }) => ({ dollars: input?.dollars }))
-  .handler(async ({ context, data }): Promise<{ allowed: false } | { allowed: true; ok: false; error: string } | { allowed: true; ok: true; dollars: number }> => {
+  .validator((input: { points?: unknown }) => ({ points: input?.points }))
+  .handler(async ({ context, data }): Promise<{ allowed: false } | { allowed: true; ok: false; error: string } | { allowed: true; ok: true; points: number }> => {
     const { getOpsActor } = await import("@/lib/ops/gate.server");
     const actor = await getOpsActor(context.bearerToken);
     if (!actor) return { allowed: false };
-    const dollars = parseCreditDollars(data.dollars);
-    if (dollars == null) return { allowed: true, ok: false, error: "Enter a whole dollar amount from 0 to 1000." };
-    const { saveReferralDollars } = await import("./desk.server");
-    await saveReferralDollars(dollars);
-    return { allowed: true, ok: true, dollars };
+    const points = parseCreditPoints(data.points);
+    if (points == null) return { allowed: true, ok: false, error: "Enter a whole number of points from 0 to 10000." };
+    const { saveReferralPoints } = await import("./desk.server");
+    await saveReferralPoints(points);
+    return { allowed: true, ok: true, points };
   });
 
 export const createReferralCampaignFn = createServerFn({ method: "POST" })

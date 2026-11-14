@@ -5,15 +5,15 @@ import { ReferralLinkLine } from "@/components/meridian/referral-card";
 import { RedirectToSignIn, isRealUser } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { referralPeopleFn, referralSummaryFn } from "@/lib/referrals/api";
-import { referralCountLine, referralMoney } from "@/lib/referrals/summary";
+import { referralBillLine, referralCountLine, referralCreditLabel, referralPoints, referralPointsReceived } from "@/lib/referrals/summary";
 import type { ReferralPerson, ReferralSummary } from "@/lib/referrals/page.server";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/referrals")({
   head: () =>
     pageHead({
-      title: "Referrals | MACH RUN",
-      description: "Your MACH RUN referral link.",
+      title: "Mach Points | MACH RUN",
+      description: "Your Mach Points.",
       path: "/referrals",
       noindex: true,
     }),
@@ -45,7 +45,7 @@ function ReferralsPage() {
         if (live) setSummary(row);
       })
       .catch(() => {
-        if (live) setError("Referrals are unavailable.");
+        if (live) setError("Mach Points are unavailable.");
       });
     void referralPeopleFn()
       .then((rows) => {
@@ -78,7 +78,7 @@ function ReferralsPage() {
               My Account
             </Link>
           </p>
-          <h1 className="mt-2 font-display text-4xl text-fg">Referrals</h1>
+          <h1 className="mt-2 font-display text-4xl text-fg">Mach Points</h1>
         </header>
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
@@ -89,10 +89,14 @@ function ReferralsPage() {
           </p>
           <ReferralLinkLine code={summary?.code ?? null} />
           <p className="text-base leading-relaxed text-fg">
-            {summary
-              ? `${referralCountLine(summary.signedUp, summary.yearly)} Credits received: ${referralMoney(summary.creditCents)}.`
-              : "Loading your referrals…"}
+            {summary ? referralCountLine(summary.signedUp, summary.yearly) : "Loading your referrals…"}
           </p>
+          {summary ? (
+            <div className="text-base leading-relaxed text-fg">
+              <p>{referralPointsReceived(summary.creditCents)}</p>
+              <p>{referralBillLine(summary.creditCents)}.</p>
+            </div>
+          ) : null}
         </section>
 
         <section className="w-full rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
@@ -108,9 +112,9 @@ function ReferralsPage() {
               </p>
             </div>
             <div className="text-right">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">Credits</p>
+              <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">Points</p>
               <p className="font-display text-3xl leading-none text-fg">
-                {referralMoney(summary?.creditCents ?? 0)}
+                {referralPoints(summary?.creditCents ?? 0)}
               </p>
             </div>
           </div>
@@ -137,7 +141,7 @@ function ReferralsPage() {
                     </p>
                   </div>
                   <p className="shrink-0 font-display text-2xl tabular-nums text-fg">
-                    {person.creditCents > 0 ? referralMoney(person.creditCents) : "—"}
+                    {person.creditCents > 0 ? referralCreditLabel(person.creditCents) : "—"}
                   </p>
                 </li>
               ))}

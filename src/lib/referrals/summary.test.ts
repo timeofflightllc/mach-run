@@ -20,6 +20,6 @@ test("the count line is the rate of yearly plans", () => {
   assert.equal(referralStatusLabel("signed-up"), "Signed up");
   assert.equal(referralStatusLabel("chose-monthly"), "Chose monthly");
   assert.equal(referralStatusLabel("yearly"), "Started a yearly plan");
-  assert.equal(referralStatusLabel("yearly", 2000), "$20 credit");
-  assert.equal(referralStatusLabel("yearly", 1500), "$15 credit");
+  assert.equal(referralStatusLabel("yearly", 2000), "200 points");
+  assert.equal(referralStatusLabel("yearly", 1500), "150 points");
 });

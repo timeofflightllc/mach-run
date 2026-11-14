@@ -8,7 +8,7 @@ import {
 import type { CampaignStat } from "@/lib/referrals/desk";
 
 export function ReferralDesk() {
-  const [dollars, setDollars] = useState("20");
+  const [points, setPoints] = useState("200");
   const [name, setName] = useState("");
   const [campaigns, setCampaigns] = useState<CampaignStat[]>([]);
   const [status, setStatus] = useState<string | null>(null);
@@ -20,7 +20,7 @@ export function ReferralDesk() {
       setStatus("Referrals are locked.");
       return;
     }
-    setDollars(String(result.dollars));
+    setPoints(String(result.points));
     setCampaigns(result.campaigns);
   }
 
@@ -28,11 +28,11 @@ export function ReferralDesk() {
     void reload().catch(() => setStatus("Could not load referrals."));
   }, []);
 
-  async function saveDollars() {
+  async function savePoints() {
     setBusy(true);
     setStatus(null);
     try {
-      const result = await saveReferralCreditFn({ data: { dollars } });
+      const result = await saveReferralCreditFn({ data: { points } });
       if (!result.allowed) {
         setStatus("Referrals are locked.");
         return;
@@ -41,8 +41,8 @@ export function ReferralDesk() {
         setStatus(result.error);
         return;
       }
-      setDollars(String(result.dollars));
-      setStatus("Future credits use this amount. Credits already given stay as they were.");
+      setPoints(String(result.points));
+      setStatus("Future referrals use this point amount. Points already given stay as they were.");
     } finally {
       setBusy(false);
     }
@@ -72,19 +72,18 @@ export function ReferralDesk() {
   return (
     <div className="space-y-8">
       <section className="max-w-xl space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
-        <p className="font-display text-lg text-fg">Credit on the next bill</p>
+        <p className="font-display text-lg text-fg">Points on the next bill</p>
         <p className="text-sm text-muted">
-          A friend who pays for a yearly plan puts this many dollars on the sender's next bill.
-          It is a credit, not cash. A change applies only to friends who pay after you save it.
+          10 points equals $1. 200 points is $20 toward the next bill. A change applies only to friends who pay after you save it.
         </p>
-        <Field label="Dollars">
+        <Field label="Points">
           <TextInput
             inputMode="numeric"
-            value={dollars}
-            onChange={(e) => setDollars(e.target.value)}
+            value={points}
+            onChange={(e) => setPoints(e.target.value)}
           />
         </Field>
-        <PrimaryButton disabled={busy} onClick={() => void saveDollars()}>
+        <PrimaryButton disabled={busy} onClick={() => void savePoints()}>
           Save amount
         </PrimaryButton>
       </section>

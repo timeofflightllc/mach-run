@@ -1,14 +1,14 @@
 import { getSql } from "@/lib/db";
 import { referralRate } from "./summary";
 import { createCampaignCode } from "./attribute.server";
-import { referralCreditDollars, setReferralCreditDollars } from "./credit.server";
+import { referralCreditPoints, setReferralCreditPoints } from "./credit.server";
 import type { CampaignStat } from "./desk";
 
 export async function referralDesk(ownerId: string): Promise<{
-  dollars: number;
+  points: number;
   campaigns: CampaignStat[];
 }> {
-  const dollars = await referralCreditDollars();
+  const points = await referralCreditPoints();
   const sql = await getSql();
   const rows = await sql.query<{
     name: string | null;
@@ -31,7 +31,7 @@ export async function referralDesk(ownerId: string): Promise<{
     [ownerId],
   );
   return {
-    dollars,
+    points,
     campaigns: rows.map((row) => {
       const signedUp = Number(row.signed_up ?? 0);
       const yearly = Number(row.yearly ?? 0);
@@ -47,8 +47,8 @@ export async function referralDesk(ownerId: string): Promise<{
   };
 }
 
-export async function saveReferralDollars(dollars: number): Promise<void> {
-  await setReferralCreditDollars(dollars);
+export async function saveReferralPoints(points: number): Promise<void> {
+  await setReferralCreditPoints(points);
 }
 
 export async function addOwnerCampaign(ownerId: string, name: string): Promise<string> {

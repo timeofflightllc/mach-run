@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { referralSummaryFn } from "@/lib/referrals/api";
-import { referralCountLine, referralMoney } from "@/lib/referrals/summary";
+import { referralBillLine, referralCountLine, referralPointsReceived } from "@/lib/referrals/summary";
 import type { ReferralSummary } from "@/lib/referrals/page.server";
 
 export function referralLink(code: string): string {
@@ -64,7 +64,7 @@ export function ReferralAccountCard() {
 
   return (
     <section className="space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
-      <p className="font-display text-lg text-fg">Referrals</p>
+      <p className="font-display text-lg text-fg">Mach Points</p>
       <p className="text-sm leading-relaxed text-muted">
         Send this link. A friend who starts a yearly plan puts a credit on your next bill.
       </p>
@@ -73,7 +73,10 @@ export function ReferralAccountCard() {
         {summary ? referralCountLine(summary.signedUp, summary.yearly) : "Loading your referrals…"}
       </p>
       {summary ? (
-        <p className="text-sm text-fg">Credits received: {referralMoney(summary.creditCents)}.</p>
+        <div className="text-sm text-fg">
+          <p>{referralPointsReceived(summary.creditCents)}</p>
+          <p>{referralBillLine(summary.creditCents)}.</p>
+        </div>
       ) : null}
       <Link to="/referrals" className="inline-flex text-sm font-medium text-fg underline underline-offset-4">
         See who signed up

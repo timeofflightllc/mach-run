@@ -1,8 +1,9 @@
 import { getSql } from "@/lib/db";
 import {
-  DEFAULT_CREDIT_DOLLARS,
+  DEFAULT_CREDIT_POINTS,
   REFERRAL_CREDIT_DESCRIPTION,
-  parseCreditDollars,
+  centsFromPoints,
+  parseCreditPoints,
   referralCreditKey,
 } from "./credit";
 
@@ -16,9 +17,15 @@ async function ensureCreditSettings(): Promise<void> {
   );
   await sql.query(
     `insert into mach_referral_settings (id, credit_dollars)
-     values (1, $1)
+     values (1, 20)
      on conflict (id) do nothing`,
-    [DEFAULT_CREDIT_DOLLARS],
+  );
+  await sql.query(`alter table mach_referral_settings add column if not exists credit_points integer`);
+  await sql.query(
+    `update mach_referral_settings
+     set credit_points = credit_dollars * 10
+     where credit_points is null
+       and credit_dollars is not null`,
   );
   await sql.query(`alter table mach_referral_signups add column if not exists credit_cents integer`);
   await sql.query(
@@ -26,24 +33,24 @@ async function ensureCreditSettings(): Promise<void> {
   );
 }
 
-export async function referralCreditDollars(): Promise<number> {
+export async function referralCreditPoints(): Promise<number> {
   await ensureCreditSettings();
   const sql = await getSql();
-  const rows = await sql.query<{ credit_dollars: number }>(
-    `select credit_dollars from mach_referral_settings where id = 1`,
+  const rows = await sql.query<{ credit_points: number | null }>(
+    `select credit_points from mach_referral_settings where id = 1`,
   );
-  const parsed = parseCreditDollars(rows[0]?.credit_dollars);
-  return parsed ?? DEFAULT_CREDIT_DOLLARS;
+  const parsed = parseCreditPoints(rows[0]?.credit_points);
+  return parsed ?? DEFAULT_CREDIT_POINTS;
 }
 
-/** Future credits only. Rows that already have an amount stay as they are. */
-export async function setReferralCreditDollars(dollars: number): Promise<void> {
-  const parsed = parseCreditDollars(dollars);
-  if (parsed == null) throw new Error("Enter a whole dollar amount from 0 to 1000.");
+/** Future referrals only. Rows that already have cents stay as they are. */
+export async function setReferralCreditPoints(points: number): Promise<void> {
+  const parsed = parseCreditPoints(points);
+  if (parsed == null) throw new Error("Enter a whole number of points from 0 to 10000.");
   await ensureCreditSettings();
   const sql = await getSql();
   await sql.query(
-    `update mach_referral_settings set credit_dollars = $1 where id = 1`,
+    `update mach_referral_settings set credit_points = $1 where id = 1`,
     [parsed],
   );
 }
@@ -92,14 +99,13 @@ async function postOneCredit(signupId: string, ownerId: string, cents: number): 
 }
 
 /**
- * After a personal yearly extension has succeeded. Records the current dollar
- * setting on this row only. Posts it to the sender's Stripe balance, or holds
- * it until that sender has a customer.
+ * After a personal yearly extension has succeeded. Records the current point
+ * setting on this row as cents. Posts it to the sender's Stripe balance, or
+ * holds it until that sender has a customer.
  */
 export async function grantReferralCredit(signupId: string): Promise<void> {
   await ensureCreditSettings();
-  const dollars = await referralCreditDollars();
-  const cents = dollars * 100;
+  const cents = centsFromPoints(await referralCreditPoints());
   const sql = await getSql();
   const claimed = await sql.query<{ id: string; owner_user_id: string }>(
     `update mach_referral_signups s
@@ -144,7 +150,7 @@ export async function flushHeldReferralCredits(userId: string): Promise<void> {
   }
 }
 
-/** A campaign signup can count as yearly. It never receives a credit. */
+/** A campaign signup can count as yearly. It never receives points. */
 export async function noteCampaignYearly(userId: string): Promise<void> {
   const sql = await getSql();
   await sql.query(
