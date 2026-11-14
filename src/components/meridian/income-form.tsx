@@ -682,7 +682,7 @@ function IncomeRow({
                 <button type="button" className="mt-3 min-h-12 w-full rounded-xl bg-[#3a8a58] px-3 text-base font-medium text-white" onClick={onSave}>
                   Save income
                 </button>
-                <button type="button" className="mt-2 block min-h-12 w-full rounded-xl bg-negative px-3 text-base font-medium text-white hover:opacity-90" onClick={onRemove}>
+                <button type="button" className="mt-2 block min-h-12 w-full rounded-xl border border-negative/35 bg-negative/10 px-3 text-base font-medium text-negative hover:bg-negative/15" onClick={onRemove}>
                   Remove
                 </button>
               </div>
