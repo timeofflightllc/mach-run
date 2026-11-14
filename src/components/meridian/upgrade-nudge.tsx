@@ -19,7 +19,7 @@ export function UpgradeNudge({
       <p>
         {kind === "analysis"
           ? `Free MACH RUN shows two paragraphs of the OODA, then fades. ${noun[0].toUpperCase()}${noun.slice(1)} — RMDs, retirement landing, every stage — is Individual.`
-          : `Free MACH RUN includes 2 ${noun}. Unlimited ${noun} start on Individual. Individual Unlimited is the next step up.`}{" "}
+          : `Free MACH RUN includes 2 accounts, 2 incomes, 2 contributions. Upgrade to Individual to access unlimited accounts, incomes and contributions.`}{" "}
         ${MACH_MONTHLY_USD}/month or ${MACH_YEARLY_USD}/year — less than a cup of coffee.
       </p>
       <Link
