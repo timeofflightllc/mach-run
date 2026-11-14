@@ -23,6 +23,70 @@ import type {
 const PATHS = 1000;
 /** Paint the counter about 30 times a second, not after every future. */
 const PAINT_MS = 32;
+const WORKERS = 4;
+
+type WorkerColumn = { nominal: number[]; real: number[] };
+type WorkerMessage = {
+  type: "progress" | "done" | "error";
+  workerId?: number;
+  done?: number;
+  total?: number;
+  survived?: number;
+  runOutAges?: number[];
+  columns?: [number, WorkerColumn][];
+  message?: string;
+};
+
+function columnsFromEntries(entries: [number, WorkerColumn][] | undefined): Map<number, WorkerColumn> {
+  const columns = new Map<number, WorkerColumn>();
+  if (!entries) return columns;
+  for (const [year, col] of entries) columns.set(year, col);
+  return columns;
+}
+
+function mergeColumns(target: Map<number, WorkerColumn>, source: Map<number, WorkerColumn>): void {
+  for (const [year, col] of source) {
+    let dest = target.get(year);
+    if (!dest) {
+      dest = { nominal: [], real: [] };
+      target.set(year, dest);
+    }
+    dest.nominal.push(...col.nominal);
+    dest.real.push(...col.real);
+  }
+}
+
+function scoreFrom(
+  swing: SwingName,
+  hash: string,
+  survived: number,
+  runOutAges: number[],
+  columns: Map<number, WorkerColumn>,
+): SurvivalScore {
+  return {
+    score: survivalPercent(survived, PATHS),
+    survived,
+    paths: PATHS,
+    swing,
+    hash,
+    runOutAge: middleRunOutAge(runOutAges),
+    bands: bandsFrom(columns),
+    traces: tracesFrom(columns),
+  };
+}
+
+export function pathRanges(total: number, workers: number): { start: number; count: number }[] {
+  const ranges: { start: number; count: number }[] = [];
+  const base = Math.floor(total / workers);
+  const extra = total % workers;
+  let start = 0;
+  for (let i = 0; i < workers; i++) {
+    const count = base + (i < extra ? 1 : 0);
+    ranges.push({ start, count });
+    start += count;
+  }
+  return ranges;
+}
 
 export type SurvivalBand = {
   year: number;
@@ -134,6 +198,111 @@ async function execute(
 ): Promise<SurvivalScore | null> {
   const ready = ensurePlan(plan);
   if (opts?.signal?.aborted) return null;
+  if (typeof Worker !== "undefined" && !opts?.runOne) {
+    const fromWorker = await runInWorkers(ready, swing, hash, opts);
+    if (fromWorker !== "fallback") return fromWorker;
+  }
+  return runOnMain(ready, swing, hash, opts);
+}
+
+async function runInWorkers(
+  plan: Plan,
+  swing: SwingName,
+  hash: string,
+  opts: SurvivalOptions | undefined,
+): Promise<SurvivalScore | null | "fallback"> {
+  const ranges = pathRanges(PATHS, WORKERS);
+  const workers: Worker[] = [];
+  try {
+    for (let i = 0; i < ranges.length; i++) {
+      const worker = new Worker(new URL("./monte-carlo.worker.ts", import.meta.url), { type: "module" });
+      workers.push(worker);
+    }
+  } catch {
+    for (const w of workers) w.terminate();
+    return "fallback";
+  }
+
+  return await new Promise<SurvivalScore | null | "fallback">((resolve) => {
+    let settled = false;
+    const finish = (value: SurvivalScore | null | "fallback") => {
+      if (settled) return;
+      settled = true;
+      for (const w of workers) w.terminate();
+      resolve(value);
+    };
+    const onAbort = () => finish(null);
+    opts?.signal?.addEventListener("abort", onAbort, { once: true });
+
+    const partial = ranges.map(() => ({
+      done: 0,
+      survived: 0,
+      runOutAges: [] as number[],
+      columns: new Map<number, WorkerColumn>(),
+      finished: false,
+    }));
+
+    const report = async () => {
+      let totalDone = 0;
+      let totalSurvived = 0;
+      const allAges: number[] = [];
+      const merged = new Map<number, WorkerColumn>();
+      for (const p of partial) {
+        totalDone += p.done;
+        totalSurvived += p.survived;
+        allAges.push(...p.runOutAges);
+        mergeColumns(merged, p.columns);
+      }
+      opts?.onProgress?.(totalDone, PATHS, tracesFrom(merged));
+      await paint();
+      if (opts?.signal?.aborted) {
+        finish(null);
+        return;
+      }
+      if (partial.every((p) => p.finished)) {
+        finish(scoreFrom(swing, hash, totalSurvived, allAges, merged));
+      }
+    };
+
+    for (let i = 0; i < workers.length; i++) {
+      const worker = workers[i];
+      worker.onerror = () => finish("fallback");
+      worker.onmessage = async (event: MessageEvent<WorkerMessage>) => {
+        const msg = event.data;
+        if (msg.type === "error") {
+          finish("fallback");
+          return;
+        }
+        const id = msg.workerId ?? i;
+        const slot = partial[id];
+        if (!slot) return;
+        slot.done = msg.done ?? slot.done;
+        slot.survived = msg.survived ?? slot.survived;
+        slot.runOutAges = msg.runOutAges ?? slot.runOutAges;
+        slot.columns = columnsFromEntries(msg.columns);
+        if (msg.type === "done") slot.finished = true;
+        await report();
+      };
+      worker.postMessage({
+        plan,
+        swing,
+        hash,
+        start: ranges[i].start,
+        count: ranges[i].count,
+        workerId: i,
+      });
+    }
+  });
+}
+
+async function runOnMain(
+  plan: Plan,
+  swing: SwingName,
+  hash: string,
+  opts: SurvivalOptions | undefined,
+): Promise<SurvivalScore | null> {
+  const ready = plan;
+  if (opts?.signal?.aborted) return null;
   const runOne = opts?.runOne ?? defaultRun;
   const years = calendarYears(ready);
   const stdev = SWING_PRESETS[swing];
@@ -143,16 +312,20 @@ async function execute(
   let paintedAt = performance.now();
   for (let path = 0; path < PATHS; path++) {
     if (opts?.signal?.aborted) return null;
-    const draw = createStandardNormal(mixSeed(hash, path));
-    const zByYear = new Map<number, number>();
-    for (const year of years) zByYear.set(year, draw());
-    const shocks: ReturnShocks = {
-      stdev,
-      zForYear: (year) => zByYear.get(year) ?? 0,
-    };
     let result: PathResult;
     try {
-      result = runOne(ready, shocks);
+      if (opts?.runOne) {
+        const draw = createStandardNormal(mixSeed(hash, path));
+        const zByYear = new Map<number, number>();
+        for (const year of years) zByYear.set(year, draw());
+        const shocks: ReturnShocks = {
+          stdev,
+          zForYear: (year) => zByYear.get(year) ?? 0,
+        };
+        result = runOne(ready, shocks);
+      } else {
+        result = runOnePath(ready, swing, hash, path);
+      }
     } catch {
       return null;
     }
@@ -186,6 +359,32 @@ async function execute(
     runOutAge: middleRunOutAge(runOutAges),
     bands: bandsFrom(columns),
     traces: tracesFrom(columns),
+  };
+}
+
+export function runOnePath(
+  plan: Plan,
+  swing: SwingName,
+  hash: string,
+  pathIndex: number,
+): PathResult {
+  const years = calendarYears(plan);
+  const stdev = SWING_PRESETS[swing];
+  const draw = createStandardNormal(mixSeed(hash, pathIndex));
+  const zByYear = new Map<number, number>();
+  for (const year of years) zByYear.set(year, draw());
+  const shocks: ReturnShocks = {
+    stdev,
+    zForYear: (year) => zByYear.get(year) ?? 0,
+  };
+  const sim = simulate(plan, { shocks, lite: true, normalized: true });
+  return {
+    depletedAge: sim.depletedAge,
+    yearEnds: sim.years.map((year) => ({
+      year: year.year,
+      nominal: year.endSpendable,
+      real: year.endSpendableReal,
+    })),
   };
 }
 
