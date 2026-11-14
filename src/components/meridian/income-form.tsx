@@ -623,7 +623,7 @@ function IncomeRow({
                 <button type="button" className="min-h-12 rounded-xl bg-[#3a8a58] px-3 text-base font-medium text-white" onClick={onSave}>
                   Save income
                 </button>
-                <button type="button" className="text-sm text-muted hover:text-negative" onClick={onRemove}>
+                <button type="button" className="min-h-12 rounded-xl bg-negative px-3 text-base font-medium text-white hover:opacity-90" onClick={onRemove}>
                   Remove
                 </button>
               </>
@@ -682,7 +682,7 @@ function IncomeRow({
                 <button type="button" className="mt-3 min-h-12 w-full rounded-xl bg-[#3a8a58] px-3 text-base font-medium text-white" onClick={onSave}>
                   Save income
                 </button>
-                <button type="button" className="mt-2 block w-full text-center text-sm text-muted hover:text-negative" onClick={onRemove}>
+                <button type="button" className="mt-2 block min-h-12 w-full rounded-xl bg-negative px-3 text-base font-medium text-white hover:opacity-90" onClick={onRemove}>
                   Remove
                 </button>
               </div>
@@ -702,7 +702,7 @@ function IncomeRow({
               <span className="block text-xs text-muted">Start: {shortDate(s.startDate) === "ongoing" ? "—" : shortDate(s.startDate)} · End: {s.endDate ? shortDate(s.endDate) : "Ongoing"}</span>
             </span>
             <span className="flex shrink-0 items-center gap-3">
-              <button type="button" className="text-xs text-muted hover:text-negative" onClick={onRemove}>
+              <button type="button" className="text-xs font-medium text-negative" onClick={onRemove}>
                 Remove
               </button>
               <button type="button" className="text-sm font-medium text-fg" onClick={onEdit}>

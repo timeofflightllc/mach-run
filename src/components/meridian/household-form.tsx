@@ -151,7 +151,7 @@ export function HouseholdForm() {
                         <button type="button" className="text-sm font-medium text-fg" onClick={() => setEditingChildId(null)}>
                           Save and Close
                         </button>
-                        <button type="button" className="text-xs text-muted hover:text-negative" onClick={() => setRemovingChildId(child.id)}>
+                        <button type="button" className="text-xs font-medium text-negative" onClick={() => setRemovingChildId(child.id)}>
                           Remove
                         </button>
                       </div>
@@ -163,7 +163,7 @@ export function HouseholdForm() {
                         <span className="block text-xs text-muted">{age === "—" ? born : `Age ${age} · ${born}`}</span>
                       </span>
                       <span className="flex shrink-0 items-center gap-3">
-                        <button type="button" className="text-xs text-muted hover:text-negative" onClick={() => setRemovingChildId(child.id)}>
+                        <button type="button" className="text-xs font-medium text-negative" onClick={() => setRemovingChildId(child.id)}>
                           Remove
                         </button>
                         <button type="button" className="text-sm font-medium text-fg" onClick={() => setEditingChildId(child.id)}>

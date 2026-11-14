@@ -288,7 +288,7 @@ function LiabilityRow({
           <button type="button" className="min-h-12 rounded-xl bg-[#3a8a58] px-3 text-base font-medium text-white" onClick={onSave}>
             Save liability
           </button>
-          <button type="button" className="text-sm text-muted hover:text-negative" onClick={onRemove}>
+          <button type="button" className="min-h-12 rounded-xl bg-negative px-3 text-base font-medium text-white hover:opacity-90" onClick={onRemove}>
             Remove
           </button>
         </div>
@@ -301,7 +301,7 @@ function LiabilityRow({
             </span>
           </span>
           <span className="flex shrink-0 items-center gap-3">
-            <button type="button" className="text-xs text-muted hover:text-negative" onClick={onRemove}>
+            <button type="button" className="text-xs font-medium text-negative" onClick={onRemove}>
               Remove
             </button>
             <button type="button" className="text-sm font-medium text-fg" onClick={onEdit}>
