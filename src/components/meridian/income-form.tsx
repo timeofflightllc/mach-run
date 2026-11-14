@@ -618,12 +618,16 @@ function IncomeRow({
                 Start the month after {previousLabel} ends
               </label>
             ) : null}
-            <button type="button" className="min-h-12 rounded-xl bg-[#3a8a58] px-3 text-base font-medium text-white" onClick={onSave}>
-              Save income
-            </button>
-            <button type="button" className="text-sm text-muted hover:text-negative" onClick={onRemove}>
-              Remove
-            </button>
+            {s.kind !== "va" ? (
+              <>
+                <button type="button" className="min-h-12 rounded-xl bg-[#3a8a58] px-3 text-base font-medium text-white" onClick={onSave}>
+                  Save income
+                </button>
+                <button type="button" className="text-sm text-muted hover:text-negative" onClick={onRemove}>
+                  Remove
+                </button>
+              </>
+            ) : null}
             {s.kind === "ss" ? (
               <p className="text-center text-sm leading-relaxed text-subtle">
                 Primary and spouse come from Family. Other is anyone else in the household.
@@ -675,6 +679,12 @@ function IncomeRow({
             {s.kind === "va" ? (
               <div>
                 <VaKids stream={s} />
+                <button type="button" className="mt-3 min-h-12 w-full rounded-xl bg-[#3a8a58] px-3 text-base font-medium text-white" onClick={onSave}>
+                  Save income
+                </button>
+                <button type="button" className="mt-2 block w-full text-center text-sm text-muted hover:text-negative" onClick={onRemove}>
+                  Remove
+                </button>
               </div>
             ) : null}
             {open && advisory ? (
