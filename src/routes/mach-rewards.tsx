@@ -138,44 +138,101 @@ function referralDate(iso: string): string {
   });
 }
 
-const EARN_CELL =
-  "flex w-full items-start gap-3 self-start rounded-xl bg-surface px-4 py-3 text-left shadow-[0_0_0_1px_var(--color-border)]";
+const SILVER =
+  "shadow-[inset_0_0_0_1px_rgba(198,204,212,0.95),inset_0_1px_0_rgba(255,255,255,0.9)] bg-surface bg-[linear-gradient(145deg,rgba(255,255,255,0.78),rgba(255,255,255,0.04)_46%,rgba(150,158,168,0.22))] text-fg";
+const SILVER_DONE =
+  "shadow-[inset_0_0_0_1px_rgba(232,236,242,0.95),inset_0_1px_0_rgba(255,255,255,0.75)] bg-[#3caf62] bg-[linear-gradient(145deg,rgba(255,255,255,0.34),rgba(255,255,255,0.04)_48%,rgba(0,0,0,0.08))] text-[#0f172a]";
 
-function EarnFace({
-  points,
-  note,
+function fineHover() {
+  return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+}
+
+function FlipCard({
   title,
+  possible,
+  earned,
+  left,
+  done,
   detail,
-  attempts,
+  href,
+  to,
+  onOpen,
 }: {
-  points: string;
-  note?: string;
   title: string;
+  possible: string;
+  earned: string;
+  left: string;
+  done: boolean;
   detail: ReactNode;
-  attempts: string;
+  href?: string;
+  to?: "/" | "/beta" | "/beta-request" | "/review";
+  onOpen?: () => void;
 }) {
-  return (
-    <>
-      <div className="w-14 shrink-0">
-        <p className="font-display text-3xl leading-none text-fg">{points}</p>
-        {note ? <p className="mt-1 text-xs leading-tight text-muted">{note}</p> : null}
+  const [turned, setTurned] = useState(false);
+  const tone = done ? SILVER_DONE : SILVER;
+  function enter() {
+    if (fineHover()) setTurned(true);
+  }
+  function leave() {
+    if (fineHover()) setTurned(false);
+  }
+  function press(event: { preventDefault(): void }) {
+    if (!fineHover() && !turned) {
+      event.preventDefault();
+      setTurned(true);
+    }
+  }
+  const faces = (
+    <div
+      className={`relative h-full min-h-full w-full transition-transform duration-500 [transform-style:preserve-3d] ${turned ? "[transform:rotateY(180deg)]" : ""}`}
+    >
+      <div className={`flex h-full min-h-full flex-col justify-center gap-1 px-4 py-3 [backface-visibility:hidden] ${tone}`}>
+        <p className="text-base font-medium leading-tight">{title}</p>
+        <p className="text-sm tabular-nums">{possible}</p>
+        <p className="text-sm tabular-nums">{earned}</p>
+        <p className="text-sm tabular-nums">{left}</p>
       </div>
-      <span className="min-w-0">
-        <span className="block text-base font-medium leading-tight text-fg">{title}</span>
-        <span className="mt-1 block text-sm leading-snug text-muted">{detail}</span>
-        <span className="mt-1.5 block text-sm text-fg">{attempts}</span>
-      </span>
-    </>
+      <div
+        className={`absolute inset-0 overflow-y-auto px-4 py-3 text-sm leading-snug [backface-visibility:hidden] [transform:rotateY(180deg)] ${tone}`}
+      >
+        {detail}
+      </div>
+    </div>
+  );
+  const className = "block h-full w-full text-left outline-none";
+  if (href) {
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" className={className} onMouseEnter={enter} onMouseLeave={leave} onClick={press}>
+        {faces}
+      </a>
+    );
+  }
+  if (to) {
+    return (
+      <Link to={to} className={className} onMouseEnter={enter} onMouseLeave={leave} onClick={press}>
+        {faces}
+      </Link>
+    );
+  }
+  return (
+    <button type="button" className={className} onMouseEnter={enter} onMouseLeave={leave} onClick={(event) => {
+      press(event);
+      if (fineHover() || turned) onOpen?.();
+    }}>
+      {faces}
+    </button>
   );
 }
 
 function EarnBingo({
   betaSubmitted,
   betaInvited,
+  referralEarned,
   locked,
 }: {
   betaSubmitted: number | null;
   betaInvited: boolean | null;
+  referralEarned: number | null;
   locked: boolean;
 }) {
   function scrollToLink() {
@@ -183,111 +240,149 @@ function EarnBingo({
   }
 
   const submitted = betaSubmitted == null ? null : Math.min(Math.max(betaSubmitted, 0), BETA_PASS_CAP);
-  const earned = submitted == null ? null : betaRewardPoints(submitted);
+  const betaEarned = submitted == null ? null : betaRewardPoints(submitted);
+  const betaPossible = BETA_PASS_CAP * BETA_PASS_POINTS;
+  const betaDone = betaEarned === betaPossible;
 
   return (
-    <div className={locked ? "opacity-60" : ""} inert={locked}>
-      <ul className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <li>
-          <a
+    <div className={`overflow-clip rounded-xl bg-border ${locked ? "opacity-60" : ""}`} inert={locked}>
+      <ul className="grid grid-cols-1 gap-px sm:grid-cols-2 xl:grid-cols-4">
+        <li className="h-full [perspective:900px]">
+          <FlipCard
+            title="Follow on Instagram"
+            possible="20 possible"
+            earned="0 earned"
+            left="20 left"
+            done={false}
             href="https://www.instagram.com/machrundotcom/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${EARN_CELL} hover:bg-elevated`}
-          >
-            <EarnFace
-              points="20"
-              title="Follow on Instagram"
-              detail="Follow MACH RUN."
-              attempts="1 possible attempt"
-            />
-          </a>
+            detail={
+              <>
+                <p>Follow MACH RUN.</p>
+                <p className="mt-2">1 possible attempt</p>
+              </>
+            }
+          />
         </li>
-        <li>
-          <a
+        <li className="h-full [perspective:900px]">
+          <FlipCard
+            title="Follow on LinkedIn"
+            possible="20 possible"
+            earned="0 earned"
+            left="20 left"
+            done={false}
             href="https://www.linkedin.com/company/machrun-com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`${EARN_CELL} hover:bg-elevated`}
-          >
-            <EarnFace
-              points="20"
-              title="Follow on LinkedIn"
-              detail="Follow MACH RUN."
-              attempts="1 possible attempt"
-            />
-          </a>
+            detail={
+              <>
+                <p>Follow MACH RUN.</p>
+                <p className="mt-2">1 possible attempt</p>
+              </>
+            }
+          />
         </li>
-        <li>
-          <Link to="/" className={`${EARN_CELL} hover:bg-elevated`}>
-            <EarnFace
-              points="100"
-              title="First MACH RUN"
-              detail="Type your household, complete the OODA Loop, execute the MACH RUN. These points are not earned with a Hale Demo run, but your real household numbers."
-              attempts="1 possible attempt"
-            />
-          </Link>
+        <li className="h-full [perspective:900px]">
+          <FlipCard
+            title="First MACH RUN"
+            possible="100 possible"
+            earned="0 earned"
+            left="100 left"
+            done={false}
+            to="/"
+            detail={
+              <>
+                <p>
+                  Type your household, complete the OODA Loop, execute the MACH RUN. These points are not earned with a Hale Demo run, but your real household numbers.
+                </p>
+                <p className="mt-2">1 possible attempt</p>
+              </>
+            }
+          />
         </li>
-        <li>
-          <Link to="/" className={`${EARN_CELL} hover:bg-elevated`}>
-            <EarnFace
-              points="10"
-              title="Run the loop again."
-              detail="Change your MACH RUN as you iterate and adapt to new information. 10 points earned once a month maximum."
-              attempts="1 possible attempt a month"
-            />
-          </Link>
+        <li className="h-full [perspective:900px]">
+          <FlipCard
+            title="Run the loop again."
+            possible="10 possible"
+            earned="0 earned"
+            left="10 left"
+            done={false}
+            to="/"
+            detail={
+              <>
+                <p>Change your MACH RUN as you iterate and adapt to new information. 10 points earned once a month maximum.</p>
+                <p className="mt-2">1 possible attempt a month</p>
+              </>
+            }
+          />
         </li>
-        <li>
-          <button type="button" onClick={scrollToLink} className={`${EARN_CELL} hover:bg-elevated`}>
-            <EarnFace
-              points="200"
-              title="Refer a friend"
-              detail="Earn 200 points when a referred friend signs up for a yearly plan."
-              attempts="Unlimited possible attempts"
-            />
-          </button>
+        <li className="h-full [perspective:900px]">
+          <FlipCard
+            title="Refer a friend"
+            possible="200 possible"
+            earned={referralEarned == null ? "— earned" : `${referralEarned} earned`}
+            left="Unlimited"
+            done={false}
+            onOpen={scrollToLink}
+            detail={
+              <>
+                <p>Earn 200 points when a referred friend signs up for a yearly plan.</p>
+                <p className="mt-2">Unlimited possible attempts</p>
+              </>
+            }
+          />
         </li>
-        <li>
+        <li className="h-full [perspective:900px]">
           {betaInvited === false ? (
-            <div className={EARN_CELL}>
-              <EarnFace
-                points="450"
-                note="possible"
-                title="Beta debrief"
-                detail={
-                  <>
-                    You are not currently a beta tester. To become a beta tester for MACH RUN and have the chance to
-                    receive additional MR points and a free hat, please{" "}
-                    <Link to="/beta-request" className="text-fg underline underline-offset-4">
-                      click here
-                    </Link>
-                    .
-                  </>
-                }
-                attempts="3 possible attempts"
-              />
-            </div>
+            <FlipCard
+              title="Beta debrief"
+              possible={`${betaPossible} possible`}
+              earned="0 earned"
+              left={`${betaPossible} left`}
+              done={false}
+              to="/beta-request"
+              detail={
+                <>
+                  <p>
+                    You are not currently a beta tester. To become a beta tester for MACH RUN and have the chance to receive additional MR points and a free hat, please click here.
+                  </p>
+                  <p className="mt-2">3 possible attempts</p>
+                </>
+              }
+            />
           ) : (
-            <Link to="/beta" className={`${EARN_CELL} hover:bg-elevated`}>
-              <EarnFace
-                points="450"
-                note="possible"
-                title="Beta debrief"
-                detail={
-                  earned == null
-                    ? "Loading…"
-                    : `${earned} of ${BETA_PASS_CAP * BETA_PASS_POINTS} earned. ${submitted} of ${BETA_PASS_CAP} feedback forms submitted.`
-                }
-                attempts="3 possible attempts"
-              />
-            </Link>
+            <FlipCard
+              title="Beta debrief"
+              possible={`${betaPossible} possible`}
+              earned={betaEarned == null ? "— earned" : `${betaEarned} earned`}
+              left={betaEarned == null ? "— left" : `${betaPossible - betaEarned} left`}
+              done={betaDone}
+              to="/beta"
+              detail={
+                <>
+                  <p>
+                    {betaEarned == null
+                      ? "Loading…"
+                      : `${betaEarned} of ${betaPossible} earned. ${submitted} of ${BETA_PASS_CAP} feedback forms submitted.`}
+                  </p>
+                  <p className="mt-2">3 possible attempts</p>
+                </>
+              }
+            />
           )}
         </li>
-        <li>
-          <Link to="/review" className={`${EARN_CELL} hover:bg-elevated`}>
-            <EarnFace points="100" title="Short review" detail="Stars, your name, and 250 characters." attempts="1 possible attempt" />
-          </Link>
+        <li className="h-full [perspective:900px]">
+          <FlipCard
+            title="Short review"
+            possible="100 possible"
+            earned="0 earned"
+            left="100 left"
+            done={false}
+            to="/review"
+            detail={
+              <>
+                <p>Stars, your name, and 250 characters.</p>
+                <p className="mt-2">1 possible attempt</p>
+              </>
+            }
+          />
         </li>
       </ul>
     </div>
@@ -458,7 +553,14 @@ function MachRewardsPage() {
           </form>
         ) : null}
 
-        <EarnBingo betaSubmitted={betaSubmitted} betaInvited={betaInvited} locked={accepted !== true} />
+        <EarnBingo
+          betaSubmitted={betaSubmitted}
+          betaInvited={betaInvited}
+          referralEarned={
+            ledger ? ledger.grants.filter((grant) => grant.source === "referral").reduce((sum, grant) => sum + grant.points, 0) : null
+          }
+          locked={accepted !== true}
+        />
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
 
