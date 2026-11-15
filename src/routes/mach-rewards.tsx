@@ -733,7 +733,9 @@ function MachRewardsPage() {
           </div>
         </section>
 
-        <section id="referral-link" className="w-full scroll-mt-6 space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)] sm:p-6">
+        <div className="space-y-3">
+          <h2 className="font-display text-2xl text-fg">Referrals</h2>
+          <section id="referral-link" className="w-full scroll-mt-6 space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)] sm:p-6">
           <p className="max-w-xl text-base leading-relaxed text-muted">
             When a friend starts a yearly plan, those points land in Mach Rewards. Nothing comes off a bill until you apply them. 10 points is $1.
           </p>
@@ -742,6 +744,7 @@ function MachRewardsPage() {
             {summary ? referralCountLine(summary.signedUp, summary.yearly) : "Loading your rewards…"}
           </p>
         </section>
+        </div>
 
         <section className="w-full rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
           <div className="flex flex-col gap-4 px-5 py-5 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:px-6">
