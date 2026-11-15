@@ -10,7 +10,7 @@ import { referralCountLine } from "@/lib/referrals/summary";
 import type { ReferralPerson, ReferralSummary } from "@/lib/referrals/page.server";
 import { pointBoardFn } from "@/lib/points/api";
 import { BETA_PASS_CAP, BETA_PASS_POINTS, betaRewardPoints } from "@/lib/points/board";
-import { acceptRewardsTermsFn, applyRewardPointsFn, rewardLedgerFn, rewardsAcceptanceFn } from "@/lib/rewards/api";
+import { acceptRewardsTermsFn, applyRewardPointsFn, instagramRewardCodeFn, rewardLedgerFn, rewardsAcceptanceFn } from "@/lib/rewards/api";
 import type { RewardGrant } from "@/lib/rewards/balance.server";
 import { rewardApplyChoices, rewardDollars } from "@/lib/rewards/apply";
 import { REWARDS_TERMS } from "@/lib/rewards/terms";
@@ -228,11 +228,15 @@ function EarnBingo({
   betaSubmitted,
   betaInvited,
   referralEarned,
+  instagramCode,
+  instagramEarned,
   locked,
 }: {
   betaSubmitted: number | null;
   betaInvited: boolean | null;
   referralEarned: number | null;
+  instagramCode: string | null;
+  instagramEarned: number;
   locked: boolean;
 }) {
   function scrollToLink() {
@@ -243,6 +247,7 @@ function EarnBingo({
   const betaEarned = submitted == null ? null : betaRewardPoints(submitted);
   const betaPossible = BETA_PASS_CAP * BETA_PASS_POINTS;
   const betaDone = betaEarned === betaPossible;
+  const instagramPoints = Math.max(0, instagramEarned);
 
   return (
     <div className={`overflow-clip rounded-xl bg-border ${locked ? "opacity-60" : ""}`} inert={locked}>
@@ -251,16 +256,21 @@ function EarnBingo({
           <FlipCard
             title="Follow on Instagram"
             possible="20 possible"
-            earned="0 earned"
-            left="20 left"
-            done={false}
+            earned={`${instagramPoints} earned`}
+            left={`${Math.max(0, 20 - instagramPoints)} left`}
+            done={instagramPoints >= 20}
             href="https://www.instagram.com/machrundotcom/"
             detail={
               <>
                 <p>
-                  Open @machrundotcom on Instagram and tap Follow. One follow, one time. That is 20 points.
+                  Follow @machrundotcom, then send this code in a direct message to that account.
                 </p>
-                <p className="mt-2">1 possible attempt</p>
+                {instagramCode ? (
+                  <p className="mt-2 font-mono text-base tracking-[0.14em]">{instagramCode}</p>
+                ) : null}
+                <p className="mt-2">
+                  The points post after that message arrives. A second message does not pay again.
+                </p>
               </>
             }
           />
@@ -411,6 +421,7 @@ function MachRewardsPage() {
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [instagramCode, setInstagramCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isRealUser(user)) return;
@@ -461,6 +472,21 @@ function MachRewardsPage() {
       live = false;
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!isRealUser(user) || accepted !== true) return;
+    let live = true;
+    void instagramRewardCodeFn()
+      .then((row) => {
+        if (live) setInstagramCode(row.code);
+      })
+      .catch(() => {
+        if (live) setInstagramCode(null);
+      });
+    return () => {
+      live = false;
+    };
+  }, [user, accepted]);
 
   async function onJoin(event: FormEvent) {
     event.preventDefault();
@@ -563,6 +589,14 @@ function MachRewardsPage() {
           referralEarned={
             ledger ? ledger.grants.filter((grant) => grant.source === "referral").reduce((sum, grant) => sum + grant.points, 0) : null
           }
+          instagramCode={instagramCode}
+          instagramEarned={
+            ledger
+              ? ledger.grants
+                  .filter((grant) => grant.source === "instagram")
+                  .reduce((sum, grant) => sum + grant.points, 0)
+              : 0
+          }
           locked={accepted !== true}
         />
 
@@ -632,7 +666,11 @@ function MachRewardsPage() {
                   >
                     <div className="min-w-0">
                       <p className="text-base font-medium text-fg">
-                        {grant.source === "beta" ? "Beta debrief" : "Referred a friend"}
+                        {grant.source === "beta"
+                          ? "Beta debrief"
+                          : grant.source === "instagram"
+                            ? "Instagram"
+                            : "Referred a friend"}
                       </p>
                       <p className="mt-0.5 text-sm text-subtle">
                         {grant.source === "referral" ? `${grant.name} · ` : ""}

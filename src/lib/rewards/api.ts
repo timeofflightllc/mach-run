@@ -25,6 +25,13 @@ export const acceptRewardsTermsFn = createServerFn({ method: "POST" })
     }
   });
 
+export const instagramRewardCodeFn = createServerFn({ method: "GET" })
+  .middleware([authMiddleware])
+  .handler(async ({ context }): Promise<{ code: string | null }> => {
+    const { instagramRewardCode } = await import("./instagram.server");
+    return { code: await instagramRewardCode(context.userId) };
+  });
+
 export const rewardLedgerFn = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
   .handler(async ({ context }): Promise<{ balance: number; grants: RewardGrant[] }> => {

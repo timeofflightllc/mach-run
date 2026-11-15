@@ -39,6 +39,7 @@ import { Route as ApiContactRouteImport } from './routes/api/contact'
 import { Route as ApiSiteErrorRouteImport } from './routes/api/site-error'
 import { Route as LearnSlugRouteImport } from './routes/learn.$slug'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiInstagramWebhookRouteImport } from './routes/api/instagram/webhook'
 import { Route as ApiStripeWebhookRouteImport } from './routes/api/stripe/webhook'
 
 const IndexRoute = IndexRouteImport.update({
@@ -192,6 +193,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInstagramWebhookRoute = ApiInstagramWebhookRouteImport.update({
+  id: '/api/instagram/webhook',
+  path: '/api/instagram/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiStripeWebhookRoute = ApiStripeWebhookRouteImport.update({
   id: '/api/stripe/webhook',
   path: '/api/stripe/webhook',
@@ -229,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/api/site-error': typeof ApiSiteErrorRoute
   '/learn/$slug': typeof LearnSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/instagram/webhook': typeof ApiInstagramWebhookRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRoutesByTo {
@@ -262,6 +269,7 @@ export interface FileRoutesByTo {
   '/api/site-error': typeof ApiSiteErrorRoute
   '/learn/$slug': typeof LearnSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/instagram/webhook': typeof ApiInstagramWebhookRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRoutesById {
@@ -296,6 +304,7 @@ export interface FileRoutesById {
   '/api/site-error': typeof ApiSiteErrorRoute
   '/learn/$slug': typeof LearnSlugRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/instagram/webhook': typeof ApiInstagramWebhookRoute
   '/api/stripe/webhook': typeof ApiStripeWebhookRoute
 }
 export interface FileRouteTypes {
@@ -331,6 +340,7 @@ export interface FileRouteTypes {
     | '/api/site-error'
     | '/learn/$slug'
     | '/api/auth/$'
+    | '/api/instagram/webhook'
     | '/api/stripe/webhook'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -364,6 +374,7 @@ export interface FileRouteTypes {
     | '/api/site-error'
     | '/learn/$slug'
     | '/api/auth/$'
+    | '/api/instagram/webhook'
     | '/api/stripe/webhook'
   id:
     | '__root__'
@@ -397,6 +408,7 @@ export interface FileRouteTypes {
     | '/api/site-error'
     | '/learn/$slug'
     | '/api/auth/$'
+    | '/api/instagram/webhook'
     | '/api/stripe/webhook'
   fileRoutesById: FileRoutesById
 }
@@ -430,6 +442,7 @@ export interface RootRouteChildren {
   ApiContactRoute: typeof ApiContactRoute
   ApiSiteErrorRoute: typeof ApiSiteErrorRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiInstagramWebhookRoute: typeof ApiInstagramWebhookRoute
   ApiStripeWebhookRoute: typeof ApiStripeWebhookRoute
 }
 
@@ -645,6 +658,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/instagram/webhook': {
+      id: '/api/instagram/webhook'
+      path: '/api/instagram/webhook'
+      fullPath: '/api/instagram/webhook'
+      preLoaderRoute: typeof ApiInstagramWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/stripe/webhook': {
       id: '/api/stripe/webhook'
       path: '/api/stripe/webhook'
@@ -695,6 +715,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiContactRoute: ApiContactRoute,
   ApiSiteErrorRoute: ApiSiteErrorRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiInstagramWebhookRoute: ApiInstagramWebhookRoute,
   ApiStripeWebhookRoute: ApiStripeWebhookRoute,
 }
 export const routeTree = rootRouteImport
