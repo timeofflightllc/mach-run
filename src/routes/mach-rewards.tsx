@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { ReferralLinkLine } from "@/components/meridian/referral-card";
 import { PrimaryButton } from "@/components/ui/field";
@@ -182,18 +182,30 @@ function FlipCard({
       setTurned(true);
     }
   }
+  const front = (
+    <>
+      <p className="text-base font-medium leading-tight">{title}</p>
+      <p className="text-sm tabular-nums">{possible}</p>
+      <p className="text-sm tabular-nums">{earned}</p>
+      <p className="text-sm tabular-nums">{left}</p>
+    </>
+  );
   const faces = (
     <div
-      className={`relative h-full min-h-full w-full transition-transform duration-500 [transform-style:preserve-3d] ${turned ? "[transform:rotateY(180deg)]" : ""}`}
+      data-fit
+      className={`grid h-full w-full [grid-template-rows:1fr] transition-transform duration-500 [transform-style:preserve-3d] ${turned ? "[transform:rotateY(180deg)]" : ""}`}
     >
-      <div className={`flex h-full min-h-full flex-col justify-center gap-1 px-4 py-3 [backface-visibility:hidden] ${tone}`}>
-        <p className="text-base font-medium leading-tight">{title}</p>
-        <p className="text-sm tabular-nums">{possible}</p>
-        <p className="text-sm tabular-nums">{earned}</p>
-        <p className="text-sm tabular-nums">{left}</p>
+      <div className="invisible col-start-1 row-start-1 flex flex-col gap-1 px-4 py-3" aria-hidden>
+        {front}
+      </div>
+      <div className="invisible col-start-1 row-start-1 px-4 py-3 text-sm leading-snug" aria-hidden>
+        {detail}
+      </div>
+      <div className={`col-start-1 row-start-1 flex h-full flex-col justify-center gap-1 px-4 py-3 [backface-visibility:hidden] ${tone}`}>
+        {front}
       </div>
       <div
-        className={`absolute inset-0 overflow-y-auto px-4 py-3 text-sm leading-snug [backface-visibility:hidden] [transform:rotateY(180deg)] ${tone}`}
+        className={`col-start-1 row-start-1 h-full px-4 py-3 text-sm leading-snug [backface-visibility:hidden] [transform:rotateY(180deg)] ${tone}`}
       >
         {detail}
       </div>
@@ -239,6 +251,7 @@ function EarnBingo({
   instagramEarned: number;
   locked: boolean;
 }) {
+  const boardRef = useRef<HTMLUListElement>(null);
   function scrollToLink() {
     document.getElementById("referral-link")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -249,10 +262,26 @@ function EarnBingo({
   const betaDone = betaEarned === betaPossible;
   const instagramPoints = Math.max(0, instagramEarned);
 
+  useEffect(() => {
+    const ul = boardRef.current;
+    if (!ul) return;
+    const fit = () => {
+      const cards = [...ul.querySelectorAll<HTMLElement>("[data-fit]")];
+      if (cards.length === 0) return;
+      for (const card of cards) card.style.minHeight = "0px";
+      const max = Math.max(...cards.map((card) => card.getBoundingClientRect().height));
+      const next = `${Math.ceil(max)}px`;
+      for (const card of cards) card.style.minHeight = next;
+    };
+    fit();
+    window.addEventListener("resize", fit);
+    return () => window.removeEventListener("resize", fit);
+  }, [betaSubmitted, betaInvited, referralEarned, instagramCode, instagramEarned, locked]);
+
   return (
     <div className={`overflow-clip rounded-xl bg-border ${locked ? "opacity-60" : ""}`} inert={locked}>
-      <ul className="grid grid-cols-1 gap-px sm:grid-cols-2 xl:grid-cols-4">
-        <li className="h-full min-h-56 [perspective:900px]">
+      <ul ref={boardRef} className="grid grid-cols-1 gap-px sm:grid-cols-2 xl:grid-cols-4">
+        <li className="[perspective:900px]">
           <FlipCard
             title="Follow on Instagram"
             possible="20 points possible"
@@ -275,7 +304,7 @@ function EarnBingo({
             }
           />
         </li>
-        <li className="h-full min-h-56 [perspective:900px]">
+        <li className="[perspective:900px]">
           <FlipCard
             title="Follow on LinkedIn"
             possible="20 points possible"
@@ -293,7 +322,7 @@ function EarnBingo({
             }
           />
         </li>
-        <li className="h-full min-h-56 [perspective:900px]">
+        <li className="[perspective:900px]">
           <FlipCard
             title="First MACH RUN"
             possible="100 points possible"
@@ -311,7 +340,7 @@ function EarnBingo({
             }
           />
         </li>
-        <li className="h-full min-h-56 [perspective:900px]">
+        <li className="[perspective:900px]">
           <FlipCard
             title="Run the loop again."
             possible="10 points possible"
@@ -327,7 +356,7 @@ function EarnBingo({
             }
           />
         </li>
-        <li className="h-full min-h-56 [perspective:900px]">
+        <li className="[perspective:900px]">
           <FlipCard
             title="Refer a friend"
             possible="200 points possible"
@@ -343,7 +372,7 @@ function EarnBingo({
             }
           />
         </li>
-        <li className="h-full min-h-56 [perspective:900px]">
+        <li className="[perspective:900px]">
           {betaInvited === false ? (
             <FlipCard
               title="Beta Test Debrief"
@@ -382,7 +411,7 @@ function EarnBingo({
             />
           )}
         </li>
-        <li className="h-full min-h-56 [perspective:900px]">
+        <li className="[perspective:900px]">
           <FlipCard
             title="Write a review"
             possible="100 points possible"
@@ -398,7 +427,7 @@ function EarnBingo({
             }
           />
         </li>
-        <li className="h-full min-h-56 [perspective:900px]">
+        <li className="[perspective:900px]">
           <FlipCard
             title="Pass the word"
             possible="20 points possible"
