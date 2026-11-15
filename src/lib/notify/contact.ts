@@ -143,6 +143,62 @@ export async function sendEnterpriseMail(
   }
 }
 
+export async function sendReviewMail(input: {
+  name: string;
+  stars: number;
+  review: string;
+}): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const key = env("RESEND_API_KEY");
+  if (!key) return { ok: false, reason: "Mail is not connected yet." };
+  const to = contactInbox("general");
+  const name = input.name.trim();
+  const review = input.review.trim();
+  const when = new Date().toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "America/Chicago",
+  });
+  const subject = `MACH RUN review — ${input.stars} stars — ${name.slice(0, 40)}`;
+  const text = [`Stars: ${input.stars} of 5`, `Name: ${name}`, `When: ${when} CT`, "", review].join("\n");
+  const html = wrapEmail(
+    "Review submitted",
+    `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#3D4A54;">
+          A short review was submitted. It is not on the site until you use it.
+        </td></tr>
+        <tr><td style="padding:0 28px 24px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE7DC;">
+            <tr><td style="padding:14px 16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1E2A32;">
+              Stars<br /><strong>${input.stars} of 5</strong><br /><br />
+              Name<br /><strong>${escapeHtml(name)}</strong><br /><br />
+              When<br /><strong>${escapeHtml(when)} CT</strong><br /><br />
+              Review<br /><strong>${escapeHtml(review)}</strong>
+            </td></tr>
+          </table>
+        </td></tr>`,
+    "A short review was submitted.",
+  );
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: fromAddress(),
+        to: [to],
+        subject,
+        html,
+        text,
+      }),
+    });
+    if (!res.ok) return { ok: false, reason: "Could not send. Try again." };
+    return { ok: true };
+  } catch {
+    return { ok: false, reason: "Could not reach mail." };
+  }
+}
+
 export async function sendBetaDebriefMail(input: {
   name: string;
   email: string;

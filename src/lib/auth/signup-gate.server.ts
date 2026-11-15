@@ -108,7 +108,7 @@ export async function gateEmailSignup(request: Request): Promise<Response | null
 }
 
 
-export async function tooManyFormSubmits(kind: "contact" | "enterprise", ip: string): Promise<boolean> {
+export async function tooManyFormSubmits(kind: "contact" | "enterprise" | "review", ip: string): Promise<boolean> {
   const sql = await getSql();
   await sql.query(`
     create table if not exists form_rate (

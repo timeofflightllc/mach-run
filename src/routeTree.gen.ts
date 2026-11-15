@@ -20,12 +20,14 @@ import { Route as FaqRouteImport } from './routes/faq'
 import { Route as LearnRouteImport } from './routes/learn'
 import { Route as LegalRouteImport } from './routes/legal'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MachRewardsRouteImport } from './routes/mach-rewards'
 import { Route as MethodRouteImport } from './routes/method'
 import { Route as MilitaryPensionPresentValueRouteImport } from './routes/military-pension-present-value'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ReferralsRouteImport } from './routes/referrals'
 import { Route as RetiredPayRouteImport } from './routes/retired-pay'
+import { Route as ReviewRouteImport } from './routes/review'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StartRouteImport } from './routes/start'
 import { Route as ToolsRouteImport } from './routes/tools'
@@ -92,6 +94,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MachRewardsRoute = MachRewardsRouteImport.update({
+  id: '/mach-rewards',
+  path: '/mach-rewards',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MethodRoute = MethodRouteImport.update({
   id: '/method',
   path: '/method',
@@ -121,6 +128,11 @@ const ReferralsRoute = ReferralsRouteImport.update({
 const RetiredPayRoute = RetiredPayRouteImport.update({
   id: '/retired-pay',
   path: '/retired-pay',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -186,12 +198,14 @@ export interface FileRoutesByFullPath {
   '/learn': typeof LearnRouteWithChildren
   '/legal': typeof LegalRoute
   '/login': typeof LoginRoute
+  '/mach-rewards': typeof MachRewardsRoute
   '/method': typeof MethodRoute
   '/military-pension-present-value': typeof MilitaryPensionPresentValueRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/referrals': typeof ReferralsRoute
   '/retired-pay': typeof RetiredPayRoute
+  '/review': typeof ReviewRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/start': typeof StartRoute
   '/tools': typeof ToolsRoute
@@ -215,12 +229,14 @@ export interface FileRoutesByTo {
   '/learn': typeof LearnRouteWithChildren
   '/legal': typeof LegalRoute
   '/login': typeof LoginRoute
+  '/mach-rewards': typeof MachRewardsRoute
   '/method': typeof MethodRoute
   '/military-pension-present-value': typeof MilitaryPensionPresentValueRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/referrals': typeof ReferralsRoute
   '/retired-pay': typeof RetiredPayRoute
+  '/review': typeof ReviewRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/start': typeof StartRoute
   '/tools': typeof ToolsRoute
@@ -245,12 +261,14 @@ export interface FileRoutesById {
   '/learn': typeof LearnRouteWithChildren
   '/legal': typeof LegalRoute
   '/login': typeof LoginRoute
+  '/mach-rewards': typeof MachRewardsRoute
   '/method': typeof MethodRoute
   '/military-pension-present-value': typeof MilitaryPensionPresentValueRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
   '/referrals': typeof ReferralsRoute
   '/retired-pay': typeof RetiredPayRoute
+  '/review': typeof ReviewRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/start': typeof StartRoute
   '/tools': typeof ToolsRoute
@@ -276,12 +294,14 @@ export interface FileRouteTypes {
     | '/learn'
     | '/legal'
     | '/login'
+    | '/mach-rewards'
     | '/method'
     | '/military-pension-present-value'
     | '/pricing'
     | '/privacy'
     | '/referrals'
     | '/retired-pay'
+    | '/review'
     | '/sitemap.xml'
     | '/start'
     | '/tools'
@@ -305,12 +325,14 @@ export interface FileRouteTypes {
     | '/learn'
     | '/legal'
     | '/login'
+    | '/mach-rewards'
     | '/method'
     | '/military-pension-present-value'
     | '/pricing'
     | '/privacy'
     | '/referrals'
     | '/retired-pay'
+    | '/review'
     | '/sitemap.xml'
     | '/start'
     | '/tools'
@@ -334,12 +356,14 @@ export interface FileRouteTypes {
     | '/learn'
     | '/legal'
     | '/login'
+    | '/mach-rewards'
     | '/method'
     | '/military-pension-present-value'
     | '/pricing'
     | '/privacy'
     | '/referrals'
     | '/retired-pay'
+    | '/review'
     | '/sitemap.xml'
     | '/start'
     | '/tools'
@@ -364,12 +388,14 @@ export interface RootRouteChildren {
   LearnRoute: typeof LearnRouteWithChildren
   LegalRoute: typeof LegalRoute
   LoginRoute: typeof LoginRoute
+  MachRewardsRoute: typeof MachRewardsRoute
   MethodRoute: typeof MethodRoute
   MilitaryPensionPresentValueRoute: typeof MilitaryPensionPresentValueRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
   ReferralsRoute: typeof ReferralsRoute
   RetiredPayRoute: typeof RetiredPayRoute
+  ReviewRoute: typeof ReviewRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StartRoute: typeof StartRoute
   ToolsRoute: typeof ToolsRoute
@@ -460,6 +486,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mach-rewards': {
+      id: '/mach-rewards'
+      path: '/mach-rewards'
+      fullPath: '/mach-rewards'
+      preLoaderRoute: typeof MachRewardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/method': {
       id: '/method'
       path: '/method'
@@ -500,6 +533,13 @@ declare module '@tanstack/react-router' {
       path: '/retired-pay'
       fullPath: '/retired-pay'
       preLoaderRoute: typeof RetiredPayRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -597,12 +637,14 @@ const rootRouteChildren: RootRouteChildren = {
   LearnRoute: LearnRouteWithChildren,
   LegalRoute: LegalRoute,
   LoginRoute: LoginRoute,
+  MachRewardsRoute: MachRewardsRoute,
   MethodRoute: MethodRoute,
   MilitaryPensionPresentValueRoute: MilitaryPensionPresentValueRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
   ReferralsRoute: ReferralsRoute,
   RetiredPayRoute: RetiredPayRoute,
+  ReviewRoute: ReviewRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   StartRoute: StartRoute,
   ToolsRoute: ToolsRoute,

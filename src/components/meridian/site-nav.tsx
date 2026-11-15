@@ -14,6 +14,7 @@ const LINKS = [
   { to: "/compare" as const, label: "Compare" },
   { to: "/announcements" as const, label: "Updates" },
   { to: "/contact" as const, label: "Contact" },
+  { to: "/review" as const, label: "Submit a Review" },
   { to: "/privacy" as const, label: "Privacy" },
   { to: "/legal" as const, label: "Terms of Service", menu: "Terms" },
 ];

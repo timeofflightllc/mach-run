@@ -17,6 +17,7 @@ export const SITEMAP_PAGES: {
   { path: "/faq", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["faq", "footer"] },
   { path: "/compare", sourceLastmod: "2026-10-11T07:45:00+00:00", slugs: ["compare", "footer"] },
   { path: "/contact", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["contact", "footer"] },
+  { path: "/review", sourceLastmod: "2026-11-15T08:00:00+00:00", slugs: [] },
   { path: "/announcements", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["announcements", "footer"] },
   { path: "/legal", sourceLastmod: "2026-10-24T06:21:00+00:00", slugs: ["legal", "footer"] },
   { path: "/privacy", sourceLastmod: "2026-10-10T16:31:31+00:00", slugs: ["privacy", "footer"] },

@@ -7,6 +7,7 @@ import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { referralPeopleFn, referralSummaryFn } from "@/lib/referrals/api";
 import { referralBillLine, referralCountLine, referralCreditLabel, referralPoints, referralPointsReceived } from "@/lib/referrals/summary";
 import type { ReferralPerson, ReferralSummary } from "@/lib/referrals/page.server";
+import { pointBoardFn } from "@/lib/points/api";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/mach-rewards")({
@@ -32,15 +33,22 @@ function referralDate(iso: string): string {
 }
 
 const EARN_CELL = "flex h-full min-h-44 w-full flex-col bg-surface px-4 py-5 text-left";
+const ATTEMPTS = "mt-auto pt-4 text-sm text-fg";
 
-function EarnBingo() {
+const BETA_PASSES = 3;
+const BETA_POINTS = 150;
+
+function EarnBingo({ betaSubmitted }: { betaSubmitted: number | null }) {
   function scrollToLink() {
     document.getElementById("referral-link")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  const submitted = betaSubmitted == null ? null : Math.min(Math.max(betaSubmitted, 0), BETA_PASSES);
+  const earned = submitted == null ? null : submitted * BETA_POINTS;
+
   return (
     <div className="overflow-hidden rounded-xl bg-border">
-      <ul className="grid grid-cols-1 gap-px lg:grid-cols-5">
+      <ul className="grid grid-cols-1 gap-px sm:grid-cols-2 xl:grid-cols-4">
         <li>
           <a
             href="https://www.instagram.com/machrundotcom/"
@@ -51,34 +59,68 @@ function EarnBingo() {
             <p className="font-display text-4xl leading-none text-fg">20</p>
             <p className="mt-6 text-base font-medium text-fg">Follow on Instagram</p>
             <p className="mt-1 text-sm leading-relaxed text-muted">Follow MACH RUN.</p>
+            <p className={ATTEMPTS}>1 possible attempt</p>
+          </a>
+        </li>
+        <li>
+          <a
+            href="https://www.linkedin.com/company/machrun-com/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${EARN_CELL} hover:bg-elevated`}
+          >
+            <p className="font-display text-4xl leading-none text-fg">20</p>
+            <p className="mt-6 text-base font-medium text-fg">Follow on LinkedIn</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted">Follow MACH RUN.</p>
+            <p className={ATTEMPTS}>1 possible attempt</p>
           </a>
         </li>
         <li>
           <Link to="/" className={`${EARN_CELL} hover:bg-elevated`}>
             <p className="font-display text-4xl leading-none text-fg">100</p>
             <p className="mt-6 text-base font-medium text-fg">First MACH RUN</p>
-            <p className="mt-1 text-sm leading-relaxed text-muted">Your own household. Not the Hale demo.</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted">
+              Type your household, complete the OODA Loop, execute the MACH RUN. These points are not earned with a Hale Demo run, but your real household numbers.
+            </p>
+            <p className={ATTEMPTS}>1 possible attempt</p>
           </Link>
         </li>
         <li>
           <Link to="/" className={`${EARN_CELL} hover:bg-elevated`}>
             <p className="font-display text-4xl leading-none text-fg">10</p>
-            <p className="mt-6 text-base font-medium text-fg">Run the loop again</p>
-            <p className="mt-1 text-sm leading-relaxed text-muted">Change the plan and run it. Once a month.</p>
+            <p className="mt-6 text-base font-medium text-fg">Run the loop again.</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted">Change your MACH RUN as you iterate and adapt to new information. 10 points earned once a month maximum.</p>
+            <p className={ATTEMPTS}>1 possible attempt a month</p>
           </Link>
         </li>
         <li>
           <button type="button" onClick={scrollToLink} className={`${EARN_CELL} hover:bg-elevated`}>
             <p className="font-display text-4xl leading-none text-fg">200</p>
             <p className="mt-6 text-base font-medium text-fg">Refer a friend</p>
-            <p className="mt-1 text-sm leading-relaxed text-muted">They start a yearly plan.</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted">Earn 200 points when a referred friend signs up for a yearly plan.</p>
+            <p className={ATTEMPTS}>Unlimited possible attempts</p>
           </button>
         </li>
         <li>
           <Link to="/beta" className={`${EARN_CELL} hover:bg-elevated`}>
-            <p className="font-display text-4xl leading-none text-fg">400</p>
+            <p className="font-display text-4xl leading-none text-fg">
+              450 <span className="text-lg font-medium text-muted">possible</span>
+            </p>
             <p className="mt-6 text-base font-medium text-fg">Beta debrief</p>
-            <p className="mt-1 text-sm leading-relaxed text-muted">Submit the form, or take the hat.</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted">
+              {earned == null
+                ? "Loading…"
+                : `${earned} of 450 earned. ${submitted} of 3 feedback forms submitted.`}
+            </p>
+            <p className={ATTEMPTS}>3 possible attempts</p>
+          </Link>
+        </li>
+        <li>
+          <Link to="/review" className={`${EARN_CELL} hover:bg-elevated`}>
+            <p className="font-display text-4xl leading-none text-fg">100</p>
+            <p className="mt-6 text-base font-medium text-fg">Short review</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted">Stars, your name, and 250 characters.</p>
+            <p className={ATTEMPTS}>1 possible attempt</p>
           </Link>
         </li>
       </ul>
@@ -90,6 +132,7 @@ function MachRewardsPage() {
   const { user, isPending } = useCurrentUserState();
   const [summary, setSummary] = useState<ReferralSummary | null>(null);
   const [people, setPeople] = useState<ReferralPerson[] | null>(null);
+  const [betaSubmitted, setBetaSubmitted] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -108,6 +151,13 @@ function MachRewardsPage() {
       })
       .catch(() => {
         if (live) setPeople([]);
+      });
+    void pointBoardFn()
+      .then((row) => {
+        if (live) setBetaSubmitted(row.betaSubmitted);
+      })
+      .catch(() => {
+        if (live) setBetaSubmitted(0);
       });
     return () => {
       live = false;
@@ -136,7 +186,7 @@ function MachRewardsPage() {
           <h1 className="mt-2 font-display text-4xl text-fg">Mach Rewards</h1>
         </header>
 
-        <EarnBingo />
+        <EarnBingo betaSubmitted={betaSubmitted} />
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
 
