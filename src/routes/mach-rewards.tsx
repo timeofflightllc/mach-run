@@ -65,8 +65,16 @@ function PlatinumCard({
       <div aria-hidden className="absolute inset-[5%] rounded-[0.55rem] border border-[#2c2926]/30" />
 
       <div className="relative flex h-full flex-col items-center px-[7%] pt-[6%]">
-        <p className="whitespace-nowrap text-[5.6cqw] font-bold leading-none tracking-[0.06em]">MACH RUN EXPRESS</p>
-        <p className="mt-[0.45cqw] text-[2.15cqw] font-semibold leading-none tracking-[0.46em]">REWARDS</p>
+        <div className="flex w-max max-w-full flex-col items-stretch">
+          <p className="whitespace-nowrap text-center text-[5.6cqw] font-bold leading-none tracking-[0.06em]">
+            MACH RUN EXPRESS
+          </p>
+          <p className="mx-auto mt-[1cqw] flex w-2/3 justify-between text-[3.5cqw] font-semibold leading-none">
+            {["R", "E", "W", "A", "R", "D", "S"].map((letter, index) => (
+              <span key={index}>{letter}</span>
+            ))}
+          </p>
+        </div>
       </div>
 
       <div
@@ -89,32 +97,30 @@ function PlatinumCard({
       <img
         src="/brand/rewards-pilot.jpg"
         alt=""
-        className="pointer-events-none absolute left-1/2 top-[54%] h-[58%] w-[36%] -translate-x-1/2 -translate-y-1/2 object-cover"
+        className="pointer-events-none absolute left-[46%] top-[53%] h-[54%] w-[32%] -translate-x-1/2 -translate-y-1/2 object-cover"
         style={{ clipPath: "ellipse(46% 46% at 50% 50%)" }}
       />
 
-      <div className="absolute right-[8%] top-[46%] -translate-y-1/2 text-right">
+      <div className="absolute right-[8%] top-[40%] -translate-y-1/2 text-right">
         <p className="text-[1.7cqw] font-semibold tracking-[0.28em]">POINTS</p>
         <p className="mt-[0.3cqw] text-[4.2cqw] font-bold leading-none tabular-nums">
           {balance == null ? "—" : balance}
         </p>
       </div>
 
-      <div className="absolute left-[63%] top-[69%] flex -translate-x-1/2 flex-col items-center">
-        <p
-          className="px-[0.9em] py-[0.2em] text-[1.45cqw] font-semibold leading-none tracking-[0.22em]"
-          style={{
-            background: "linear-gradient(180deg, rgba(255,255,255,0.35), rgba(70,66,60,0.08))",
-            clipPath: "polygon(7% 0, 93% 0, 100% 50%, 93% 100%, 7% 100%, 0 50%)",
-            boxShadow: "inset 0 0 0 1px rgba(44,41,38,0.55)",
-          }}
-        >
-          MEMBER SINCE
-        </p>
-        <p className="mt-[0.35cqw] text-[2.7cqw] font-bold leading-none tabular-nums">{since ?? "—"}</p>
+      <div className="absolute right-[7.5%] top-[60%] flex w-[27%] flex-col items-center">
+        <div className="relative flex w-full items-center justify-center">
+          <svg viewBox="0 0 140 22" className="absolute inset-0 h-full w-full" aria-hidden>
+            <path d="M8 1.5 H132 L138.5 11 L132 20.5 H8 L1.5 11 Z" fill="none" stroke="#2c2926" strokeWidth="1.1" />
+          </svg>
+          <p className="relative px-[0.7em] py-[0.45em] text-[1.85cqw] font-semibold leading-none tracking-[0.14em]">
+            MEMBER SINCE
+          </p>
+        </div>
+        <p className="mt-[0.7cqw] text-[3.1cqw] font-bold leading-none tabular-nums">{since ?? "—"}</p>
       </div>
 
-      <p className="absolute bottom-[7.5%] left-[8%] right-[8%] truncate text-[3.3cqw] font-semibold tracking-[0.12em] uppercase">
+      <p className="absolute bottom-[7.5%] left-[8%] right-[40%] truncate text-[3.3cqw] font-semibold tracking-[0.12em] uppercase">
         {name ?? ""}
       </p>
     </div>
