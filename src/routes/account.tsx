@@ -1,10 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ChevronRight } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { BackupPasswordModal } from "@/components/meridian/backup-modal";
 import { DeleteAccountModal } from "@/components/meridian/delete-account-modal";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { IdleLockSettings } from "@/components/meridian/idle-lock-settings";
-import { ReferralAccountCard } from "@/components/meridian/referral-card";
 import { BillingCard } from "@/components/meridian/billing-card";
 import { BetaAccountLink } from "@/components/beta/account-link";
 import { Field, PrimaryButton, TextInput } from "@/components/ui/field";
@@ -409,10 +409,20 @@ function Account() {
           <h1 className="mt-2 font-display text-3xl text-fg">Your MACH Run identity</h1>
         </header>
 
-        <div className="grid items-start gap-8 lg:[&:has(>:nth-child(2))]:grid-cols-2">
-          <ReferralAccountCard />
-          <BetaAccountLink />
-        </div>
+        <nav aria-label="Account" className="overflow-hidden rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
+          <ul className="divide-y divide-border">
+            <li>
+              <Link
+                to="/mach-rewards"
+                className="flex min-h-11 items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-fg hover:bg-elevated"
+              >
+                <span>Mach Rewards</span>
+                <ChevronRight className="size-4 shrink-0 text-subtle" aria-hidden />
+              </Link>
+            </li>
+            <BetaAccountLink />
+          </ul>
+        </nav>
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
         {msg ? <p className="text-sm text-muted">{msg}</p> : null}

@@ -1,7 +1,7 @@
 import { referralDisplayName } from "../referrals/summary.ts";
 
 export type RewardGrant = {
-  source: "beta" | "referral" | "instagram";
+  source: "beta" | "referral" | "instagram" | "loop";
   points: number;
   date: string;
   name: string;
@@ -27,11 +27,18 @@ export async function readRewardGrants(sql: Sql, userId: string): Promise<Reward
     [userId],
   );
   return rows
-    .filter((row) => row.source === "beta" || row.source === "referral" || row.source === "instagram")
+    .filter(
+      (row) =>
+        row.source === "beta" ||
+        row.source === "referral" ||
+        row.source === "instagram" ||
+        row.source === "loop",
+    )
     .map((row) => ({
-      source: row.source as "beta" | "referral" | "instagram",
+      source: row.source as "beta" | "referral" | "instagram" | "loop",
       points: Number(row.points),
       date: row.date,
-      name: row.source === "instagram" ? "" : referralDisplayName(row.name),
+      name:
+        row.source === "instagram" || row.source === "loop" ? "" : referralDisplayName(row.name),
     }));
 }

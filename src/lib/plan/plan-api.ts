@@ -137,6 +137,19 @@ export const saveMachPlan = createServerFn({ method: "POST" })
       } catch {
         /* activity is optional */
       }
+      try {
+        const { rewardsTermsAccepted } = await import("@/lib/rewards/acceptance.server");
+        const { considerLoopGrant } = await import("@/lib/rewards/loop-grant");
+        await considerLoopGrant(sql, {
+          userId: context.userId,
+          stored: opened,
+          incoming: data,
+          paid,
+          accepted: await rewardsTermsAccepted(context.userId),
+        });
+      } catch {
+        /* a missed reward does not fail the save */
+      }
       return { ok: true as const };
     } catch {
       return { ok: false as const };

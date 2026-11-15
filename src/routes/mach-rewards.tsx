@@ -1,5 +1,5 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { RefreshCw } from "lucide-react";
+import { Check, Copy, RefreshCw } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { ReferralLinkLine } from "@/components/meridian/referral-card";
@@ -163,6 +163,57 @@ function useTouchCards() {
   return touch;
 }
 
+function InstagramMark() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
+      <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="17.5" cy="6.5" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+function InstagramCode({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+  async function copy(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  }
+  function openInstagram(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    window.open("https://www.instagram.com/machrundotcom/", "_blank", "noopener,noreferrer");
+  }
+  return (
+    <div className="mt-2 flex items-center gap-1.5">
+      <p className="font-mono text-base tracking-[0.14em]">{code}</p>
+      <button
+        type="button"
+        aria-label={copied ? "Copied" : "Copy code"}
+        onClick={(event) => void copy(event)}
+        className="grid size-8 shrink-0 place-items-center rounded-md text-fg hover:bg-fg/10"
+      >
+        {copied ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
+      </button>
+      <button
+        type="button"
+        aria-label="Open Instagram"
+        onClick={openInstagram}
+        className="grid size-8 shrink-0 place-items-center rounded-md text-fg hover:bg-fg/10"
+      >
+        <InstagramMark />
+      </button>
+    </div>
+  );
+}
+
 function FlipCard({
   title,
   possible,
@@ -306,6 +357,7 @@ function EarnBingo({
   referralEarned,
   instagramCode,
   instagramEarned,
+  loopDone,
   locked,
 }: {
   betaSubmitted: number | null;
@@ -313,6 +365,7 @@ function EarnBingo({
   referralEarned: number | null;
   instagramCode: string | null;
   instagramEarned: number;
+  loopDone: boolean;
   locked: boolean;
 }) {
   const boardRef = useRef<HTMLUListElement>(null);
@@ -341,7 +394,7 @@ function EarnBingo({
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
-  }, [betaSubmitted, betaInvited, referralEarned, instagramCode, instagramEarned, locked, touch]);
+  }, [betaSubmitted, betaInvited, referralEarned, instagramCode, instagramEarned, loopDone, locked, touch]);
 
   return (
     <div className={`overflow-clip rounded-xl bg-border ${locked ? "opacity-60" : ""}`} inert={locked}>
@@ -359,9 +412,7 @@ function EarnBingo({
                 <p>
                   Follow @machrundotcom, then send this code in a direct message to that account.
                 </p>
-                {instagramCode ? (
-                  <p className="mt-2 font-mono text-base tracking-[0.14em]">{instagramCode}</p>
-                ) : null}
+                {instagramCode ? <InstagramCode code={instagramCode} /> : null}
                 <p className="mt-2">
                   The points post after that message arrives. A second message does not pay again.
                 </p>
@@ -409,9 +460,9 @@ function EarnBingo({
           <FlipCard touch={touch}
             title="Run the loop again."
             possible="10 points possible"
-            earned="0 earned"
-            left="10 left"
-            done={false}
+            earned={loopDone ? "10 earned" : "0 earned"}
+            left={loopDone ? "0 left" : "10 left"}
+            done={loopDone}
             to="/"
             detail={
               <>
@@ -705,6 +756,15 @@ function MachRewardsPage() {
                   .reduce((sum, grant) => sum + grant.points, 0)
               : 0
           }
+          loopDone={
+            ledger
+              ? ledger.grants.some(
+                  (grant) =>
+                    grant.source === "loop" &&
+                    grant.date.startsWith(new Date().toISOString().slice(0, 7)),
+                )
+              : false
+          }
           locked={accepted !== true}
         />
 
@@ -780,7 +840,9 @@ function MachRewardsPage() {
                           ? "Beta debrief"
                           : grant.source === "instagram"
                             ? "Instagram"
-                            : "Referred a friend"}
+                            : grant.source === "loop"
+                              ? "Run the loop again."
+                              : "Referred a friend"}
                       </p>
                       <p className="mt-0.5 text-sm text-subtle">
                         {grant.source === "referral" ? `${grant.name} · ` : ""}
