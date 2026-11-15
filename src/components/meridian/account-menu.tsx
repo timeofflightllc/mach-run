@@ -69,12 +69,12 @@ export function AccountMenu() {
             My Account
           </Link>
           <Link
-            to="/referrals"
+            to="/mach-rewards"
             role="menuitem"
             onClick={() => setOpen(false)}
             className="block px-3 py-2.5 text-sm text-fg hover:bg-surface"
           >
-            Mach Points
+            Mach Rewards
           </Link>
           <button
             type="button"

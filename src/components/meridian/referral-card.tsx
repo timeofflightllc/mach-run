@@ -64,13 +64,13 @@ export function ReferralAccountCard() {
 
   return (
     <section className="space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
-      <p className="font-display text-lg text-fg">Mach Points</p>
+      <p className="font-display text-lg text-fg">Mach Rewards</p>
       <p className="text-sm leading-relaxed text-muted">
         Send this link. A friend who starts a yearly plan puts a credit on your next bill.
       </p>
       <ReferralLinkLine code={summary?.code ?? null} />
       <p className="text-sm leading-relaxed text-fg">
-        {summary ? referralCountLine(summary.signedUp, summary.yearly) : "Loading your referrals…"}
+        {summary ? referralCountLine(summary.signedUp, summary.yearly) : "Loading your rewards…"}
       </p>
       {summary ? (
         <div className="text-sm text-fg">
@@ -78,7 +78,7 @@ export function ReferralAccountCard() {
           <p>{referralBillLine(summary.creditCents)}.</p>
         </div>
       ) : null}
-      <Link to="/referrals" className="inline-flex text-sm font-medium text-fg underline underline-offset-4">
+      <Link to="/mach-rewards" className="inline-flex text-sm font-medium text-fg underline underline-offset-4">
         See who signed up
       </Link>
     </section>

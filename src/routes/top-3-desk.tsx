@@ -101,7 +101,7 @@ const DESK_SECTIONS = [
     label: "Money",
     tabs: [
       ["codes", "Promo codes"],
-      ["referrals", "Referrals"],
+      ["referrals", "Mach Rewards"],
       ["conversions", "Conversions"],
       ["pay", "Retired pay"],
     ],
