@@ -144,8 +144,8 @@ function referralDate(iso: string): string {
 
 const SILVER =
   "shadow-[inset_0_0_0_1px_rgba(198,204,212,0.95),inset_0_1px_0_rgba(255,255,255,0.9)] bg-surface bg-[linear-gradient(145deg,rgba(255,255,255,0.78),rgba(255,255,255,0.04)_46%,rgba(150,158,168,0.22))] text-fg";
-const SILVER_DONE =
-  "shadow-[inset_0_0_0_1px_rgba(232,236,242,0.95),inset_0_1px_0_rgba(255,255,255,0.75)] bg-[#3caf62] bg-[linear-gradient(145deg,rgba(255,255,255,0.34),rgba(255,255,255,0.04)_48%,rgba(0,0,0,0.08))] text-[#0f172a]";
+const GREEN =
+  "shadow-[inset_0_0_0_1px_rgba(210,232,214,0.95),inset_0_1px_0_rgba(255,255,255,0.8)] bg-[#2f7a4c] bg-[linear-gradient(145deg,rgba(255,255,255,0.5),rgba(214,236,214,0.18)_46%,rgba(8,36,20,0.34))] text-[#0f172a]";
 
 function fineHover() {
   return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
@@ -168,7 +168,7 @@ function FlipCard({
   possible,
   earned,
   left,
-  done,
+  done: _done,
   detail,
   href,
   to,
@@ -188,7 +188,6 @@ function FlipCard({
 }) {
   const navigate = useNavigate();
   const [turned, setTurned] = useState(false);
-  const tone = done ? SILVER_DONE : SILVER;
   const pad = touch ? "pl-4 pr-11 pt-3 pb-12" : "px-4 py-3";
   function enter() {
     if (fineHover()) setTurned(true);
@@ -239,11 +238,11 @@ function FlipCard({
       <div className={`invisible col-start-1 row-start-1 text-sm leading-snug ${pad}`} aria-hidden>
         {detail}
       </div>
-      <div className={`col-start-1 row-start-1 flex h-full flex-col justify-center gap-1 [backface-visibility:hidden] ${pad} ${tone}`}>
+      <div className={`col-start-1 row-start-1 flex h-full flex-col justify-center gap-1 [backface-visibility:hidden] ${pad} ${GREEN}`}>
         {front}
       </div>
       <div
-        className={`col-start-1 row-start-1 h-full text-sm leading-snug [backface-visibility:hidden] [transform:rotateY(180deg)] ${pad} ${tone}`}
+        className={`col-start-1 row-start-1 h-full text-sm leading-snug [backface-visibility:hidden] [transform:rotateY(180deg)] ${pad} ${SILVER}`}
       >
         {detail}
       </div>
