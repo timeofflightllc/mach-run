@@ -27,12 +27,27 @@ export const Route = createFileRoute("/mach-rewards")({
   component: MachRewardsPage,
 });
 
-function PlatinumCard({ balance, name }: { balance: number | null; name: string | null }) {
-  const ink = "text-[#2c2926] [text-shadow:0_1px_0_rgba(255,255,255,0.65)]";
+function memberYear(iso: string | null): string | null {
+  if (!iso) return null;
+  const year = new Date(iso).getFullYear();
+  if (!Number.isFinite(year)) return null;
+  return String(year).slice(-2);
+}
+
+function PlatinumCard({
+  balance,
+  name,
+  since,
+}: {
+  balance: number | null;
+  name: string | null;
+  since: string | null;
+}) {
+  const face = "text-[#2c2926] [text-shadow:0_1px_0_rgba(255,255,255,0.65)]";
   return (
     <div
-      className={`relative mx-auto w-full max-w-lg overflow-hidden rounded-[1rem] shadow-[0_18px_34px_-22px_rgba(30,28,24,0.72),inset_0_1px_0_rgba(255,255,255,0.8)] ${ink}`}
-      style={{ aspectRatio: "1.586 / 1" }}
+      className={`relative mx-auto w-full max-w-lg overflow-hidden rounded-[1rem] shadow-[0_18px_34px_-22px_rgba(30,28,24,0.72),inset_0_1px_0_rgba(255,255,255,0.8)] ${face}`}
+      style={{ aspectRatio: "1.586 / 1", containerType: "inline-size", fontFamily: "var(--font-card)" }}
     >
       <div
         aria-hidden
@@ -49,11 +64,9 @@ function PlatinumCard({ balance, name }: { balance: number | null; name: string 
       <div aria-hidden className="absolute inset-[3.4%] rounded-[0.7rem] border border-[#2c2926]/80" />
       <div aria-hidden className="absolute inset-[5%] rounded-[0.55rem] border border-[#2c2926]/30" />
 
-      <div className="relative flex h-full flex-col items-center px-[8%] pt-[6.5%]">
-        <p className="font-serif text-[clamp(0.72rem,2.5vw,1.15rem)] font-semibold leading-none tracking-[0.12em]">
-          MACH RUN EXPRESS
-        </p>
-        <p className="mt-[0.35em] text-[clamp(0.48rem,1.35vw,0.68rem)] leading-none tracking-[0.48em]">REWARDS</p>
+      <div className="relative flex h-full flex-col items-center px-[7%] pt-[6%]">
+        <p className="whitespace-nowrap text-[5.6cqw] font-bold leading-none tracking-[0.06em]">MACH RUN EXPRESS</p>
+        <p className="mt-[0.45cqw] text-[2.15cqw] font-semibold leading-none tracking-[0.46em]">REWARDS</p>
       </div>
 
       <div
@@ -76,18 +89,32 @@ function PlatinumCard({ balance, name }: { balance: number | null; name: string 
       <img
         src="/brand/rewards-pilot.jpg"
         alt=""
-        className="pointer-events-none absolute left-1/2 top-[56%] h-[64%] w-[40%] -translate-x-1/2 -translate-y-1/2 object-cover"
+        className="pointer-events-none absolute left-1/2 top-[54%] h-[58%] w-[36%] -translate-x-1/2 -translate-y-1/2 object-cover"
         style={{ clipPath: "ellipse(46% 46% at 50% 50%)" }}
       />
 
-      <div className="absolute right-[8%] top-[54%] -translate-y-1/2 text-right">
-        <p className="text-[clamp(0.45rem,1.15vw,0.58rem)] tracking-[0.32em]">POINTS</p>
-        <p className="mt-0.5 font-display text-[clamp(1.15rem,3.4vw,1.7rem)] leading-none tabular-nums">
+      <div className="absolute right-[8%] top-[46%] -translate-y-1/2 text-right">
+        <p className="text-[1.7cqw] font-semibold tracking-[0.28em]">POINTS</p>
+        <p className="mt-[0.3cqw] text-[4.2cqw] font-bold leading-none tabular-nums">
           {balance == null ? "—" : balance}
         </p>
       </div>
 
-      <p className="absolute bottom-[8%] left-[8%] right-[28%] truncate font-serif text-[clamp(0.62rem,1.7vw,0.84rem)] tracking-[0.14em] uppercase">
+      <div className="absolute left-[63%] top-[69%] flex -translate-x-1/2 flex-col items-center">
+        <p
+          className="px-[0.9em] py-[0.2em] text-[1.45cqw] font-semibold leading-none tracking-[0.22em]"
+          style={{
+            background: "linear-gradient(180deg, rgba(255,255,255,0.35), rgba(70,66,60,0.08))",
+            clipPath: "polygon(7% 0, 93% 0, 100% 50%, 93% 100%, 7% 100%, 0 50%)",
+            boxShadow: "inset 0 0 0 1px rgba(44,41,38,0.55)",
+          }}
+        >
+          MEMBER SINCE
+        </p>
+        <p className="mt-[0.35cqw] text-[2.7cqw] font-bold leading-none tabular-nums">{since ?? "—"}</p>
+      </div>
+
+      <p className="absolute bottom-[7.5%] left-[8%] right-[8%] truncate text-[3.3cqw] font-semibold tracking-[0.12em] uppercase">
         {name ?? ""}
       </p>
     </div>
@@ -230,6 +257,7 @@ function MachRewardsPage() {
   const [betaSubmitted, setBetaSubmitted] = useState<number | null>(null);
   const [betaInvited, setBetaInvited] = useState<boolean | null>(null);
   const [accepted, setAccepted] = useState<boolean | null>(null);
+  const [acceptedAt, setAcceptedAt] = useState<string | null>(null);
   const [ledger, setLedger] = useState<{ balance: number; grants: RewardGrant[] } | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyPoints, setApplyPoints] = useState<number | null>(null);
@@ -271,7 +299,10 @@ function MachRewardsPage() {
       });
     void rewardsAcceptanceFn()
       .then((row) => {
-        if (live) setAccepted(row.accepted);
+        if (live) {
+          setAccepted(row.accepted);
+          setAcceptedAt(row.acceptedAt);
+        }
       })
       .catch(() => {
         if (live) setAccepted(false);
@@ -297,6 +328,7 @@ function MachRewardsPage() {
       const result = await acceptRewardsTermsFn();
       if (!result.ok) throw new Error(result.reason);
       setAccepted(true);
+      setAcceptedAt(new Date().toISOString());
     } catch (err) {
       setJoinError(err instanceof Error ? err.message : "Could not save that. Try again.");
     } finally {
@@ -391,6 +423,7 @@ function MachRewardsPage() {
             <PlatinumCard
               balance={ledger == null ? null : ledger.balance}
               name={user?.displayName?.trim() || null}
+              since={memberYear(acceptedAt)}
             />
             <div className="mt-5">
               <PrimaryButton

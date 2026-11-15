@@ -4,9 +4,13 @@ import type { RewardGrant } from "./balance.server";
 
 export const rewardsAcceptanceFn = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .handler(async ({ context }): Promise<{ accepted: boolean }> => {
-    const { rewardsTermsAccepted } = await import("./acceptance.server");
-    return { accepted: await rewardsTermsAccepted(context.userId) };
+  .handler(async ({ context }): Promise<{ accepted: boolean; acceptedAt: string | null }> => {
+    const { rewardsAcceptedAt, rewardsTermsAccepted } = await import("./acceptance.server");
+    const [accepted, acceptedAt] = await Promise.all([
+      rewardsTermsAccepted(context.userId),
+      rewardsAcceptedAt(context.userId),
+    ]);
+    return { accepted, acceptedAt: accepted ? acceptedAt : null };
   });
 
 export const acceptRewardsTermsFn = createServerFn({ method: "POST" })

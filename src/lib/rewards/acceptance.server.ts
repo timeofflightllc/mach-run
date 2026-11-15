@@ -10,7 +10,18 @@ export async function rewardsTermsAccepted(userId: string): Promise<boolean> {
   return rows[0]?.terms_version === REWARDS_TERMS_VERSION;
 }
 
-/** Writes only when Join is pressed. The version is the server's, not the browser's. */
+export async function rewardsAcceptedAt(userId: string): Promise<string | null> {
+  const sql = await getSql();
+  const rows = await sql.query<{ accepted_at: Date | string }>(
+    `select accepted_at from mach_rewards_acceptance where user_id = $1`,
+    [userId],
+  );
+  const value = rows[0]?.accepted_at;
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 export async function acceptRewardsTerms(userId: string): Promise<void> {
   const sql = await getSql();
   await sql.query(
