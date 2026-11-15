@@ -2,8 +2,9 @@ import { Link } from "@tanstack/react-router";
 import { Check, Copy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { referralSummaryFn } from "@/lib/referrals/api";
-import { referralBillLine, referralCountLine, referralPointsReceived } from "@/lib/referrals/summary";
+import { referralCountLine } from "@/lib/referrals/summary";
 import type { ReferralSummary } from "@/lib/referrals/page.server";
+import { rewardLedgerFn } from "@/lib/rewards/api";
 
 export function referralLink(code: string): string {
   return `https://machrun.com/?ref=${code}`;
@@ -47,12 +48,20 @@ export function ReferralLinkLine({ code, locked = false }: { code: string | null
 /** The link is on the profile. The list of people stays on the Referrals page. */
 export function ReferralAccountCard() {
   const [summary, setSummary] = useState<ReferralSummary | null>(null);
+  const [balance, setBalance] = useState<number | null>(null);
 
   useEffect(() => {
     let live = true;
     void referralSummaryFn()
       .then((row) => {
         if (live) setSummary(row);
+      })
+      .catch(() => {
+        /* The account page still loads. */
+      });
+    void rewardLedgerFn()
+      .then((row) => {
+        if (live) setBalance(row.balance);
       })
       .catch(() => {
         /* The account page still loads. */
@@ -65,19 +74,14 @@ export function ReferralAccountCard() {
   return (
     <section className="space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
       <p className="font-display text-lg text-fg">Mach Rewards</p>
+      <p className="font-display text-3xl tabular-nums text-fg">{balance == null ? "—" : balance}</p>
       <p className="text-sm leading-relaxed text-muted">
-        Send this link. When a friend starts a yearly plan, 200 points land on your account. Those points come off your next bill at a rate of 10 points to $1.
+        When a friend starts a yearly plan, those points land in Mach Rewards. Nothing comes off a bill until you apply them. 10 points is $1.
       </p>
       <ReferralLinkLine code={summary?.code ?? null} />
       <p className="text-sm leading-relaxed text-fg">
         {summary ? referralCountLine(summary.signedUp, summary.yearly) : "Loading your rewards…"}
       </p>
-      {summary ? (
-        <div className="text-sm text-fg">
-          <p>{referralPointsReceived(summary.creditCents)}</p>
-          <p>{referralBillLine(summary.creditCents)}.</p>
-        </div>
-      ) : null}
       <Link to="/mach-rewards" className="inline-flex text-sm font-medium text-fg underline underline-offset-4">
         See who signed up
       </Link>

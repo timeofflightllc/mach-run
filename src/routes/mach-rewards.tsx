@@ -6,10 +6,13 @@ import { PrimaryButton } from "@/components/ui/field";
 import { RedirectToSignIn, isRealUser } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { referralPeopleFn, referralSummaryFn } from "@/lib/referrals/api";
-import { referralBillLine, referralCountLine, referralCreditLabel, referralPoints, referralPointsReceived } from "@/lib/referrals/summary";
+import { referralCountLine } from "@/lib/referrals/summary";
 import type { ReferralPerson, ReferralSummary } from "@/lib/referrals/page.server";
 import { pointBoardFn } from "@/lib/points/api";
-import { acceptRewardsTermsFn, rewardsAcceptanceFn } from "@/lib/rewards/api";
+import { BETA_PASS_CAP, BETA_PASS_POINTS, betaRewardPoints } from "@/lib/points/board";
+import { acceptRewardsTermsFn, applyRewardPointsFn, rewardLedgerFn, rewardsAcceptanceFn } from "@/lib/rewards/api";
+import type { RewardGrant } from "@/lib/rewards/balance.server";
+import { rewardApplyChoices, rewardDollars } from "@/lib/rewards/apply";
 import { REWARDS_TERMS } from "@/lib/rewards/terms";
 import { pageHead } from "@/lib/seo";
 
@@ -23,6 +26,60 @@ export const Route = createFileRoute("/mach-rewards")({
     }),
   component: MachRewardsPage,
 });
+
+function PlatinumCard({ balance, name }: { balance: number | null; name: string | null }) {
+  const engraved = "text-[#3c3934] [text-shadow:0_1px_0_rgba(255,255,255,0.72)]";
+  return (
+    <div
+      className="relative mx-auto w-full max-w-xl overflow-hidden rounded-[1.15rem] shadow-[0_22px_40px_-24px_rgba(30,28,24,0.7),inset_0_1px_0_rgba(255,255,255,0.75)]"
+      style={{ aspectRatio: "1.586 / 1" }}
+    >
+      <div
+        aria-hidden
+        className="absolute inset-0"
+        style={{
+          background: [
+            "linear-gradient(118deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.05) 24%, rgba(255,255,255,0) 40%, rgba(255,255,255,0.22) 52%, rgba(60,56,50,0.08) 68%, rgba(255,255,255,0.45) 100%)",
+            "repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(80,76,70,0.03) 1px 3px)",
+            "linear-gradient(155deg, #f7f4ee 0%, #d4d0c6 28%, #9a968e 52%, #e4e0d6 74%, #b7b3a9 100%)",
+          ].join(","),
+        }}
+      />
+      <div className={`relative flex h-full flex-col px-[7%] py-[6%] ${engraved}`}>
+        <div className="flex items-start justify-between gap-3">
+          <p className="font-display text-[clamp(0.95rem,2.4vw,1.35rem)] tracking-[0.22em]">MACH RUN</p>
+          <p className="font-display text-[clamp(0.7rem,1.7vw,0.95rem)] tracking-[0.28em]">PLATINUM</p>
+        </div>
+        <div
+          aria-hidden
+          className="mt-[4%] h-[16%] w-[14%] max-w-14 rounded-[0.35rem] border border-[#8a7344]/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]"
+          style={{
+            background:
+              "linear-gradient(135deg, #f3e2b0 0%, #c6a15a 28%, #f7edd0 46%, #a8883e 72%, #e6d39a 100%)",
+          }}
+        >
+          <div className="grid h-full grid-cols-2 grid-rows-3 gap-px p-1 opacity-70">
+            <span className="border-b border-[#8a7344]/50" />
+            <span className="border-b border-[#8a7344]/50" />
+            <span className="border-b border-[#8a7344]/50" />
+            <span className="border-b border-[#8a7344]/50" />
+            <span />
+            <span />
+          </div>
+        </div>
+        <div className="flex flex-1 flex-col items-center justify-center text-center">
+          <p className="font-display text-[clamp(2.4rem,8vw,4.25rem)] leading-none tabular-nums">
+            {balance == null ? "—" : balance}
+          </p>
+          <p className="mt-2 text-[clamp(0.65rem,1.5vw,0.8rem)] tracking-[0.42em]">POINTS</p>
+        </div>
+        <p className="h-5 truncate text-left text-[clamp(0.7rem,1.8vw,0.95rem)] tracking-[0.16em] uppercase">
+          {name ?? ""}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 function referralDate(iso: string): string {
   const [year, month, day] = iso.split("-").map(Number);
@@ -38,9 +95,6 @@ function referralDate(iso: string): string {
 const EARN_CELL = "flex h-full min-h-44 w-full flex-col bg-surface px-4 py-5 text-left";
 const ATTEMPTS = "mt-auto pt-4 text-sm text-fg";
 
-const BETA_PASSES = 3;
-const BETA_POINTS = 150;
-
 function EarnBingo({
   betaSubmitted,
   betaInvited,
@@ -54,8 +108,8 @@ function EarnBingo({
     document.getElementById("referral-link")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  const submitted = betaSubmitted == null ? null : Math.min(Math.max(betaSubmitted, 0), BETA_PASSES);
-  const earned = submitted == null ? null : submitted * BETA_POINTS;
+  const submitted = betaSubmitted == null ? null : Math.min(Math.max(betaSubmitted, 0), BETA_PASS_CAP);
+  const earned = submitted == null ? null : betaRewardPoints(submitted);
 
   return (
     <div className={`overflow-hidden rounded-xl bg-border ${locked ? "opacity-60" : ""}`} inert={locked}>
@@ -137,7 +191,7 @@ function EarnBingo({
               <p className="mt-1 text-sm leading-relaxed text-muted">
                 {earned == null
                   ? "Loading…"
-                  : `${earned} of 450 earned. ${submitted} of 3 feedback forms submitted.`}
+                  : `${earned} of ${BETA_PASS_CAP * BETA_PASS_POINTS} earned. ${submitted} of ${BETA_PASS_CAP} feedback forms submitted.`}
               </p>
               <p className={ATTEMPTS}>3 possible attempts</p>
             </Link>
@@ -163,6 +217,12 @@ function MachRewardsPage() {
   const [betaSubmitted, setBetaSubmitted] = useState<number | null>(null);
   const [betaInvited, setBetaInvited] = useState<boolean | null>(null);
   const [accepted, setAccepted] = useState<boolean | null>(null);
+  const [ledger, setLedger] = useState<{ balance: number; grants: RewardGrant[] } | null>(null);
+  const [applyOpen, setApplyOpen] = useState(false);
+  const [applyPoints, setApplyPoints] = useState<number | null>(null);
+  const [applying, setApplying] = useState(false);
+  const [applyNote, setApplyNote] = useState<string | null>(null);
+  const [applyError, setApplyError] = useState<string | null>(null);
   const [agreed, setAgreed] = useState(false);
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -203,6 +263,13 @@ function MachRewardsPage() {
       .catch(() => {
         if (live) setAccepted(false);
       });
+    void rewardLedgerFn()
+      .then((row) => {
+        if (live) setLedger(row);
+      })
+      .catch(() => {
+        if (live) setError("Mach Rewards are unavailable.");
+      });
     return () => {
       live = false;
     };
@@ -221,6 +288,27 @@ function MachRewardsPage() {
       setJoinError(err instanceof Error ? err.message : "Could not save that. Try again.");
     } finally {
       setJoining(false);
+    }
+  }
+
+  async function onApply() {
+    if (applyPoints == null || applying) return;
+    setApplying(true);
+    setApplyError(null);
+    try {
+      const result = await applyRewardPointsFn({ data: { points: applyPoints } });
+      if (!result.ok) {
+        setApplyError(result.error);
+        return;
+      }
+      setLedger((current) => (current ? { ...current, balance: result.balance } : current));
+      setApplyNote(result.line);
+      setApplyOpen(false);
+      setApplyPoints(null);
+    } catch {
+      setApplyError("Those points were not applied. Your balance is unchanged.");
+    } finally {
+      setApplying(false);
     }
   }
 
@@ -287,69 +375,88 @@ function MachRewardsPage() {
 
         <section className="w-full rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
           <div className="px-5 py-6 sm:px-6 sm:py-7">
-            <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">Point balance</p>
-            <p className="mt-1 font-display text-5xl tabular-nums text-fg">
-              {summary ? referralPoints(summary.creditCents) : "—"}
-            </p>
-            <p className="mt-1 text-sm text-muted">
-              {summary ? referralBillLine(summary.creditCents) : "Loading your balance…"}
-            </p>
+            <PlatinumCard
+              balance={ledger == null ? null : ledger.balance}
+              name={user?.displayName?.trim() || null}
+            />
+            <div className="mt-5">
+              <PrimaryButton
+                disabled={ledger == null || ledger.balance <= 0 || applyOpen || applying}
+                onClick={() => {
+                  setApplyOpen(true);
+                  setApplyPoints(null);
+                  setApplyError(null);
+                }}
+              >
+                Apply Mach Rewards to your next bill
+              </PrimaryButton>
+            </div>
+            {applyOpen && ledger ? (
+              <fieldset className="mt-4 space-y-3">
+                {rewardApplyChoices(ledger.balance).map((points, index, choices) => (
+                  <label key={points} className="flex items-center gap-3 text-sm text-fg">
+                    <input
+                      type="radio"
+                      name="reward-apply"
+                      checked={applyPoints === points}
+                      onChange={() => setApplyPoints(points)}
+                      className="size-4 accent-fg"
+                    />
+                    <span>
+                      {index === choices.length - 1
+                        ? `All ${points} points (${rewardDollars(points)})`
+                        : `${points} points (${rewardDollars(points)})`}
+                    </span>
+                  </label>
+                ))}
+                {applyError ? <p className="text-sm text-negative">{applyError}</p> : null}
+                <PrimaryButton disabled={applyPoints == null || applying} onClick={() => void onApply()}>
+                  {applying ? "Applying…" : "Apply to my next bill"}
+                </PrimaryButton>
+              </fieldset>
+            ) : null}
+            {applyNote ? <p className="mt-3 text-sm text-fg">{applyNote}</p> : null}
           </div>
           <div className="border-t border-border">
             <p className="px-5 py-3 text-xs font-medium uppercase tracking-[0.16em] text-subtle sm:px-6">
               History
             </p>
-            {people == null ? (
+            {ledger == null ? (
               <p className="px-5 pb-5 text-sm text-muted sm:px-6">Loading…</p>
+            ) : ledger.grants.length === 0 ? (
+              <p className="px-5 pb-5 text-base text-muted sm:px-6">No points yet.</p>
             ) : (
-              (() => {
-                const earned = people.filter((person) => person.creditCents > 0);
-                if (earned.length === 0) {
-                  return (
-                    <p className="px-5 pb-5 text-base text-muted sm:px-6">
-                      No points yet. Refer a friend who starts a yearly plan to earn points.
-                    </p>
-                  );
-                }
-                return (
-                  <ul>
-                    {earned.map((person, index) => (
-                      <li
-                        key={`${person.date}-${person.name}-${index}`}
-                        className="flex items-center justify-between gap-4 border-t border-border px-5 py-3 first:border-t-0 sm:px-6"
-                      >
-                        <div className="min-w-0">
-                          <p className="text-base font-medium text-fg">Referred a friend</p>
-                          <p className="mt-0.5 text-sm text-subtle">
-                            {person.name} · {referralDate(person.date)}
-                          </p>
-                        </div>
-                        <p className="shrink-0 font-display text-xl tabular-nums text-fg">
-                          +{referralPoints(person.creditCents)}
-                        </p>
-                      </li>
-                    ))}
-                  </ul>
-                );
-              })()
+              <ul>
+                {ledger.grants.map((grant, index) => (
+                  <li
+                    key={`${grant.source}-${grant.date}-${index}`}
+                    className={`flex items-center justify-between gap-4 px-5 py-3 sm:px-6 ${index > 0 ? "border-t border-border" : ""}`}
+                  >
+                    <div className="min-w-0">
+                      <p className="text-base font-medium text-fg">
+                        {grant.source === "beta" ? "Beta debrief" : "Referred a friend"}
+                      </p>
+                      <p className="mt-0.5 text-sm text-subtle">
+                        {grant.source === "referral" ? `${grant.name} · ` : ""}
+                        {referralDate(grant.date)}
+                      </p>
+                    </div>
+                    <p className="shrink-0 font-display text-xl tabular-nums text-fg">+{grant.points}</p>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
         </section>
 
         <section id="referral-link" className="w-full scroll-mt-6 space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)] sm:p-6">
           <p className="max-w-xl text-base leading-relaxed text-muted">
-            Send this link. When a friend starts a yearly plan, 200 points land on your account. Those points come off your next bill at a rate of 10 points to $1.
+            When a friend starts a yearly plan, those points land in Mach Rewards. Nothing comes off a bill until you apply them. 10 points is $1.
           </p>
           <ReferralLinkLine code={summary?.code ?? null} locked={accepted !== true} />
           <p className="text-base leading-relaxed text-fg">
             {summary ? referralCountLine(summary.signedUp, summary.yearly) : "Loading your rewards…"}
           </p>
-          {summary ? (
-            <div className="text-base leading-relaxed text-fg">
-              <p>{referralPointsReceived(summary.creditCents)}</p>
-              <p>{referralBillLine(summary.creditCents)}.</p>
-            </div>
-          ) : null}
         </section>
 
         <section className="w-full rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
@@ -362,12 +469,6 @@ function MachRewardsPage() {
                   : people.length === 1
                     ? "1 person"
                     : `${people.length} people`}
-              </p>
-            </div>
-            <div className="text-right">
-              <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">Points</p>
-              <p className="font-display text-3xl leading-none text-fg">
-                {referralPoints(summary?.creditCents ?? 0)}
               </p>
             </div>
           </div>
@@ -390,12 +491,13 @@ function MachRewardsPage() {
                     <p className="mt-0.5 text-sm text-subtle">
                       {referralDate(person.date)}
                       {" · "}
-                      {person.creditCents > 0 ? "Yearly plan" : person.status}
+                      {person.status === "Chose monthly"
+                        ? "Chose monthly"
+                        : person.status === "Signed up"
+                          ? "Signed up"
+                          : "Started a yearly plan"}
                     </p>
                   </div>
-                  <p className="shrink-0 font-display text-2xl tabular-nums text-fg">
-                    {person.creditCents > 0 ? referralCreditLabel(person.creditCents) : "—"}
-                  </p>
                 </li>
               ))}
             </ul>

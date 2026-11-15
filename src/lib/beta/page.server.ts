@@ -98,7 +98,7 @@ async function writeAnswers(
   answers: BetaAnswers,
   status: "draft" | "submitted",
   limit = 0,
-): Promise<boolean> {
+): Promise<string | null> {
   const sql = await getSql();
   const payload = JSON.stringify(answers);
   const existing = await sql.query<{ id: string }>(
@@ -112,7 +112,7 @@ async function writeAnswers(
        where id = $1 and user_id = $3 and status = 'draft'`,
       [existing[0].id, payload, userId],
     );
-    return true;
+    return null;
   }
   if (existing[0] && status === "submitted") {
     const rows = await sql.query<{ id: string }>(
@@ -126,7 +126,7 @@ async function writeAnswers(
        returning id`,
       [existing[0].id, payload, userId, limit],
     );
-    return rows.length > 0;
+    return rows[0]?.id ?? null;
   }
   if (status === "submitted") {
     const rows = await sql.query<{ id: string }>(
@@ -139,7 +139,7 @@ async function writeAnswers(
        returning id`,
       [randomUUID(), userId, payload, limit],
     );
-    return rows.length > 0;
+    return rows[0]?.id ?? null;
   }
   try {
     await sql.query(
@@ -147,7 +147,7 @@ async function writeAnswers(
        values ($1, $2, 'draft', $3::jsonb)`,
       [randomUUID(), userId, payload],
     );
-    return true;
+    return null;
   } catch (err) {
     const code = err && typeof err === "object" && "code" in err ? String((err as { code: string }).code) : "";
     if (code !== "23505") throw err;
@@ -157,7 +157,7 @@ async function writeAnswers(
        where user_id = $1 and status = 'draft'`,
       [userId, payload],
     );
-    return true;
+    return null;
   }
 }
 
@@ -191,8 +191,14 @@ export async function submitBeta(
       error: "A mailing address is required, or check “Please do not send a hat.”",
     };
   }
-  const wrote = await writeAnswers(userId, answers, "submitted", access.limit);
-  if (!wrote) return { ok: false, error: closedMessage(access.limit) };
+  const responseId = await writeAnswers(userId, answers, "submitted", access.limit);
+  if (!responseId) return { ok: false, error: closedMessage(access.limit) };
+  try {
+    const { grantBetaDebrief } = await import("../rewards/grant.server");
+    await grantBetaDebrief(userId, responseId);
+  } catch {
+    /* The debrief is already saved. Points can be granted from the same row later. */
+  }
   try {
     const pass = await submittedCount(userId);
     const { sendBetaDebriefMail } = await import("../notify/contact");

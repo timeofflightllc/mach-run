@@ -42,7 +42,7 @@ export function ReferralDesk() {
         return;
       }
       setPoints(String(result.points));
-      setStatus("Future referrals use this point amount. Points already given stay as they were.");
+      setStatus("Future friends add this many points. Grants already written stay as they are.");
     } finally {
       setBusy(false);
     }
@@ -72,9 +72,9 @@ export function ReferralDesk() {
   return (
     <div className="space-y-8">
       <section className="max-w-xl space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
-        <p className="font-display text-lg text-fg">Points on the next bill</p>
+        <p className="font-display text-lg text-fg">Points a yearly friend adds</p>
         <p className="text-sm text-muted">
-          10 points equals $1. 200 points is $20 toward the next bill. A change applies only to friends who pay after you save it.
+          This is how many Mach Rewards points a future yearly friend adds. 10 points is $1. A change does not rewrite a grant already written, and it does not post dollars.
         </p>
         <Field label="Points">
           <TextInput
@@ -91,7 +91,7 @@ export function ReferralDesk() {
       <section className="max-w-xl space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
         <p className="font-display text-lg text-fg">Campaign link</p>
         <p className="text-sm text-muted">
-          Counts signups and yearly plans. It does not add two months and it does not post a credit.
+          Counts signups and yearly plans. It does not add points.
         </p>
         <Field label="Name">
           <TextInput value={name} onChange={(e) => setName(e.target.value)} />
