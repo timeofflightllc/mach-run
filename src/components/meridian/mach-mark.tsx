@@ -1,6 +1,9 @@
+import { useEffect, useRef, useState } from "react";
 import { Link, getRouteApi } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { SiteMenu, SiteNav } from "@/components/meridian/site-nav";
+import { useCurrentUserState } from "@/lib/auth/use-current-user";
+import { pointBoardFn } from "@/lib/points/api";
 import type { FooterCopy } from "@/lib/site-copy/types";
 
 /** Nested Mach-cone chevrons. currentColor = outer; inner is titanium. */
@@ -79,6 +82,7 @@ export function BrandLockup({
 
 /** Top bar on every page except the calculator. */
 export function PageMast() {
+  const account = useMastSession();
   return (
     <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-3">
       <div className="flex items-center justify-between gap-3">
@@ -86,27 +90,121 @@ export function PageMast() {
           <BrandLockup framed />
         </Link>
         <div className="flex shrink-0 items-center gap-1 md:hidden">
-          <SiteMenu align="right" accountLink />
-          <Link
-            to="/"
-            className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
-          >
-            Home
-          </Link>
+          <SiteMenu align="right" />
+          <MastAccount session={account} />
         </div>
       </div>
       <p className="text-center text-[11px] font-bold leading-snug tracking-[0.12em] text-muted sm:text-xs md:min-w-0 md:flex-1 md:px-2 md:text-[13px] lg:text-lg lg:tracking-[0.08em]">
         The Supersonic Retirement Calculator
       </p>
       <div className="hidden shrink-0 items-center gap-1 md:flex">
-        <SiteMenu align="right" accountLink />
-        <Link
-          to="/"
-          className="inline-flex h-10 items-center justify-center rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
-        >
-          Home
-        </Link>
+        <SiteMenu align="right" />
+        <MastAccount session={account} />
       </div>
+    </div>
+  );
+}
+
+function useMastSession() {
+  const { user, isPending } = useCurrentUserState();
+  const signedIn = Boolean(user && !user.isDevFallback);
+  const [betaInvited, setBetaInvited] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!signedIn) return;
+    let cancel = false;
+    void pointBoardFn()
+      .then((row) => {
+        if (!cancel) setBetaInvited(row.betaInvited);
+      })
+      .catch(() => {
+        if (!cancel) setBetaInvited(false);
+      });
+    return () => {
+      cancel = true;
+    };
+  }, [signedIn]);
+
+  return { user: signedIn ? user : null, isPending, betaInvited: signedIn ? betaInvited : null };
+}
+
+function MastAccount({ session }: { session: ReturnType<typeof useMastSession> }) {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+  const { user, isPending, betaInvited } = session;
+
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(event: MouseEvent) {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDoc);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  if (isPending && !user) return <span className="inline-flex h-10 w-10" aria-hidden />;
+  if (!user) {
+    return (
+      <Link
+        to="/login"
+        search={{ mode: "up" }}
+        className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+      >
+        Join MACH RUN
+      </Link>
+    );
+  }
+
+  const label = user.displayName?.trim() || user.primaryEmail || "Account";
+  const item = "block whitespace-nowrap px-3 py-2.5 text-sm text-fg hover:bg-surface";
+  return (
+    <div ref={root} className="relative z-[80] shrink-0">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        onClick={() => setOpen((value) => !value)}
+        className="inline-flex h-10 max-w-[9rem] items-center gap-1 rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated sm:max-w-[14rem]"
+      >
+        <span className="truncate">{label}</span>
+        <span className="text-subtle" aria-hidden>
+          ▾
+        </span>
+      </button>
+      {open ? (
+        <div
+          role="menu"
+          className="absolute right-0 z-[80] mt-1 min-w-[13rem] rounded-lg bg-elevated py-1 shadow-[0_0_0_1px_var(--color-border)]"
+        >
+          <Link to="/account" role="menuitem" onClick={() => setOpen(false)} className={item}>
+            My Account
+          </Link>
+          <Link to="/mach-rewards" role="menuitem" onClick={() => setOpen(false)} className={item}>
+            Mach Rewards
+          </Link>
+          <Link
+            to="/mach-rewards"
+            hash="referral-link"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className={item}
+          >
+            MR Referrals
+          </Link>
+          {betaInvited ? (
+            <Link to="/beta" role="menuitem" onClick={() => setOpen(false)} className={item}>
+              MR Beta Testing
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

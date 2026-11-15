@@ -120,8 +120,11 @@ function PlatinumCard({
         <p className="mt-[0.7cqw] text-[3.1cqw] font-bold leading-none tabular-nums">{since ?? "—"}</p>
       </div>
 
-      <p className="absolute bottom-[7.5%] left-[8%] right-[40%] truncate text-[3.3cqw] font-semibold tracking-[0.12em] uppercase">
+      <p className="absolute bottom-[7.5%] left-[8%] right-[46%] truncate text-[3.3cqw] font-semibold tracking-[0.12em] uppercase">
         {name ?? ""}
+      </p>
+      <p className="absolute bottom-[7.5%] right-[8%] text-[3.3cqw] font-semibold leading-none tabular-nums">
+        Value: {balance == null ? "—" : rewardDollars(balance)}
       </p>
     </div>
   );
