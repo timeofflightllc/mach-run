@@ -1,5 +1,6 @@
-import { Link, createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { RefreshCw } from "lucide-react";
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent, type ReactNode } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { ReferralLinkLine } from "@/components/meridian/referral-card";
 import { PrimaryButton } from "@/components/ui/field";
@@ -150,6 +151,18 @@ function fineHover() {
   return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
 }
 
+function useTouchCards() {
+  const [touch, setTouch] = useState(false);
+  useEffect(() => {
+    const query = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const sync = () => setTouch(!query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+  return touch;
+}
+
 function FlipCard({
   title,
   possible,
@@ -160,6 +173,7 @@ function FlipCard({
   href,
   to,
   onOpen,
+  touch,
 }: {
   title: string;
   possible: string;
@@ -170,9 +184,12 @@ function FlipCard({
   href?: string;
   to?: "/" | "/beta" | "/beta-request" | "/review";
   onOpen?: () => void;
+  touch: boolean;
 }) {
+  const navigate = useNavigate();
   const [turned, setTurned] = useState(false);
   const tone = done ? SILVER_DONE : SILVER;
+  const pad = touch ? "pl-4 pr-11 pt-3 pb-12" : "px-4 py-3";
   function enter() {
     if (fineHover()) setTurned(true);
   }
@@ -184,6 +201,24 @@ function FlipCard({
       event.preventDefault();
       setTurned(true);
     }
+  }
+  function flip(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    setTurned((value) => !value);
+  }
+  function go(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    if (href) {
+      window.open(href, "_blank", "noopener,noreferrer");
+      return;
+    }
+    if (to) {
+      void navigate({ to });
+      return;
+    }
+    onOpen?.();
   }
   const front = (
     <>
@@ -198,23 +233,50 @@ function FlipCard({
       data-fit
       className={`grid h-full w-full [grid-template-rows:1fr] transition-transform duration-500 [transform-style:preserve-3d] ${turned ? "[transform:rotateY(180deg)]" : ""}`}
     >
-      <div className="invisible col-start-1 row-start-1 flex flex-col gap-1 px-4 py-3" aria-hidden>
+      <div className={`invisible col-start-1 row-start-1 flex flex-col gap-1 ${pad}`} aria-hidden>
         {front}
       </div>
-      <div className="invisible col-start-1 row-start-1 px-4 py-3 text-sm leading-snug" aria-hidden>
+      <div className={`invisible col-start-1 row-start-1 text-sm leading-snug ${pad}`} aria-hidden>
         {detail}
       </div>
-      <div className={`col-start-1 row-start-1 flex h-full flex-col justify-center gap-1 px-4 py-3 [backface-visibility:hidden] ${tone}`}>
+      <div className={`col-start-1 row-start-1 flex h-full flex-col justify-center gap-1 [backface-visibility:hidden] ${pad} ${tone}`}>
         {front}
       </div>
       <div
-        className={`col-start-1 row-start-1 h-full px-4 py-3 text-sm leading-snug [backface-visibility:hidden] [transform:rotateY(180deg)] ${tone}`}
+        className={`col-start-1 row-start-1 h-full text-sm leading-snug [backface-visibility:hidden] [transform:rotateY(180deg)] ${pad} ${tone}`}
       >
         {detail}
       </div>
     </div>
   );
+  const controls = (
+    <>
+      <button
+        type="button"
+        aria-label="Flip card"
+        onClick={flip}
+        className="absolute top-2 right-2 z-10 grid size-8 place-items-center rounded-full bg-fg/10 text-fg"
+      >
+        <RefreshCw className="size-4" aria-hidden />
+      </button>
+      <button
+        type="button"
+        onClick={go}
+        className="absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-md bg-fg px-4 py-1.5 text-sm font-medium text-bg"
+      >
+        Go
+      </button>
+    </>
+  );
   const className = "block h-full w-full text-left outline-none";
+  if (touch) {
+    return (
+      <div className={`relative ${className}`}>
+        {faces}
+        {controls}
+      </div>
+    );
+  }
   if (href) {
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" className={className} onMouseEnter={enter} onMouseLeave={leave} onClick={press}>
@@ -255,6 +317,7 @@ function EarnBingo({
   locked: boolean;
 }) {
   const boardRef = useRef<HTMLUListElement>(null);
+  const touch = useTouchCards();
   function scrollToLink() {
     document.getElementById("referral-link")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -279,13 +342,13 @@ function EarnBingo({
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
-  }, [betaSubmitted, betaInvited, referralEarned, instagramCode, instagramEarned, locked]);
+  }, [betaSubmitted, betaInvited, referralEarned, instagramCode, instagramEarned, locked, touch]);
 
   return (
     <div className={`overflow-clip rounded-xl bg-border ${locked ? "opacity-60" : ""}`} inert={locked}>
       <ul ref={boardRef} className="grid grid-cols-1 gap-px sm:grid-cols-2 xl:grid-cols-4">
         <li className="[perspective:900px]">
-          <FlipCard
+          <FlipCard touch={touch}
             title="Follow on Instagram"
             possible="20 points possible"
             earned={`${instagramPoints} earned`}
@@ -308,7 +371,7 @@ function EarnBingo({
           />
         </li>
         <li className="[perspective:900px]">
-          <FlipCard
+          <FlipCard touch={touch}
             title="Follow on LinkedIn"
             possible="20 points possible"
             earned="0 earned"
@@ -326,7 +389,7 @@ function EarnBingo({
           />
         </li>
         <li className="[perspective:900px]">
-          <FlipCard
+          <FlipCard touch={touch}
             title="First MACH RUN"
             possible="100 points possible"
             earned="0 earned"
@@ -344,7 +407,7 @@ function EarnBingo({
           />
         </li>
         <li className="[perspective:900px]">
-          <FlipCard
+          <FlipCard touch={touch}
             title="Run the loop again."
             possible="10 points possible"
             earned="0 earned"
@@ -360,9 +423,9 @@ function EarnBingo({
           />
         </li>
         <li className="[perspective:900px]">
-          <FlipCard
+          <FlipCard touch={touch}
             title="Refer a friend"
-            possible="200 points possible"
+            possible="200 points per friend"
             earned={referralEarned == null ? "— earned" : `${referralEarned} earned`}
             left="Unlimited"
             done={false}
@@ -377,7 +440,7 @@ function EarnBingo({
         </li>
         <li className="[perspective:900px]">
           {betaInvited === false ? (
-            <FlipCard
+            <FlipCard touch={touch}
               title="Beta Test Debrief"
               possible={`${betaPossible} points possible`}
               earned="0 earned"
@@ -394,7 +457,7 @@ function EarnBingo({
               }
             />
           ) : (
-            <FlipCard
+            <FlipCard touch={touch}
               title="Beta Test Debrief"
               possible={`${betaPossible} points possible`}
               earned={betaEarned == null ? "— earned" : `${betaEarned} earned`}
@@ -415,7 +478,7 @@ function EarnBingo({
           )}
         </li>
         <li className="[perspective:900px]">
-          <FlipCard
+          <FlipCard touch={touch}
             title="Write a review"
             possible="100 points possible"
             earned="0 earned"
@@ -431,7 +494,7 @@ function EarnBingo({
           />
         </li>
         <li className="[perspective:900px]">
-          <FlipCard
+          <FlipCard touch={touch}
             title="Pass the word"
             possible="20 points possible"
             earned="0 earned"
