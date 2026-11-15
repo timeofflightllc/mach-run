@@ -95,7 +95,7 @@ function PlatinumCard({
       </div>
 
       <img
-        src="/brand/rewards-pilot.jpg"
+        src="/brand/rewards-pilot.jpg?v=55p"
         alt=""
         className="pointer-events-none absolute left-1/2 top-[53%] h-[54%] w-[32%] -translate-x-1/2 -translate-y-1/2 object-cover"
         style={{ clipPath: "ellipse(46% 46% at 50% 50%)" }}
