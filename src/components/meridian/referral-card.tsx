@@ -10,12 +10,12 @@ export function referralLink(code: string): string {
 }
 
 /** One line. The icon copies that exact address, with no line break. */
-export function ReferralLinkLine({ code }: { code: string | null }) {
+export function ReferralLinkLine({ code, locked = false }: { code: string | null; locked?: boolean }) {
   const [copied, setCopied] = useState(false);
   const link = code ? referralLink(code) : "";
 
   async function copy() {
-    if (!link) return;
+    if (!link || locked) return;
     try {
       await navigator.clipboard.writeText(link);
       setCopied(true);
@@ -26,10 +26,10 @@ export function ReferralLinkLine({ code }: { code: string | null }) {
   }
 
   return (
-    <div className="flex w-full min-w-0 flex-wrap items-center gap-2 overflow-visible py-1">
+    <div className={`flex w-full min-w-0 flex-wrap items-center gap-2 overflow-visible py-1 ${locked ? "pointer-events-none opacity-60 select-none" : ""}`}>
       <button
         type="button"
-        disabled={!link}
+        disabled={!link || locked}
         onClick={() => void copy()}
         aria-label={copied ? "Copied" : "Copy"}
         className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm font-medium text-fg hover:bg-elevated disabled:opacity-60"

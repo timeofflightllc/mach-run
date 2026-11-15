@@ -1,13 +1,16 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { ReferralLinkLine } from "@/components/meridian/referral-card";
+import { PrimaryButton } from "@/components/ui/field";
 import { RedirectToSignIn, isRealUser } from "@/lib/auth/gates";
 import { useCurrentUserState } from "@/lib/auth/use-current-user";
 import { referralPeopleFn, referralSummaryFn } from "@/lib/referrals/api";
 import { referralBillLine, referralCountLine, referralCreditLabel, referralPoints, referralPointsReceived } from "@/lib/referrals/summary";
 import type { ReferralPerson, ReferralSummary } from "@/lib/referrals/page.server";
 import { pointBoardFn } from "@/lib/points/api";
+import { acceptRewardsTermsFn, rewardsAcceptanceFn } from "@/lib/rewards/api";
+import { REWARDS_TERMS } from "@/lib/rewards/terms";
 import { pageHead } from "@/lib/seo";
 
 export const Route = createFileRoute("/mach-rewards")({
@@ -41,9 +44,11 @@ const BETA_POINTS = 150;
 function EarnBingo({
   betaSubmitted,
   betaInvited,
+  locked,
 }: {
   betaSubmitted: number | null;
   betaInvited: boolean | null;
+  locked: boolean;
 }) {
   function scrollToLink() {
     document.getElementById("referral-link")?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -53,7 +58,7 @@ function EarnBingo({
   const earned = submitted == null ? null : submitted * BETA_POINTS;
 
   return (
-    <div className="overflow-hidden rounded-xl bg-border">
+    <div className={`overflow-hidden rounded-xl bg-border ${locked ? "opacity-60" : ""}`} inert={locked}>
       <ul className="grid grid-cols-1 gap-px sm:grid-cols-2 xl:grid-cols-4">
         <li>
           <a
@@ -157,6 +162,10 @@ function MachRewardsPage() {
   const [people, setPeople] = useState<ReferralPerson[] | null>(null);
   const [betaSubmitted, setBetaSubmitted] = useState<number | null>(null);
   const [betaInvited, setBetaInvited] = useState<boolean | null>(null);
+  const [accepted, setAccepted] = useState<boolean | null>(null);
+  const [agreed, setAgreed] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -183,12 +192,37 @@ function MachRewardsPage() {
         setBetaInvited(row.betaInvited);
       })
       .catch(() => {
-        if (live) setBetaSubmitted(0);
+        if (!live) return;
+        setBetaSubmitted(0);
+        setBetaInvited(false);
+      });
+    void rewardsAcceptanceFn()
+      .then((row) => {
+        if (live) setAccepted(row.accepted);
+      })
+      .catch(() => {
+        if (live) setAccepted(false);
       });
     return () => {
       live = false;
     };
   }, [user]);
+
+  async function onJoin(event: FormEvent) {
+    event.preventDefault();
+    if (!agreed || joining) return;
+    setJoining(true);
+    setJoinError(null);
+    try {
+      const result = await acceptRewardsTermsFn();
+      if (!result.ok) throw new Error(result.reason);
+      setAccepted(true);
+    } catch (err) {
+      setJoinError(err instanceof Error ? err.message : "Could not save that. Try again.");
+    } finally {
+      setJoining(false);
+    }
+  }
 
   if (isPending && !user) {
     return (
@@ -212,7 +246,42 @@ function MachRewardsPage() {
           <h1 className="mt-2 font-display text-4xl text-fg">Mach Rewards</h1>
         </header>
 
-        <EarnBingo betaSubmitted={betaSubmitted} betaInvited={betaInvited} />
+        {accepted === false ? (
+          <form
+            onSubmit={(event) => void onJoin(event)}
+            className="w-full space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)] sm:p-6"
+          >
+            <h2 className="font-display text-2xl text-fg">Join Mach Rewards</h2>
+            <p className="text-base text-fg">Points are a thank-you, not a paycheck.</p>
+            <div className="space-y-3 text-sm leading-relaxed text-muted">
+              {REWARDS_TERMS.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </div>
+            <p className="text-sm leading-relaxed text-fg">
+              These sit on top of the MACH RUN{" "}
+              <Link to="/legal" className="font-medium underline underline-offset-4">
+                Terms of Service
+              </Link>
+              .
+            </p>
+            <label className="flex items-start gap-3 text-sm leading-relaxed text-fg">
+              <input
+                type="checkbox"
+                checked={agreed}
+                onChange={(event) => setAgreed(event.target.checked)}
+                className="mt-1 size-4 shrink-0 accent-fg"
+              />
+              <span>I have read and agree to the Mach Rewards Terms and the MACH RUN Terms of Service.</span>
+            </label>
+            {joinError ? <p className="text-sm text-negative">{joinError}</p> : null}
+            <PrimaryButton type="submit" disabled={!agreed || joining}>
+              {joining ? "Joining…" : "Join Mach Rewards"}
+            </PrimaryButton>
+          </form>
+        ) : null}
+
+        <EarnBingo betaSubmitted={betaSubmitted} betaInvited={betaInvited} locked={accepted !== true} />
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
 
@@ -271,7 +340,7 @@ function MachRewardsPage() {
           <p className="max-w-xl text-base leading-relaxed text-muted">
             Send this link. When a friend starts a yearly plan, 200 points land on your account. Those points come off your next bill at a rate of 10 points to $1.
           </p>
-          <ReferralLinkLine code={summary?.code ?? null} />
+          <ReferralLinkLine code={summary?.code ?? null} locked={accepted !== true} />
           <p className="text-base leading-relaxed text-fg">
             {summary ? referralCountLine(summary.signedUp, summary.yearly) : "Loading your rewards…"}
           </p>
