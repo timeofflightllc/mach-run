@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { sendBetaRequestMail } from "@/lib/notify/contact";
-import { clientIp, tooManyFormSubmits } from "@/lib/auth/signup-gate.server";
+import { clientIp, tooManyFormSubmits, turnstileFailureReason, verifyTurnstile } from "@/lib/auth/signup-gate.server";
 
 export const Route = createFileRoute("/api/beta-request")({
   server: {
@@ -18,6 +18,11 @@ export const Route = createFileRoute("/api/beta-request")({
         const name = typeof body.name === "string" ? body.name.trim() : "";
         const email = typeof body.email === "string" ? body.email.trim() : "";
         const note = typeof body.note === "string" ? body.note.trim() : "";
+        const captcha = typeof body.captcha === "string" ? body.captcha : "";
+        const turnstile = await verifyTurnstile(captcha);
+        if (!turnstile.ok) {
+          return Response.json({ ok: false, reason: turnstileFailureReason(turnstile.code) }, { status: 400 });
+        }
         const ip = clientIp(request);
         if (await tooManyFormSubmits("beta", ip)) {
           return Response.json(
