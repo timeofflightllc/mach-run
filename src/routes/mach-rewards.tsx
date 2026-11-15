@@ -42,11 +42,16 @@ function EarnBingo() {
     <div className="overflow-hidden rounded-xl bg-border">
       <ul className="grid grid-cols-1 gap-px lg:grid-cols-5">
         <li>
-          <div className={EARN_CELL}>
+          <a
+            href="https://www.instagram.com/machrundotcom/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${EARN_CELL} hover:bg-elevated`}
+          >
             <p className="font-display text-4xl leading-none text-fg">20</p>
             <p className="mt-6 text-base font-medium text-fg">Follow on Instagram</p>
-            <p className="mt-1 text-sm leading-relaxed text-subtle">The Instagram handle is not set.</p>
-          </div>
+            <p className="mt-1 text-sm leading-relaxed text-muted">Follow MACH RUN.</p>
+          </a>
         </li>
         <li>
           <Link to="/" className={`${EARN_CELL} hover:bg-elevated`}>
