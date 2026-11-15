@@ -81,10 +81,11 @@ function MachRewardsPage() {
           <h1 className="mt-2 font-display text-4xl text-fg">Mach Rewards</h1>
           <div className="mt-3 max-w-xl space-y-2 text-base leading-relaxed text-muted">
             <p>Earn reward points with Mach Rewards!</p>
-            <p>Refer a friend who signs up for a yearly plan - 20 MR points.</p>
-            <p>Your first personal household MACH RUN - 100 MR points.</p>
-            <p>Completing a Beta Test Feedback Form - 200 MR points.</p>
             <p>Follow MACH RUN on Instagram - 20 MR points.</p>
+            <p>Execute your first personal household MACH RUN - 100 MR points.</p>
+            <p>Iterate your plan, make changes, and run the loop again - 10 MR points (given a max of once a month)</p>
+            <p>Refer a friend who signs up for a yearly plan - 200 MR points.</p>
+            <p>Completing a Beta Test Feedback Form - 400 MR points or a free MACH RUN hat.</p>
           </div>
         </header>
 
@@ -92,7 +93,7 @@ function MachRewardsPage() {
 
         <section className="w-full space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)] sm:p-6">
           <p className="max-w-xl text-base leading-relaxed text-muted">
-            Send this link. When a friend starts a yearly plan, 20 points land on your account. Those points come off your next bill at a rate of 10 points to $1.
+            Send this link. When a friend starts a yearly plan, 200 points land on your account. Those points come off your next bill at a rate of 10 points to $1.
           </p>
           <ReferralLinkLine code={summary?.code ?? null} />
           <p className="text-base leading-relaxed text-fg">

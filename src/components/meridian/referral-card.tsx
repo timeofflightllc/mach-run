@@ -66,7 +66,7 @@ export function ReferralAccountCard() {
     <section className="space-y-3 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)]">
       <p className="font-display text-lg text-fg">Mach Rewards</p>
       <p className="text-sm leading-relaxed text-muted">
-        Send this link. When a friend starts a yearly plan, 20 points land on your account. Those points come off your next bill at a rate of 10 points to $1.
+        Send this link. When a friend starts a yearly plan, 200 points land on your account. Those points come off your next bill at a rate of 10 points to $1.
       </p>
       <ReferralLinkLine code={summary?.code ?? null} />
       <p className="text-sm leading-relaxed text-fg">
