@@ -613,13 +613,6 @@ function MachRewardsPage() {
                 <p key={paragraph}>{paragraph}</p>
               ))}
             </div>
-            <p className="text-sm leading-relaxed text-fg">
-              These sit on top of the MACH RUN{" "}
-              <Link to="/legal" className="font-medium underline underline-offset-4">
-                Terms of Service
-              </Link>
-              .
-            </p>
             <label className="flex items-start gap-3 text-sm leading-relaxed text-fg">
               <input
                 type="checkbox"

@@ -5,6 +5,7 @@ import { parsePricingCopy, serializePricingCopy, withLivePricingLines } from "./
 import { parseHeroCopy, openHeroDeckBreak } from "./hero-copy";
 import { parseCompareCopy } from "./compare-copy";
 import { DEFAULT_PAGES, defaultAnnouncements, byAnnouncementDateDesc, PINNED_ANNOUNCEMENTS, REFUND_FAQ_BLOCK, REFUND_LEGAL_BLOCK, FREE_CALCULATORS_BLOCK, METHOD_SOURCES_BLOCK, RETIRED_PAY_TERMS_BLOCK } from "./defaults";
+import { rewardsTermsLegalBlock } from "@/lib/rewards/terms";
 import {
   SITE_PAGE_SLUGS,
   type SiteAnnouncement,
@@ -413,8 +414,21 @@ function presentTerms(page: SitePage): SitePage {
     ...page,
     title: "Terms of Service",
     kicker: "Last updated: October 24, 2026.",
-    body,
+    body: placeMachRewardsAfterLimitation(body),
   };
+}
+
+/** Mach Rewards sits after Limitation and before Contact. A copy saved elsewhere is moved there. */
+function placeMachRewardsAfterLimitation(body: string): string {
+  const stripped = body
+    .replace(/(?:^|\n\n)# Mach Rewards(?:\s*\{#[a-z0-9-]+\})?\s*\n[\s\S]*?(?=\n\n# |$)/, "\n\n")
+    .replace(/These sit on top of the (?:MACH RUN )?Terms of Service\.?/gi, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  const section = rewardsTermsLegalBlock().trim();
+  const contactAt = stripped.indexOf("# Contact");
+  if (contactAt === -1) return `${stripped}\n\n${section}\n`;
+  return `${stripped.slice(0, contactAt).trimEnd()}\n\n${section}\n\n${stripped.slice(contactAt)}`;
 }
 
 function preferCurrentLegal(page: SitePage): SitePage {

@@ -1,4 +1,5 @@
 import { ANNOUNCEMENTS } from "@/lib/announcements";
+import { rewardsTermsLegalBlock } from "@/lib/rewards/terms";
 import { DEFAULT_FOOTER_COPY, serializeFooterCopy } from "./footer-copy";
 import { DEFAULT_PLANNER_COPY, serializePlannerCopy } from "./planner-copy";
 import { DEFAULT_BOYD_QUOTES } from "./boyd-quotes";
@@ -301,6 +302,8 @@ See the [Privacy policy](/privacy).
 
 # Limitation
 MACH RUN is provided as-is. We are not liable for decisions you make from a calculated run or from OODA AI.
+
+${rewardsTermsLegalBlock()}
 
 # Contact
 Questions go to [Contact](/contact).
