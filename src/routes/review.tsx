@@ -58,7 +58,7 @@ function ReviewPage() {
 
   return (
     <main className="min-h-screen bg-bg py-10 text-fg">
-      <div className="static-gutter mx-auto w-full max-w-xl space-y-8">
+      <div className="static-gutter mx-auto w-full space-y-8">
         <PageMast />
         <nav aria-label="Breadcrumb" className="text-sm text-muted">
           <Link to="/" className="underline underline-offset-4 hover:text-fg">
