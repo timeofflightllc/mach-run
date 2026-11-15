@@ -15,6 +15,10 @@ export async function applyRewardPoints(userId: string, points: number): Promise
   if (!Number.isInteger(points) || points <= 0) {
     return { ok: false, error: "Choose how many points to apply." };
   }
+  const { rewardsTermsAccepted } = await import("./acceptance.server");
+  if (!(await rewardsTermsAccepted(userId))) {
+    return { ok: false, error: "Agree to the Mach Rewards terms before applying points." };
+  }
   const sql = await getSql();
   const customers = await sql.query<{ stripe_customer_id: string | null }>(
     `select stripe_customer_id from mach_subscriptions where user_id = $1 limit 1`,

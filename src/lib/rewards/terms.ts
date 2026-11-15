@@ -1,5 +1,5 @@
 /** Bump this when the words change. A stored older version asks again. */
-export const REWARDS_TERMS_VERSION = "mach-rewards-2026-11-15b";
+export const REWARDS_TERMS_VERSION = "mach-rewards-2026-11-15c";
 
 export const REWARDS_TERMS = [
   "These terms cover Mach Rewards only. The MACH RUN Terms of Service still apply.",
@@ -7,7 +7,7 @@ export const REWARDS_TERMS = [
   "You can earn points only for the actions listed on the Mach Rewards page, and only after you join. A Hale demo does not count. MACH RUN decides whether an action counts. We can refuse or reverse points if an account looks shared, bought, or gamed.",
   "One person, one account. Do not refer yourself.",
   "We can change the point values, pause a card, or end the program. If we end it, unused points end with it. A referral credit already posted to your bill stays posted.",
-  "Joining is optional. The calculator works without it. This program is not financial, tax, legal, or investment advice.",
+  "Joining is optional. The calculator works without it.",
 ];
 
 /** The Terms of Service section. Short on purpose. The join page uses REWARDS_TERMS. */

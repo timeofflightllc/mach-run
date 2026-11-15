@@ -620,7 +620,7 @@ function MachRewardsPage() {
                 onChange={(event) => setAgreed(event.target.checked)}
                 className="mt-1 size-4 shrink-0 accent-fg"
               />
-              <span>I have read and agree to the Mach Rewards Terms and the MACH RUN Terms of Service.</span>
+              <span>I have read and agree to the Mach Rewards Terms.</span>
             </label>
             {joinError ? <p className="text-sm text-negative">{joinError}</p> : null}
             <PrimaryButton type="submit" disabled={!agreed || joining}>
@@ -655,45 +655,47 @@ function MachRewardsPage() {
               name={user?.displayName?.trim() || null}
               since={memberYear(acceptedAt)}
             />
-            <div className="mt-5 flex justify-center">
-              <PrimaryButton
-                disabled={ledger == null || ledger.balance <= 0 || applyOpen || applying}
-                onClick={() => {
-                  setApplyOpen(true);
-                  setApplyPoints(null);
-                  setApplyError(null);
-                }}
-              >
-                Apply Mach Rewards to your next bill
-              </PrimaryButton>
-            </div>
-            {applyOpen && ledger ? (
-              <fieldset className="mt-4 flex flex-col items-center gap-3">
-                <div className="space-y-3">
-                  {rewardApplyChoices(ledger.balance).map((points, index, choices) => (
-                    <label key={points} className="flex items-center gap-3 text-sm text-fg">
-                      <input
-                        type="radio"
-                        name="reward-apply"
-                        checked={applyPoints === points}
-                        onChange={() => setApplyPoints(points)}
-                        className="size-4 accent-fg"
-                      />
-                      <span>
-                        {index === choices.length - 1
-                          ? `All ${points} points (${rewardDollars(points)})`
-                          : `${points} points (${rewardDollars(points)})`}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-                {applyError ? <p className="text-sm text-negative">{applyError}</p> : null}
-                <PrimaryButton disabled={applyPoints == null || applying} onClick={() => void onApply()}>
-                  {applying ? "Applying…" : "Apply to my next bill"}
+            <div className={`mt-5 ${accepted === true ? "" : "pointer-events-none opacity-50 select-none"}`}>
+              <div className="flex justify-center">
+                <PrimaryButton
+                  disabled={accepted !== true || ledger == null || ledger.balance <= 0 || applyOpen || applying}
+                  onClick={() => {
+                    setApplyOpen(true);
+                    setApplyPoints(null);
+                    setApplyError(null);
+                  }}
+                >
+                  Apply Mach Rewards to your next bill
                 </PrimaryButton>
-              </fieldset>
-            ) : null}
-            {applyNote ? <p className="mt-3 text-center text-sm text-fg">{applyNote}</p> : null}
+              </div>
+              {applyOpen && ledger && accepted === true ? (
+                <fieldset className="mt-4 flex flex-col items-center gap-3">
+                  <div className="space-y-3">
+                    {rewardApplyChoices(ledger.balance).map((points, index, choices) => (
+                      <label key={points} className="flex items-center gap-3 text-sm text-fg">
+                        <input
+                          type="radio"
+                          name="reward-apply"
+                          checked={applyPoints === points}
+                          onChange={() => setApplyPoints(points)}
+                          className="size-4 accent-fg"
+                        />
+                        <span>
+                          {index === choices.length - 1
+                            ? `All ${points} points (${rewardDollars(points)})`
+                            : `${points} points (${rewardDollars(points)})`}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  {applyError ? <p className="text-sm text-negative">{applyError}</p> : null}
+                  <PrimaryButton disabled={applyPoints == null || applying} onClick={() => void onApply()}>
+                    {applying ? "Applying…" : "Apply to my next bill"}
+                  </PrimaryButton>
+                </fieldset>
+              ) : null}
+              {applyNote ? <p className="mt-3 text-center text-sm text-fg">{applyNote}</p> : null}
+            </div>
           </div>
           <div className="border-t border-border">
             <p className="px-5 py-3 text-xs font-medium uppercase tracking-[0.16em] text-subtle sm:px-6">
