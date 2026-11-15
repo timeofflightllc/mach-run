@@ -108,7 +108,7 @@ export async function gateEmailSignup(request: Request): Promise<Response | null
 }
 
 
-export async function tooManyFormSubmits(kind: "contact" | "enterprise" | "review", ip: string): Promise<boolean> {
+export async function tooManyFormSubmits(kind: "contact" | "enterprise" | "review" | "beta", ip: string): Promise<boolean> {
   const sql = await getSql();
   await sql.query(`
     create table if not exists form_rate (
@@ -125,7 +125,7 @@ export async function tooManyFormSubmits(kind: "contact" | "enterprise" | "revie
   const now = Date.now();
   const row = rows[0];
   const windowMs = 15 * 60 * 1000;
-  const max = kind === "contact" ? 5 : 3;
+  const max = kind === "contact" || kind === "beta" ? 5 : 3;
   if (!row) {
     await sql.query(
       `insert into form_rate (key, hits, window_start) values ($1, 1, now())

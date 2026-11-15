@@ -263,6 +263,68 @@ export async function sendBetaDebriefMail(input: {
   }
 }
 
+export async function sendBetaRequestMail(input: {
+  name: string;
+  email: string;
+  note: string;
+}): Promise<{ ok: true } | { ok: false; reason: string }> {
+  const key = env("RESEND_API_KEY");
+  if (!key) return { ok: false, reason: "Mail is not connected yet." };
+  const name = input.name.trim();
+  const email = input.email.trim();
+  const note = input.note.trim();
+  const when = new Date().toLocaleString("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "America/Chicago",
+  });
+  const subject = "MACH RUN beta tester request";
+  const text = [`Name: ${name}`, `Email: ${email}`, `When: ${when} CT`, "", note].join("\n");
+  const html = wrapEmail(
+    "Beta tester request",
+    `<tr><td style="padding:8px 28px 16px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#3D4A54;">
+          Someone asked to become a MACH RUN beta tester.
+        </td></tr>
+        <tr><td style="padding:0 28px 24px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ECE7DC;">
+            <tr><td style="padding:14px 16px;font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#1E2A32;">
+              Name<br /><strong>${escapeHtml(name)}</strong><br /><br />
+              Email<br /><strong>${escapeHtml(email)}</strong><br /><br />
+              When<br /><strong>${escapeHtml(when)} CT</strong>
+            </td></tr>
+          </table>
+        </td></tr>
+        <tr><td style="padding:0 28px 24px;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#3D4A54;">
+          <pre style="margin:0;font-family:Arial,Helvetica,sans-serif;white-space:pre-wrap;">${escapeHtml(note)}</pre>
+        </td></tr>
+        <tr><td style="padding:0 28px 24px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#5D6C78;">
+          This is an owner alert. The person who asked was not copied, and beta access was not granted.
+        </td></tr>`,
+    `${name} asked to beta test MACH RUN.`,
+  );
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: fromAddress(),
+        to: ["cain@machrun.com"],
+        reply_to: email,
+        subject,
+        html,
+        text,
+      }),
+    });
+    if (!res.ok) return { ok: false, reason: "Could not send. Try again." };
+    return { ok: true };
+  } catch {
+    return { ok: false, reason: "Could not reach mail." };
+  }
+}
+
 export async function sendBetaInviteMail(input: {
   name: string;
   email: string;

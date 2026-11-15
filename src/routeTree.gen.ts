@@ -14,6 +14,7 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as AccountRouteImport } from './routes/account'
 import { Route as AnnouncementsRouteImport } from './routes/announcements'
 import { Route as BetaRouteImport } from './routes/beta'
+import { Route as BetaRequestRouteImport } from './routes/beta-request'
 import { Route as CompareRouteImport } from './routes/compare'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as FaqRouteImport } from './routes/faq'
@@ -33,6 +34,7 @@ import { Route as StartRouteImport } from './routes/start'
 import { Route as ToolsRouteImport } from './routes/tools'
 import { Route as Top3DeskRouteImport } from './routes/top-3-desk'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as ApiBetaRequestRouteImport } from './routes/api/beta-request'
 import { Route as ApiContactRouteImport } from './routes/api/contact'
 import { Route as ApiSiteErrorRouteImport } from './routes/api/site-error'
 import { Route as LearnSlugRouteImport } from './routes/learn.$slug'
@@ -62,6 +64,11 @@ const AnnouncementsRoute = AnnouncementsRouteImport.update({
 const BetaRoute = BetaRouteImport.update({
   id: '/beta',
   path: '/beta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BetaRequestRoute = BetaRequestRouteImport.update({
+  id: '/beta-request',
+  path: '/beta-request',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CompareRoute = CompareRouteImport.update({
@@ -160,6 +167,11 @@ const VerifyEmailRoute = VerifyEmailRouteImport.update({
   path: '/verify-email',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBetaRequestRoute = ApiBetaRequestRouteImport.update({
+  id: '/api/beta-request',
+  path: '/api/beta-request',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiContactRoute = ApiContactRouteImport.update({
   id: '/api/contact',
   path: '/api/contact',
@@ -192,6 +204,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AccountRoute
   '/announcements': typeof AnnouncementsRoute
   '/beta': typeof BetaRoute
+  '/beta-request': typeof BetaRequestRoute
   '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
@@ -211,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/tools': typeof ToolsRoute
   '/top-3-desk': typeof Top3DeskRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/api/beta-request': typeof ApiBetaRequestRoute
   '/api/contact': typeof ApiContactRoute
   '/api/site-error': typeof ApiSiteErrorRoute
   '/learn/$slug': typeof LearnSlugRoute
@@ -223,6 +237,7 @@ export interface FileRoutesByTo {
   '/account': typeof AccountRoute
   '/announcements': typeof AnnouncementsRoute
   '/beta': typeof BetaRoute
+  '/beta-request': typeof BetaRequestRoute
   '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
@@ -242,6 +257,7 @@ export interface FileRoutesByTo {
   '/tools': typeof ToolsRoute
   '/top-3-desk': typeof Top3DeskRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/api/beta-request': typeof ApiBetaRequestRoute
   '/api/contact': typeof ApiContactRoute
   '/api/site-error': typeof ApiSiteErrorRoute
   '/learn/$slug': typeof LearnSlugRoute
@@ -255,6 +271,7 @@ export interface FileRoutesById {
   '/account': typeof AccountRoute
   '/announcements': typeof AnnouncementsRoute
   '/beta': typeof BetaRoute
+  '/beta-request': typeof BetaRequestRoute
   '/compare': typeof CompareRoute
   '/contact': typeof ContactRoute
   '/faq': typeof FaqRoute
@@ -274,6 +291,7 @@ export interface FileRoutesById {
   '/tools': typeof ToolsRoute
   '/top-3-desk': typeof Top3DeskRoute
   '/verify-email': typeof VerifyEmailRoute
+  '/api/beta-request': typeof ApiBetaRequestRoute
   '/api/contact': typeof ApiContactRoute
   '/api/site-error': typeof ApiSiteErrorRoute
   '/learn/$slug': typeof LearnSlugRoute
@@ -288,6 +306,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/announcements'
     | '/beta'
+    | '/beta-request'
     | '/compare'
     | '/contact'
     | '/faq'
@@ -307,6 +326,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/top-3-desk'
     | '/verify-email'
+    | '/api/beta-request'
     | '/api/contact'
     | '/api/site-error'
     | '/learn/$slug'
@@ -319,6 +339,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/announcements'
     | '/beta'
+    | '/beta-request'
     | '/compare'
     | '/contact'
     | '/faq'
@@ -338,6 +359,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/top-3-desk'
     | '/verify-email'
+    | '/api/beta-request'
     | '/api/contact'
     | '/api/site-error'
     | '/learn/$slug'
@@ -350,6 +372,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/announcements'
     | '/beta'
+    | '/beta-request'
     | '/compare'
     | '/contact'
     | '/faq'
@@ -369,6 +392,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/top-3-desk'
     | '/verify-email'
+    | '/api/beta-request'
     | '/api/contact'
     | '/api/site-error'
     | '/learn/$slug'
@@ -382,6 +406,7 @@ export interface RootRouteChildren {
   AccountRoute: typeof AccountRoute
   AnnouncementsRoute: typeof AnnouncementsRoute
   BetaRoute: typeof BetaRoute
+  BetaRequestRoute: typeof BetaRequestRoute
   CompareRoute: typeof CompareRoute
   ContactRoute: typeof ContactRoute
   FaqRoute: typeof FaqRoute
@@ -401,6 +426,7 @@ export interface RootRouteChildren {
   ToolsRoute: typeof ToolsRoute
   Top3DeskRoute: typeof Top3DeskRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  ApiBetaRequestRoute: typeof ApiBetaRequestRoute
   ApiContactRoute: typeof ApiContactRoute
   ApiSiteErrorRoute: typeof ApiSiteErrorRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
@@ -442,6 +468,13 @@ declare module '@tanstack/react-router' {
       path: '/beta'
       fullPath: '/beta'
       preLoaderRoute: typeof BetaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/beta-request': {
+      id: '/beta-request'
+      path: '/beta-request'
+      fullPath: '/beta-request'
+      preLoaderRoute: typeof BetaRequestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/compare': {
@@ -577,6 +610,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VerifyEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/beta-request': {
+      id: '/api/beta-request'
+      path: '/api/beta-request'
+      fullPath: '/api/beta-request'
+      preLoaderRoute: typeof ApiBetaRequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/contact': {
       id: '/api/contact'
       path: '/api/contact'
@@ -631,6 +671,7 @@ const rootRouteChildren: RootRouteChildren = {
   AccountRoute: AccountRoute,
   AnnouncementsRoute: AnnouncementsRoute,
   BetaRoute: BetaRoute,
+  BetaRequestRoute: BetaRequestRoute,
   CompareRoute: CompareRoute,
   ContactRoute: ContactRoute,
   FaqRoute: FaqRoute,
@@ -650,6 +691,7 @@ const rootRouteChildren: RootRouteChildren = {
   ToolsRoute: ToolsRoute,
   Top3DeskRoute: Top3DeskRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  ApiBetaRequestRoute: ApiBetaRequestRoute,
   ApiContactRoute: ApiContactRoute,
   ApiSiteErrorRoute: ApiSiteErrorRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,

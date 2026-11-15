@@ -38,7 +38,13 @@ const ATTEMPTS = "mt-auto pt-4 text-sm text-fg";
 const BETA_PASSES = 3;
 const BETA_POINTS = 150;
 
-function EarnBingo({ betaSubmitted }: { betaSubmitted: number | null }) {
+function EarnBingo({
+  betaSubmitted,
+  betaInvited,
+}: {
+  betaSubmitted: number | null;
+  betaInvited: boolean | null;
+}) {
   function scrollToLink() {
     document.getElementById("referral-link")?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
@@ -102,18 +108,35 @@ function EarnBingo({ betaSubmitted }: { betaSubmitted: number | null }) {
           </button>
         </li>
         <li>
-          <Link to="/beta" className={`${EARN_CELL} hover:bg-elevated`}>
-            <p className="font-display text-4xl leading-none text-fg">
-              450 <span className="text-lg font-medium text-muted">possible</span>
-            </p>
-            <p className="mt-6 text-base font-medium text-fg">Beta debrief</p>
-            <p className="mt-1 text-sm leading-relaxed text-muted">
-              {earned == null
-                ? "Loading…"
-                : `${earned} of 450 earned. ${submitted} of 3 feedback forms submitted.`}
-            </p>
-            <p className={ATTEMPTS}>3 possible attempts</p>
-          </Link>
+          {betaInvited === false ? (
+            <div className={EARN_CELL}>
+              <p className="font-display text-4xl leading-none text-fg">
+                450 <span className="text-lg font-medium text-muted">possible</span>
+              </p>
+              <p className="mt-6 text-base font-medium text-fg">Beta debrief</p>
+              <p className="mt-1 text-sm leading-relaxed text-muted">
+                You are not currently a beta tester. To become a beta tester for MACH RUN and have the chance to receive additional MR points and a free hat, please{" "}
+                <Link to="/beta-request" className="text-fg underline underline-offset-4">
+                  click here
+                </Link>
+                .
+              </p>
+              <p className={ATTEMPTS}>3 possible attempts</p>
+            </div>
+          ) : (
+            <Link to="/beta" className={`${EARN_CELL} hover:bg-elevated`}>
+              <p className="font-display text-4xl leading-none text-fg">
+                450 <span className="text-lg font-medium text-muted">possible</span>
+              </p>
+              <p className="mt-6 text-base font-medium text-fg">Beta debrief</p>
+              <p className="mt-1 text-sm leading-relaxed text-muted">
+                {earned == null
+                  ? "Loading…"
+                  : `${earned} of 450 earned. ${submitted} of 3 feedback forms submitted.`}
+              </p>
+              <p className={ATTEMPTS}>3 possible attempts</p>
+            </Link>
+          )}
         </li>
         <li>
           <Link to="/review" className={`${EARN_CELL} hover:bg-elevated`}>
@@ -133,6 +156,7 @@ function MachRewardsPage() {
   const [summary, setSummary] = useState<ReferralSummary | null>(null);
   const [people, setPeople] = useState<ReferralPerson[] | null>(null);
   const [betaSubmitted, setBetaSubmitted] = useState<number | null>(null);
+  const [betaInvited, setBetaInvited] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -154,7 +178,9 @@ function MachRewardsPage() {
       });
     void pointBoardFn()
       .then((row) => {
-        if (live) setBetaSubmitted(row.betaSubmitted);
+        if (!live) return;
+        setBetaSubmitted(row.betaSubmitted);
+        setBetaInvited(row.betaInvited);
       })
       .catch(() => {
         if (live) setBetaSubmitted(0);
@@ -186,7 +212,7 @@ function MachRewardsPage() {
           <h1 className="mt-2 font-display text-4xl text-fg">Mach Rewards</h1>
         </header>
 
-        <EarnBingo betaSubmitted={betaSubmitted} />
+        <EarnBingo betaSubmitted={betaSubmitted} betaInvited={betaInvited} />
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
 
