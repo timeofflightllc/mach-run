@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { MachFooter, PageMast } from "@/components/meridian/mach-mark";
 import { ReferralLinkLine } from "@/components/meridian/referral-card";
 import { PrimaryButton } from "@/components/ui/field";
@@ -138,8 +138,36 @@ function referralDate(iso: string): string {
   });
 }
 
-const EARN_CELL = "flex h-full min-h-44 w-full flex-col bg-surface px-4 py-5 text-left";
-const ATTEMPTS = "mt-auto pt-4 text-sm text-fg";
+const EARN_CELL =
+  "flex w-full items-start gap-3 self-start rounded-xl bg-surface px-4 py-3 text-left shadow-[0_0_0_1px_var(--color-border)]";
+
+function EarnFace({
+  points,
+  note,
+  title,
+  detail,
+  attempts,
+}: {
+  points: string;
+  note?: string;
+  title: string;
+  detail: ReactNode;
+  attempts: string;
+}) {
+  return (
+    <>
+      <div className="w-14 shrink-0">
+        <p className="font-display text-3xl leading-none text-fg">{points}</p>
+        {note ? <p className="mt-1 text-xs leading-tight text-muted">{note}</p> : null}
+      </div>
+      <span className="min-w-0">
+        <span className="block text-base font-medium leading-tight text-fg">{title}</span>
+        <span className="mt-1 block text-sm leading-snug text-muted">{detail}</span>
+        <span className="mt-1.5 block text-sm text-fg">{attempts}</span>
+      </span>
+    </>
+  );
+}
 
 function EarnBingo({
   betaSubmitted,
@@ -158,8 +186,8 @@ function EarnBingo({
   const earned = submitted == null ? null : betaRewardPoints(submitted);
 
   return (
-    <div className={`overflow-hidden rounded-xl bg-border ${locked ? "opacity-60" : ""}`} inert={locked}>
-      <ul className="grid grid-cols-1 gap-px sm:grid-cols-2 xl:grid-cols-4">
+    <div className={locked ? "opacity-60" : ""} inert={locked}>
+      <ul className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <li>
           <a
             href="https://www.instagram.com/machrundotcom/"
@@ -167,10 +195,12 @@ function EarnBingo({
             rel="noopener noreferrer"
             className={`${EARN_CELL} hover:bg-elevated`}
           >
-            <p className="font-display text-4xl leading-none text-fg">20</p>
-            <p className="mt-6 text-base font-medium text-fg">Follow on Instagram</p>
-            <p className="mt-1 text-sm leading-relaxed text-muted">Follow MACH RUN.</p>
-            <p className={ATTEMPTS}>1 possible attempt</p>
+            <EarnFace
+              points="20"
+              title="Follow on Instagram"
+              detail="Follow MACH RUN."
+              attempts="1 possible attempt"
+            />
           </a>
         </li>
         <li>
@@ -180,75 +210,83 @@ function EarnBingo({
             rel="noopener noreferrer"
             className={`${EARN_CELL} hover:bg-elevated`}
           >
-            <p className="font-display text-4xl leading-none text-fg">20</p>
-            <p className="mt-6 text-base font-medium text-fg">Follow on LinkedIn</p>
-            <p className="mt-1 text-sm leading-relaxed text-muted">Follow MACH RUN.</p>
-            <p className={ATTEMPTS}>1 possible attempt</p>
+            <EarnFace
+              points="20"
+              title="Follow on LinkedIn"
+              detail="Follow MACH RUN."
+              attempts="1 possible attempt"
+            />
           </a>
         </li>
         <li>
           <Link to="/" className={`${EARN_CELL} hover:bg-elevated`}>
-            <p className="font-display text-4xl leading-none text-fg">100</p>
-            <p className="mt-6 text-base font-medium text-fg">First MACH RUN</p>
-            <p className="mt-1 text-sm leading-relaxed text-muted">
-              Type your household, complete the OODA Loop, execute the MACH RUN. These points are not earned with a Hale Demo run, but your real household numbers.
-            </p>
-            <p className={ATTEMPTS}>1 possible attempt</p>
+            <EarnFace
+              points="100"
+              title="First MACH RUN"
+              detail="Type your household, complete the OODA Loop, execute the MACH RUN. These points are not earned with a Hale Demo run, but your real household numbers."
+              attempts="1 possible attempt"
+            />
           </Link>
         </li>
         <li>
           <Link to="/" className={`${EARN_CELL} hover:bg-elevated`}>
-            <p className="font-display text-4xl leading-none text-fg">10</p>
-            <p className="mt-6 text-base font-medium text-fg">Run the loop again.</p>
-            <p className="mt-1 text-sm leading-relaxed text-muted">Change your MACH RUN as you iterate and adapt to new information. 10 points earned once a month maximum.</p>
-            <p className={ATTEMPTS}>1 possible attempt a month</p>
+            <EarnFace
+              points="10"
+              title="Run the loop again."
+              detail="Change your MACH RUN as you iterate and adapt to new information. 10 points earned once a month maximum."
+              attempts="1 possible attempt a month"
+            />
           </Link>
         </li>
         <li>
           <button type="button" onClick={scrollToLink} className={`${EARN_CELL} hover:bg-elevated`}>
-            <p className="font-display text-4xl leading-none text-fg">200</p>
-            <p className="mt-6 text-base font-medium text-fg">Refer a friend</p>
-            <p className="mt-1 text-sm leading-relaxed text-muted">Earn 200 points when a referred friend signs up for a yearly plan.</p>
-            <p className={ATTEMPTS}>Unlimited possible attempts</p>
+            <EarnFace
+              points="200"
+              title="Refer a friend"
+              detail="Earn 200 points when a referred friend signs up for a yearly plan."
+              attempts="Unlimited possible attempts"
+            />
           </button>
         </li>
         <li>
           {betaInvited === false ? (
             <div className={EARN_CELL}>
-              <p className="font-display text-4xl leading-none text-fg">
-                450 <span className="text-lg font-medium text-muted">possible</span>
-              </p>
-              <p className="mt-6 text-base font-medium text-fg">Beta debrief</p>
-              <p className="mt-1 text-sm leading-relaxed text-muted">
-                You are not currently a beta tester. To become a beta tester for MACH RUN and have the chance to receive additional MR points and a free hat, please{" "}
-                <Link to="/beta-request" className="text-fg underline underline-offset-4">
-                  click here
-                </Link>
-                .
-              </p>
-              <p className={ATTEMPTS}>3 possible attempts</p>
+              <EarnFace
+                points="450"
+                note="possible"
+                title="Beta debrief"
+                detail={
+                  <>
+                    You are not currently a beta tester. To become a beta tester for MACH RUN and have the chance to
+                    receive additional MR points and a free hat, please{" "}
+                    <Link to="/beta-request" className="text-fg underline underline-offset-4">
+                      click here
+                    </Link>
+                    .
+                  </>
+                }
+                attempts="3 possible attempts"
+              />
             </div>
           ) : (
             <Link to="/beta" className={`${EARN_CELL} hover:bg-elevated`}>
-              <p className="font-display text-4xl leading-none text-fg">
-                450 <span className="text-lg font-medium text-muted">possible</span>
-              </p>
-              <p className="mt-6 text-base font-medium text-fg">Beta debrief</p>
-              <p className="mt-1 text-sm leading-relaxed text-muted">
-                {earned == null
-                  ? "Loading…"
-                  : `${earned} of ${BETA_PASS_CAP * BETA_PASS_POINTS} earned. ${submitted} of ${BETA_PASS_CAP} feedback forms submitted.`}
-              </p>
-              <p className={ATTEMPTS}>3 possible attempts</p>
+              <EarnFace
+                points="450"
+                note="possible"
+                title="Beta debrief"
+                detail={
+                  earned == null
+                    ? "Loading…"
+                    : `${earned} of ${BETA_PASS_CAP * BETA_PASS_POINTS} earned. ${submitted} of ${BETA_PASS_CAP} feedback forms submitted.`
+                }
+                attempts="3 possible attempts"
+              />
             </Link>
           )}
         </li>
         <li>
           <Link to="/review" className={`${EARN_CELL} hover:bg-elevated`}>
-            <p className="font-display text-4xl leading-none text-fg">100</p>
-            <p className="mt-6 text-base font-medium text-fg">Short review</p>
-            <p className="mt-1 text-sm leading-relaxed text-muted">Stars, your name, and 250 characters.</p>
-            <p className={ATTEMPTS}>1 possible attempt</p>
+            <EarnFace points="100" title="Short review" detail="Stars, your name, and 250 characters." attempts="1 possible attempt" />
           </Link>
         </li>
       </ul>
