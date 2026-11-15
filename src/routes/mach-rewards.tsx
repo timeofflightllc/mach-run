@@ -255,7 +255,7 @@ function EarnBingo({
         <li className="h-full [perspective:900px]">
           <FlipCard
             title="Follow on Instagram"
-            possible="20 possible"
+            possible="20 points possible"
             earned={`${instagramPoints} earned`}
             left={`${Math.max(0, 20 - instagramPoints)} left`}
             done={instagramPoints >= 20}
@@ -278,7 +278,7 @@ function EarnBingo({
         <li className="h-full [perspective:900px]">
           <FlipCard
             title="Follow on LinkedIn"
-            possible="20 possible"
+            possible="20 points possible"
             earned="0 earned"
             left="20 left"
             done={false}
@@ -296,7 +296,7 @@ function EarnBingo({
         <li className="h-full [perspective:900px]">
           <FlipCard
             title="First MACH RUN"
-            possible="100 possible"
+            possible="100 points possible"
             earned="0 earned"
             left="100 left"
             done={false}
@@ -314,7 +314,7 @@ function EarnBingo({
         <li className="h-full [perspective:900px]">
           <FlipCard
             title="Run the loop again."
-            possible="10 possible"
+            possible="10 points possible"
             earned="0 earned"
             left="10 left"
             done={false}
@@ -330,7 +330,7 @@ function EarnBingo({
         <li className="h-full [perspective:900px]">
           <FlipCard
             title="Refer a friend"
-            possible="200 possible"
+            possible="200 points possible"
             earned={referralEarned == null ? "— earned" : `${referralEarned} earned`}
             left="Unlimited"
             done={false}
@@ -346,8 +346,8 @@ function EarnBingo({
         <li className="h-full [perspective:900px]">
           {betaInvited === false ? (
             <FlipCard
-              title="Beta debrief"
-              possible={`${betaPossible} possible`}
+              title="Beta Test Debrief"
+              possible={`${betaPossible} points possible`}
               earned="0 earned"
               left={`${betaPossible} left`}
               done={false}
@@ -363,8 +363,8 @@ function EarnBingo({
             />
           ) : (
             <FlipCard
-              title="Beta debrief"
-              possible={`${betaPossible} possible`}
+              title="Beta Test Debrief"
+              possible={`${betaPossible} points possible`}
               earned={betaEarned == null ? "— earned" : `${betaEarned} earned`}
               left={betaEarned == null ? "— left" : `${betaPossible - betaEarned} left`}
               done={betaDone}
@@ -384,15 +384,15 @@ function EarnBingo({
         </li>
         <li className="h-full [perspective:900px]">
           <FlipCard
-            title="Short review"
-            possible="100 possible"
+            title="Write a review"
+            possible="100 points possible"
             earned="0 earned"
             left="100 left"
             done={false}
             to="/review"
             detail={
               <>
-                <p>Stars, your name, and 250 characters.</p>
+                <p>Rate MACH RUN out of 5 stars, and leave a short review (250 characters max). Thank you!</p>
                 <p className="mt-2">1 possible attempt</p>
               </>
             }
