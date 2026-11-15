@@ -91,6 +91,57 @@ function MachRewardsPage() {
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
 
+        <section className="w-full rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
+          <div className="px-5 py-6 sm:px-6 sm:py-7">
+            <p className="text-xs font-medium uppercase tracking-[0.16em] text-subtle">Point balance</p>
+            <p className="mt-1 font-display text-5xl tabular-nums text-fg">
+              {summary ? referralPoints(summary.creditCents) : "—"}
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              {summary ? referralBillLine(summary.creditCents) : "Loading your balance…"}
+            </p>
+          </div>
+          <div className="border-t border-border">
+            <p className="px-5 py-3 text-xs font-medium uppercase tracking-[0.16em] text-subtle sm:px-6">
+              History
+            </p>
+            {people == null ? (
+              <p className="px-5 pb-5 text-sm text-muted sm:px-6">Loading…</p>
+            ) : (
+              (() => {
+                const earned = people.filter((person) => person.creditCents > 0);
+                if (earned.length === 0) {
+                  return (
+                    <p className="px-5 pb-5 text-base text-muted sm:px-6">
+                      No points yet. Refer a friend who starts a yearly plan to earn points.
+                    </p>
+                  );
+                }
+                return (
+                  <ul>
+                    {earned.map((person, index) => (
+                      <li
+                        key={`${person.date}-${person.name}-${index}`}
+                        className="flex items-center justify-between gap-4 border-t border-border px-5 py-3 first:border-t-0 sm:px-6"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-base font-medium text-fg">Referred a friend</p>
+                          <p className="mt-0.5 text-sm text-subtle">
+                            {person.name} · {referralDate(person.date)}
+                          </p>
+                        </div>
+                        <p className="shrink-0 font-display text-xl tabular-nums text-fg">
+                          +{referralPoints(person.creditCents)}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              })()
+            )}
+          </div>
+        </section>
+
         <section className="w-full space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)] sm:p-6">
           <p className="max-w-xl text-base leading-relaxed text-muted">
             Send this link. When a friend starts a yearly plan, 200 points land on your account. Those points come off your next bill at a rate of 10 points to $1.
