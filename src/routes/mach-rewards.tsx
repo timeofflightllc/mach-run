@@ -575,7 +575,7 @@ function MachRewardsPage() {
               name={user?.displayName?.trim() || null}
               since={memberYear(acceptedAt)}
             />
-            <div className="mt-5">
+            <div className="mt-5 flex justify-center">
               <PrimaryButton
                 disabled={ledger == null || ledger.balance <= 0 || applyOpen || applying}
                 onClick={() => {
