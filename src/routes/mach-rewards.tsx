@@ -252,7 +252,7 @@ function EarnBingo({
   return (
     <div className={`overflow-clip rounded-xl bg-border ${locked ? "opacity-60" : ""}`} inert={locked}>
       <ul className="grid grid-cols-1 gap-px sm:grid-cols-2 xl:grid-cols-4">
-        <li className="h-full [perspective:900px]">
+        <li className="h-full min-h-56 [perspective:900px]">
           <FlipCard
             title="Follow on Instagram"
             possible="20 points possible"
@@ -275,7 +275,7 @@ function EarnBingo({
             }
           />
         </li>
-        <li className="h-full [perspective:900px]">
+        <li className="h-full min-h-56 [perspective:900px]">
           <FlipCard
             title="Follow on LinkedIn"
             possible="20 points possible"
@@ -293,7 +293,7 @@ function EarnBingo({
             }
           />
         </li>
-        <li className="h-full [perspective:900px]">
+        <li className="h-full min-h-56 [perspective:900px]">
           <FlipCard
             title="First MACH RUN"
             possible="100 points possible"
@@ -311,7 +311,7 @@ function EarnBingo({
             }
           />
         </li>
-        <li className="h-full [perspective:900px]">
+        <li className="h-full min-h-56 [perspective:900px]">
           <FlipCard
             title="Run the loop again."
             possible="10 points possible"
@@ -327,7 +327,7 @@ function EarnBingo({
             }
           />
         </li>
-        <li className="h-full [perspective:900px]">
+        <li className="h-full min-h-56 [perspective:900px]">
           <FlipCard
             title="Refer a friend"
             possible="200 points possible"
@@ -343,7 +343,7 @@ function EarnBingo({
             }
           />
         </li>
-        <li className="h-full [perspective:900px]">
+        <li className="h-full min-h-56 [perspective:900px]">
           {betaInvited === false ? (
             <FlipCard
               title="Beta Test Debrief"
@@ -382,7 +382,7 @@ function EarnBingo({
             />
           )}
         </li>
-        <li className="h-full [perspective:900px]">
+        <li className="h-full min-h-56 [perspective:900px]">
           <FlipCard
             title="Write a review"
             possible="100 points possible"
@@ -393,6 +393,27 @@ function EarnBingo({
             detail={
               <>
                 <p>Rate MACH RUN out of 5 stars, and leave a short review (250 characters max). Thank you!</p>
+                <p className="mt-2">1 possible attempt</p>
+              </>
+            }
+          />
+        </li>
+        <li className="h-full min-h-56 [perspective:900px]">
+          <FlipCard
+            title="Pass the word"
+            possible="20 points possible"
+            earned="0 earned"
+            left="20 left"
+            done={false}
+            onOpen={scrollToLink}
+            detail={
+              <>
+                <p>
+                  Send machrun.com to one person who is still guessing. A text, an email, or a post. One time.
+                </p>
+                <p className="mt-2">
+                  This is not the referral. That one pays 200 points when they start a yearly plan.
+                </p>
                 <p className="mt-2">1 possible attempt</p>
               </>
             }
