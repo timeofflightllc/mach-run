@@ -28,10 +28,10 @@ export const Route = createFileRoute("/mach-rewards")({
 });
 
 function PlatinumCard({ balance, name }: { balance: number | null; name: string | null }) {
-  const engraved = "text-[#3c3934] [text-shadow:0_1px_0_rgba(255,255,255,0.72)]";
+  const ink = "text-[#2c2926] [text-shadow:0_1px_0_rgba(255,255,255,0.65)]";
   return (
     <div
-      className="relative mx-auto w-full max-w-xl overflow-hidden rounded-[1.15rem] shadow-[0_22px_40px_-24px_rgba(30,28,24,0.7),inset_0_1px_0_rgba(255,255,255,0.75)]"
+      className={`relative mx-auto w-full max-w-lg overflow-hidden rounded-[1rem] shadow-[0_18px_34px_-22px_rgba(30,28,24,0.72),inset_0_1px_0_rgba(255,255,255,0.8)] ${ink}`}
       style={{ aspectRatio: "1.586 / 1" }}
     >
       <div
@@ -39,44 +39,57 @@ function PlatinumCard({ balance, name }: { balance: number | null; name: string 
         className="absolute inset-0"
         style={{
           background: [
-            "linear-gradient(118deg, rgba(255,255,255,0.72) 0%, rgba(255,255,255,0.05) 24%, rgba(255,255,255,0) 40%, rgba(255,255,255,0.22) 52%, rgba(60,56,50,0.08) 68%, rgba(255,255,255,0.45) 100%)",
-            "repeating-linear-gradient(90deg, rgba(255,255,255,0.16) 0 1px, rgba(80,76,70,0.03) 1px 3px)",
-            "linear-gradient(155deg, #f7f4ee 0%, #d4d0c6 28%, #9a968e 52%, #e4e0d6 74%, #b7b3a9 100%)",
+            "radial-gradient(circle at 50% 58%, rgba(255,255,255,0.45) 0 8%, transparent 9% 12%, rgba(70,66,60,0.05) 13% 16%, transparent 17% 22%, rgba(70,66,60,0.04) 23% 26%, transparent 27%)",
+            "linear-gradient(118deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.08) 26%, rgba(255,255,255,0) 42%, rgba(255,255,255,0.2) 58%, rgba(40,36,32,0.06) 74%, rgba(255,255,255,0.5) 100%)",
+            "repeating-linear-gradient(90deg, rgba(255,255,255,0.2) 0 1px, rgba(70,66,60,0.035) 1px 3px)",
+            "linear-gradient(160deg, #f6f3ec 0%, #d8d4ca 30%, #a29e96 54%, #ece7dc 76%, #c2beb4 100%)",
           ].join(","),
         }}
       />
-      <div className={`relative flex h-full flex-col px-[7%] py-[6%] ${engraved}`}>
-        <div className="flex items-start justify-between gap-3">
-          <p className="font-display text-[clamp(0.95rem,2.4vw,1.35rem)] tracking-[0.22em]">MACH RUN</p>
-          <p className="font-display text-[clamp(0.7rem,1.7vw,0.95rem)] tracking-[0.28em]">PLATINUM</p>
+      <div aria-hidden className="absolute inset-[3.4%] rounded-[0.7rem] border border-[#2c2926]/80" />
+      <div aria-hidden className="absolute inset-[5%] rounded-[0.55rem] border border-[#2c2926]/30" />
+
+      <div className="relative flex h-full flex-col items-center px-[8%] pt-[6.5%]">
+        <p className="font-serif text-[clamp(0.72rem,2.5vw,1.15rem)] font-semibold leading-none tracking-[0.12em]">
+          MACH RUN EXPRESS
+        </p>
+        <p className="mt-[0.35em] text-[clamp(0.48rem,1.35vw,0.68rem)] leading-none tracking-[0.48em]">REWARDS</p>
+      </div>
+
+      <div
+        aria-hidden
+        className="absolute left-[8%] top-[46%] h-[18%] w-[13%] max-w-11 -translate-y-1/2 rounded-[0.28rem] border border-[#8a7344]/80 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
+        style={{
+          background: "linear-gradient(135deg, #f4e4b4 0%, #c6a15a 30%, #f8efd4 48%, #a8883e 74%, #e7d49c 100%)",
+        }}
+      >
+        <div className="grid h-full grid-cols-2 grid-rows-3 gap-px p-[2px] opacity-70">
+          <span className="border-b border-[#8a7344]/55" />
+          <span className="border-b border-[#8a7344]/55" />
+          <span className="border-b border-[#8a7344]/55" />
+          <span className="border-b border-[#8a7344]/55" />
+          <span />
+          <span />
         </div>
-        <div
-          aria-hidden
-          className="mt-[4%] h-[16%] w-[14%] max-w-14 rounded-[0.35rem] border border-[#8a7344]/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]"
-          style={{
-            background:
-              "linear-gradient(135deg, #f3e2b0 0%, #c6a15a 28%, #f7edd0 46%, #a8883e 72%, #e6d39a 100%)",
-          }}
-        >
-          <div className="grid h-full grid-cols-2 grid-rows-3 gap-px p-1 opacity-70">
-            <span className="border-b border-[#8a7344]/50" />
-            <span className="border-b border-[#8a7344]/50" />
-            <span className="border-b border-[#8a7344]/50" />
-            <span className="border-b border-[#8a7344]/50" />
-            <span />
-            <span />
-          </div>
-        </div>
-        <div className="flex flex-1 flex-col items-center justify-center text-center">
-          <p className="font-display text-[clamp(2.4rem,8vw,4.25rem)] leading-none tabular-nums">
-            {balance == null ? "—" : balance}
-          </p>
-          <p className="mt-2 text-[clamp(0.65rem,1.5vw,0.8rem)] tracking-[0.42em]">POINTS</p>
-        </div>
-        <p className="h-5 truncate text-left text-[clamp(0.7rem,1.8vw,0.95rem)] tracking-[0.16em] uppercase">
-          {name ?? ""}
+      </div>
+
+      <img
+        src="/brand/rewards-pilot.jpg"
+        alt=""
+        className="pointer-events-none absolute left-1/2 top-[56%] h-[64%] w-[40%] -translate-x-1/2 -translate-y-1/2 object-cover"
+        style={{ clipPath: "ellipse(46% 46% at 50% 50%)" }}
+      />
+
+      <div className="absolute right-[8%] top-[54%] -translate-y-1/2 text-right">
+        <p className="text-[clamp(0.45rem,1.15vw,0.58rem)] tracking-[0.32em]">POINTS</p>
+        <p className="mt-0.5 font-display text-[clamp(1.15rem,3.4vw,1.7rem)] leading-none tabular-nums">
+          {balance == null ? "—" : balance}
         </p>
       </div>
+
+      <p className="absolute bottom-[8%] left-[8%] right-[28%] truncate font-serif text-[clamp(0.62rem,1.7vw,0.84rem)] tracking-[0.14em] uppercase">
+        {name ?? ""}
+      </p>
     </div>
   );
 }
