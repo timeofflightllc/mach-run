@@ -31,6 +31,56 @@ function referralDate(iso: string): string {
   });
 }
 
+const EARN_CELL = "flex h-full min-h-44 w-full flex-col bg-surface px-4 py-5 text-left";
+
+function EarnBingo() {
+  function scrollToLink() {
+    document.getElementById("referral-link")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  return (
+    <div className="overflow-hidden rounded-xl bg-border">
+      <ul className="grid grid-cols-1 gap-px lg:grid-cols-5">
+        <li>
+          <div className={EARN_CELL}>
+            <p className="font-display text-4xl leading-none text-fg">20</p>
+            <p className="mt-6 text-base font-medium text-fg">Follow on Instagram</p>
+            <p className="mt-1 text-sm leading-relaxed text-subtle">The Instagram handle is not set.</p>
+          </div>
+        </li>
+        <li>
+          <Link to="/" className={`${EARN_CELL} hover:bg-elevated`}>
+            <p className="font-display text-4xl leading-none text-fg">100</p>
+            <p className="mt-6 text-base font-medium text-fg">First MACH RUN</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted">Your own household. Not the Hale demo.</p>
+          </Link>
+        </li>
+        <li>
+          <Link to="/" className={`${EARN_CELL} hover:bg-elevated`}>
+            <p className="font-display text-4xl leading-none text-fg">10</p>
+            <p className="mt-6 text-base font-medium text-fg">Run the loop again</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted">Change the plan and run it. Once a month.</p>
+          </Link>
+        </li>
+        <li>
+          <button type="button" onClick={scrollToLink} className={`${EARN_CELL} hover:bg-elevated`}>
+            <p className="font-display text-4xl leading-none text-fg">200</p>
+            <p className="mt-6 text-base font-medium text-fg">Refer a friend</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted">They start a yearly plan.</p>
+          </button>
+        </li>
+        <li>
+          <Link to="/beta" className={`${EARN_CELL} hover:bg-elevated`}>
+            <p className="font-display text-4xl leading-none text-fg">400</p>
+            <p className="mt-6 text-base font-medium text-fg">Beta debrief</p>
+            <p className="mt-1 text-sm leading-relaxed text-muted">Submit the form, or take the hat.</p>
+          </Link>
+        </li>
+      </ul>
+    </div>
+  );
+}
+
 function MachRewardsPage() {
   const { user, isPending } = useCurrentUserState();
   const [summary, setSummary] = useState<ReferralSummary | null>(null);
@@ -79,15 +129,9 @@ function MachRewardsPage() {
             </Link>
           </p>
           <h1 className="mt-2 font-display text-4xl text-fg">Mach Rewards</h1>
-          <div className="mt-3 max-w-xl space-y-2 text-base leading-relaxed text-muted">
-            <p>Earn reward points with Mach Rewards!</p>
-            <p>Follow MACH RUN on Instagram - 20 MR points.</p>
-            <p>Execute your first personal household MACH RUN - 100 MR points.</p>
-            <p>Iterate your plan, make changes, and run the loop again - 10 MR points (given a max of once a month)</p>
-            <p>Refer a friend who signs up for a yearly plan - 200 MR points.</p>
-            <p>Completing a Beta Test Feedback Form - 400 MR points or a free MACH RUN hat.</p>
-          </div>
         </header>
+
+        <EarnBingo />
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
 
@@ -142,7 +186,7 @@ function MachRewardsPage() {
           </div>
         </section>
 
-        <section className="w-full space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)] sm:p-6">
+        <section id="referral-link" className="w-full scroll-mt-6 space-y-4 rounded-xl bg-surface p-5 shadow-[0_0_0_1px_var(--color-border)] sm:p-6">
           <p className="max-w-xl text-base leading-relaxed text-muted">
             Send this link. When a friend starts a yearly plan, 200 points land on your account. Those points come off your next bill at a rate of 10 points to $1.
           </p>
