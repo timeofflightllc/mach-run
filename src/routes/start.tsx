@@ -214,7 +214,15 @@ function StartQuiz() {
   const { user } = useCurrentUserState();
   const signedInEmail = isRealUser(user) ? user?.primaryEmail : null;
   const quotes = useBoydQuotes();
-  const boydPick = useRef<{ step: number; quotes: string[]; line: string } | null>(null);
+  // First render (server and client) must match. Random pick happens after mount and on step change.
+  const [boydLine, setBoydLine] = useState(quotes[0] ?? "");
+  useEffect(() => {
+    if (quotes.length === 0) {
+      setBoydLine("");
+      return;
+    }
+    setBoydLine(pickBoyd(quotes, ""));
+  }, [quotes, step]);
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState("");
   const [monthlyNeed, setMonthlyNeed] = useState(5000);
@@ -245,14 +253,6 @@ function StartQuiz() {
   const nextStep = useRef(0);
   const praiseTimer = useRef<number | null>(null);
   const nameForPlan = useRef<string | null>(null);
-  if (!boydPick.current || boydPick.current.step !== step) {
-    boydPick.current = {
-      step,
-      quotes,
-      line: pickBoyd(quotes, boydPick.current?.line ?? ""),
-    };
-  }
-  const boydLine = boydPick.current.line;
 
   const floor = ageFloor(birthYear);
   const age = Math.min(Math.max(retireAge, floor), Math.max(75, floor));

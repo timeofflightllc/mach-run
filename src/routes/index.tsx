@@ -886,8 +886,20 @@ function Home() {
   const plan = usePlanStore((s) => s.plan);
   const boydQuotes = useBoydQuotes();
   const heroCopy = useHeroCopy();
-  const boydPick = useRef(Math.floor(Math.random() * Math.max(boydQuotes.length, 1)));
-  const boydLine = boydQuotes[boydPick.current % Math.max(boydQuotes.length, 1)] ?? "";
+  // First render (server and client) must match. Random pick happens after mount.
+  const [boydLine, setBoydLine] = useState(boydQuotes[0] ?? "");
+  useEffect(() => {
+    if (boydQuotes.length === 0) {
+      setBoydLine("");
+      return;
+    }
+    if (boydQuotes.length === 1) {
+      setBoydLine(boydQuotes[0] ?? "");
+      return;
+    }
+    const i = Math.floor(Math.random() * boydQuotes.length);
+    setBoydLine(boydQuotes[i] ?? boydQuotes[0] ?? "");
+  }, [boydQuotes]);
   const copy = usePlannerCopy();
   const patchAssumptions = usePlanStore((s) => s.patchAssumptions);
   const { status: saveStatus, saveNow } = useCloudPlan();
