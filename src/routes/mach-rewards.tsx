@@ -97,13 +97,13 @@ function PlatinumCard({
       <img
         src="/brand/rewards-pilot.jpg"
         alt=""
-        className="pointer-events-none absolute left-[46%] top-[53%] h-[54%] w-[32%] -translate-x-1/2 -translate-y-1/2 object-cover"
+        className="pointer-events-none absolute left-1/2 top-[53%] h-[54%] w-[32%] -translate-x-1/2 -translate-y-1/2 object-cover"
         style={{ clipPath: "ellipse(46% 46% at 50% 50%)" }}
       />
 
-      <div className="absolute right-[8%] top-[40%] -translate-y-1/2 text-right">
-        <p className="text-[1.7cqw] font-semibold tracking-[0.28em]">POINTS</p>
-        <p className="mt-[0.3cqw] text-[4.2cqw] font-bold leading-none tabular-nums">
+      <div className="absolute right-[8%] top-[38%] -translate-y-1/2 text-right">
+        <p className="text-[2.6cqw] font-semibold tracking-[0.22em]">POINTS</p>
+        <p className="mt-[0.4cqw] text-[6.2cqw] font-bold leading-none tabular-nums">
           {balance == null ? "—" : balance}
         </p>
       </div>
