@@ -257,7 +257,9 @@ function EarnBingo({
             href="https://www.instagram.com/machrundotcom/"
             detail={
               <>
-                <p>Follow MACH RUN.</p>
+                <p>
+                  Open @machrundotcom on Instagram and tap Follow. One follow, one time. That is 20 points.
+                </p>
                 <p className="mt-2">1 possible attempt</p>
               </>
             }
@@ -273,7 +275,9 @@ function EarnBingo({
             href="https://www.linkedin.com/company/machrun-com/"
             detail={
               <>
-                <p>Follow MACH RUN.</p>
+                <p>
+                  Open the MACH RUN company page on LinkedIn and tap Follow. One follow, one time. That is 20 points.
+                </p>
                 <p className="mt-2">1 possible attempt</p>
               </>
             }
