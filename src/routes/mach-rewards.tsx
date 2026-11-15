@@ -588,30 +588,32 @@ function MachRewardsPage() {
               </PrimaryButton>
             </div>
             {applyOpen && ledger ? (
-              <fieldset className="mt-4 space-y-3">
-                {rewardApplyChoices(ledger.balance).map((points, index, choices) => (
-                  <label key={points} className="flex items-center gap-3 text-sm text-fg">
-                    <input
-                      type="radio"
-                      name="reward-apply"
-                      checked={applyPoints === points}
-                      onChange={() => setApplyPoints(points)}
-                      className="size-4 accent-fg"
-                    />
-                    <span>
-                      {index === choices.length - 1
-                        ? `All ${points} points (${rewardDollars(points)})`
-                        : `${points} points (${rewardDollars(points)})`}
-                    </span>
-                  </label>
-                ))}
+              <fieldset className="mt-4 flex flex-col items-center gap-3">
+                <div className="space-y-3">
+                  {rewardApplyChoices(ledger.balance).map((points, index, choices) => (
+                    <label key={points} className="flex items-center gap-3 text-sm text-fg">
+                      <input
+                        type="radio"
+                        name="reward-apply"
+                        checked={applyPoints === points}
+                        onChange={() => setApplyPoints(points)}
+                        className="size-4 accent-fg"
+                      />
+                      <span>
+                        {index === choices.length - 1
+                          ? `All ${points} points (${rewardDollars(points)})`
+                          : `${points} points (${rewardDollars(points)})`}
+                      </span>
+                    </label>
+                  ))}
+                </div>
                 {applyError ? <p className="text-sm text-negative">{applyError}</p> : null}
                 <PrimaryButton disabled={applyPoints == null || applying} onClick={() => void onApply()}>
                   {applying ? "Applying…" : "Apply to my next bill"}
                 </PrimaryButton>
               </fieldset>
             ) : null}
-            {applyNote ? <p className="mt-3 text-sm text-fg">{applyNote}</p> : null}
+            {applyNote ? <p className="mt-3 text-center text-sm text-fg">{applyNote}</p> : null}
           </div>
           <div className="border-t border-border">
             <p className="px-5 py-3 text-xs font-medium uppercase tracking-[0.16em] text-subtle sm:px-6">
