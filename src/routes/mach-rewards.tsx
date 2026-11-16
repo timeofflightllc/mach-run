@@ -742,32 +742,6 @@ function MachRewardsPage() {
           </form>
         ) : null}
 
-        <EarnBingo
-          betaSubmitted={betaSubmitted}
-          betaInvited={betaInvited}
-          referralEarned={
-            ledger ? ledger.grants.filter((grant) => grant.source === "referral").reduce((sum, grant) => sum + grant.points, 0) : null
-          }
-          instagramCode={instagramCode}
-          instagramEarned={
-            ledger
-              ? ledger.grants
-                  .filter((grant) => grant.source === "instagram")
-                  .reduce((sum, grant) => sum + grant.points, 0)
-              : 0
-          }
-          loopDone={
-            ledger
-              ? ledger.grants.some(
-                  (grant) =>
-                    grant.source === "loop" &&
-                    grant.date.startsWith(new Date().toISOString().slice(0, 7)),
-                )
-              : false
-          }
-          locked={accepted !== true}
-        />
-
         {error ? <p className="text-sm text-negative">{error}</p> : null}
 
         <section className="w-full rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
@@ -856,6 +830,32 @@ function MachRewardsPage() {
             )}
           </div>
         </section>
+
+        <EarnBingo
+          betaSubmitted={betaSubmitted}
+          betaInvited={betaInvited}
+          referralEarned={
+            ledger ? ledger.grants.filter((grant) => grant.source === "referral").reduce((sum, grant) => sum + grant.points, 0) : null
+          }
+          instagramCode={instagramCode}
+          instagramEarned={
+            ledger
+              ? ledger.grants
+                  .filter((grant) => grant.source === "instagram")
+                  .reduce((sum, grant) => sum + grant.points, 0)
+              : 0
+          }
+          loopDone={
+            ledger
+              ? ledger.grants.some(
+                  (grant) =>
+                    grant.source === "loop" &&
+                    grant.date.startsWith(new Date().toISOString().slice(0, 7)),
+                )
+              : false
+          }
+          locked={accepted !== true}
+        />
 
         <div className="space-y-3">
           <h2 className="font-display text-2xl text-fg">Referrals</h2>
