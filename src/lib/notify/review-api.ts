@@ -14,8 +14,8 @@ export const submitReview = createServerFn({ method: "POST" })
     if (!Number.isInteger(data.stars) || data.stars < 1 || data.stars > 5) {
       return { ok: false, reason: "Pick a star rating." };
     }
-    if (data.review.length < 10 || data.review.length > 250) {
-      return { ok: false, reason: "The review needs 10 to 250 characters." };
+    if (data.review.length < 10 || data.review.length > 335) {
+      return { ok: false, reason: "The review needs 10 to 335 characters." };
     }
     const { verifyTurnstile, turnstileFailureReason, clientIp, tooManyFormSubmits } = await import(
       "@/lib/auth/signup-gate.server"

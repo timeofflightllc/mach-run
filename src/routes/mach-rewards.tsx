@@ -537,7 +537,7 @@ function EarnBingo({
             to="/review"
             detail={
               <>
-                <p>Rate MACH RUN out of 5 stars, and leave a short review (250 characters max). Thank you!</p>
+                <p>Rate MACH RUN out of 5 stars, and leave a short review (335 characters max). Thank you!</p>
                 <p className="mt-2">1 possible attempt</p>
               </>
             }

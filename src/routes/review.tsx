@@ -8,13 +8,13 @@ import { submitReview } from "@/lib/notify/review-api";
 import { pageHead } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
-const MAX = 250;
+const MAX = 335;
 
 export const Route = createFileRoute("/review")({
   head: () =>
     pageHead({
       title: "Submit a Review | MACH RUN",
-      description: "A short review of MACH RUN. 250 characters. It is read before it is used.",
+      description: "A short review of MACH RUN. 335 characters. It is read before it is used.",
       path: "/review",
     }),
   component: ReviewPage,
@@ -69,7 +69,7 @@ function ReviewPage() {
         </nav>
         <header>
           <h1 className="font-display text-4xl text-fg sm:text-5xl">Submit a Review</h1>
-          <p className="mt-2 text-lg text-muted">250 characters. MACH RUN reads it before it is used anywhere.</p>
+          <p className="mt-2 text-lg text-muted">335 characters. MACH RUN reads it before it is used anywhere.</p>
         </header>
         {done ? (
           <p className="text-base text-fg">Received. Thank you. This review is not on the site until MACH RUN uses it.</p>
