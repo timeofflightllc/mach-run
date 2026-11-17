@@ -318,6 +318,37 @@ function InstagramCode({ code }: { code: string }) {
   );
 }
 
+function LinkedInMark() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
+      <rect x="3" y="3" width="18" height="18" rx="3" fill="none" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8 10.2V16.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="8" cy="7.6" r="0.9" fill="currentColor" />
+      <path d="M12 16.5v-3.6a2.1 2.1 0 0 1 4.2 0v3.6" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function LinkedInFollow() {
+  function openLinkedIn(event: MouseEvent<HTMLButtonElement>) {
+    event.preventDefault();
+    event.stopPropagation();
+    window.open("https://www.linkedin.com/company/machrun-com/", "_blank", "noopener,noreferrer");
+  }
+  return (
+    <div className="mt-2">
+      <button
+        type="button"
+        aria-label="Follow on LinkedIn"
+        onClick={openLinkedIn}
+        className="grid size-8 place-items-center rounded-md text-fg hover:bg-fg/10"
+      >
+        <LinkedInMark />
+      </button>
+    </div>
+  );
+}
+
 function FlipCard({
   title,
   possible,
@@ -537,6 +568,7 @@ function EarnBingo({
                 <p>
                   Open the MACH RUN company page on LinkedIn and tap Follow. One follow, one time. That is 20 points.
                 </p>
+                <LinkedInFollow />
                 <p className="mt-2">1 possible attempt</p>
               </>
             }
@@ -853,7 +885,7 @@ function MachRewardsPage() {
 
         {error ? <p className="text-sm text-negative">{error}</p> : null}
 
-        <section className="w-full rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
+        <section className="w-full overflow-hidden rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)] min-[1400px]:grid min-[1400px]:grid-cols-[minmax(0,1.45fr)_minmax(16rem,0.7fr)] min-[1400px]:items-stretch">
           <div className="px-5 py-6 sm:px-6 sm:py-7">
             <PlatinumCard
               earned={ledger == null ? null : ledger.earned}
@@ -908,7 +940,7 @@ function MachRewardsPage() {
               {applyNote ? <p className="mt-3 text-center text-sm text-fg">{applyNote}</p> : null}
             </div>
           </div>
-          <div className="border-t border-border">
+          <div className="border-t border-border min-[1400px]:border-t-0 min-[1400px]:border-l">
             <p className="px-5 py-3 text-xs font-medium uppercase tracking-[0.16em] text-subtle sm:px-6">
               History
             </p>
