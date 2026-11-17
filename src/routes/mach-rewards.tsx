@@ -940,41 +940,45 @@ function MachRewardsPage() {
               {applyNote ? <p className="mt-3 text-center text-sm text-fg">{applyNote}</p> : null}
             </div>
           </div>
-          <div className="border-t border-border min-[1400px]:border-t-0 min-[1400px]:border-l">
-            <p className="px-5 py-3 text-xs font-medium uppercase tracking-[0.16em] text-subtle sm:px-6">
-              History
-            </p>
-            {ledger == null ? (
-              <p className="px-5 pb-5 text-sm text-muted sm:px-6">Loading…</p>
-            ) : ledger.grants.length === 0 ? (
-              <p className="px-5 pb-5 text-base text-muted sm:px-6">No points yet.</p>
-            ) : (
-              <ul>
-                {ledger.grants.map((grant, index) => (
-                  <li
-                    key={`${grant.source}-${grant.date}-${index}`}
-                    className={`flex items-center justify-between gap-4 px-5 py-3 sm:px-6 ${index > 0 ? "border-t border-border" : ""}`}
-                  >
-                    <div className="min-w-0">
-                      <p className="text-base font-medium text-fg">
-                        {grant.source === "beta"
-                          ? "Beta debrief"
-                          : grant.source === "instagram"
-                            ? "Instagram"
-                            : grant.source === "loop"
-                              ? "Run the loop again."
-                              : "Referred a friend"}
-                      </p>
-                      <p className="mt-0.5 text-sm text-subtle">
-                        {grant.source === "referral" ? `${grant.name} · ` : ""}
-                        {referralDate(grant.date)}
-                      </p>
-                    </div>
-                    <p className="shrink-0 font-display text-xl tabular-nums text-fg">+{grant.points}</p>
-                  </li>
-                ))}
-              </ul>
-            )}
+          <div className="flex h-64 flex-col border-t border-border min-[1400px]:relative min-[1400px]:h-auto min-[1400px]:min-h-0 min-[1400px]:border-t-0 min-[1400px]:border-l">
+            <div className="flex h-full min-h-0 flex-col min-[1400px]:absolute min-[1400px]:inset-0">
+              <p className="shrink-0 px-5 py-3 text-xs font-medium uppercase tracking-[0.16em] text-subtle sm:px-6">
+                History
+              </p>
+              <div className="min-h-0 flex-1 overflow-y-auto">
+                {ledger == null ? (
+                  <p className="px-5 pb-5 text-sm text-muted sm:px-6">Loading…</p>
+                ) : ledger.grants.length === 0 ? (
+                  <p className="px-5 pb-5 text-base text-muted sm:px-6">No points yet.</p>
+                ) : (
+                  <ul>
+                    {ledger.grants.map((grant, index) => (
+                      <li
+                        key={`${grant.source}-${grant.date}-${index}`}
+                        className={`flex items-center justify-between gap-4 px-5 py-3 sm:px-6 ${index > 0 ? "border-t border-border" : ""}`}
+                      >
+                        <div className="min-w-0">
+                          <p className="text-base font-medium text-fg">
+                            {grant.source === "beta"
+                              ? "Beta debrief"
+                              : grant.source === "instagram"
+                                ? "Instagram"
+                                : grant.source === "loop"
+                                  ? "Run the loop again."
+                                  : "Referred a friend"}
+                          </p>
+                          <p className="mt-0.5 text-sm text-subtle">
+                            {grant.source === "referral" ? `${grant.name} · ` : ""}
+                            {referralDate(grant.date)}
+                          </p>
+                        </div>
+                        <p className="shrink-0 font-display text-xl tabular-nums text-fg">+{grant.points}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
           </div>
         </section>
 
