@@ -90,11 +90,13 @@ function memberYear(iso: string | null): string | null {
 }
 
 function PlatinumCard({
+  earned,
   balance,
   name,
   since,
   tier,
 }: {
+  earned: number | null;
   balance: number | null;
   name: string | null;
   since: string | null;
@@ -148,9 +150,9 @@ function PlatinumCard({
       />
 
       <div className="absolute right-[8%] top-[38%] -translate-y-1/2 text-right">
-        <p className="text-[2.6cqw] font-semibold tracking-[0.22em]">POINTS</p>
+        <p className="whitespace-nowrap text-[2.3cqw] font-semibold tracking-[0.12em]">Lifetime Points</p>
         <p className="mt-[0.4cqw] text-[6.2cqw] font-bold leading-none tabular-nums">
-          {balance == null ? "—" : balance}
+          {earned == null ? "—" : earned}
         </p>
       </div>
 
@@ -166,22 +168,28 @@ function PlatinumCard({
         <p className="mt-[0.7cqw] text-[3.1cqw] font-bold leading-none tabular-nums">{since ?? "—"}</p>
       </div>
 
-      <p className="absolute bottom-[7.5%] left-[8%] right-[46%] truncate text-[3.3cqw] font-semibold tracking-[0.12em] uppercase">
+      <p className="absolute bottom-[6.5%] left-[8%] right-[46%] truncate text-[3.3cqw] font-semibold tracking-[0.12em] uppercase">
         {name ?? ""}
       </p>
-      <p className="absolute bottom-[7.5%] right-[8%] text-[3.3cqw] font-semibold leading-none tabular-nums">
-        Value: {balance == null ? "—" : rewardDollars(balance)}
-      </p>
+      <div className="absolute bottom-[6.5%] right-[8%] text-right">
+        <p className="whitespace-nowrap text-[2.5cqw] font-semibold leading-none tabular-nums">
+          Points Balance: {balance == null ? "—" : balance}
+        </p>
+        <p className="mt-[0.9cqw] text-[3.3cqw] font-semibold leading-none tabular-nums">
+          Value: {balance == null ? "—" : rewardDollars(balance)}
+        </p>
+      </div>
     </div>
   );
 }
 
 function RewardsCardDraft() {
-  const samples: { tier: RewardTier; balance: number }[] = [
-    { tier: "Green", balance: 40 },
-    { tier: "Silver", balance: 240 },
-    { tier: "Gold", balance: 860 },
-    { tier: "Platinum", balance: 12840 },
+  const touch = useTouchCards();
+  const samples: { tier: RewardTier; earned: number; balance: number }[] = [
+    { tier: "Green", earned: 40, balance: 40 },
+    { tier: "Silver", earned: 240, balance: 180 },
+    { tier: "Gold", earned: 860, balance: 610 },
+    { tier: "Platinum", earned: 1500, balance: 1240 },
   ];
   return (
     <main className="min-h-screen bg-bg py-10 text-fg">
@@ -196,11 +204,32 @@ function RewardsCardDraft() {
           <PlatinumCard
             key={sample.tier}
             tier={sample.tier}
+            earned={sample.earned}
             balance={sample.balance}
             name="Jordan Hale"
             since="26"
           />
         ))}
+        <div className="overflow-clip rounded-xl bg-border">
+          <ul className="grid grid-cols-1 gap-px sm:grid-cols-2">
+            {[
+              ["Follow on Instagram", "20 points possible", "0 earned", "20 left"],
+              ["Run the loop", "10 points possible", "10 earned", "0 left"],
+            ].map(([title, possible, earned, left]) => (
+              <li key={title} className="[perspective:900px]">
+                <FlipCard
+                  touch={touch}
+                  title={title}
+                  possible={possible}
+                  earned={earned}
+                  left={left}
+                  done={left.startsWith("0")}
+                  detail={<p>The back stays the light face. Hover, or tap the arrow, to turn it.</p>}
+                />
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </main>
   );
@@ -220,7 +249,7 @@ function referralDate(iso: string): string {
 const SILVER =
   "shadow-[inset_0_0_0_1px_rgba(198,204,212,0.95),inset_0_1px_0_rgba(255,255,255,0.9)] bg-surface bg-[linear-gradient(145deg,rgba(255,255,255,0.78),rgba(255,255,255,0.04)_46%,rgba(150,158,168,0.22))] text-fg";
 const GREEN =
-  "shadow-[inset_0_0_0_1px_rgba(210,232,214,0.95),inset_0_1px_0_rgba(255,255,255,0.8)] bg-[#2f7a4c] bg-[linear-gradient(145deg,rgba(255,255,255,0.5),rgba(214,236,214,0.18)_46%,rgba(8,36,20,0.34))] text-[#0f172a]";
+  "text-[#f6f1e6] shadow-[inset_0_0_0_1px_rgba(231,197,106,0.42),inset_0_1px_0_rgba(255,255,255,0.16)] bg-[#0e4a32] bg-[linear-gradient(165deg,rgba(255,236,190,0.16),transparent_46%,rgba(0,0,0,0.16))]";
 
 function fineHover() {
   return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
@@ -347,10 +376,10 @@ function FlipCard({
   }
   const front = (
     <>
-      <p className="text-base font-medium leading-tight">{title}</p>
-      <p className="text-sm tabular-nums">{possible}</p>
-      <p className="text-sm tabular-nums">{earned}</p>
-      <p className="text-sm tabular-nums">{left}</p>
+      <p className="text-base font-medium leading-tight tracking-[0.01em] text-[#f6f1e6]">{title}</p>
+      <p className="text-sm tabular-nums text-[#e7c56a]">{possible}</p>
+      <p className="text-sm tabular-nums text-[#d7cbb6]">{earned}</p>
+      <p className="text-sm tabular-nums text-[#d7cbb6]">{left}</p>
     </>
   );
   const faces = (
@@ -380,14 +409,14 @@ function FlipCard({
         type="button"
         aria-label="Flip card"
         onClick={flip}
-        className="absolute top-2 right-2 z-10 grid size-8 place-items-center rounded-full bg-fg/10 text-fg"
+        className="absolute top-2 right-2 z-10 grid size-8 place-items-center rounded-full bg-[#f6f1e6] text-[#0e4a32] shadow-[0_0_0_1px_rgba(14,74,50,0.2)]"
       >
         <RefreshCw className="size-4" aria-hidden />
       </button>
       <button
         type="button"
         onClick={go}
-        className="absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-md bg-fg px-4 py-1.5 text-sm font-medium text-bg"
+        className="absolute bottom-2 left-1/2 z-10 -translate-x-1/2 rounded-md bg-[#e7c56a] px-4 py-1.5 text-sm font-medium text-[#072e20]"
       >
         Go
       </button>
@@ -827,6 +856,7 @@ function MachRewardsPage() {
         <section className="w-full rounded-xl bg-surface shadow-[0_0_0_1px_var(--color-border)]">
           <div className="px-5 py-6 sm:px-6 sm:py-7">
             <PlatinumCard
+              earned={ledger == null ? null : ledger.earned}
               balance={ledger == null ? null : ledger.balance}
               name={user?.displayName?.trim() || null}
               since={memberYear(acceptedAt)}
