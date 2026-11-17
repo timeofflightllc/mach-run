@@ -84,23 +84,20 @@ export function BrandLockup({
 export function PageMast() {
   const account = useMastSession();
   return (
-    <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between md:gap-3">
-      <div className="flex items-center justify-between gap-3">
-        <Link to="/" className="inline-block shrink-0 opacity-90 hover:opacity-100">
-          <BrandLockup framed />
-        </Link>
-        <div className="flex shrink-0 items-center gap-1 md:hidden">
-          <SiteMenu align="right" />
-          <MastAccount session={account} />
-        </div>
-      </div>
-      <p className="text-center text-[11px] font-bold leading-snug tracking-[0.12em] text-muted sm:text-xs md:min-w-0 md:flex-1 md:px-2 md:text-[13px] lg:text-lg lg:tracking-[0.08em]">
-        The Supersonic Retirement Calculator
-      </p>
-      <div className="hidden shrink-0 items-center gap-1 md:flex">
+    <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 md:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+      <Link
+        to="/"
+        className="relative z-10 inline-block shrink-0 justify-self-start bg-bg opacity-90 hover:opacity-100 md:pr-3"
+      >
+        <BrandLockup framed />
+      </Link>
+      <div className="relative z-10 flex shrink-0 items-center justify-self-end gap-1 bg-bg md:col-start-3 md:pl-3">
         <SiteMenu align="right" />
         <MastAccount session={account} />
       </div>
+      <p className="col-span-2 text-center text-[11px] font-bold leading-snug tracking-[0.12em] text-muted sm:text-xs md:col-span-1 md:col-start-2 md:row-start-1 md:whitespace-nowrap md:px-3 md:text-[13px] lg:text-lg lg:tracking-[0.08em]">
+        The Supersonic Retirement Calculator
+      </p>
     </div>
   );
 }

@@ -2032,16 +2032,13 @@ function Home() {
                     <BrandLockup showTagline={false} />
                   </div>
                   <div className="flex min-w-0 flex-wrap items-center justify-end gap-x-2 gap-y-1">
-                    <SiteMenu align="right" className="hidden md:block" />
+                    <SiteMenu align="right" />
                     <ProfileSwitcher ent={ent} />
                     <AuthSlot saved={saveStatus} />
                   </div>
-                  <p className="mt-[0.8px] w-[9.8rem] min-w-0 whitespace-normal text-left text-[11px] font-bold leading-tight tracking-[0.04em] text-muted sm:w-[11.5rem] sm:text-xs sm:tracking-[0.08em] md:w-auto md:whitespace-nowrap md:text-[13px] md:tracking-[0.12em]">
+                  <p className="col-span-2 mt-[0.8px] text-center text-[11px] font-bold leading-tight tracking-[0.04em] text-muted sm:text-xs sm:tracking-[0.08em] md:whitespace-nowrap md:text-[13px] md:tracking-[0.12em] lg:text-lg lg:tracking-[0.08em]">
                     The Supersonic Retirement Calculator
                   </p>
-                  <div className="flex items-center justify-end gap-1 md:hidden">
-                    <SiteMenu align="right" className="z-10" />
-                  </div>
                 </div>
               </div>
               <nav
