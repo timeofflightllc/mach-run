@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto";
 import { getSql } from "@/lib/db";
 import { rewardApplyAllowed, rewardAppliedLine, REWARD_NEEDS_PLAN } from "./apply";
-import { rewardBalance } from "./balance.server";
+import { rewardBalance, rewardStanding } from "./balance.server";
+import type { RewardStanding } from "./standing";
 
 export type ApplyRewardResult =
-  | { ok: true; balance: number; line: string }
+  | ({ ok: true; line: string } & RewardStanding)
   | { ok: false; error: string };
 
 /**
@@ -64,5 +65,5 @@ export async function applyRewardPoints(userId: string, points: number): Promise
     return { ok: false, error: "Those points were not applied. Your balance is unchanged." };
   }
 
-  return { ok: true, balance: await rewardBalance(userId), line: rewardAppliedLine(points) };
+  return { ok: true, ...(await rewardStanding(userId)), line: rewardAppliedLine(points) };
 }

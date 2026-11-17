@@ -149,6 +149,27 @@ function MastAccount({ session }: { session: ReturnType<typeof useMastSession> }
     };
   }, [open]);
 
+  if (!user && import.meta.env.DEV) {
+    return (
+      <span className="inline-flex items-center gap-2">
+        <Link
+          to="/mach-rewards"
+          className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+        >
+          Card draft
+        </Link>
+        {isPending ? null : (
+          <Link
+            to="/login"
+            search={{ mode: "up" }}
+            className="inline-flex h-10 items-center justify-center whitespace-nowrap rounded-lg px-3 text-sm font-medium text-fg shadow-[0_0_0_1px_var(--color-border)] hover:bg-elevated"
+          >
+            Join MACH RUN
+          </Link>
+        )}
+      </span>
+    );
+  }
   if (isPending && !user) return <span className="inline-flex h-10 w-10" aria-hidden />;
   if (!user) {
     return (

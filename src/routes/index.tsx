@@ -1970,6 +1970,11 @@ function Home() {
                       <AuthSlot saved={saveStatus} />
                     ) : (
                       <>
+                        {import.meta.env.DEV ? (
+                          <a href="/mach-rewards" className="whitespace-nowrap px-1 text-[11px] font-medium text-muted hover:text-fg">
+                            Card draft
+                          </a>
+                        ) : null}
                         <a href="/pricing" className="whitespace-nowrap px-1 text-[11px] font-medium text-muted hover:text-fg">
                           Pricing
                         </a>

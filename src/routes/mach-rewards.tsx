@@ -13,6 +13,8 @@ import { pointBoardFn } from "@/lib/points/api";
 import { BETA_PASS_CAP, BETA_PASS_POINTS, betaRewardPoints } from "@/lib/points/board";
 import { acceptRewardsTermsFn, applyRewardPointsFn, instagramRewardCodeFn, rewardLedgerFn, rewardsAcceptanceFn } from "@/lib/rewards/api";
 import type { RewardGrant } from "@/lib/rewards/balance.server";
+import type { RewardStanding } from "@/lib/rewards/standing";
+import { rewardTier, type RewardTier } from "@/lib/rewards/tier";
 import { rewardApplyChoices, rewardDollars } from "@/lib/rewards/apply";
 import { REWARDS_TERMS } from "@/lib/rewards/terms";
 import { pageHead } from "@/lib/seo";
@@ -28,6 +30,58 @@ export const Route = createFileRoute("/mach-rewards")({
   component: MachRewardsPage,
 });
 
+const SILVER_METAL = [
+  "radial-gradient(circle at 50% 58%, rgba(255,255,255,0.45) 0 8%, transparent 9% 12%, rgba(70,66,60,0.05) 13% 16%, transparent 17% 22%, rgba(70,66,60,0.04) 23% 26%, transparent 27%)",
+  "linear-gradient(118deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.08) 26%, rgba(255,255,255,0) 42%, rgba(255,255,255,0.2) 58%, rgba(40,36,32,0.06) 74%, rgba(255,255,255,0.5) 100%)",
+  "repeating-linear-gradient(90deg, rgba(255,255,255,0.2) 0 1px, rgba(70,66,60,0.035) 1px 3px)",
+  "linear-gradient(160deg, #f6f3ec 0%, #d8d4ca 30%, #a29e96 54%, #ece7dc 76%, #c2beb4 100%)",
+].join(",");
+
+const CARD_METAL: Record<
+  RewardTier,
+  { face: string; border: string; borderSoft: string; background: string }
+> = {
+  Green: {
+    face: "text-[#e7c56a] [text-shadow:0_1px_0_rgba(0,0,0,0.35)]",
+    border: "border-[#d4b15a]/90",
+    borderSoft: "border-[#e7c56a]/40",
+    background: [
+      "radial-gradient(circle at 50% 58%, rgba(255,236,180,0.2) 0 8%, transparent 9% 12%, rgba(0,0,0,0.16) 13% 16%, transparent 17% 22%, rgba(0,0,0,0.1) 23% 26%, transparent 27%)",
+      "linear-gradient(118deg, rgba(255,228,160,0.28) 0%, rgba(255,255,255,0.05) 26%, rgba(255,255,255,0) 42%, rgba(255,214,120,0.12) 58%, rgba(0,0,0,0.2) 74%, rgba(255,228,160,0.16) 100%)",
+      "repeating-linear-gradient(90deg, rgba(255,236,190,0.08) 0 1px, rgba(0,0,0,0.1) 1px 3px)",
+      "linear-gradient(160deg, #1a6b45 0%, #0c4a30 30%, #072e20 54%, #12573a 76%, #083526 100%)",
+    ].join(","),
+  },
+  Silver: {
+    face: "text-[#2c2926] [text-shadow:0_1px_0_rgba(255,255,255,0.65)]",
+    border: "border-[#2c2926]/80",
+    borderSoft: "border-[#2c2926]/30",
+    background: SILVER_METAL,
+  },
+  Gold: {
+    face: "text-[#1a140e] [text-shadow:0_1px_0_rgba(255,248,220,0.55)]",
+    border: "border-[#1a140e]/80",
+    borderSoft: "border-[#1a140e]/30",
+    background: [
+      "radial-gradient(circle at 50% 58%, rgba(255,255,255,0.5) 0 8%, transparent 9% 12%, rgba(90,58,16,0.08) 13% 16%, transparent 17% 22%, rgba(90,58,16,0.06) 23% 26%, transparent 27%)",
+      "linear-gradient(118deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.08) 26%, rgba(255,255,255,0) 42%, rgba(255,248,220,0.22) 58%, rgba(70,42,8,0.08) 74%, rgba(255,255,255,0.5) 100%)",
+      "repeating-linear-gradient(90deg, rgba(255,255,255,0.22) 0 1px, rgba(90,58,16,0.045) 1px 3px)",
+      "linear-gradient(160deg, #f8e8b8 0%, #e0c06a 30%, #b8862f 54%, #f3dc94 76%, #c9a24a 100%)",
+    ].join(","),
+  },
+  Platinum: {
+    face: "text-[#111111] [text-shadow:0_1px_0_rgba(255,255,255,0.8)]",
+    border: "border-[#111111]/80",
+    borderSoft: "border-[#111111]/30",
+    background: [
+      "radial-gradient(circle at 50% 58%, rgba(255,255,255,0.7) 0 8%, transparent 9% 12%, rgba(70,96,120,0.06) 13% 16%, transparent 17% 22%, rgba(70,96,120,0.045) 23% 26%, transparent 27%)",
+      "linear-gradient(118deg, rgba(255,255,255,0.92) 0%, rgba(255,255,255,0.16) 26%, rgba(255,255,255,0) 42%, rgba(255,255,255,0.34) 58%, rgba(40,60,80,0.05) 74%, rgba(255,255,255,0.72) 100%)",
+      "repeating-linear-gradient(90deg, rgba(255,255,255,0.34) 0 1px, rgba(70,96,120,0.04) 1px 3px)",
+      "linear-gradient(160deg, #ffffff 0%, #e7eef6 30%, #c5d2e0 54%, #f7fbff 76%, #d5e1ec 100%)",
+    ].join(","),
+  },
+};
+
 function memberYear(iso: string | null): string | null {
   if (!iso) return null;
   const year = new Date(iso).getFullYear();
@@ -39,40 +93,31 @@ function PlatinumCard({
   balance,
   name,
   since,
+  tier,
 }: {
   balance: number | null;
   name: string | null;
   since: string | null;
+  tier: RewardTier;
 }) {
-  const face = "text-[#2c2926] [text-shadow:0_1px_0_rgba(255,255,255,0.65)]";
+  const metal = CARD_METAL[tier];
   return (
     <div
-      className={`relative mx-auto w-full max-w-lg overflow-hidden rounded-[1rem] shadow-[0_18px_34px_-22px_rgba(30,28,24,0.72),inset_0_1px_0_rgba(255,255,255,0.8)] ${face}`}
+      className={`relative mx-auto w-full max-w-lg overflow-hidden rounded-[1rem] shadow-[0_18px_34px_-22px_rgba(30,28,24,0.72),inset_0_1px_0_rgba(255,255,255,0.8)] ${metal.face}`}
       style={{ aspectRatio: "1.586 / 1", containerType: "inline-size", fontFamily: "var(--font-card)" }}
     >
-      <div
-        aria-hidden
-        className="absolute inset-0"
-        style={{
-          background: [
-            "radial-gradient(circle at 50% 58%, rgba(255,255,255,0.45) 0 8%, transparent 9% 12%, rgba(70,66,60,0.05) 13% 16%, transparent 17% 22%, rgba(70,66,60,0.04) 23% 26%, transparent 27%)",
-            "linear-gradient(118deg, rgba(255,255,255,0.78) 0%, rgba(255,255,255,0.08) 26%, rgba(255,255,255,0) 42%, rgba(255,255,255,0.2) 58%, rgba(40,36,32,0.06) 74%, rgba(255,255,255,0.5) 100%)",
-            "repeating-linear-gradient(90deg, rgba(255,255,255,0.2) 0 1px, rgba(70,66,60,0.035) 1px 3px)",
-            "linear-gradient(160deg, #f6f3ec 0%, #d8d4ca 30%, #a29e96 54%, #ece7dc 76%, #c2beb4 100%)",
-          ].join(","),
-        }}
-      />
-      <div aria-hidden className="absolute inset-[3.4%] rounded-[0.7rem] border border-[#2c2926]/80" />
-      <div aria-hidden className="absolute inset-[5%] rounded-[0.55rem] border border-[#2c2926]/30" />
+      <div aria-hidden className="absolute inset-0" style={{ background: metal.background }} />
+      <div aria-hidden className={`absolute inset-[3.4%] rounded-[0.7rem] border ${metal.border}`} />
+      <div aria-hidden className={`absolute inset-[5%] rounded-[0.55rem] border ${metal.borderSoft}`} />
 
       <div className="relative flex h-full flex-col items-center px-[7%] pt-[6%]">
-        <div className="flex w-max max-w-full flex-col items-stretch">
+        <div className="flex w-max max-w-full flex-col items-center">
           <p className="whitespace-nowrap text-center text-[5.6cqw] font-bold leading-none tracking-[0.06em]">
-            MACH RUN EXPRESS
+            MACH REWARDS
           </p>
-          <p className="mx-auto mt-[1cqw] flex w-2/3 justify-between text-[3.5cqw] font-semibold leading-none">
-            {["R", "E", "W", "A", "R", "D", "S"].map((letter, index) => (
-              <span key={index}>{letter}</span>
+          <p className="mt-[1.2cqw] flex justify-center gap-[0.62em] text-[3.5cqw] font-semibold leading-none">
+            {tier.toUpperCase().split("").map((letter, index) => (
+              <span key={`${letter}-${index}`}>{letter}</span>
             ))}
           </p>
         </div>
@@ -112,7 +157,7 @@ function PlatinumCard({
       <div className="absolute right-[7.5%] top-[60%] flex w-[27%] flex-col items-center">
         <div className="relative flex w-full items-center justify-center">
           <svg viewBox="0 0 140 22" className="absolute inset-0 h-full w-full" aria-hidden>
-            <path d="M8 1.5 H132 L138.5 11 L132 20.5 H8 L1.5 11 Z" fill="none" stroke="#2c2926" strokeWidth="1.1" />
+            <path d="M8 1.5 H132 L138.5 11 L132 20.5 H8 L1.5 11 Z" fill="none" stroke="currentColor" strokeWidth="1.1" />
           </svg>
           <p className="relative px-[0.7em] py-[0.45em] text-[1.85cqw] font-semibold leading-none tracking-[0.14em]">
             MEMBER SINCE
@@ -128,6 +173,36 @@ function PlatinumCard({
         Value: {balance == null ? "—" : rewardDollars(balance)}
       </p>
     </div>
+  );
+}
+
+function RewardsCardDraft() {
+  const samples: { tier: RewardTier; balance: number }[] = [
+    { tier: "Green", balance: 40 },
+    { tier: "Silver", balance: 240 },
+    { tier: "Gold", balance: 860 },
+    { tier: "Platinum", balance: 12840 },
+  ];
+  return (
+    <main className="min-h-screen bg-bg py-10 text-fg">
+      <div className="static-gutter mx-auto w-full max-w-xl space-y-8">
+        <PageMast />
+        <header>
+          <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">Draft</p>
+          <h1 className="font-display text-3xl tracking-tight">Card faces</h1>
+          <p className="mt-2 text-sm text-muted">Preview only. Not a live account.</p>
+        </header>
+        {samples.map((sample) => (
+          <PlatinumCard
+            key={sample.tier}
+            tier={sample.tier}
+            balance={sample.balance}
+            name="Jordan Hale"
+            since="26"
+          />
+        ))}
+      </div>
+    </main>
   );
 }
 
@@ -577,7 +652,7 @@ function MachRewardsPage() {
   const [betaInvited, setBetaInvited] = useState<boolean | null>(null);
   const [accepted, setAccepted] = useState<boolean | null>(null);
   const [acceptedAt, setAcceptedAt] = useState<string | null>(null);
-  const [ledger, setLedger] = useState<{ balance: number; grants: RewardGrant[] } | null>(null);
+  const [ledger, setLedger] = useState<(RewardStanding & { grants: RewardGrant[] }) | null>(null);
   const [applyOpen, setApplyOpen] = useState(false);
   const [applyPoints, setApplyPoints] = useState<number | null>(null);
   const [applying, setApplying] = useState(false);
@@ -681,7 +756,11 @@ function MachRewardsPage() {
         setApplyError(result.error);
         return;
       }
-      setLedger((current) => (current ? { ...current, balance: result.balance } : current));
+      setLedger((current) =>
+        current
+          ? { ...current, earned: result.earned, spent: result.spent, balance: result.balance }
+          : current,
+      );
       setApplyNote(result.line);
       setApplyOpen(false);
       setApplyPoints(null);
@@ -692,6 +771,7 @@ function MachRewardsPage() {
     }
   }
 
+  if (!isRealUser(user) && import.meta.env.DEV) return <RewardsCardDraft />;
   if (isPending && !user) {
     return (
       <main className="grid min-h-screen place-items-center bg-bg text-muted">
@@ -750,7 +830,12 @@ function MachRewardsPage() {
               balance={ledger == null ? null : ledger.balance}
               name={user?.displayName?.trim() || null}
               since={memberYear(acceptedAt)}
+              tier={ledger == null ? "Green" : rewardTier(ledger.earned, acceptedAt)}
             />
+            <p className="mt-4 text-center text-sm tabular-nums text-fg">
+              Earned {ledger == null ? "—" : ledger.earned} · Spent {ledger == null ? "—" : ledger.spent} · Balance{" "}
+              {ledger == null ? "—" : ledger.balance}
+            </p>
             <div className={`mt-5 ${accepted === true ? "" : "pointer-events-none opacity-50 select-none"}`}>
               <div className="flex justify-center">
                 <PrimaryButton

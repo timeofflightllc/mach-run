@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authMiddleware } from "@/lib/auth/middleware";
-import type { RewardGrant } from "./balance.server";
+import type { RewardGrant, RewardStanding } from "./balance.server";
 
 export const rewardsAcceptanceFn = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
@@ -34,13 +34,13 @@ export const instagramRewardCodeFn = createServerFn({ method: "GET" })
 
 export const rewardLedgerFn = createServerFn({ method: "GET" })
   .middleware([authMiddleware])
-  .handler(async ({ context }): Promise<{ balance: number; grants: RewardGrant[] }> => {
-    const { loadRewardGrants, rewardBalance } = await import("./balance.server");
-    const [balance, grants] = await Promise.all([
-      rewardBalance(context.userId),
+  .handler(async ({ context }): Promise<RewardStanding & { grants: RewardGrant[] }> => {
+    const { loadRewardGrants, rewardStanding } = await import("./balance.server");
+    const [standing, grants] = await Promise.all([
+      rewardStanding(context.userId),
       loadRewardGrants(context.userId),
     ]);
-    return { balance, grants };
+    return { ...standing, grants };
   });
 
 export const applyRewardPointsFn = createServerFn({ method: "POST" })
@@ -48,7 +48,7 @@ export const applyRewardPointsFn = createServerFn({ method: "POST" })
   .validator((input: { points?: unknown }) => ({
     points: typeof input?.points === "number" ? input.points : Number.NaN,
   }))
-  .handler(async ({ context, data }): Promise<{ ok: true; balance: number; line: string } | { ok: false; error: string }> => {
+  .handler(async ({ context, data }) => {
     const { applyRewardPoints } = await import("./apply.server");
     return applyRewardPoints(context.userId, data.points);
   });

@@ -16,6 +16,14 @@ export function AuthSlot({ saved }: { saved?: "idle" | "saving" | "saved" | "gue
         <AccountMenu />
       ) : (
         <>
+          {import.meta.env.DEV ? (
+            <a
+              href="/mach-rewards"
+              className="inline-flex h-11 items-center whitespace-nowrap px-2 text-sm font-medium text-muted hover:text-fg"
+            >
+              Card draft
+            </a>
+          ) : null}
           <a
             href="/pricing"
             className="hidden h-11 items-center whitespace-nowrap px-2 text-sm font-medium text-muted hover:text-fg sm:inline-flex"
